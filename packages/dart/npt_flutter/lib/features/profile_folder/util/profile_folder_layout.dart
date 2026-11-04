@@ -217,12 +217,13 @@ class ProfileFolderLayout {
             .where((String id) => !travellingSet.contains(id))
             .toList();
 
+        final bool aboveFirstHeader = showHeaders && headerIndex < 0;
+        final bool inCollapsedSection =
+            showHeaders && collapsed.contains(section.id);
         final List<String> order;
-        if (showHeaders && headerIndex < 0) {
-          // Above the first header: top of the first section.
+        if (aboveFirstHeader) {
           order = <String>[...travelling, ...rest];
-        } else if (showHeaders && collapsed.contains(section.id)) {
-          // A collapsed folder shows no rows to drop between, so append.
+        } else if (inCollapsedSection) {
           order = <String>[...rest, ...travelling];
         } else {
           order = <String>[];

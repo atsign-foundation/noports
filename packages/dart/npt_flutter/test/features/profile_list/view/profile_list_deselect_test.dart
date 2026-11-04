@@ -18,7 +18,7 @@ import 'package:npt_flutter/util/language.dart';
 
 import 'profile_list_view_test.mocks.dart';
 
-// The cubits log through the navigator context, which prints every change.
+/// The cubits log through the navigator context, which prints every change.
 class _SilentLogsCubit extends LogsCubit {
   @override
   void log(Loggable loggable) {}
@@ -85,7 +85,8 @@ void main() {
     name: 'Desktops',
     profileIds: <String>[vncUuid],
   );
-  // Alpha and Beta in Servers, Gamma in Desktops, Delta and Zeta unfiled.
+
+  /// Alpha and Beta in Servers, Gamma in Desktops, Delta and Zeta unfiled.
   const ProfileFolderData openFolders = ProfileFolderData(
     folders: <ProfileFolder>[serversFolder, desktopsFolder],
   );
@@ -162,7 +163,6 @@ void main() {
     when(mockSyncCubit.state).thenReturn(true);
     when(mockSyncCubit.stream).thenAnswer((_) => const Stream<bool>.empty());
 
-    // Already backed up, so no dialog opens over the list.
     mockBackupKeyCubit = MockBackupKeyCubit();
     when(mockBackupKeyCubit.state).thenReturn(false);
     when(

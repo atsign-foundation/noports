@@ -60,7 +60,6 @@ class ProfileHeaderView extends StatelessWidget {
                     vertical: Sizes.p8,
                     horizontal: Sizes.p10,
                   ),
-                  // Same width as the row grip, so the columns line up.
                   child: Row(
                     children: <Widget>[
                       const SizedBox(width: ProfileDragHandle.width),

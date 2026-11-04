@@ -71,6 +71,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     'ProfileFolderListView',
   );
 
+  /// Cleared when the folders unload: the list that would end it is gone.
   _DragSession? _drag;
 
   /// Shown until the bloc emits it, so a dropped row doesn't jump back.
@@ -81,7 +82,6 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     return BlocConsumer<ProfileFolderBloc, ProfileFolderState>(
       listener: (BuildContext context, ProfileFolderState state) {
         if (state is! ProfileFoldersLoaded) {
-          // The list is being replaced; its callbacks won't fire again.
           _drag = null;
         }
         if (_pending != null || state is! ProfileFoldersLoaded) {
@@ -90,7 +90,6 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
       },
       builder: (BuildContext context, ProfileFolderState folderState) {
         if (folderState is ProfileFoldersLoading) {
-          // Avoids listing every connection unfiled until the folders load.
           return const Center(child: Spinner());
         }
         if (folderState is! ProfileFoldersLoaded) {
@@ -137,6 +136,8 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     );
   }
 
+  /// Keeps an empty Unfiled header, hidden until a row drag: a change in item
+  /// count cancels a drag.
   Widget _buildReorderable(ProfileFolderLayout layout, bool editable) {
     final bool reorderable = widget.reorderable && editable;
     final bool movable = widget.movable && editable;
@@ -145,15 +146,11 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
       for (final ProfileFolderSection section in layout.sections)
         if (section.folder != null) section.folder!,
     ];
-    // Favorites first keeps a folder on its side of the favorites.
     bool canPrecede(ProfileFolder a, ProfileFolder b) =>
         (widget.compareFolders?.call(a, b) ?? 0) <= 0;
     final Set<String> loaded = widget.profiles.toSet();
     final bool dimRows = _drag?.isFolder ?? false;
-    // Item count must stay fixed during a drag or it gets cancelled, so the
-    // empty unfiled header stays in the list and only shows on a drag.
     final bool rowDragging = _drag != null && !_drag!.isFolder;
-    // A press on a grip during a drag or its drop animation would cancel it.
     final bool dragEnabled = _drag == null;
 
     Widget buildEntry(BuildContext context, int index) {
@@ -166,14 +163,14 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
               : folderIds.indexOf(folder.uuid);
           final bool shown =
               folder != null || section.uuids.isNotEmpty || rowDragging;
+          final int? totalWhileSearching = widget.searching && folder != null
+              ? folder.profileIds.where(loaded.contains).length
+              : null;
           final Widget header = ProfileFolderSectionHeader(
             title: section.title,
             icon: section.icon,
             uuids: section.uuids,
-            // A search shows some of a folder; Start all starts only those.
-            total: widget.searching && folder != null
-                ? folder.profileIds.where(loaded.contains).length
-                : null,
+            total: totalWhileSearching,
             folder: folder,
             collapsed: layout.collapsed.contains(section.id),
             onToggleCollapsed: widget.searching
@@ -224,8 +221,9 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
       }
     }
 
-    if (!reorderable && !movable) {
-      // A plain list, so screen readers aren't offered moves that do nothing.
+    /// ReorderableListView would still offer screen readers moves.
+    final bool nothingMoves = !reorderable && !movable;
+    if (nothingMoves) {
       return ListView.builder(
         key: _scrollKey,
         itemCount: layout.entries.length,
@@ -233,10 +231,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
       );
     }
     return Listener(
-      // A cancelled drag reports neither its end nor a reorder.
-      onPointerCancel: (_) {
-        if (_drag?.dropped == false) _endDrag();
-      },
+      onPointerCancel: (_) => _endCancelledDrag(),
       child: ReorderableListView.builder(
         key: _scrollKey,
         buildDefaultDragHandles: false,
@@ -341,9 +336,8 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
       ),
       _ => current,
     };
-    // Marking a favorite lifts an item without changing the manual order, so a
-    // drop above it can match what is already saved and still be put back.
-    if (next == current) {
+    final bool dropMatchesSaved = next == current;
+    if (dropMatchesSaved) {
       _explainIfMoved(event, _layoutFor(current));
       return;
     }
@@ -423,14 +417,14 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
         final List<String> manual = folderId == null
             ? data.resolveUnfiled(widget.profiles)
             : data.folderById(folderId)?.profileIds ?? const <String>[];
+        bool sortKeepsBothOrders(String a, String b) =>
+            listEquals(arrange(<String>[a, b]), <String>[a, b]) &&
+            listEquals(arrange(<String>[b, a]), <String>[b, a]);
         final List<String> order = ProfileFolderData.placeInManualOrder(
           manual: manual,
           released: event.sectionOrder,
           moved: event.profileIds,
-          // Tied when the sort keeps both orders of the pair.
-          tie: (String a, String b) =>
-              listEquals(arrange(<String>[a, b]), <String>[a, b]) &&
-              listEquals(arrange(<String>[b, a]), <String>[b, a]),
+          tie: sortKeepsBothOrders,
         );
         if (listEquals(order, manual)) return null;
         return ProfileFolderPlaceProfilesEvent(
@@ -494,10 +488,15 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     );
   }
 
+  /// A cancelled drag reports neither its end nor a reorder.
+  void _endCancelledDrag() {
+    if (_drag?.dropped == false) _endDrag();
+  }
+
+  /// Ends the drag when the proxy goes away, even if the list never reports it.
   Widget _proxyDecorator(Widget child, int index, Animation<double> animation) {
     final _DragSession? session = _drag;
     final int count = session?.movedIds.length ?? 0;
-    // The proxy goes away after every drag, even ones the list never reports.
     return _OnDispose(
       onDispose: () {
         if (identical(_drag, session)) _endDrag();

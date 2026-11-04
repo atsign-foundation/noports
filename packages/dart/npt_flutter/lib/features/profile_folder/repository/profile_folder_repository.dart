@@ -102,6 +102,8 @@ class ProfileFolderRepository {
   }
 }
 
+/// Reports every round, failed ones too: a failed round may still have pulled
+/// the folders.
 class _SyncRoundListener extends SyncProgressListener {
   final void Function(bool caughtUp) onRound;
 
@@ -110,7 +112,6 @@ class _SyncRoundListener extends SyncProgressListener {
   @override
   void onSyncProgressEvent(SyncProgress syncProgress) {
     final SyncStatus? status = syncProgress.syncStatus;
-    // A failed round may still have pulled the folders, so every round counts.
     if (status == SyncStatus.success || status == SyncStatus.failure) {
       final int? server = syncProgress.serverCommitId;
       onRound(

@@ -10,6 +10,8 @@ class ProfileListRow extends StatelessWidget {
   final int? reorderIndex;
 
   final bool dimmed;
+
+  /// Off during a drag and its drop animation: a grip press would cancel it.
   final bool dragEnabled;
 
   const ProfileListRow({

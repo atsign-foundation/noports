@@ -157,8 +157,7 @@ void main() {
     );
   });
 
-  // The real cubits must be created inside the test body so that their stream
-  // subscriptions live in the FakeAsync zone driven by [WidgetTester.pump].
+  /// The real cubits are created here so their streams run in FakeAsync.
   void createRealBlocs() {
     selectedCubit = ProfilesSelectedCubit();
     runningCubit = ProfilesRunningCubit();
@@ -322,7 +321,6 @@ void main() {
       folderBloc.emit(synced);
       await tester.pumpAndSettle();
 
-      // Rows can still move to another folder, folders can't be reordered.
       expect(find.byKey(gripKey), findsNWidgets(5));
       expect(
         find.descendant(
@@ -356,7 +354,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Shown at once, saved only once the folders have synced.
       expect(row(sshUuid), findsNothing);
       expect(folderRepo.puts, isEmpty);
     });
@@ -476,7 +473,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ReorderableListView), findsOneWidget);
-      // Five rows and the two folder headers, but not the unfiled header.
       expect(find.byKey(gripKey), findsNWidgets(7));
       for (final ProfileFolder folder in twoFolders.folders) {
         expect(
@@ -653,7 +649,6 @@ void main() {
         noneUuid,
         extraUuid,
       });
-      // The hidden ones are not counted, so the box reads as all selected.
       expect(boxValue(tester), isTrue);
 
       await tapSelectAll(tester);
@@ -1577,7 +1572,6 @@ void main() {
     });
 
     group('connections still waiting from an earlier Start all', () {
-      // The first connection never reports back, so the rest keep waiting.
       Future<ProfileStartQueueCubit> pumpWithStartAllRunning(
         WidgetTester tester,
         ProfileFolder folder,
@@ -1665,7 +1659,6 @@ void main() {
       );
 
       setUp(() {
-        // A row loads its connection only once it is on screen.
         final ProfileState notLoaded = const ProfileInitial(sshUuid);
         when(profileBlocs[sshUuid]!.state).thenReturn(notLoaded);
         when(

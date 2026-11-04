@@ -14,6 +14,7 @@ import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/uuid.dart';
 
 class ProfileFolderActions {
+  /// Read when a dialog is confirmed, not when it opens: a sync can change it.
   static List<String>? visibleUnfiled(BuildContext context) {
     final ProfileFolderState folders = context.read<ProfileFolderBloc>().state;
     final ProfileListState profiles = context.read<ProfileListBloc>().state;
@@ -69,23 +70,21 @@ class ProfileFolderActions {
       ),
     );
     if (skipped == null) return;
-    // Unchecked ones still waiting from an earlier Start all don't start.
-    queue.remove(skipped.where(queue.isWaiting));
-    // Re-read here, not before the dialog, in case a sync changed it.
+    final Iterable<String> uncheckedStillWaiting = skipped.where(
+      queue.isWaiting,
+    );
+    queue.remove(uncheckedStillWaiting);
     final ProfileFolderState state = bloc.state;
     if (state is! ProfileFoldersLoaded) return;
     final ProfileFolder? current = state.data.folderById(folder.uuid);
     if (current == null) return;
+    final Iterable<String> skippedUnlisted = current.skippedByStartAll.where(
+      (String uuid) => !shown.contains(uuid),
+    );
     bloc.add(
       ProfileFolderSetSkippedByStartAllEvent(
         folderId: folder.uuid,
-        skipped: <String>[
-          // Members not listed keep what they had.
-          ...current.skippedByStartAll.where(
-            (String uuid) => !shown.contains(uuid),
-          ),
-          ...skipped,
-        ],
+        skipped: <String>[...skippedUnlisted, ...skipped],
       ),
     );
   }
@@ -161,7 +160,6 @@ class ProfileFolderActions {
           ProfileFolderMoveProfilesEvent(
             profileIds: ids,
             folderId: null,
-            // Re-read here, not before the dialog, in case a sync changed it.
             visibleUnfiled: context.mounted ? visibleUnfiled(context) : null,
           ),
         );

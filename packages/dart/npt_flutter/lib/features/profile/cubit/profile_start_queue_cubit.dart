@@ -24,11 +24,11 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
 
   bool isWaiting(String uuid) => state.isWaiting(uuid);
 
+  /// A [uuids] entry already starting after a Stop all is kept running.
   void add(Iterable<String> uuids) {
     final List<String> next = List<String>.of(state.waiting);
     for (final String uuid in uuids) {
       if (uuid == _current) {
-        // Asked to start again after a Stop all: keep it running.
         _stopCurrent = false;
         continue;
       }
@@ -80,14 +80,12 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
   Future<void> _drain() async {
     _draining = true;
     try {
-      // Once closed the waiting list can't shrink, so the loop has to stop.
       while (!isClosed && state.waiting.isNotEmpty) {
         final String uuid = state.waiting.first;
         _setWaiting(state.waiting.skip(1).toList());
         _current = uuid;
         _stopCurrent = false;
         final ProfileBloc bloc = _cache.getProfileBloc(uuid);
-        // A deleted connection's bloc is closed; keep going on a failure.
         if (bloc.isClosed) continue;
         try {
           await _start(bloc);
@@ -105,7 +103,6 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
   Future<void> _start(ProfileBloc bloc) async {
     ProfileState state = bloc.state;
     if (state is ProfileInitial || state is ProfileLoading) {
-      // Rows load their profile only once they are shown.
       if (state is ProfileInitial) bloc.add(const ProfileLoadEvent());
       final ProfileState? loaded = await _next(
         bloc,

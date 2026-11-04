@@ -28,6 +28,8 @@ class ProfileFolderSectionHeader extends StatelessWidget {
   final ProfileFolder? folder;
 
   final int? reorderIndex;
+
+  /// Off during a drag and its drop animation: a grip press would cancel it.
   final bool dragEnabled;
 
   final bool editable;
@@ -125,7 +127,6 @@ class ProfileFolderSectionHeader extends StatelessWidget {
                     ),
                   ),
           ),
-          // Fixed slots keep start/stop buttons aligned across headers.
           SizedBox(
             width: _slotWidth,
             child: folder == null
@@ -316,7 +317,6 @@ class _ProfileFolderMenuButton extends StatelessWidget {
                     bloc.add(
                       ProfileFolderDeleteEvent(
                         folderId: folder.uuid,
-                        // Read on confirm, not when the dialog opened.
                         visibleUnfiled: context.mounted
                             ? ProfileFolderActions.visibleUnfiled(context)
                             : null,

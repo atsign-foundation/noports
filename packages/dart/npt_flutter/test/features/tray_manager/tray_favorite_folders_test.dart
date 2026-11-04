@@ -73,6 +73,8 @@ class RecordingStartQueue extends ProfileStartQueueCubit {
   void setWaiting(List<String> uuids) => emit(ProfileStartQueueState(uuids));
 }
 
+/// Added when no tray widget listens: the plugin reports clicks only to
+/// listeners, and calls each menu item once per listener.
 class IgnoringTrayListener with TrayListener {}
 
 void main() {
@@ -127,8 +129,8 @@ void main() {
     });
   });
 
-  // Blocs are created in the test body so their streams run in FakeAsync.
-  // With [listening] the tray reloads itself on state changes, as in the app.
+  /// Blocs are created in the test body so their streams run in FakeAsync.
+  /// With [listening] the tray reloads itself on state changes, as in the app.
   Future<void> pumpTray(
     WidgetTester tester, {
     Map<String, String> loaded = defaultNames,
@@ -194,9 +196,6 @@ void main() {
     });
 
     if (!listening) {
-      // The plugin only reports menu clicks while something listens, and it
-      // calls each menu item once per listener, so the tray widget must be the
-      // only one when it is there.
       final IgnoringTrayListener listener = IgnoringTrayListener();
       trayManager.addListener(listener);
       addTearDown(() => trayManager.removeListener(listener));

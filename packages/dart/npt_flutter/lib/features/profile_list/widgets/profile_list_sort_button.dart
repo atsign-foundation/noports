@@ -57,6 +57,8 @@ class ProfileListSortButton extends StatelessWidget {
     );
   }
 
+  /// Skips saving when settings failed to load, which would replace them with
+  /// defaults. The relay is passed on because copyWith resets it otherwise.
   static void save(
     BuildContext context, {
     ProfileSortMode? sortMode,
@@ -67,15 +69,12 @@ class ProfileListSortButton extends StatelessWidget {
     if (sortMode != null) filter.sort(sortMode);
     if (favoritesFirst != null) filter.setFavoritesFirst(favoritesFirst);
 
-    // Saving over settings that failed to load would replace them with
-    // defaults.
     final SettingsBloc settingsBloc = context.read<SettingsBloc>();
     final SettingsState state = settingsBloc.state;
     if (state is! SettingsLoadedState || state is SettingsFailedLoad) return;
     settingsBloc.add(
       SettingsEditEvent(
         settings: state.settings.copyWith(
-          // copyWith resets the relay unless it is passed.
           relayAtsign: state.settings.relayAtsign,
           sortMode: sortMode,
           favoritesFirst: favoritesFirst,

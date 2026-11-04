@@ -53,9 +53,8 @@ class FakeProfileCache extends Fake implements ProfileCacheCubit {
   int _lookups = 0;
   int _lookupLimit = 1 << 30;
 
-  // Makes the lookups after the next [count] throw. A queue loop that should
-  // have stopped then fails the test instead of spinning forever, which no
-  // test timeout could interrupt.
+  /// Makes lookups after the next [count] throw, so a queue loop that should
+  /// have stopped fails the test instead of spinning forever.
   void failAfterLookups(int count) => _lookupLimit = _lookups + count;
 
   @override
@@ -708,11 +707,8 @@ void main() {
       expect(c.events, isEmpty);
     });
 
-    // The test binding fails a test that ends with a timer still pending, and
-    // the wait on a start that never reports ends with a 90 second timer.
-    testWidgets('ends the wait on the connection that is starting', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('ends the wait on the connection that is starting and leaves '
+        'no timer pending', (WidgetTester tester) async {
       final ProfileStartQueueCubit closing = ProfileStartQueueCubit(cache);
       final FakeProfileBloc a = connection('a', loaded('a'));
       closing.add(<String>['a']);

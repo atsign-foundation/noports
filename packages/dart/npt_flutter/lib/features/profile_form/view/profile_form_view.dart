@@ -22,8 +22,8 @@ class ProfileFormView extends StatelessWidget {
     final chosen = folderCubit.state;
     final folders = context.read<ProfileFolderBloc>().state;
     if (folders is! ProfileFoldersLoaded) return null;
-    // An edited connection stays where it is unless the user moves it.
-    if (!folderCubit.picked && copyFrom == null) return null;
+    final bool folderLeftAsIs = !folderCubit.picked && copyFrom == null;
+    if (folderLeftAsIs) return null;
     final newName = chosen.newName;
     if (newName != null) {
       return ProfileFolderCreateEvent(
@@ -105,8 +105,6 @@ class ProfileFormView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const ProfileDisplayNameTextField(),
-                            // Sync, or another device, can move the connection
-                            // while the form is open.
                             BlocListener<ProfileFolderBloc, ProfileFolderState>(
                               listener: (context, folders) {
                                 if (folders is! ProfileFoldersLoaded) return;
@@ -189,7 +187,6 @@ class ProfileFormView extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: Sizes.p50,
                               ),
-                              // Off while saving, so a double click saves once.
                               child: BlocBuilder<ProfileBloc, ProfileState>(
                                 bloc: context
                                     .read<ProfileCacheCubit>()

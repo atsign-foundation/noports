@@ -64,7 +64,8 @@ void main() {
         layout.entries.last.key,
         headerKey(ProfileFolderLayout.unfiledSectionId),
       );
-      expect(layout.entries, hasLength(5)); // 3 headers + 2 rows
+      const int headersAndRows = 3 + 2;
+      expect(layout.entries, hasLength(headersAndRows));
     });
 
     test('a collapsed section contributes only its header', () {
@@ -135,9 +136,14 @@ void main() {
   });
 
   group('ProfileFolderLayout.resolveDrop', () {
-    // entries: 0 header(g1) 3 header(g2) 5 header(g3) 6 header(unfiled)
-    //          1 row(a)     4 row(c)                  7 row(d)
-    //          2 row(b)
+    const int headerG1 = 0;
+    const int rowA = 1;
+    const int rowB = 2;
+    const int headerG2 = 3;
+    const int rowC = 4;
+    const int headerG3 = 5;
+    const int headerUnfiled = 6;
+    const int rowD = 7;
     const ProfileFolder g1 = ProfileFolder(
       uuid: 'g1',
       name: 'Servers',
@@ -166,8 +172,8 @@ void main() {
       final ProfileFolderLayout layout = fixtureLayout();
 
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 2, // row(b)
-        newIndex: 1, // just above row(a), still inside Servers
+        oldIndex: rowB,
+        newIndex: rowA,
       );
 
       expect(event, isA<ProfileFolderPlaceProfilesEvent>());
@@ -192,8 +198,8 @@ void main() {
         final ProfileFolderLayout layout = fixtureLayout();
 
         final ProfileFolderEvent? event = layout.resolveDrop(
-          oldIndex: 4, // row(c), in Desktops
-          newIndex: 1, // just under Servers' header
+          oldIndex: rowC,
+          newIndex: rowA,
         );
 
         final ProfileFolderPlaceProfilesEvent placeEvent =
@@ -216,8 +222,6 @@ void main() {
       'a row dropped under a collapsed header goes to the end, and the '
       'sectionOrder (and the merged result) keep hidden members in place',
       () {
-        // 'h1' is stored in the folder but not loaded, so it never appears
-        // in the layout, yet must keep its position relative to 'a'.
         const ProfileFolder folder = ProfileFolder(
           uuid: 'g1',
           name: 'Servers',
@@ -233,11 +237,12 @@ void main() {
           loaded: localLoaded,
           collapsed: collapsed,
         );
-        // entries: 0 header(g1) [collapsed] 1 header(unfiled) 2 row(c)
+        const int collapsedHeaderG1Index = 0;
+        const int unfiledRowCIndex = 2;
 
         final ProfileFolderEvent? event = layout.resolveDrop(
-          oldIndex: 2, // row(c), unfiled
-          newIndex: 1, // just under the collapsed Servers header
+          oldIndex: unfiledRowCIndex,
+          newIndex: collapsedHeaderG1Index + 1,
         );
 
         final ProfileFolderPlaceProfilesEvent placeEvent =
@@ -264,8 +269,8 @@ void main() {
       final ProfileFolderLayout layout = fixtureLayout();
 
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 4, // row(c), in Desktops
-        newIndex: 5, // just under the empty folder's header
+        oldIndex: rowC,
+        newIndex: headerG3,
       );
 
       final ProfileFolderPlaceProfilesEvent placeEvent =
@@ -289,8 +294,8 @@ void main() {
         final ProfileFolderLayout layout = fixtureLayout();
 
         final ProfileFolderEvent? event = layout.resolveDrop(
-          oldIndex: 7, // row(d), unfiled
-          newIndex: 0, // above everything
+          oldIndex: rowD,
+          newIndex: headerG1,
         );
 
         final ProfileFolderPlaceProfilesEvent placeEvent =
@@ -313,8 +318,8 @@ void main() {
       final ProfileFolderLayout layout = fixtureLayout();
 
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 1, // row(a), in Servers
-        newIndex: 6, // just under the Unfiled header, above row(d)
+        oldIndex: rowA,
+        newIndex: headerUnfiled,
       );
 
       final ProfileFolderPlaceProfilesEvent placeEvent =
@@ -339,8 +344,8 @@ void main() {
       );
 
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 0, // row(a)
-        newIndex: 2, // to the end
+        oldIndex: 0,
+        newIndex: 2,
       );
 
       final ProfileFolderPlaceProfilesEvent placeEvent =
@@ -361,13 +366,12 @@ void main() {
         'lands, including selected ids from another, collapsed section', () {
       const Set<String> collapsed = <String>{'g2'};
       final ProfileFolderLayout layout = fixtureLayout(collapsed: collapsed);
-      // entries with g2 collapsed: 0 header(g1) 1 row(a) 2 row(b)
-      //   3 header(g2)[collapsed] 4 header(g3) 5 header(unfiled) 6 row(d)
+      const int unfiledHeaderWithG2Collapsed = 5;
 
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 1, // row(a), dragged
-        newIndex: 5, // just under the Unfiled header, above row(d)
-        movedIds: const <String>['a', 'c'], // 'c' lives in collapsed g2
+        oldIndex: rowA,
+        newIndex: unfiledHeaderWithG2Collapsed,
+        movedIds: const <String>['a', 'c'],
       );
 
       final ProfileFolderPlaceProfilesEvent placeEvent =
@@ -390,9 +394,9 @@ void main() {
       final ProfileFolderLayout layout = fixtureLayout();
 
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 4, // row(c)
-        newIndex: 1, // just under Servers' header
-        movedIds: const <String>['a', 'd'], // does not include 'c'
+        oldIndex: rowC,
+        newIndex: rowA,
+        movedIds: const <String>['a', 'd'],
       );
 
       final ProfileFolderPlaceProfilesEvent placeEvent =
@@ -405,8 +409,8 @@ void main() {
       final ProfileFolderLayout layout = fixtureLayout();
 
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 3, // header(g2)
-        newIndex: 0, // before header(g1)
+        oldIndex: headerG2,
+        newIndex: headerG1,
       );
 
       expect(event, isA<ProfileFolderReorderEvent>());
@@ -428,8 +432,8 @@ void main() {
       final ProfileFolderLayout layout = fixtureLayout();
 
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 0, // header(g1)
-        newIndex: 6, // just under the Unfiled header
+        oldIndex: headerG1,
+        newIndex: headerUnfiled,
       );
 
       final ProfileFolderReorderEvent reorderEvent =
@@ -450,8 +454,8 @@ void main() {
       final ProfileFolderLayout layout = fixtureLayout();
 
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 6, // header(unfiled)
-        newIndex: 0,
+        oldIndex: headerUnfiled,
+        newIndex: headerG1,
       );
 
       expect(event, isNull);
@@ -461,8 +465,8 @@ void main() {
       final ProfileFolderLayout layout = fixtureLayout();
 
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 0, // header(g1), dropped back in the same place
-        newIndex: 0,
+        oldIndex: headerG1,
+        newIndex: headerG1,
       );
 
       expect(event, isNull);
@@ -480,7 +484,6 @@ void main() {
   });
 
   group('ProfileFolderLayout.resolveDrop with stepFolders', () {
-    // entries: 0 header(A) 1 row(a) 2 header(B) 3 row(b) 4 header(unfiled)
     final ProfileFolderLayout layout = ProfileFolderLayout.build(
       data: const ProfileFolderData(
         folders: <ProfileFolder>[
@@ -492,12 +495,15 @@ void main() {
       collapsed: const <String>{},
       unfiledTitle: 'Unfiled',
     );
+    const int headerA = 0;
+    const int rowA = 1;
+    const int headerB = 2;
+    const int rowB = 3;
 
     test('move up past a row steps the folder up one place', () {
-      // The screen reader's "move up" on header B: (2, 1).
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 2,
-        newIndex: 1,
+        oldIndex: headerB,
+        newIndex: rowA,
         stepFolders: true,
       );
       expect(event, const ProfileFolderReorderEvent(<String>['B', 'A']));
@@ -505,20 +511,24 @@ void main() {
 
     test('move down past a row steps the folder down one place', () {
       final ProfileFolderEvent? event = layout.resolveDrop(
-        oldIndex: 0,
-        newIndex: 1,
+        oldIndex: headerA,
+        newIndex: rowA,
         stepFolders: true,
       );
       expect(event, const ProfileFolderReorderEvent(<String>['B', 'A']));
     });
 
     test('the same one-entry move from a drag changes nothing', () {
-      expect(layout.resolveDrop(oldIndex: 2, newIndex: 1), isNull);
+      expect(layout.resolveDrop(oldIndex: headerB, newIndex: rowA), isNull);
     });
 
     test('stepping the last folder down is a no-op', () {
       expect(
-        layout.resolveDrop(oldIndex: 2, newIndex: 3, stepFolders: true),
+        layout.resolveDrop(
+          oldIndex: headerB,
+          newIndex: rowB,
+          stepFolders: true,
+        ),
         isNull,
       );
     });

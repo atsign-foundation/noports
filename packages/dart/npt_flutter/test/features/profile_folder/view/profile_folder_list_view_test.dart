@@ -17,7 +17,7 @@ import 'package:npt_flutter/util/language.dart';
 import '../../profile_list/view/profile_list_view_test.mocks.dart';
 
 class FakeProfileFolderRepository extends ProfileFolderRepository {
-  // What a refresh reads; null reads as a failed read.
+  /// What a refresh reads; null reads as a failed read.
   ProfileFolderData? stored;
   final List<ProfileFolderData> puts = <ProfileFolderData>[];
 
@@ -153,8 +153,7 @@ void main() {
     );
   });
 
-  // The real blocs must be created inside the test body so that their stream
-  // subscriptions live in the FakeAsync zone driven by [WidgetTester.pump].
+  /// Creates the real blocs in the test body so their streams run in FakeAsync.
   void createRealBlocs() {
     runningCubit = ProfilesRunningCubit();
     folderRepo = FakeProfileFolderRepository();
@@ -165,6 +164,7 @@ void main() {
     });
   }
 
+  /// A [sortedDropMessage] snack bar goes through [App.navState], which logs.
   Widget buildSubject(
     WidgetTester tester, {
     List<String> profiles = allUuids,
@@ -179,7 +179,6 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    // A snack bar is shown through the app's navigator key, which also logs.
     final bool snackBars = sortedDropMessage != null;
     return MultiBlocProvider(
       providers: <BlocProvider<dynamic>>[
@@ -269,14 +268,12 @@ void main() {
     expect(find.text(strings.folderNone), findsOneWidget);
     expect(find.byType(ProfileListRow), findsNWidgets(3));
 
-    // Profile ids that are not loaded do not count towards the folder.
     final Finder serversCount = find.descendant(
       of: header(serversFolder.uuid),
       matching: find.text('1'),
     );
     expect(serversCount, findsOneWidget);
 
-    // Vertical order: Servers, ssh row, Desktops, rdp row, Unfiled, none row.
     final double serversY = tester.getTopLeft(header(serversFolder.uuid)).dy;
     final double sshY = tester.getTopLeft(row(sshUuid)).dy;
     final double desktopsY = tester.getTopLeft(header(desktopsFolder.uuid)).dy;
@@ -412,7 +409,6 @@ void main() {
     expect(header(ProfileFolderListView.unfiledSectionId), findsOneWidget);
     expect(find.byType(ProfileListRow), findsNWidgets(3));
     expect(folderRepo.puts.single.folders, <ProfileFolder>[desktopsFolder]);
-    // The folder's members go after what unfiled already showed.
     expect(folderRepo.puts.single.unfiled, <String>[
       noneUuid,
       sshUuid,
@@ -488,7 +484,6 @@ void main() {
             .widgetList(find.byTooltip(tooltip))
             .map((Widget w) => tester.getTopLeft(find.byWidget(w)).dx)
             .toList();
-        // Two folders and the unfiled section (which holds noneUuid).
         expect(xs, hasLength(3), reason: tooltip);
         expect(xs.toSet(), hasLength(1), reason: '$tooltip x positions: $xs');
       }
@@ -521,8 +516,7 @@ void main() {
 
     const Duration frame = Duration(milliseconds: 16);
 
-    // Drags from [start] by [dy], then waits out the 250 ms drop animation
-    // and the view's 350 ms end timer, pumping frames [dropFrame] apart.
+    /// Drags from [start] by [dy], then pumps frames until the drop settles.
     Future<void> dragFrom(
       WidgetTester tester,
       Offset start,
@@ -602,7 +596,6 @@ void main() {
           desktopsFolder,
         ]);
 
-        // Proxy bottom lands in the lower half of the Desktops header.
         await dragGrip(
           tester,
           row(sshUuid),
@@ -695,8 +688,6 @@ void main() {
         'reorders the folders', (WidgetTester tester) async {
       await loadFolders(tester, <ProfileFolder>[serversFolder, desktopsFolder]);
 
-      // Past the ssh row and the Desktops header, so the proxy's bottom sits
-      // in the lower half of the rdp row.
       final double dy =
           heightOf(tester, row(sshUuid)) +
           heightOf(tester, header(desktopsFolder.uuid)) +
@@ -706,7 +697,6 @@ void main() {
         header(serversFolder.uuid),
         dy,
         whileDragging: () async {
-          // Rows play no part in a folder drop and are faded meanwhile.
           final AnimatedOpacity fade = tester.widget<AnimatedOpacity>(
             find.descendant(
               of: row(noneUuid),
@@ -753,7 +743,6 @@ void main() {
       final Offset rowTop = tester.getTopLeft(row(sshUuid));
       final double dy = heightOf(tester, header(desktopsFolder.uuid)) * 0.75;
       Future<void> rowStaysPut() async {
-        // A lifted row would follow the pointer.
         expect(tester.getTopLeft(row(sshUuid)), rowTop);
       }
 
@@ -840,8 +829,6 @@ void main() {
       ).thenReturn(const ProfilesSelectedState({sshUuid, noneUuid}));
       await loadFolders(tester, <ProfileFolder>[serversFolder, desktopsFolder]);
 
-      // 100 ms frames: the drop animation finishes after the view's 350 ms
-      // end timer, exercising that race.
       await dragGrip(
         tester,
         row(sshUuid),
@@ -925,13 +912,11 @@ void main() {
         ];
         final double rdpTop = tester.getTopLeft(row(rdpUuid)).dy;
 
-        // Past the rdp row, so the folders keep their order.
         await dragGrip(
           tester,
           header(desktopsFolder.uuid),
           heightOf(tester, row(rdpUuid)) * 0.75,
           whileDragging: () async {
-            // The list opened a gap, so this is a real drop.
             expect(tester.getTopLeft(row(rdpUuid)).dy, lessThan(rdpTop));
           },
         );
@@ -1079,8 +1064,11 @@ void main() {
             matching: find.byType(PopupMenuItem<PopupMenuEntry>),
           ),
         );
-        // Past a folder that is not a favorite would put it back on top.
-        expect(item(strings.folderMoveDown).enabled, isFalse);
+        expect(
+          item(strings.folderMoveDown).enabled,
+          isFalse,
+          reason: 'moving past a non-favorite folder would put it back on top',
+        );
         expect(item(strings.folderMoveUp).enabled, isFalse);
       });
 
@@ -1139,9 +1127,12 @@ void main() {
           },
         );
 
-        // The screen still shows the favorite first.
         expectVerticalOrder(tester, onScreen);
-        expect(folderRepo.puts, isEmpty);
+        expect(
+          folderRepo.puts,
+          isEmpty,
+          reason: 'a drop the sort undoes saves nothing',
+        );
         expect(savedUnfiled(), <String>[sshUuid, rdpUuid, noneUuid]);
       });
 
@@ -1174,9 +1165,6 @@ void main() {
       });
 
       group('around a connection that is not loaded', () {
-        // The saved order has a connection with no row, such as one another
-        // device added or one still loading. rdp is a favorite, so the screen
-        // shows rdp above ssh whatever the saved order.
         const String hidden = 'uuid-not-loaded';
         const List<String> loadedPair = <String>[sshUuid, rdpUuid];
         final String message = strings.profileSortFavoritesMessage;
@@ -1272,7 +1260,6 @@ void main() {
             row(noneUuid),
           ]);
 
-          // none goes between rdp and ssh, which the screen can show.
           await dragGrip(
             tester,
             row(noneUuid),
@@ -1292,9 +1279,6 @@ void main() {
       });
 
       group('a selection of one favorite and one other connection', () {
-        // Saved: ssh, none, rdp. On screen the favorites come first: ssh, rdp,
-        // none. Moving rdp above ssh changes the saved order; none keeps its
-        // place after ssh whichever of the two rows is grabbed.
         const Map<String, int> rowsToTop = <String, int>{
           rdpUuid: 1,
           noneUuid: 2,
@@ -1338,8 +1322,7 @@ void main() {
       });
 
       group('dragging a folder header', () {
-        // Saved: Servers, Desktops, Other. Other is a favorite, so the screen
-        // shows Other, Servers, Desktops.
+        /// Saved: Servers, Desktops, Other. Shown: Other, the favorite, first.
         Future<void> loadWithFavoriteFolder(
           WidgetTester tester, {
           String? message,
@@ -1380,7 +1363,6 @@ void main() {
             header(desktopsFolder.uuid),
           ]);
 
-          // Past the ssh row and the Desktops header, into the rdp row.
           final double dy =
               heightOf(tester, row(sshUuid)) +
               heightOf(tester, header(desktopsFolder.uuid)) +
@@ -1411,7 +1393,6 @@ void main() {
                 .getTopLeft(header(otherFolder.uuid))
                 .dy;
 
-            // Past the none row and into the top half of the Other header.
             final double dy =
                 heightOf(tester, row(noneUuid)) +
                 heightOf(tester, header(otherFolder.uuid)) * 0.75;
@@ -1473,7 +1454,6 @@ void main() {
               .getTopLeft(header(otherFolder.uuid))
               .dy;
 
-          // Past the none row and into the top half of the Other header.
           final double dy =
               heightOf(tester, row(noneUuid)) +
               heightOf(tester, header(otherFolder.uuid)) * 0.75;
@@ -1507,7 +1487,6 @@ void main() {
               .getTopLeft(header(serversFolder.uuid))
               .dy;
 
-          // Past the none row and into the lower half of the Servers header.
           final double dy =
               heightOf(tester, row(noneUuid)) +
               heightOf(tester, header(serversFolder.uuid)) * 0.75;
@@ -1538,7 +1517,6 @@ void main() {
               .getTopLeft(header(serversFolder.uuid))
               .dy;
 
-          // Past the none row and into the lower half of the Servers header.
           final double dy =
               heightOf(tester, row(noneUuid)) +
               heightOf(tester, header(serversFolder.uuid)) * 0.75;
@@ -1579,7 +1557,6 @@ void main() {
         grip(header(ProfileFolderListView.unfiledSectionId)),
         findsNothing,
       );
-      // The rows can still move between the folder and unfiled.
       expect(grip(row(sshUuid)), findsOneWidget);
       expect(grip(row(rdpUuid)), findsOneWidget);
       expect(grip(row(noneUuid)), findsOneWidget);
@@ -1622,7 +1599,6 @@ void main() {
       expect(find.byType(ProfileListRow), findsNWidgets(3));
       expect(find.byKey(gripKey), findsNothing);
 
-      // A drag where the grip would be does nothing.
       await dragFrom(
         tester,
         tester.getTopLeft(row(noneUuid)) + const Offset(22, 20),
@@ -1809,7 +1785,7 @@ void main() {
   });
 
   group('scroll position', () {
-    // 40 connections: the first ten in a folder, the rest unfiled.
+    /// 40 connections: the first ten in a folder, the rest unfiled.
     final List<String> many = <String>[
       for (int i = 0; i < 40; i++) 'uuid-many-$i',
     ];
@@ -1847,7 +1823,7 @@ void main() {
       await tester.pump();
     }
 
-    // What a search shows: no reordering and no moves, whatever the sort.
+    /// Search shows no reordering and no moves, whatever the sort.
     Future<void> setSearching(WidgetTester tester, bool searching) async {
       await tester.pumpWidget(
         buildSubject(
@@ -1901,7 +1877,6 @@ void main() {
       folderBloc.emit(ProfileFoldersLoaded(manyData));
       await tester.pumpAndSettle();
 
-      // A different list took over, and it starts where the other stopped.
       expect(tester.widget(list), isA<ReorderableListView>());
       expect(find.byKey(gripKey), findsWidgets);
       expect(offset(tester), scrolled);
@@ -1922,7 +1897,6 @@ void main() {
       final double scrolled = offset(tester);
       expect(scrolled, greaterThan(500));
 
-      // No list is shown while they load.
       folderBloc.emit(const ProfileFoldersLoading());
       await tester.pump(const Duration(milliseconds: 50));
       expect(list, findsNothing);
@@ -1949,8 +1923,6 @@ void main() {
       expect(find.byKey(gripKey), findsNothing);
       expect(offset(tester), beforeSearch);
 
-      // Scrolled further while searching, and the list keeps that on its way
-      // back.
       await scrollBy(tester, 300);
       final double duringSearch = offset(tester);
       expect(duringSearch, greaterThan(beforeSearch));

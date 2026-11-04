@@ -13,7 +13,6 @@ class ProfileSelectAllBox extends StatelessWidget {
         .watch<ProfileListFilterCubit>()
         .state;
     final ProfileFolderState folders = context.watch<ProfileFolderBloc>().state;
-    // Rows a search or a collapsed folder hides aren't selected.
     bool shownRow(String uuid) =>
         filter.matches(uuid) &&
         (filter.searching ||

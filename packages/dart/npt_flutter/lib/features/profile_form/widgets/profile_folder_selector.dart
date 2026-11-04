@@ -61,14 +61,7 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
     super.initState();
     _focus.addListener(() {
       if (_focus.hasFocus) {
-        // Typing replaces the chosen folder's name rather than adding to it.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!_focus.hasFocus) return;
-          _text.selection = TextSelection(
-            baseOffset: 0,
-            extentOffset: _text.text.length,
-          );
-        });
+        _selectTextAfterFrame();
         return;
       }
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -114,11 +107,22 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
     }
   }
 
+  /// Typing replaces the chosen folder's name rather than adding to it.
+  void _selectTextAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_focus.hasFocus) return;
+      _text.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _text.text.length,
+      );
+    });
+  }
+
+  /// Cuts the typed text as the name dialog does, so a cut name repeats none.
   List<DropdownMenuEntry<String>> _filter(
     List<DropdownMenuEntry<String>> entries,
     String filter,
   ) {
-    // Cut first, as the name dialog does, so a cut name can't repeat one.
     final String name = filter
         .trim()
         .characters
@@ -163,7 +167,9 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
         final String selection = chosen.newName != null
             ? _newFolder
             : folder?.uuid ?? _noFolder;
-        final String menuKey =
+
+        /// DropdownMenu reads [initialSelection] once; a new key rebuilds it.
+        final String selectionResetKey =
             'ProfileFolderSelector-$selection-${folder?.name}-'
             '${chosen.newName}-$_resets';
         return Padding(
@@ -186,11 +192,9 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
               SizedBox(
                 width: double.infinity,
                 child: DropdownMenu<String>(
-                  // Changes wait until the folders have caught up.
                   enabled: state.editable,
-                  // Rebuilt on a rename: DropdownMenu reads its selection once.
-                  key: ValueKey<String>(menuKey),
-                  controller: _controllerFor(menuKey),
+                  key: ValueKey<String>(selectionResetKey),
+                  controller: _controllerFor(selectionResetKey),
                   focusNode: _focus,
                   initialSelection: selection,
                   enableFilter: true,

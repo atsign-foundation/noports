@@ -149,7 +149,6 @@ class TrayCubit extends LoggingCubit<TrayState> {
             ProfileFolderActions.stopAll(context, uuids);
           } else {
             ProfileFolderActions.startAll(context, startable);
-            // Show the main window on Windows only when initiating a connection
             if (Platform.isWindows) windowManager.show();
           }
         },

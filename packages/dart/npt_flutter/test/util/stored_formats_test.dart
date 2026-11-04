@@ -19,8 +19,8 @@ import 'package:npt_flutter/util/language.dart';
 
 import '../features/profile/repository/profile_repository_test.mocks.dart';
 
-// What a version of the app wrote to the atServer. These literals must not
-// change when the code is renamed: older and newer versions read the same data.
+/// What the app writes to the atServer. These literals must not change when
+/// the code is renamed: older and newer versions read the same data.
 const String _storedFolders = '''
 {
   "folders": [
@@ -615,6 +615,7 @@ void main() {
       return installation;
     }
 
+    /// Schedules a frame: the import reports from a post-frame callback.
     Future<void> importDocument(
       WidgetTester tester,
       ExportableProfileFiletype filetype,
@@ -625,7 +626,6 @@ void main() {
         contents: contents,
       );
       await tester.pump();
-      // The import reports its result from a post-frame callback.
       tester.binding.scheduleFrame();
       await tester.pump();
     }
@@ -732,8 +732,6 @@ void main() {
       expect(installation.favoriteUuids, isEmpty);
     });
 
-    // The first profile carries the value under test and the second one
-    // "favorite": true, so a favorite is shown to be restored at all.
     for (final ExportableProfileFiletype filetype
         in ExportableProfileFiletype.values) {
       for (final String literal in <String>['false', 'null', '"true"', '1']) {

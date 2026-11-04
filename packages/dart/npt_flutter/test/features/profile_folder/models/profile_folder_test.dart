@@ -34,8 +34,8 @@ List<String> _favoritesFirst(List<String> order, Set<String> favorites) =>
       ...order.where((String id) => !favorites.contains(id)),
     ];
 
-// One drop on a favorites-first screen: [moved] is lifted out of [manual]'s
-// screen and put down at one position, giving the screen order [released].
+/// One drop on a favorites-first screen: [moved] is lifted out of [manual]'s
+/// screen and put down at one position, giving the screen order [released].
 final class _Drop {
   final List<String> manual;
   final Set<String> favorites;
@@ -66,8 +66,8 @@ final class _Drop {
       'manual $manual, favorites $favorites, $moved dropped to $released';
 }
 
-// Every manual order of four ids, every choice of two favorites, every id
-// grabbed and every position it is dropped at.
+/// Every manual order of four ids, every choice of two favorites, every id
+/// grabbed and every position it is dropped at.
 Iterable<_Drop> _everyDrop() sync* {
   const List<String> ids = <String>['A', 'B', 'C', 'D'];
   for (final List<String> manual in _permutations(ids)) {
@@ -442,8 +442,6 @@ void main() {
             ProfileFolder(uuid: 'g1', name: 'One', profileIds: <String>['a']),
             ProfileFolder(uuid: 'g2', name: 'Two', profileIds: <String>['b']),
           ],
-          // 'f' is stored but never loaded; 'd' repeated to prove
-          // dedup; 'a' stored despite being folder-claimed.
           unfiled: <String>['f', 'd', 'd', 'c', 'a'],
         );
         final List<String> resolved = resolveData.resolveUnfiled(<String>[
@@ -453,8 +451,6 @@ void main() {
           'd',
           'e',
         ]);
-        // 'f' skipped (not loaded), 'a' skipped (claimed by g1), then 'e'
-        // appended from loaded order.
         expect(resolved, <String>['d', 'c', 'e']);
       });
     });
@@ -493,7 +489,6 @@ void main() {
       );
 
       test('is a no-op when none of the ids is in a folder', () {
-        // "No folder" picked for a connection that is already unfiled.
         expect(
           base.withProfilesUnfiled(
             <String>['x'],
@@ -570,7 +565,7 @@ void main() {
     });
 
     group('placeInManualOrder', () {
-      // B and D are favorites: Favorites first lifts them above A and C.
+      /// B and D are favorites, so Favorites first lifts them above A and C.
       const Set<String> favorites = <String>{'B', 'D'};
       bool tie(String a, String b) =>
           favorites.contains(a) == favorites.contains(b);
@@ -597,7 +592,6 @@ void main() {
       });
 
       test('a drop that leaves the screen as it was changes nothing', () {
-        // A dropped above the favorites still shows below them.
         expect(
           place(
             <String>['A', 'B', 'C', 'D'],
@@ -605,6 +599,7 @@ void main() {
             <String>['A'],
           ),
           <String>['A', 'B', 'C', 'D'],
+          reason: 'A dropped above the favorites still shows below them',
         );
       });
 
@@ -631,7 +626,6 @@ void main() {
       });
 
       test('a mixed selection places each kind among its own', () {
-        // Screen before: B, D, A, C. C and B are dragged to the top.
         expect(
           place(
             <String>['A', 'B', 'C', 'D'],
@@ -639,6 +633,7 @@ void main() {
             <String>['B', 'C'],
           ),
           <String>['C', 'A', 'B', 'D'],
+          reason: 'screen before B, D, A, C; C and B are dragged to the top',
         );
       });
 
@@ -659,28 +654,28 @@ void main() {
       group('with a tie on each side on screen and others between them', () {
         test('a connection goes before the next tie, not after the previous '
             'one', () {
-          // Screen before: B, D, A, C, E. A is dropped between C and E, and
-          // the favorite D sits between C and E in the manual order, so the
-          // two candidate places differ:
-          //   before E (the next tie):    B, C, D, A, E
-          //   after C (the previous tie): B, C, A, D, E
           final List<String> result = place(
             <String>['A', 'B', 'C', 'D', 'E'],
             <String>['B', 'D', 'C', 'A', 'E'],
             <String>['A'],
           );
 
-          expect(result, <String>['B', 'C', 'D', 'A', 'E']);
-          expect(result, isNot(<String>['B', 'C', 'A', 'D', 'E']));
+          expect(result, <String>[
+            'B',
+            'C',
+            'D',
+            'A',
+            'E',
+          ], reason: 'before E, the next tie');
+          expect(
+            result,
+            isNot(<String>['B', 'C', 'A', 'D', 'E']),
+            reason: 'not after C, the previous tie',
+          );
         });
 
         test('a favorite goes before the next favorite, not after the previous '
             'one', () {
-          // Three favorites: B, D and F. Screen before: B, D, F, A, C. B is
-          // dropped between D and F, and the connection C sits between D and F
-          // in the manual order:
-          //   before F (the next tie):    A, D, C, B, F
-          //   after D (the previous tie): A, D, B, C, F
           final Set<String> threeFavorites = <String>{'B', 'D', 'F'};
           final List<String> result = ProfileFolderData.placeInManualOrder(
             manual: <String>['B', 'A', 'D', 'C', 'F'],
@@ -690,8 +685,18 @@ void main() {
                 threeFavorites.contains(a) == threeFavorites.contains(b),
           );
 
-          expect(result, <String>['A', 'D', 'C', 'B', 'F']);
-          expect(result, isNot(<String>['A', 'D', 'B', 'C', 'F']));
+          expect(result, <String>[
+            'A',
+            'D',
+            'C',
+            'B',
+            'F',
+          ], reason: 'before F, the next tie');
+          expect(
+            result,
+            isNot(<String>['A', 'D', 'B', 'C', 'F']),
+            reason: 'not after D, the previous tie',
+          );
         });
 
         test('holds for every such drop of five ids', () {
@@ -714,20 +719,19 @@ void main() {
                     .toList();
                 final int index = onScreen.indexOf(moved);
                 if (index <= 0 || index + 1 >= onScreen.length) continue;
-                // An unchanged order among ties is left as saved.
-                if (listEquals(
+                final bool orderAmongTiesUnchanged = listEquals(
                   manual.where((String id) => tie(moved, id)).toList(),
                   onScreen,
-                )) {
-                  continue;
-                }
+                );
+                if (orderAmongTiesUnchanged) continue;
                 final List<String> rest = manual
                     .where((String id) => id != moved)
                     .toList();
                 final String previous = onScreen[index - 1];
                 final String next = onScreen[index + 1];
-                // Only ids of the other kind can sit between the two ties.
-                if (rest.indexOf(next) - rest.indexOf(previous) < 2) continue;
+                final bool otherKindBetweenTies =
+                    rest.indexOf(next) - rest.indexOf(previous) >= 2;
+                if (!otherKindBetweenTies) continue;
                 checked++;
 
                 final List<String> result = place(manual, released, <String>[
@@ -748,20 +752,25 @@ void main() {
               }
             }
           }
-          // Of the 120 * 5 * 5 drops, 96 have a tie on each side, an id of
-          // the other kind between them and a changed order among the ties.
-          expect(checked, 96);
+          expect(
+            checked,
+            96,
+            reason:
+                'of the 120 * 5 * 5 drops, 96 have a tie on each side, an id '
+                'of the other kind between them and a changed order among '
+                'the ties',
+          );
         });
       });
 
       test('moved ids that tie move together', () {
-        // Nothing is lifted: every id ties with every other.
+        bool everyIdTies(String a, String b) => true;
         expect(
           ProfileFolderData.placeInManualOrder(
             manual: <String>['A', 'B', 'C', 'D', 'E'],
             released: <String>['C', 'D', 'A', 'B', 'E'],
             moved: <String>['A', 'B'],
-            tie: (String a, String b) => true,
+            tie: everyIdTies,
           ),
           <String>['C', 'D', 'A', 'B', 'E'],
         );
@@ -935,8 +944,6 @@ void main() {
             ProfileFolder(
               uuid: 'g1',
               name: 'One',
-              // 'h' is stored but not currently loaded, so the view's
-              // sectionOrder below cannot show it.
               profileIds: <String>['a', 'h', 'b'],
             ),
           ],
@@ -961,8 +968,6 @@ void main() {
           'now holds (stale view)', () {
         const ProfileFolderData base = ProfileFolderData(
           folders: <ProfileFolder>[
-            // A concurrent sync already moved 'x' into g1; the dragging
-            // view's sectionOrder for g2 below has not caught up.
             ProfileFolder(
               uuid: 'g1',
               name: 'One',

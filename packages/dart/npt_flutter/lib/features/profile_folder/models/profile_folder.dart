@@ -317,7 +317,6 @@ final class ProfileFolderData extends Loggable {
             (ProfileFolder f) => f.uuid == folderId
                 ? f.copyWith(
                     profileIds: newTarget,
-                    // Reordering within the folder keeps what Start all skips.
                     skippedByStartAll: target!.skippedByStartAll
                         .where(newTarget.contains)
                         .toList(),
@@ -368,10 +367,8 @@ final class ProfileFolderData extends Loggable {
     return result;
   }
 
-  /// Where a drop puts [moved] in [manual]; [released] is the screen order
-  /// after the drop. Moved ids that [tie] move together, and only when their
-  /// order among their ties changed: before the next of those on screen, or
-  /// else after the previous.
+  /// Places [moved] in [manual] from the screen order [released]: next to the
+  /// ids they [tie] with, and only when their order among those changed.
   static List<String> placeInManualOrder({
     required List<String> manual,
     required List<String> released,

@@ -123,7 +123,7 @@ void main() {
 
   ProfileBloc savedBloc() => cache.getProfileBloc(uuid);
 
-  // Blocs are created in the test body so their streams run in FakeAsync.
+  /// Blocs are created in the test body so their streams run in FakeAsync.
   Future<void> pumpForm(
     WidgetTester tester, {
     ProfileFolderData folders = otherFolders,
@@ -136,14 +136,17 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    // The test font is wider than the real one, so the device row overflows.
     final void Function(FlutterErrorDetails)? onError = FlutterError.onError;
-    FlutterError.onError = (FlutterErrorDetails details) {
+
+    /// The test font is wider than the real one, so the device row overflows.
+    void ignoreRowOverflow(FlutterErrorDetails details) {
       if (details.exception.toString().contains('RenderFlex overflowed')) {
         return;
       }
       onError?.call(details);
-    };
+    }
+
+    FlutterError.onError = ignoreRowOverflow;
     addTearDown(() => FlutterError.onError = onError);
 
     profileRepo = FakeProfileRepository();
@@ -441,7 +444,6 @@ void main() {
       expect(menuLabels(), <String>['${strings.folderNew}: $capped']);
     });
 
-    // The name is trimmed again after the cut, which can land on spaces.
     for (final int spaces in <int>[1, 4]) {
       testWidgets('does not offer a name whose 64-character cut ends in '
           '$spaces space(s) and then equals an existing folder', (
@@ -479,8 +481,6 @@ void main() {
       });
     }
 
-    // Cutting by UTF-16 units would leave half of a surrogate pair or of a
-    // joined sequence in the folder name.
     for (final (String, String) emoji in <(String, String)>[
       ('a smiley', '\u{1F600}'),
       ('a family', '\u{1F468}‍\u{1F469}‍\u{1F467}'),
@@ -1113,8 +1113,11 @@ void main() {
 
       await loadFolders(tester, synced: false);
 
-      // Shown from the local copy, but not known until it has synced.
-      expect(formFolder(tester).picked, isFalse);
+      expect(
+        formFolder(tester).picked,
+        isFalse,
+        reason: 'shown from the local copy, but not known until it has synced',
+      );
       expect(formFolder(tester).state, (folderId: 'g-desktops', newName: null));
       expect(fieldText(tester), 'Desktops');
 
@@ -1470,8 +1473,7 @@ void main() {
   });
 
   group('A local copy of the folders that is out of date', () {
-    // The local copy has the connection in Servers; the synced data has it in
-    // Desktops.
+    /// The local copy has the connection in Servers; synced data has Desktops.
     ProfileFolderData staleCopy() => withConnectionIn('g-servers');
     ProfileFolderData syncedData() => withConnectionIn('g-desktops');
 
@@ -1669,7 +1671,6 @@ void main() {
       await pumpForm(tester, synced: false);
       expect(fieldText(tester), strings.folderNone);
 
-      // E.g. a copy submitted before sync is put in its original's folder.
       folderBloc.add(
         const ProfileFolderMoveProfilesEvent(
           profileIds: <String>[uuid],
@@ -1781,8 +1782,6 @@ void main() {
   });
 
   group('The Folder field that was never tapped', () {
-    // The menu is rebuilt when what it shows changes; with the field not
-    // focused, nothing else is there to hold the old menu's state.
     testWidgets('shows a folder chosen through the cubit', (
       WidgetTester tester,
     ) async {

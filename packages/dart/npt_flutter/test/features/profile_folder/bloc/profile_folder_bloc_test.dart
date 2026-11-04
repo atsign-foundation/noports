@@ -401,7 +401,6 @@ void main() {
       act: (ProfileFolderBloc bloc) => bloc.add(
         const ProfileFolderDeleteEvent(
           folderId: 'ga',
-          // 'x' is unfiled and was never dragged, so it is not stored yet.
           visibleUnfiled: <String>['x'],
         ),
       ),
@@ -696,7 +695,6 @@ void main() {
       bloc.add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Renamed'));
       await Future<void>.delayed(Duration.zero);
       repo.throwOnPut = false;
-      // Same data as the state already shows, but the atServer never got it.
       bloc.add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Renamed'));
     },
     verify: (_) {
@@ -766,7 +764,6 @@ void main() {
               folderId: 'gb',
             ),
           )
-          // What deleting the connection p3 sends.
           ..add(const ProfileFolderRemoveProfilesEvent(<String>['p3']))
           ..add(
             const ProfileFolderDeleteEvent(
@@ -819,7 +816,6 @@ void main() {
         expect(repo.puts, isEmpty);
         repo.onRound!(true);
         await settle();
-        // The atServer now holds the saved rename; another round adds nothing.
         repo.loadResult = repo.puts.single;
         repo.onRound!(true);
         await settle();
@@ -884,7 +880,6 @@ void main() {
         await settle();
         expect(bloc.state.editable, isFalse);
         expect(repo.puts, isEmpty);
-        // The caught-up round is remembered, so this one completes the switch.
         repo.loadResult = loadedData;
         repo.onRound!(false);
         await settle();
@@ -927,7 +922,6 @@ void main() {
         repo.onRound!(true);
         await settle();
         expect(repo.heldReads, hasLength(1));
-        // Queued behind the round, which is still reading.
         bloc.add(
           const ProfileFolderMoveProfilesEvent(
             profileIds: <String>['p3'],
@@ -1070,7 +1064,8 @@ void main() {
     final ProfileFolderData collapsedGa = ProfileFolderData(
       folders: <ProfileFolder>[collapsedA, folderB],
     );
-    // What the atServer sent while the user had ga collapsed here.
+
+    /// What the atServer sent while the user had ga collapsed here.
     final ProfileFolderData serverWithCollapsedGa = ProfileFolderData(
       folders: <ProfileFolder>[collapsedA, folderB],
       unfiled: const <String>['p4', 'p5'],
@@ -1117,7 +1112,6 @@ void main() {
         expect(repo.puts, isEmpty);
         repo.onRound!(true);
         await settle();
-        // The atServer now holds what was saved; a later round saves nothing.
         repo.loadResult = serverWithCollapsedGa;
         repo.onRound!(true);
         await settle();
@@ -1274,7 +1268,6 @@ void main() {
         );
         await settle();
         expect(repo.puts, isEmpty);
-        // Another device deleted gb.
         repo.loadResult = const ProfileFolderData(
           folders: <ProfileFolder>[folderA],
         );
@@ -1330,7 +1323,6 @@ void main() {
         await settle();
         expect(repo.puts, hasLength(2));
 
-        // The atServer now holds the expanded section, plus something new.
         repo.loadResult = dataWithUnfiled;
         repo.onRound!(false);
         await settle();
@@ -1494,7 +1486,6 @@ void main() {
         repo.caughtUp.complete(true);
         await settle();
         expect(repo.puts, hasLength(1));
-        // Saves in the new session start from what it read.
         repo.heldPuts = null;
         bloc.add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Z'));
       },
@@ -1522,9 +1513,12 @@ void main() {
         ),
       ],
       verify: (_) {
-        expect(repo.puts, hasLength(2));
-        // Only the collapse that was already being saved, never the rename of
-        // gb that was waiting behind it.
+        expect(
+          repo.puts,
+          hasLength(2),
+          reason:
+              'only the save already in flight, not the queued rename of gb',
+        );
         expect(repo.puts.first.folderById('gb')?.name, 'B');
         expect(repo.puts.last.folderById('gb')?.name, 'B');
         expect(repo.puts.last.folderById('ga')?.collapsed, isFalse);

@@ -28,8 +28,8 @@ class ProfileFolderBloc
   /// A caught-up round whose re-read failed still counts for the next one.
   bool _caughtUpSeen = false;
 
+  /// Handles one event at a time, so saves land in the order they were made.
   ProfileFolderBloc(this._repo) : super(const ProfileFoldersInitial()) {
-    // One event at a time, so saves land in the order they were made.
     on<ProfileFolderEvent>(
       _handle,
       transformer: (Stream<ProfileFolderEvent> events, mapper) =>
@@ -166,7 +166,6 @@ class ProfileFolderBloc
     } else {
       emit(ProfileFoldersLoaded(data));
     }
-    // Applied here, ahead of anything queued meanwhile, so later edits win.
     for (final ProfileFolderEvent deferredEvent in deferred) {
       if (_closing || session != _session) return;
       await _handle(deferredEvent, emit);
@@ -229,6 +228,7 @@ class ProfileFolderBloc
     await _save(data.copyWith(folders: folders), emit);
   }
 
+  /// Unfiles the members while the folder still exists, then drops it.
   Future<void> _onDelete(
     ProfileFolderDeleteEvent event,
     Emitter<ProfileFolderState> emit,
@@ -238,7 +238,6 @@ class ProfileFolderBloc
     final ProfileFolder? deleted = data.folderById(event.folderId);
     if (deleted == null) return;
 
-    // Unfile the members while the folder still exists, then drop it.
     final ProfileFolderData unfiled = data.withProfilesUnfiled(
       deleted.profileIds,
       visibleUnfiled: event.visibleUnfiled,

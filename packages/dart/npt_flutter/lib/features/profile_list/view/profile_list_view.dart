@@ -131,7 +131,6 @@ class _ProfileListViewState extends State<ProfileListView> {
                           isFullProfile
                               ? const Row(
                                   children: [
-                                    // Shrinks the search before the buttons.
                                     Expanded(
                                       child: Row(
                                         children: [

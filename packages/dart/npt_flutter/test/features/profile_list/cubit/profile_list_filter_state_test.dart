@@ -322,8 +322,8 @@ void main() {
   });
 
   group('connection order', () {
-    // Manual order p1..p5. Folding puts Écran between banana and Zebra, and
-    // lowercasing puts apple before Zebra. p4 and p5 tie.
+    /// Manual order p1..p5. Folding puts Écran between banana and Zebra, and
+    /// lowercasing puts apple before Zebra. p4 and p5 tie.
     final Map<String, Profile> profiles = named(<String, String>{
       'p1': 'Zebra',
       'p2': 'apple',
@@ -854,7 +854,7 @@ void main() {
       );
     });
 
-    // Blocs are created in the test body so their streams run in FakeAsync.
+    /// Blocs are created in the test body so their streams run in FakeAsync.
     void createRealBlocs() {
       runningCubit = ProfilesRunningCubit();
       folderRepo = _FakeFolderRepository();
@@ -991,10 +991,9 @@ void main() {
         'order', (WidgetTester tester) async {
       await showSorted(tester);
 
-      // Released between Alpha and Zeta, where a manual drop would insert it.
-      final double dy =
+      final double releaseBetweenAlphaAndZeta =
           tester.getTopLeft(row(zetaId)).dy - tester.getTopLeft(row(midId)).dy;
-      await dragGrip(tester, row(midId), dy);
+      await dragGrip(tester, row(midId), releaseBetweenAlphaAndZeta);
 
       expect(folderRepo.puts, hasLength(1));
       final ProfileFolderData saved = folderRepo.puts.single;
