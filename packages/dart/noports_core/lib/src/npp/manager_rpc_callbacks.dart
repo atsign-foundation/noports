@@ -518,7 +518,19 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
         switch(target) {
           case 'Client': {
             final String clientId = valueAsMap['clientId'];
-            rule.addAll(nppCache.getClientById(clientId).toJson());
+            final Client client = nppCache.getClientById(clientId);
+            rule.addAll(client.toJson());
+            if (nppOperationHooks?.preDeleteClient != null) {
+              try {
+                await nppOperationHooks!.preDeleteClient!(client);
+              } catch (e, s) {
+                logger.severe(
+                    'preDeleteClient hook failed for client $clientId', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = nppCache.deleteClient(clientId);
             responsePayload['success'] = success;
             if (success) {
@@ -530,7 +542,19 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ClientGroup': {
             final String clientGroupId = valueAsMap['clientGroupId'];
-            rule.addAll(nppCache.getClientGroupById(clientGroupId).toJson());
+            final ClientGroup clientGroup = nppCache.getClientGroupById(clientGroupId);
+            rule.addAll(clientGroup.toJson());
+            if (nppOperationHooks?.preDeleteClientGroup != null) {
+              try {
+                await nppOperationHooks!.preDeleteClientGroup!(clientGroup);
+              } catch (e, s) {
+                logger.severe(
+                    'preDeleteClientGroup hook failed for client group $clientGroupId', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = nppCache.deleteClientGroup(clientGroupId);
             responsePayload['success'] = success;
             if (success) {
@@ -542,7 +566,21 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ClientGroupMember': {
             final String clientGroupMemberId = valueAsMap['clientGroupMemberId'];
-            rule.addAll(nppCache.getClientGroupMemberById(clientGroupMemberId).toJson());
+            final ClientGroupMember clientGroupMember =
+                nppCache.getClientGroupMemberById(clientGroupMemberId);
+            rule.addAll(clientGroupMember.toJson());
+            if (nppOperationHooks?.preDeleteClientGroupMember != null) {
+              try {
+                await nppOperationHooks!
+                    .preDeleteClientGroupMember!(clientGroupMember);
+              } catch (e, s) {
+                logger.severe(
+                    'preDeleteClientGroupMember hook failed for client group member $clientGroupMemberId', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = nppCache.deleteClientGroupMember(clientGroupMemberId);
             responsePayload['success'] = success;
             if (success) {
@@ -554,7 +592,19 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Daemon': {
             final String daemonId = valueAsMap['daemonId'];
-            rule.addAll(nppCache.getDaemonById(daemonId).toJson());
+            final Daemon daemon = nppCache.getDaemonById(daemonId);
+            rule.addAll(daemon.toJson());
+            if (nppOperationHooks?.preDeleteDaemon != null) {
+              try {
+                await nppOperationHooks!.preDeleteDaemon!(daemon);
+              } catch (e, s) {
+                logger.severe(
+                    'preDeleteDaemon hook failed for daemon $daemonId', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = nppCache.deleteDaemon(daemonId);
             responsePayload['success'] = success;
             if (success) {
@@ -566,7 +616,19 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Service': {
             final String serviceId = valueAsMap['serviceId'];
-            rule.addAll(nppCache.getServiceById(serviceId).toJson());
+            final Service service = nppCache.getServiceById(serviceId);
+            rule.addAll(service.toJson());
+            if (nppOperationHooks?.preDeleteService != null) {
+              try {
+                await nppOperationHooks!.preDeleteService!(service);
+              } catch (e, s) {
+                logger.severe(
+                    'preDeleteService hook failed for service $serviceId', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = nppCache.deleteService(serviceId);
             responsePayload['success'] = success;
             if (success) {
@@ -578,7 +640,19 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ServiceACL': {
             final String serviceACLId = valueAsMap['serviceACLId'];
-            rule.addAll(nppCache.getServiceACLById(serviceACLId).toJson());
+            final ServiceACL serviceACL = nppCache.getServiceACLById(serviceACLId);
+            rule.addAll(serviceACL.toJson());
+            if (nppOperationHooks?.preDeleteServiceACL != null) {
+              try {
+                await nppOperationHooks!.preDeleteServiceACL!(serviceACL);
+              } catch (e, s) {
+                logger.severe(
+                    'preDeleteServiceACL hook failed for service ACL $serviceACLId', e, s);
+                success = false;
+                message = 'Pre-operation hook failed: $e';
+                break;
+              }
+            }
             success = nppCache.deleteServiceACL(serviceACLId);
             responsePayload['success'] = success;
             if (success) {

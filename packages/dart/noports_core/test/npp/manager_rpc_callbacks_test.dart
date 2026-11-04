@@ -386,4 +386,38 @@ void main() {
       expect(events.map((e) => e['reqId']), [1, 2]);
     });
   });
+
+  group('Given a pre-delete hook that fails', () {
+    test('when a client is deleted, then it stays, the answer is an error, and'
+        ' it logs ruleChangeFailed', () async {
+      final c = callbacks(
+        hooks: NppOperationHooks(
+          preDeleteClient: (_) async => throw Exception('disk full'),
+        ),
+      );
+      await c.handleRequest(
+        req({
+          'operation': 'put',
+          'target': 'Client',
+          'value': {'name': 'Alice', 'atSign': '@alice'},
+        }),
+        policy,
+      );
+
+      final response = await c.handleRequest(
+        req({
+          'operation': 'delete',
+          'target': 'Client',
+          'value': {'clientId': '1'},
+        }, reqId: 2),
+        policy,
+      );
+
+      expect(response.respType, AtRpcRespType.error);
+      expect(cache.clients, hasLength(1));
+      expect(events.last['event'], 'ruleChangeFailed');
+      expect(events.last['operation'], 'delete');
+      expect(events.last['error'], contains('disk full'));
+    });
+  });
 }

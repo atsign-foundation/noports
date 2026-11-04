@@ -417,6 +417,35 @@ NppOperationHooks nppOperationHooksForAtServer({
     );
   };
 
+  /// Deletes the atServer copy of the [kind] rule [id] (e.g. `client`), the
+  /// key its pre-put hook wrote, so a deleted rule isn't loaded again.
+  Future<void> deleteKey(String kind, String? id) async {
+    final bool success = await atClient.delete(
+      AtKey()
+        ..key = '$id'
+        ..namespace = '$kind.$domainNamespace.$baseNamespace'
+        ..sharedBy = atClient.getCurrentAtSign(),
+      deleteRequestOptions: DeleteRequestOptions()..useRemoteAtServer = true,
+    );
+    if (!success) {
+      throw Exception('Failed to delete $kind $id from atServer');
+    }
+    _logger.info('Pre-delete hook for $kind $id, success: $success');
+  }
+
+  nppOperationHooks.preDeleteClient = (Client client) =>
+      deleteKey('client', client.id);
+  nppOperationHooks.preDeleteClientGroup = (ClientGroup clientGroup) =>
+      deleteKey('client_group', clientGroup.id);
+  nppOperationHooks.preDeleteClientGroupMember =
+      (ClientGroupMember clientGroupMember) =>
+          deleteKey('client_group_member', clientGroupMember.id);
+  nppOperationHooks.preDeleteDaemon = (Daemon daemon) =>
+      deleteKey('daemon', daemon.id);
+  nppOperationHooks.preDeleteService = (Service service) =>
+      deleteKey('service', service.id);
+  nppOperationHooks.preDeleteServiceACL = (ServiceACL serviceACL) =>
+      deleteKey('service_acl', serviceACL.id);
   return nppOperationHooks;
 }
 
@@ -476,5 +505,28 @@ NppOperationHooks nppOperationHooksForFiles({
     _logger.info('Pre-put hook for ServiceACL: wrote to ${file.path}');
   };
 
+  /// Deletes [fileName] from the policy directory. A file already gone is
+  /// fine, so a failed delete can be retried.
+  Future<void> deleteFile(String fileName) async {
+    final file = File('$directoryPath/$fileName');
+    if (await file.exists()) {
+      await file.delete();
+    }
+    _logger.info('Pre-delete hook: removed ${file.path}');
+  }
+
+  nppOperationHooks.preDeleteClient = (Client client) =>
+      deleteFile('${client.id}_client.json');
+  nppOperationHooks.preDeleteClientGroup = (ClientGroup clientGroup) =>
+      deleteFile('${clientGroup.id}_client_group.json');
+  nppOperationHooks.preDeleteClientGroupMember =
+      (ClientGroupMember clientGroupMember) =>
+          deleteFile('${clientGroupMember.id}_client_group_member.json');
+  nppOperationHooks.preDeleteDaemon = (Daemon daemon) =>
+      deleteFile('${daemon.id}_daemon.json');
+  nppOperationHooks.preDeleteService = (Service service) =>
+      deleteFile('${service.id}_service.json');
+  nppOperationHooks.preDeleteServiceACL = (ServiceACL serviceACL) =>
+      deleteFile('${serviceACL.id}_service_acl.json');
   return nppOperationHooks;
 }
