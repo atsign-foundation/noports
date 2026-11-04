@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-/// A null [index] keeps an empty slot of the same [width], so rows line up.
 class ProfileDragHandle extends StatelessWidget {
   static const double width = Sizes.p24;
 

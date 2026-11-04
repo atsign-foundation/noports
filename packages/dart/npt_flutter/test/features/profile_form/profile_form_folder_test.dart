@@ -16,7 +16,6 @@ class FakeProfileRepository extends ProfileRepository {
   final List<Profile> puts = <Profile>[];
   bool saveSucceeds = true;
 
-  /// Holds each save until the test completes it, when set.
   Completer<void>? saveGate;
 
   @override
@@ -43,7 +42,6 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
   ProfileFolderData stored = const ProfileFolderData();
   final List<ProfileFolderData> puts = <ProfileFolderData>[];
 
-  /// Completes when the test says the local copy has caught up.
   Completer<bool> caughtUp = Completer<bool>();
 
   @override
@@ -125,8 +123,7 @@ void main() {
 
   ProfileBloc savedBloc() => cache.getProfileBloc(uuid);
 
-  /// The real blocs are created in the test body so that their streams run in
-  /// the FakeAsync zone driven by [WidgetTester.pump].
+  // Blocs are created in the test body so their streams run in FakeAsync.
   Future<void> pumpForm(
     WidgetTester tester, {
     ProfileFolderData folders = otherFolders,
@@ -246,7 +243,6 @@ void main() {
   ProfileFolderData currentData() =>
       (folderBloc.state as ProfileFoldersLoaded).data;
 
-  /// Loads the folders into a form that was opened before they were there.
   Future<void> loadFolders(WidgetTester tester, {bool synced = true}) async {
     folderBloc.add(const ProfileFolderLoadEvent());
     await tester.pump();
@@ -259,7 +255,6 @@ void main() {
   String fieldText(WidgetTester tester) =>
       tester.widget<TextField>(folderField()).controller!.text;
 
-  /// Folder data in which the connection being edited is in [folderId].
   ProfileFolderData withConnectionIn(String folderId) => ProfileFolderData(
     folders: <ProfileFolder>[
       for (final ProfileFolder f in otherFolders.folders)
@@ -446,8 +441,7 @@ void main() {
       expect(menuLabels(), <String>['${strings.folderNew}: $capped']);
     });
 
-    // The cut can land on spaces inside the typed text; the name is trimmed
-    // again after it, so it can't differ from an existing one by those spaces.
+    // The name is trimmed again after the cut, which can land on spaces.
     for (final int spaces in <int>[1, 4]) {
       testWidgets('does not offer a name whose 64-character cut ends in '
           '$spaces space(s) and then equals an existing folder', (
@@ -1347,7 +1341,6 @@ void main() {
       await pickEntry(tester, '${strings.folderNew}: Databases');
       final String newId = formFolder(tester).state.folderId!;
 
-      // The folders load again and have not caught up yet.
       folderRepo.caughtUp = Completer<bool>();
       folderBloc.add(const ProfileFolderLoadEvent());
       await tester.pumpAndSettle();
@@ -1749,7 +1742,6 @@ void main() {
     testWidgets('follows its original to the synced folder', (
       WidgetTester tester,
     ) async {
-      // The local copy has s1 in Servers; the synced data has it in Desktops.
       await pumpForm(tester, synced: false, copyFrom: original('s1'));
       expect(fieldText(tester), 'Servers');
 

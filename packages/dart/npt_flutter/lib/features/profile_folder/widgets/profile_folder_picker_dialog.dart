@@ -22,12 +22,9 @@ final class ProfileFolderPickExisting extends ProfileFolderPick {
   const ProfileFolderPickExisting(this.folderId);
 }
 
-/// Lets the user choose a destination folder. Pops with a [ProfileFolderPick],
-/// or null when dismissed.
 class ProfileFolderPickerDialog extends StatelessWidget {
   final List<ProfileFolder> folders;
 
-  /// Null is "No folder".
   final String? currentFolderId;
 
   /// False when the connections are in different places: none is marked.

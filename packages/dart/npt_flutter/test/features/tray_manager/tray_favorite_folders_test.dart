@@ -94,7 +94,6 @@ void main() {
     cacheUuid: 'Cache',
   };
 
-  /// "Cache" is left out of Start all, "gone" is not a loaded connection.
   const ProfileFolder servers = ProfileFolder(
     uuid: 'f-servers',
     name: 'Servers',
@@ -128,10 +127,8 @@ void main() {
     });
   });
 
-  /// The real blocs must be created inside the test body so that their stream
-  /// subscriptions live in the FakeAsync zone driven by [WidgetTester.pump].
-  /// With [listening] the tray also reloads itself on state changes, as in the
-  /// app; otherwise the test calls [TrayCubit.reload] itself.
+  // Blocs are created in the test body so their streams run in FakeAsync.
+  // With [listening] the tray reloads itself on state changes, as in the app.
   Future<void> pumpTray(
     WidgetTester tester, {
     Map<String, String> loaded = defaultNames,
@@ -236,7 +233,6 @@ void main() {
     );
   }
 
-  /// Marks [uuid] as connected, the way the app does once a start succeeds.
   void connect(String uuid) {
     final ProfileLoadedState current =
         profileBlocs[uuid]!.state as ProfileLoadedState;
@@ -246,7 +242,6 @@ void main() {
     runningCubit.prepare(uuid);
   }
 
-  /// Lets the reloads the tray started on its own run to the end.
   Future<void> settle(WidgetTester tester) async {
     for (int i = 0; i < 5; i++) {
       await tester.pump();

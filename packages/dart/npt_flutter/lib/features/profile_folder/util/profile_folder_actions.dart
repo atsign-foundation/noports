@@ -14,7 +14,6 @@ import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/uuid.dart';
 
 class ProfileFolderActions {
-  /// The unfiled section as shown, or null before it has loaded.
   static List<String>? visibleUnfiled(BuildContext context) {
     final ProfileFolderState folders = context.read<ProfileFolderBloc>().state;
     final ProfileListState profiles = context.read<ProfileListBloc>().state;
@@ -131,7 +130,6 @@ class ProfileFolderActions {
     bloc.add(ProfileFolderRenameEvent(folderId: folder.uuid, name: name));
   }
 
-  /// Asks the user which folder [profileIds] should live in, then applies it.
   /// Returns false if the user cancelled.
   static Future<bool> moveToFolder(
     BuildContext context,

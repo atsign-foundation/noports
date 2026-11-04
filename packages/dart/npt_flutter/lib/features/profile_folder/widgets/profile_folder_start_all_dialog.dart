@@ -5,7 +5,6 @@ import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
-/// Pops with the connections to skip, or null on cancel.
 class ProfileFolderStartAllDialog extends StatefulWidget {
   final List<String> uuids;
   final Set<String> skipped;

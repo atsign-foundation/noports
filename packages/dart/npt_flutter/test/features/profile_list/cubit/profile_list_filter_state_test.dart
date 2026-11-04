@@ -781,7 +781,6 @@ void main() {
       midId: buildProfile(midId, 'Mid'),
     };
 
-    // Stored order is zeta, alpha; a name sort shows alpha, zeta.
     const ProfileFolder serversFolder = ProfileFolder(
       uuid: 'g-servers',
       name: 'Servers',
@@ -855,8 +854,7 @@ void main() {
       );
     });
 
-    /// The real blocs must be created inside the test body so that their
-    /// stream subscriptions live in the FakeAsync zone driven by the tester.
+    // Blocs are created in the test body so their streams run in FakeAsync.
     void createRealBlocs() {
       runningCubit = ProfilesRunningCubit();
       folderRepo = _FakeFolderRepository();

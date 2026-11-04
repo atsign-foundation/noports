@@ -210,7 +210,6 @@ class _ProfileListViewState extends State<ProfileListView> {
   }
 }
 
-/// Not the defaults a failed load falls back to.
 bool _isUserSettings(SettingsState state) =>
     state is SettingsLoadedState && state is! SettingsFailedLoad;
 

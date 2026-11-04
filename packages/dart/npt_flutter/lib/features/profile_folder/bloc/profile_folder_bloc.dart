@@ -20,11 +20,9 @@ class ProfileFolderBloc
 
   bool _closing = false;
 
-  /// Changes made before the local copy caught up, applied once it has.
   final List<ProfileFolderEvent> _deferred = <ProfileFolderEvent>[];
 
-  /// Collapses changed before the local copy caught up: shown at once and
-  /// saved once it has. A null key is the unfiled section.
+  /// Collapses made before sync caught up; a null key is the unfiled section.
   final Map<String?, bool> _collapsedWhileSyncing = <String?, bool>{};
 
   /// A caught-up round whose re-read failed still counts for the next one.
@@ -81,8 +79,7 @@ class ProfileFolderBloc
     _caughtUpSeen = false;
   }
 
-  /// False when [event] can't change the folders now. One made before the
-  /// local copy caught up is kept and applied once it has.
+  /// Events made before the local copy caught up are kept for later.
   bool _canEdit(ProfileFolderEvent event) {
     final ProfileFolderState current = state;
     if (current is ProfileFoldersLoaded && !current.synced) {
@@ -107,8 +104,8 @@ class ProfileFolderBloc
     }
   }
 
-  /// Shows the local copy at once. Edits wait until it has caught up with the
-  /// atServer, so an older copy is never saved over a newer one.
+  /// Edits wait for the local copy to catch up, so an older copy is never
+  /// saved over a newer one.
   Future<void> _onLoad(
     ProfileFolderLoadEvent event,
     Emitter<ProfileFolderState> emit,

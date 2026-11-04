@@ -178,8 +178,6 @@ final class _FakeFavoriteRepository extends FavoriteRepository {
   }
 }
 
-/// One installation of the app: its stored profiles and favorites, and the
-/// blocs that export and import read from the widget tree.
 final class _Installation {
   final _FakeProfileRepository profileRepository = _FakeProfileRepository();
   final _FakeFavoriteRepository favoriteRepository;
@@ -300,8 +298,6 @@ void main() {
     });
 
     group('flags', () {
-      // [favorite, collapsed, unfiledCollapsed] as read from one stored folder
-      // with the given fields inside a stored document with the given fields.
       List<bool> readFlags({
         Map<String, dynamic> folder = const <String, dynamic>{},
         Map<String, dynamic> document = const <String, dynamic>{},
@@ -740,7 +736,6 @@ void main() {
     // "favorite": true, so a favorite is shown to be restored at all.
     for (final ExportableProfileFiletype filetype
         in ExportableProfileFiletype.values) {
-      // The same four values in JSON and in YAML.
       for (final String literal in <String>['false', 'null', '"true"', '1']) {
         testWidgets('a ${filetype.filetype} document with "favorite": $literal '
             'imports that profile without a favorite', (tester) async {

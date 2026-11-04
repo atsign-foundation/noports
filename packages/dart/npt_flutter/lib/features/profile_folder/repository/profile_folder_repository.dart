@@ -6,8 +6,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile_folder/models/profile_folder.dart';
 import 'package:npt_flutter/util/constants.dart';
 
-/// Every folder is in one document under one key, so when two devices change
-/// folders before syncing, the last one to sync wins.
+/// All folders share one key, so the last device to sync wins.
 class ProfileFolderRepository {
   /// A read or write that hangs would hold up every later folder event.
   static const Duration _timeout = Duration(seconds: 30);
@@ -29,8 +28,7 @@ class ProfileFolderRepository {
     return builder.build();
   }
 
-  /// Returns the stored folders, an empty [ProfileFolderData] when nothing has
-  /// been stored yet, or null when the value could not be read.
+  /// Empty data when nothing is stored, null when the read failed.
   Future<ProfileFolderData?> getProfileFolders() async {
     final Atsign? atsign = _client.getCurrentAtSign()?.toAtsign();
     final AtKey key = getProfileFolderAtKey(sharedBy: atsign);
@@ -53,7 +51,6 @@ class ProfileFolderRepository {
     }
   }
 
-  /// False if the local copy hasn't caught up with the atServer by [timeout].
   Future<bool> waitForSync({
     Duration timeout = const Duration(seconds: 30),
   }) async {
@@ -69,9 +66,8 @@ class ProfileFolderRepository {
     return true;
   }
 
-  /// Calls [onRound] after each sync round, with whether it pulled everything
-  /// the atServer had. Pushes still waiting don't count: one the atServer
-  /// keeps refusing would otherwise hold the folders read-only.
+  /// Pushes still waiting don't count: one the atServer keeps refusing would
+  /// hold the folders read-only.
   void watchSync(void Function(bool caughtUp) onRound) {
     stopWatching();
     try {

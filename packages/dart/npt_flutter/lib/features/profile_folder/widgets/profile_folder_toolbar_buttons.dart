@@ -36,7 +36,6 @@ class ProfileFolderLoadRetryButton extends StatelessWidget {
   }
 }
 
-/// Creates an empty folder. Hidden while profiles are selected.
 class ProfileFolderCreateButton extends StatelessWidget {
   const ProfileFolderCreateButton({super.key});
 
@@ -62,8 +61,6 @@ class ProfileFolderCreateButton extends StatelessWidget {
   }
 }
 
-/// Moves the selected profiles into a folder. Shown only while profiles are
-/// selected and folders have loaded.
 class ProfileFolderMoveButton extends StatelessWidget {
   const ProfileFolderMoveButton({super.key});
 
@@ -104,7 +101,6 @@ class ProfileFolderMoveButton extends StatelessWidget {
   }
 }
 
-/// Hidden until the folders load, and off with a reason until they sync.
 class _FolderEditGate extends StatelessWidget {
   final Widget Function(BuildContext context, bool editable) builder;
   const _FolderEditGate({required this.builder});

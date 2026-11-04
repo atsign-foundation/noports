@@ -67,7 +67,8 @@ class ProfileListSortButton extends StatelessWidget {
     if (sortMode != null) filter.sort(sortMode);
     if (favoritesFirst != null) filter.setFavoritesFirst(favoritesFirst);
 
-    // Saving over settings that failed to load would replace them with defaults.
+    // Saving over settings that failed to load would replace them with
+    // defaults.
     final SettingsBloc settingsBloc = context.read<SettingsBloc>();
     final SettingsState state = settingsBloc.state;
     if (state is! SettingsLoadedState || state is SettingsFailedLoad) return;

@@ -13,12 +13,9 @@ import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_snack_bar.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
-/// Renders the loaded profile uuids as a flat list, or as custom folders
-/// followed by an unfiled section once any folder exists.
 class ProfileFolderListView extends StatefulWidget {
   final List<String> profiles;
 
-  /// Null keeps the manual order.
   final List<String> Function(List<String> uuids)? arrange;
   final bool searching;
   final bool Function(ProfileFolder folder)? folderMatches;
@@ -29,7 +26,6 @@ class ProfileFolderListView extends StatefulWidget {
   /// Rows can still move to another folder when not [reorderable].
   final bool movable;
 
-  /// Shown when the sort puts a drop elsewhere than where it was released.
   final String? sortedDropMessage;
 
   const ProfileFolderListView({
@@ -58,7 +54,6 @@ class _DragSession {
 
   final List<String> movedIds;
 
-  /// Released; only the drop animation is left.
   bool dropped = false;
 
   _DragSession({
@@ -70,8 +65,8 @@ class _DragSession {
 }
 
 class _ProfileFolderListViewState extends State<ProfileFolderListView> {
-  /// Shared by every list this builds, so swapping one for another (once the
-  /// folders sync, or a search starts) keeps the scroll position.
+  /// Shared by every list, so swapping one for another keeps the scroll
+  /// position.
   static const PageStorageKey<String> _scrollKey = PageStorageKey<String>(
     'ProfileFolderListView',
   );
@@ -142,7 +137,6 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     );
   }
 
-  /// Until [editable], nothing can be dragged or changed.
   Widget _buildReorderable(ProfileFolderLayout layout, bool editable) {
     final bool reorderable = widget.reorderable && editable;
     final bool movable = widget.movable && editable;
@@ -182,7 +176,6 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
                 : null,
             folder: folder,
             collapsed: layout.collapsed.contains(section.id),
-            // Folders stay open while searching and move only in manual order.
             onToggleCollapsed: widget.searching
                 ? null
                 : () => context.read<ProfileFolderBloc>().add(
@@ -280,8 +273,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     });
   }
 
-  /// Fires on release. The drop is applied here because autoscroll can still
-  /// move the gap during the drop animation.
+  /// Applied on release: autoscroll can still move the gap afterwards.
   void _onReorderEnd(int insertIndex) {
     final _DragSession? session = _drag;
     if (session == null) return;
@@ -418,9 +410,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     );
   }
 
-  /// With favorites lifted, the screen order isn't the manual one, so a drop
-  /// is placed in the manual order instead of saving what the screen shows.
-  /// Null when the drop changes nothing.
+  /// With favorites lifted, the drop is placed in the manual order.
   ProfileFolderEvent? _inManualOrder(
     ProfileFolderEvent event,
     ProfileFolderData data,
@@ -538,7 +528,6 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
   }
 }
 
-/// Calls [onDispose] after the frame in which this widget is removed.
 class _OnDispose extends StatefulWidget {
   final VoidCallback onDispose;
   final Widget child;

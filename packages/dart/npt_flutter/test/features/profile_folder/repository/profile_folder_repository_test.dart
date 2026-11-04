@@ -10,8 +10,6 @@ import 'package:npt_flutter/util/constants.dart';
 
 import '../../profile/repository/profile_repository_test.mocks.dart';
 
-/// A sync service that keeps the listeners added to it, so a test can send
-/// them sync progress.
 class FakeSyncService extends Fake implements SyncService {
   final List<SyncProgressListener> listeners = <SyncProgressListener>[];
   int syncCalls = 0;

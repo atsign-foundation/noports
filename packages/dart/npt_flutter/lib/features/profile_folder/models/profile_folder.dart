@@ -183,7 +183,6 @@ final class ProfileFolderData extends Loggable {
     return null;
   }
 
-  /// A null [folderId] is the unfiled section.
   ProfileFolderData withCollapsed(String? folderId, bool collapsed) {
     if (folderId == null) return copyWith(unfiledCollapsed: collapsed);
     return copyWith(
@@ -196,7 +195,6 @@ final class ProfileFolderData extends Loggable {
     );
   }
 
-  /// Whether [profileId]'s section is collapsed, so its row isn't shown.
   /// Without folders there are no sections to collapse.
   bool isCollapsed(String profileId) =>
       folders.isNotEmpty &&
@@ -239,8 +237,7 @@ final class ProfileFolderData extends Loggable {
     );
   }
 
-  /// Takes [ids] out of their folders and puts them after everything in
-  /// [visibleUnfiled]; without it they join the unpositioned connections.
+  /// Puts [ids] after [visibleUnfiled], or with the unpositioned ones.
   ProfileFolderData withProfilesUnfiled(
     Iterable<String> ids, {
     List<String>? visibleUnfiled,
@@ -276,8 +273,7 @@ final class ProfileFolderData extends Loggable {
     );
   }
 
-  /// Places [profileIds] into [folderId] (null = unfiled) to match
-  /// [sectionOrder]; ids a stale view shows in another folder are skipped.
+  /// Ids a stale view shows in another folder are skipped.
   ProfileFolderData placeProfiles({
     required List<String> profileIds,
     required String? folderId,
@@ -332,7 +328,6 @@ final class ProfileFolderData extends Loggable {
     );
   }
 
-  /// Folders not named in [folderIds] keep their order after the named ones.
   ProfileFolderData withFoldersOrdered(List<String> folderIds) {
     final List<ProfileFolder> ordered = <ProfileFolder>[];
     final Set<String> placed = <String>{};
@@ -346,8 +341,7 @@ final class ProfileFolderData extends Loggable {
     return copyWith(folders: ordered);
   }
 
-  /// Reconciles [visible] order into [stored], keeping ids hidden from
-  /// [visible] anchored just before the next visible id that followed them.
+  /// Ids hidden from [visible] stay just before the next visible id after them.
   static List<String> mergeVisibleOrder(
     List<String> stored,
     List<String> visible,
@@ -374,11 +368,10 @@ final class ProfileFolderData extends Loggable {
     return result;
   }
 
-  /// Where a drop puts [moved] in [manual] when the screen order lifts some
-  /// ids above others, so that only ids that [tie] keep their manual order on
-  /// screen. [released] is the screen order after the drop. Moved ids that
-  /// tie move together, and only when their order among their ties changed:
-  /// just before the next of those on screen, or else after the previous.
+  /// Where a drop puts [moved] in [manual]; [released] is the screen order
+  /// after the drop. Moved ids that [tie] move together, and only when their
+  /// order among their ties changed: before the next of those on screen, or
+  /// else after the previous.
   static List<String> placeInManualOrder({
     required List<String> manual,
     required List<String> released,
@@ -429,7 +422,6 @@ final class ProfileFolderData extends Loggable {
     _unfiledCollapsedKey,
   };
 
-  /// Drops folders without a uuid.
   factory ProfileFolderData.fromJson(Map<String, dynamic> json) {
     final List<dynamic> rawFolders = json[_foldersKey] is List
         ? json[_foldersKey] as List<dynamic>

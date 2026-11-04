@@ -12,16 +12,12 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
   bool throwOnPut = false;
   final List<ProfileFolderData> puts = <ProfileFolderData>[];
 
-  /// Completes when the test says the local copy has caught up.
   Completer<bool> caughtUp = Completer<bool>();
   void Function(bool caughtUp)? onRound;
   int watchSyncCalls = 0;
 
-  /// Holds each put until the test completes it, when set.
   List<Completer<void>>? heldPuts;
 
-  /// Holds each read until the test completes it, when set. A held read
-  /// returns whatever [loadResult] is once it is released.
   List<Completer<void>>? heldReads;
 
   @override
@@ -254,7 +250,6 @@ void main() {
         ..add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'First'))
         ..add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Second'));
       await Future<void>.delayed(Duration.zero);
-      // The second change waits for the first save to finish.
       expect(repo.puts, hasLength(1));
       repo.heldPuts!.first.complete();
       await Future<void>.delayed(Duration.zero);
@@ -1488,7 +1483,6 @@ void main() {
         repo.heldPuts = <Completer<void>>[];
         repo.onRound!(true);
         await settle();
-        // The collapse is being saved; the rename waits its turn.
         expect(repo.puts, hasLength(1));
 
         bloc.clearAll();

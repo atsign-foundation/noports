@@ -17,7 +17,7 @@ import 'package:npt_flutter/util/language.dart';
 import '../../profile_list/view/profile_list_view_test.mocks.dart';
 
 class FakeProfileFolderRepository extends ProfileFolderRepository {
-  /// What a refresh reads; null reads as a failed read.
+  // What a refresh reads; null reads as a failed read.
   ProfileFolderData? stored;
   final List<ProfileFolderData> puts = <ProfileFolderData>[];
 
@@ -153,8 +153,8 @@ void main() {
     );
   });
 
-  /// The real blocs must be created inside the test body so that their stream
-  /// subscriptions live in the FakeAsync zone driven by [WidgetTester.pump].
+  // The real blocs must be created inside the test body so that their stream
+  // subscriptions live in the FakeAsync zone driven by [WidgetTester.pump].
   void createRealBlocs() {
     runningCubit = ProfilesRunningCubit();
     folderRepo = FakeProfileFolderRepository();
@@ -521,8 +521,8 @@ void main() {
 
     const Duration frame = Duration(milliseconds: 16);
 
-    /// Drags from [start] by [dy], then waits out the 250 ms drop animation
-    /// and the view's 350 ms end timer, pumping frames [dropFrame] apart.
+    // Drags from [start] by [dy], then waits out the 250 ms drop animation
+    // and the view's 350 ms end timer, pumping frames [dropFrame] apart.
     Future<void> dragFrom(
       WidgetTester tester,
       Offset start,
@@ -586,7 +586,6 @@ void main() {
 
     double heightOf(WidgetTester tester, Finder f) => tester.getSize(f).height;
 
-    /// The edits a drop sent to the bloc, as opposed to a no-op it filtered.
     List<ProfileFolderEvent> dropEvents() => folderBloc.events
         .where(
           (ProfileFolderEvent e) =>
@@ -1136,7 +1135,6 @@ void main() {
           row(sshUuid),
           -heightOf(tester, row(rdpUuid)),
           whileDragging: () async {
-            // The list opened a gap above rdp, so this is a real drop.
             expect(tester.getTopLeft(row(rdpUuid)).dy, greaterThan(rdpTop));
           },
         );
@@ -1190,7 +1188,6 @@ void main() {
             row(sshUuid),
             -heightOf(tester, row(rdpUuid)),
             whileDragging: () async {
-              // The list opened a gap above rdp, so this is a real drop.
               expect(tester.getTopLeft(row(rdpUuid)).dy, greaterThan(rdpTop));
             },
           );
@@ -1423,7 +1420,6 @@ void main() {
               header(serversFolder.uuid),
               -dy,
               whileDragging: () async {
-                // The list opened a gap above Other, so this is a real drop.
                 expect(
                   tester.getTopLeft(header(otherFolder.uuid)).dy,
                   greaterThan(otherTop),
@@ -1458,7 +1454,6 @@ void main() {
               heightOf(tester, row(rdpUuid)) * 0.75;
           await dragGrip(tester, header(serversFolder.uuid), dy);
 
-          // The screen shows the drop, so there is nothing to explain.
           expect(dropEvents(), hasLength(1));
           expect(folderRepo.puts, hasLength(1));
           expect(
@@ -1852,7 +1847,7 @@ void main() {
       await tester.pump();
     }
 
-    /// What a search shows: no reordering and no moves, whatever the sort.
+    // What a search shows: no reordering and no moves, whatever the sort.
     Future<void> setSearching(WidgetTester tester, bool searching) async {
       await tester.pumpWidget(
         buildSubject(
@@ -1884,7 +1879,6 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    /// The first connection that starts inside the viewport.
     String firstShown(WidgetTester tester) => tester
         .widgetList<ProfileListRow>(find.byType(ProfileListRow))
         .firstWhere(

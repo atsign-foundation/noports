@@ -25,16 +25,13 @@ class ProfileFolderSectionHeader extends StatelessWidget {
   final bool collapsed;
   final VoidCallback? onToggleCollapsed;
 
-  /// Null for the unfiled section.
   final ProfileFolder? folder;
 
   final int? reorderIndex;
   final bool dragEnabled;
 
-  /// False turns off everything that changes the folder.
   final bool editable;
 
-  /// Null disables the menu item.
   final VoidCallback? onMoveUp;
   final VoidCallback? onMoveDown;
 

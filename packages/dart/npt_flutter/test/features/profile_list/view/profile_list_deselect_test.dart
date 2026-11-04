@@ -18,7 +18,7 @@ import 'package:npt_flutter/util/language.dart';
 
 import 'profile_list_view_test.mocks.dart';
 
-/// The cubits log through the navigator's context, which prints every change.
+// The cubits log through the navigator context, which prints every change.
 class _SilentLogsCubit extends LogsCubit {
   @override
   void log(Loggable loggable) {}
@@ -184,8 +184,6 @@ void main() {
     ).thenAnswer((_) => Stream<OnboardingState>.value(onboarded));
   });
 
-  /// Pumps the whole list with the folders already loaded and every
-  /// connection loaded, so a search can tell which ones match.
   Future<void> pumpList(
     WidgetTester tester,
     ProfileFolderData data, {
@@ -434,7 +432,6 @@ void main() {
       expect(row(sshUuid), findsOneWidget);
       await select(tester, <String>[sshUuid, vncUuid]);
 
-      // A narrower search still shows Alpha, so it is not deselected.
       await search(tester, 'al');
       expect(selectedCubit.state.selected, <String>{sshUuid});
 
@@ -453,7 +450,6 @@ void main() {
       (WidgetTester tester) async {
         await pumpList(tester, serversCollapsed);
         await search(tester, 'a');
-        // Every name contains an "a", so the search hides nothing.
         expect(find.byType(ProfileListRow), findsNWidgets(5));
         await select(tester, <String>[sshUuid, rdpUuid, vncUuid, noneUuid]);
 

@@ -3,7 +3,6 @@ part of 'profile_folder_bloc.dart';
 sealed class ProfileFolderState extends Loggable {
   const ProfileFolderState();
 
-  /// Folders can change only once loaded and caught up with the atServer.
   bool get editable => false;
 
   @override

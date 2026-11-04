@@ -102,7 +102,6 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
     }
   }
 
-  /// Waits until [bloc] is connected or has failed.
   Future<void> _start(ProfileBloc bloc) async {
     ProfileState state = bloc.state;
     if (state is ProfileInitial || state is ProfileLoading) {

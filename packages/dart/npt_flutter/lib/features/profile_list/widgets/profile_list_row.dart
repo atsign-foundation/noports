@@ -4,11 +4,9 @@ import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_list/widgets/profile_drag_handle.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
-/// One profile row in the connections list, backed by the cached [ProfileBloc].
 class ProfileListRow extends StatelessWidget {
   final String uuid;
 
-  /// Index in the enclosing reorderable list, or null if it can't be dragged.
   final int? reorderIndex;
 
   final bool dimmed;

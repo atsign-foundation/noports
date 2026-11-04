@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/app_color.dart';
 
-/// Prompts for a folder name. Pops with the trimmed name, or null on cancel.
 class ProfileFolderNameDialog extends StatefulWidget {
   static const int maxLength = 64;
 
   final String title;
   final String? initialName;
 
-  /// Refused, ignoring case.
   final Iterable<String> takenNames;
   const ProfileFolderNameDialog({
     required this.title,

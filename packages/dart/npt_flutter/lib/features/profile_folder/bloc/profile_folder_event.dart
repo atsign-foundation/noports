@@ -16,8 +16,7 @@ final class ProfileFolderLoadEvent extends ProfileFolderEvent {
   }
 }
 
-/// Re-reads the folders after a sync round, without going through a loading
-/// state. [caughtUp] is true once nothing is left to pull or push.
+/// [caughtUp] is true once the round pulled everything the atServer had.
 final class ProfileFolderRefreshEvent extends ProfileFolderEvent {
   final bool caughtUp;
   const ProfileFolderRefreshEvent({this.caughtUp = false});
@@ -66,8 +65,6 @@ final class ProfileFolderRenameEvent extends ProfileFolderEvent {
   }
 }
 
-/// Deletes [folderId]. Its profiles become unfiled, ordered by
-/// [visibleUnfiled] when given.
 final class ProfileFolderDeleteEvent extends ProfileFolderEvent {
   final String folderId;
   final List<String>? visibleUnfiled;
@@ -82,10 +79,6 @@ final class ProfileFolderDeleteEvent extends ProfileFolderEvent {
   }
 }
 
-/// Moves [profileIds] into the folder [folderId].
-/// A null [folderId] takes them out of every folder instead, ordered by
-/// [visibleUnfiled]
-/// when given.
 final class ProfileFolderMoveProfilesEvent extends ProfileFolderEvent {
   final Iterable<String> profileIds;
   final String? folderId;
@@ -118,7 +111,6 @@ final class ProfileFolderRemoveProfilesEvent extends ProfileFolderEvent {
   }
 }
 
-/// Places [profileIds] into [folderId] (null means unfiled) at [sectionOrder].
 final class ProfileFolderPlaceProfilesEvent extends ProfileFolderEvent {
   final List<String> profileIds;
   final String? folderId;
@@ -170,7 +162,6 @@ final class ProfileFolderSetFavoriteEvent extends ProfileFolderEvent {
   }
 }
 
-/// A null [folderId] is the unfiled section.
 final class ProfileFolderSetCollapsedEvent extends ProfileFolderEvent {
   final String? folderId;
   final bool collapsed;

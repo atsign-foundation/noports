@@ -6,21 +6,18 @@ import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/util/uuid.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-/// A null [folderId] is "No folder". A [newName] is created on submit, with
-/// [folderId] as its uuid so a second submit can't create it twice.
+/// A [newName] is created on submit, with [folderId] as its uuid so a second
+/// submit can't create it twice.
 typedef ProfileFormFolder = ({String? folderId, String? newName});
 
 class ProfileFormFolderCubit extends Cubit<ProfileFormFolder> {
   bool _picked;
 
-  /// [picked] is true when the form opens on a folder chosen beforehand,
-  /// e.g. a new connection made from a folder's menu.
   ProfileFormFolderCubit(String? folderId, {bool picked = false})
     : _picked = picked,
       super((folderId: folderId, newName: null));
 
-  /// True once the user picks a folder. Until then the field follows the
-  /// folders, which may change on sync or on another device.
+  /// Until the user picks a folder, the field follows the folders.
   bool get picked => _picked;
 
   void choose(String? folderId) {
@@ -33,7 +30,6 @@ class ProfileFormFolderCubit extends Cubit<ProfileFormFolder> {
     emit((folderId: Uuid.generate(), newName: name));
   }
 
-  /// Shows [folderId] unless the user has picked a folder.
   void follow(String? folderId) {
     if (!_picked) emit((folderId: folderId, newName: null));
   }
@@ -52,14 +48,12 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
   static const String _createFolder = ':create';
   static const String _createNamed = ':create:';
 
-  /// One per DropdownMenu: a new key builds a new menu, and the old one must
-  /// not hear the new one's text while it is torn down.
+  /// One per menu: the old menu must not hear the new one's text.
   TextEditingController _text = TextEditingController();
   String? _textKey;
   final FocusNode _focus = FocusNode();
 
-  /// Bumped to show the chosen folder again, e.g. after typing without
-  /// picking anything.
+  /// Bumped to show the chosen folder again after typing without picking.
   int _resets = 0;
 
   @override
@@ -120,7 +114,6 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
     }
   }
 
-  /// Typing a name no folder has offers to create it.
   List<DropdownMenuEntry<String>> _filter(
     List<DropdownMenuEntry<String>> entries,
     String filter,

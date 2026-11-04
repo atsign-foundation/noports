@@ -127,7 +127,6 @@ class TrayCubit extends LoggingCubit<TrayState> {
     if (favoriteState is! FavoritesLoaded) return;
     if (profileListState is! ProfileListLoaded) return;
 
-    /// Favorite folders first, then favorite connections, each sorted by name
     var loadedProfiles = profileListState.profiles.toSet();
     var running = profilesRunningState.socketConnectors;
     var favoriteFolders = profileFolderState is ProfileFoldersLoaded

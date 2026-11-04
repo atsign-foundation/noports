@@ -11,7 +11,6 @@ class ProfileFolderSection {
 
   final List<String> uuids;
 
-  /// Null for the unfiled section.
   final ProfileFolder? folder;
 
   const ProfileFolderSection({
@@ -28,7 +27,6 @@ sealed class ProfileListEntry {
 
   ProfileFolderSection get section;
 
-  /// ReorderableListView needs a key per item.
   Key get key;
 }
 
@@ -54,7 +52,6 @@ final class ProfileListRowEntry extends ProfileListEntry {
 class ProfileFolderLayout {
   static const String unfiledSectionId = 'unfiled';
 
-  /// The unfiled section is always present, even when empty.
   final List<ProfileFolderSection> sections;
 
   final List<ProfileListEntry> entries;
@@ -164,7 +161,6 @@ class ProfileFolderLayout {
         if (ids.contains(uuid)) uuid,
   ];
 
-  /// Maps a drop to the bloc event that applies it, or null if nothing changes.
   /// [stepFolders] moves a folder one place, as screen reader moves do.
   ProfileFolderEvent? resolveDrop({
     required int oldIndex,

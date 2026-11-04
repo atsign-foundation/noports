@@ -14,12 +14,9 @@ class ProfileFormView extends StatelessWidget {
   final String? folderId;
   const ProfileFormView(this.uuid, {super.key, this.copyFrom, this.folderId});
 
-  /// The connection whose folder the field shows until the user picks one:
-  /// a copy starts in its original's folder.
   String get _followed => copyFrom?.uuid ?? uuid;
 
-  /// Read before saving: the page closes when the save succeeds. Folders not
-  /// synced yet apply it once they are.
+  /// Read before saving: the page closes when the save succeeds.
   ProfileFolderEvent? _folderEvent(BuildContext context) {
     final folderCubit = context.read<ProfileFormFolderCubit>();
     final chosen = folderCubit.state;
@@ -47,7 +44,6 @@ class ProfileFormView extends StatelessWidget {
     );
   }
 
-  /// The folder is applied only once the connection is saved.
   Future<void> _submit(BuildContext context, Profile profile) async {
     final ProfileBloc saved = context.read<ProfileCacheCubit>().getProfileBloc(
       uuid,

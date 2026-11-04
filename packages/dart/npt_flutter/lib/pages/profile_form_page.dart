@@ -6,7 +6,6 @@ class ProfileFormPageArguments {
   final String uuid;
   final Profile? copyFrom;
 
-  /// When set, the saved profile is placed in this folder.
   final String? folderId;
   ProfileFormPageArguments(this.uuid, {this.copyFrom, this.folderId});
 }

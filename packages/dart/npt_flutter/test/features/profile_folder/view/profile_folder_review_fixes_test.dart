@@ -157,8 +157,8 @@ void main() {
     );
   });
 
-  /// The real cubits must be created inside the test body so that their stream
-  /// subscriptions live in the FakeAsync zone driven by [WidgetTester.pump].
+  // The real cubits must be created inside the test body so that their stream
+  // subscriptions live in the FakeAsync zone driven by [WidgetTester.pump].
   void createRealBlocs() {
     selectedCubit = ProfilesSelectedCubit();
     runningCubit = ProfilesRunningCubit();
@@ -1577,7 +1577,7 @@ void main() {
     });
 
     group('connections still waiting from an earlier Start all', () {
-      /// The first connection never reports back, so the rest keep waiting.
+      // The first connection never reports back, so the rest keep waiting.
       Future<ProfileStartQueueCubit> pumpWithStartAllRunning(
         WidgetTester tester,
         ProfileFolder folder,

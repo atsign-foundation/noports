@@ -17,7 +17,6 @@ class FakeProfileBloc extends Fake implements ProfileBloc {
   final StreamController<ProfileState> _controller =
       StreamController<ProfileState>.broadcast();
 
-  /// Every event the queue sent, in order.
   final List<ProfileEvent> events = <ProfileEvent>[];
 
   @override
@@ -54,9 +53,9 @@ class FakeProfileCache extends Fake implements ProfileCacheCubit {
   int _lookups = 0;
   int _lookupLimit = 1 << 30;
 
-  /// Makes the lookups after the next [count] throw. A queue loop that should
-  /// have stopped then fails the test instead of spinning forever, which no
-  /// test timeout could interrupt.
+  // Makes the lookups after the next [count] throw. A queue loop that should
+  // have stopped then fails the test instead of spinning forever, which no
+  // test timeout could interrupt.
   void failAfterLookups(int count) => _lookupLimit = _lookups + count;
 
   @override
@@ -92,7 +91,6 @@ ProfileState failedSave(String uuid) =>
 ProfileState failedStart(String uuid) =>
     ProfileFailedStart(uuid, profile: profileOf(uuid), reason: 'no route');
 
-/// Lets everything the cubit has scheduled run.
 Future<void> settle() => Future<void>.delayed(Duration.zero);
 
 void main() {

@@ -38,7 +38,6 @@ final class ProfileListFilterState extends Loggable {
   bool hides(String uuid) =>
       searching && profiles.containsKey(uuid) && !matches(uuid);
 
-  /// A folder whose name matches shows all of its connections.
   bool folderMatches(ProfileFolder folder) =>
       searching && nameSortKey(folder.name).contains(_needle);
 
@@ -61,7 +60,6 @@ final class ProfileListFilterState extends Loggable {
   /// Folded like the name sort, so "ecran" finds "Écran".
   String get _needle => nameSortKey(query.trim());
 
-  /// Null keeps the manual order.
   int Function(ProfileFolder a, ProfileFolder b)? get folderOrder {
     if (!reordered) return null;
     return (ProfileFolder a, ProfileFolder b) {
@@ -78,7 +76,6 @@ final class ProfileListFilterState extends Loggable {
     };
   }
 
-  /// Filters [uuids] by the query, then sorts them, keeping ties in order.
   List<String> apply(Iterable<String> uuids, Set<String> favorites) {
     final List<String> shown = uuids.where(matches).toList();
     if (!reordered) return shown;

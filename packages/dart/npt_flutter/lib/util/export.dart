@@ -36,7 +36,6 @@ class Export {
   static const profilesKey = 'profiles';
   static const favoriteKey = 'favorite';
 
-  /// Marks the user's favorites so an import can restore them.
   static List<Map<String, dynamic>> exportableProfiles(
     Iterable<Profile> profiles,
   ) {

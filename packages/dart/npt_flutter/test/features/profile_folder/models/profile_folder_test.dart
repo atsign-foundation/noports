@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/features/profile_folder/models/profile_folder.dart';
 import 'package:npt_flutter/util/name_sort.dart';
 
-// Asserts no id appears twice across all folders plus unfiled.
 void _expectNoDuplicateIds(ProfileFolderData data) {
   final List<String> allIds = <String>[
     for (final ProfileFolder folder in data.folders) ...folder.profileIds,
@@ -35,8 +34,8 @@ List<String> _favoritesFirst(List<String> order, Set<String> favorites) =>
       ...order.where((String id) => !favorites.contains(id)),
     ];
 
-/// One drop on a favorites-first screen: [moved] is lifted out of [manual]'s
-/// screen and put down at one position, giving the screen order [released].
+// One drop on a favorites-first screen: [moved] is lifted out of [manual]'s
+// screen and put down at one position, giving the screen order [released].
 final class _Drop {
   final List<String> manual;
   final Set<String> favorites;
@@ -67,8 +66,8 @@ final class _Drop {
       'manual $manual, favorites $favorites, $moved dropped to $released';
 }
 
-/// Every manual order of four ids, every choice of two favorites, every id
-/// grabbed and every position it is dropped at.
+// Every manual order of four ids, every choice of two favorites, every id
+// grabbed and every position it is dropped at.
 Iterable<_Drop> _everyDrop() sync* {
   const List<String> ids = <String>['A', 'B', 'C', 'D'];
   for (final List<String> manual in _permutations(ids)) {
@@ -769,8 +768,6 @@ void main() {
       });
 
       group('for every single drop', () {
-        // Four ids, every manual order, every pair as favorites, every id
-        // grabbed, every place it is put down: 24 * 6 * 4 * 4 drops.
         final List<_Drop> drops = _everyDrop().toList();
 
         test('covers every drop', () {
@@ -816,7 +813,6 @@ void main() {
               )
               .toList();
 
-          // Both kinds of drop are in the set.
           expect(unchanged, isNotEmpty);
           expect(unchanged.length, lessThan(drops.length));
           for (final _Drop drop in unchanged) {
@@ -834,7 +830,6 @@ void main() {
             final List<String> saved = drop.manual
                 .where(drop.sameKindAsMoved)
                 .toList();
-            // An unchanged order among ties is left as saved.
             if (listEquals(saved, onScreen)) continue;
             checked++;
 
