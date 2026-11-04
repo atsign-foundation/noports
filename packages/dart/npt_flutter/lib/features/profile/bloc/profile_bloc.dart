@@ -260,6 +260,7 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       );
     }
 
+    App.navState.currentContext?.read<ProfilesRunningCubit>().invalidate(uuid);
     if (!emit.isDone) emit(ProfileLoaded(uuid, profile: profile));
   }
 
@@ -333,7 +334,9 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       await progressSub?.cancel();
       await errorSub?.cancel();
       _activeNpt = null;
-      running?.invalidate(uuid);
+      // NOTE: keep-alive may start another session, so the profile stays
+      // listed as running until [_onStart] ends.
+      running?.release(uuid);
     }
   }
 
