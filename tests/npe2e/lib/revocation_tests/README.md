@@ -33,9 +33,15 @@ And once:
    (`--client-key-check-secs 0`), so `srvd` must be what ends the session and
    logs `has been withdrawn to r.__e`.
 
-Every npt the pack starts listens on 127.0.0.1, and each check connects
-there, so a check reaches npt even when srvd holds the same port number on
-another address. `dart test` in `tests/npe2e` checks that, without an EE.
+Every npt the pack starts is told to listen on 127.0.0.1
+(`nptLocalHostArgs` in `tunnel_check.dart`), and each check connects there,
+so a check reaches npt even when srvd holds the same port number on another
+address. `dart test` in `tests/npe2e` checks the banner check that way,
+without an EE, with npt's stand-in listening where the pack tells npt to:
+beside a listener on every IPv4 address, which macOS allows and Linux
+refuses (a platform that refuses it skips that case and says why), and
+beside one on `::1` alone, which both allow. It cannot tell connecting to
+`localhost` from connecting to 127.0.0.1, since Dart tries 127.0.0.1 first.
 
 ## Running locally
 

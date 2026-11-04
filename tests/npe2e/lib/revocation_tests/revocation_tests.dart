@@ -415,8 +415,7 @@ Future<({int? port, String output})> _openTunnel(
     '-T',
     '60s',
     '-x',
-    '--local-host',
-    nptLocalHost,
+    ...nptLocalHostArgs,
     if (relayAuthMode != null) ...['--relay-auth-mode', relayAuthMode],
   ];
   context.transcript.withTag(tag).command(npt.file.path, args);
