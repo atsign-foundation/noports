@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 
@@ -26,15 +28,17 @@ class ProfileCacheCubit extends LoggingCubit<ProfileCacheState> {
     return bloc;
   }
 
-  /// Stops every cached profile and forgets them all, e.g. on sign-out.
+  /// Closes every cached profile, which stops it, and forgets them all, e.g.
+  /// on sign-out.
   ///
   /// A bloc dropped from the cache is unreachable from the UI, so anything it
   /// is still running - a session, or a keep-alive loop retrying one - would
   /// otherwise carry on behind the user's back with the signed-out atClient.
   void clear() {
-    for (final bloc in state.profileBlocs.values) {
-      if (!bloc.isClosed) bloc.add(const ProfileStopEvent());
-    }
+    final dropped = state.profileBlocs.values.toList();
     emit(const ProfileCacheState({}));
+    for (final bloc in dropped) {
+      unawaited(bloc.close());
+    }
   }
 }

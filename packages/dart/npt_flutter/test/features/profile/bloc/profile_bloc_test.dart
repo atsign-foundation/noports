@@ -858,8 +858,8 @@ void main() {
             cache.clear();
             await pumpUntil(
               tester,
-              () => bloc.state is ProfileLoaded,
-              reason: 'clearing the cache must stop its profiles',
+              () => bloc.isClosed,
+              reason: 'clearing the cache must close its profiles',
             );
 
             final attemptsAtClear = attempts.length;
