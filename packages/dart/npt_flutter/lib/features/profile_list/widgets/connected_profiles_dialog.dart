@@ -155,9 +155,11 @@ class ConnectedProfilesDialog extends StatelessWidget {
         if (connectedProfileNames.isNotEmpty)
           TextButton(
             onPressed: () {
-              // Stop all running profiles
+              // NOTE: a stop, not just closing the connection, or keep-alive
+              // reconnects.
+              final cache = context.read<ProfileCacheCubit>();
               for (final uuid in connectedUuids) {
-                context.read<ProfilesRunningCubit>().invalidate(uuid);
+                cache.getProfileBloc(uuid).add(const ProfileStopEvent());
               }
               // Return false because their is no running profile
               Navigator.of(context).pop(false);
