@@ -56,7 +56,8 @@ abstract interface class Npt {
 
   /// Ends this session, closing the tunnel [runInline] started, if any, and
   /// completing [done]. A [runInline] still starting then closes the tunnel it
-  /// opens and throws, rather than return it.
+  /// opens and throws, rather than return it. A teardown step that fails is
+  /// logged and the rest still run, so this never throws.
   Future<void> close();
 
   /// Completes when the session has ended, or when it failed to start.
@@ -183,23 +184,25 @@ class _NptImpl extends NptBase
   @override
   Future<void> close() async {
     _closed = true;
-    (Object, StackTrace)? firstFailure;
-    Future<void> step(FutureOr<void> Function() teardown) async {
+    Future<void> step(String name, FutureOr<void> Function() teardown) async {
       try {
         await teardown();
-      } catch (e, st) {
-        firstFailure ??= (e, st);
+      } catch (e) {
+        logger.warning('Session $sessionId: $name failed while closing: $e');
       }
     }
 
-    await step(() => _inlineConnector?.close());
-    await step(_sshnpdChannel.cancelSubscriptions);
-    await step(_srvdChannel.cancelSubscriptions);
+    await step('closing the tunnel', () => _inlineConnector?.close());
+    await step(
+      'cancelling the daemon channel',
+      _sshnpdChannel.cancelSubscriptions,
+    );
+    await step(
+      'cancelling the relay channel',
+      _srvdChannel.cancelSubscriptions,
+    );
     if (!_completer.isCompleted) {
       _completer.complete();
-    }
-    if (firstFailure case (final error, final stackTrace)) {
-      Error.throwWithStackTrace(error, stackTrace);
     }
   }
 

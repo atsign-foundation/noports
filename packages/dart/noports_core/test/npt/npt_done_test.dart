@@ -125,16 +125,34 @@ class _UncancellableDaemonNotificationService extends _FakeNotificationService {
   Stream<AtNotification> subscribe({
     String? regex,
     bool shouldDecrypt = false,
-  }) {
-    if (!regex!.endsWith('@device\$')) {
-      return super.subscribe(regex: regex, shouldDecrypt: shouldDecrypt);
-    }
-    final controller = StreamController<AtNotification>(
-      onCancel: () => Future<void>.error(StateError('cancel failed')),
-    );
-    controllers[regex] = controller;
-    return controller.stream;
-  }
+  }) => regex!.endsWith('@device\$')
+      ? _uncancellable(controllers, regex)
+      : super.subscribe(regex: regex, shouldDecrypt: shouldDecrypt);
+}
+
+/// A [_DeliveringNotificationService] whose subscriptions to the daemon
+/// session regex fail to cancel.
+class _UncancellableDaemonDeliveringService
+    extends _DeliveringNotificationService {
+  @override
+  Stream<AtNotification> subscribe({
+    String? regex,
+    bool shouldDecrypt = false,
+  }) => regex!.endsWith('@device\$')
+      ? _uncancellable(controllers, regex)
+      : super.subscribe(regex: regex, shouldDecrypt: shouldDecrypt);
+}
+
+/// A stream for [regex], recorded in [controllers], whose cancel fails.
+Stream<AtNotification> _uncancellable(
+  Map<String, StreamController<AtNotification>> controllers,
+  String regex,
+) {
+  final controller = StreamController<AtNotification>(
+    onCancel: () => Future<void>.error(StateError('cancel failed')),
+  );
+  controllers[regex] = controller;
+  return controller.stream;
 }
 
 NptParams _params() => NptParams(
@@ -378,6 +396,39 @@ void main() {
               'channel being cancelled',
         );
       });
+
+      test(
+        'when close is called, then close completes and done resolves',
+        () async {
+          final notifications = _UncancellableDaemonDeliveringService();
+          final npt = Npt.create(
+            atClient: _StartableAtClient()
+              ..fakeNotificationService = notifications,
+            params: _params(),
+          );
+          unawaited(() async {
+            try {
+              await npt.runInline();
+            } catch (_) {}
+          }());
+
+          await notifications.relayRequested.future.timeout(
+            Duration(seconds: 5),
+          );
+          expect(
+            notifications.controllers.keys,
+            contains('${npt.sessionId}.${npt.namespace}@device\$'),
+            reason: 'the test must reach the daemon channel\'s subscription',
+          );
+
+          await expectLater(
+            npt.close(),
+            completes,
+            reason: 'a teardown step that fails must not make close fail',
+          );
+          await expectLater(npt.done.timeout(Duration(seconds: 5)), completes);
+        },
+      );
     },
   );
 

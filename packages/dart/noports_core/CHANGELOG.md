@@ -15,7 +15,8 @@
 - fix: `runInline` no longer hands back an open tunnel after `Npt.close` was
   called while it was starting; it closes the tunnel and throws.
 - fix: `Npt.close` cancels both its daemon and relay channels' subscriptions
-  even when cancelling one of them fails.
+  even when cancelling one of them fails, and logs such a failure rather than
+  throwing it.
 - fix: an sshnp session whose daemon feature check fails no longer raises an
   unhandled error.
 - build: depends on the at_client_sdk release candidates: at_client
