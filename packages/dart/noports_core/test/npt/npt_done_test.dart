@@ -256,7 +256,19 @@ void main() {
         'SocketConnector open', () async {
       final relay = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
       final relaySockets = <Socket>[];
-      relay.listen(relaySockets.add);
+      final controlSocketClosed = Completer<void>();
+      relay.listen((socket) {
+        relaySockets.add(socket);
+        socket.listen(
+          (_) {},
+          onDone: () {
+            if (!controlSocketClosed.isCompleted) {
+              controlSocketClosed.complete();
+            }
+          },
+          onError: (_) {},
+        );
+      });
       addTearDown(() async {
         for (final s in relaySockets) {
           s.destroy();
@@ -321,6 +333,16 @@ void main() {
         reason:
             'close had completed and done had resolved, yet the startup went '
             'on to open this connector (startup error: $startupError)',
+      );
+      expect(
+        await controlSocketClosed.future
+            .then((_) => true)
+            .timeout(Duration(seconds: 2), onTimeout: () => false),
+        isTrue,
+        reason:
+            'the startup\'s connection to the relay must not outlive close, '
+            'whether runInline returned or threw (startup error: '
+            '$startupError)',
       );
     });
   });
