@@ -14,13 +14,19 @@ class ProfileFormView extends StatelessWidget {
   final String? folderId;
   const ProfileFormView(this.uuid, {super.key, this.copyFrom, this.folderId});
 
+  /// The connection whose folder the field shows until the user picks one:
+  /// a copy starts in its original's folder.
+  String get _followed => copyFrom?.uuid ?? uuid;
+
   /// Read before saving: the page closes when the save succeeds. Folders not
   /// synced yet apply it once they are.
   ProfileFolderEvent? _folderEvent(BuildContext context) {
     final folderCubit = context.read<ProfileFormFolderCubit>();
     final chosen = folderCubit.state;
     final folders = context.read<ProfileFolderBloc>().state;
-    if (folders is! ProfileFoldersLoaded || !folderCubit.known) return null;
+    if (folders is! ProfileFoldersLoaded) return null;
+    // An edited connection stays where it is unless the user moves it.
+    if (!folderCubit.picked && copyFrom == null) return null;
     final newName = chosen.newName;
     if (newName != null) {
       return ProfileFolderCreateEvent(
@@ -77,10 +83,9 @@ class ProfileFormView extends StatelessWidget {
             return ProfileFormFolderCubit(
               folderId ??
                   (folders is ProfileFoldersLoaded
-                      ? folders.data.folderForProfile(uuid)?.uuid
+                      ? folders.data.folderForProfile(_followed)?.uuid
                       : null),
-              // A copy that hasn't synced may show an old folder.
-              known: folderId != null || folders.editable,
+              picked: folderId != null,
             );
           },
         ),
@@ -104,19 +109,16 @@ class ProfileFormView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const ProfileDisplayNameTextField(),
-                            // The connection's folder is known once the
-                            // folders have synced.
+                            // Sync, or another device, can move the connection
+                            // while the form is open.
                             BlocListener<ProfileFolderBloc, ProfileFolderState>(
                               listener: (context, folders) {
                                 if (folders is! ProfileFoldersLoaded) return;
-                                final cubit = context
-                                    .read<ProfileFormFolderCubit>();
-                                final String? current = folders.data
-                                    .folderForProfile(uuid)
-                                    ?.uuid;
-                                folders.editable
-                                    ? cubit.resolve(current)
-                                    : cubit.preview(current);
+                                context.read<ProfileFormFolderCubit>().follow(
+                                  folders.data
+                                      .folderForProfile(_followed)
+                                      ?.uuid,
+                                );
                               },
                               child: const ProfileFolderSelector(),
                             ),

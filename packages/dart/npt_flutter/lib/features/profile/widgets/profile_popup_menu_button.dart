@@ -30,9 +30,6 @@ class ProfilePopupMenuButton extends StatelessWidget {
     final ProfileFolderState folderState = context
         .watch<ProfileFolderBloc>()
         .state;
-    final ProfileFolderData? folderData = folderState is ProfileFoldersLoaded
-        ? folderState.data
-        : null;
     return PopupMenuButton<PopupMenuEntry>(
       padding: EdgeInsets.zero,
       itemBuilder: (_) {
@@ -80,7 +77,6 @@ class ProfilePopupMenuButton extends StatelessWidget {
                   arguments: ProfileFormPageArguments(
                     Uuid.generate(),
                     copyFrom: copyFrom,
-                    folderId: folderData?.folderForProfile(copyFrom.uuid)?.uuid,
                   ),
                 );
               }

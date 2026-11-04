@@ -133,6 +133,7 @@ void main() {
     bool loadFolders = true,
     bool synced = true,
     String? folderId,
+    Profile? copyFrom,
   }) async {
     tester.view.physicalSize = const Size(1200, 2600);
     tester.view.devicePixelRatio = 1.0;
@@ -194,7 +195,13 @@ void main() {
             navigatorKey: App.navState,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: Scaffold(body: ProfileFormView(uuid, folderId: folderId)),
+            home: Scaffold(
+              body: ProfileFormView(
+                uuid,
+                folderId: folderId,
+                copyFrom: copyFrom,
+              ),
+            ),
           ),
         ),
       ),
@@ -438,6 +445,45 @@ void main() {
 
       expect(menuLabels(), <String>['${strings.folderNew}: $capped']);
     });
+
+    // The cut can land on spaces inside the typed text; the name is trimmed
+    // again after it, so it can't differ from an existing one by those spaces.
+    for (final int spaces in <int>[1, 4]) {
+      testWidgets('does not offer a name whose 64-character cut ends in '
+          '$spaces space(s) and then equals an existing folder', (
+        WidgetTester tester,
+      ) async {
+        final String existing =
+            'a' * (ProfileFolderNameDialog.maxLength - spaces);
+        await pumpForm(
+          tester,
+          folders: ProfileFolderData(
+            folders: <ProfileFolder>[
+              ProfileFolder(uuid: 'g-long', name: existing),
+            ],
+          ),
+        );
+        await openMenu(tester);
+        await typeInField(tester, '$existing${' ' * spaces}tail');
+
+        expect(menuLabels(), <String>[existing]);
+      });
+
+      testWidgets('offers a name whose 64-character cut ends in $spaces '
+          'space(s) without those spaces', (WidgetTester tester) async {
+        final String kept = 'b' * (ProfileFolderNameDialog.maxLength - spaces);
+        await pumpForm(tester);
+        await openMenu(tester);
+        await typeInField(tester, '$kept${' ' * spaces}tail');
+
+        expect(menuLabels(), <String>['${strings.folderNew}: $kept']);
+
+        await pickEntry(tester, '${strings.folderNew}: $kept');
+
+        expect(formFolder(tester).state.newName, kept);
+        expect(fieldText(tester), kept);
+      });
+    }
 
     // Cutting by UTF-16 units would leave half of a surrogate pair or of a
     // joined sequence in the folder name.
@@ -1068,20 +1114,20 @@ void main() {
         loadFolders: false,
         folders: withConnectionIn('g-desktops'),
       );
-      expect(formFolder(tester).known, isFalse);
+      expect(formFolder(tester).picked, isFalse);
       expect(folderField(), findsNothing);
 
       await loadFolders(tester, synced: false);
 
       // Shown from the local copy, but not known until it has synced.
-      expect(formFolder(tester).known, isFalse);
+      expect(formFolder(tester).picked, isFalse);
       expect(formFolder(tester).state, (folderId: 'g-desktops', newName: null));
       expect(fieldText(tester), 'Desktops');
 
       folderRepo.caughtUp.complete(true);
       await tester.pumpAndSettle();
 
-      expect(formFolder(tester).known, isTrue);
+      expect(formFolder(tester).picked, isFalse);
       expect(fieldText(tester), 'Desktops');
       expect(formFolder(tester).state.folderId, 'g-desktops');
     });
@@ -1092,7 +1138,7 @@ void main() {
 
       await loadFolders(tester);
 
-      expect(formFolder(tester).known, isTrue);
+      expect(formFolder(tester).picked, isFalse);
       expect(formFolder(tester).state, (folderId: null, newName: null));
       expect(fieldText(tester), strings.folderNone);
     });
@@ -1231,7 +1277,7 @@ void main() {
         folders: withConnectionIn('g-desktops'),
         folderId: 'g-servers',
       );
-      expect(formFolder(tester).known, isTrue);
+      expect(formFolder(tester).picked, isTrue);
 
       await loadFolders(tester);
 
@@ -1427,6 +1473,442 @@ void main() {
       expect(folderEvents(), isEmpty);
       expect(folderRepo.puts, isEmpty);
       expect(currentData(), otherFolders);
+    });
+  });
+
+  group('A local copy of the folders that is out of date', () {
+    // The local copy has the connection in Servers; the synced data has it in
+    // Desktops.
+    ProfileFolderData staleCopy() => withConnectionIn('g-servers');
+    ProfileFolderData syncedData() => withConnectionIn('g-desktops');
+
+    testWidgets('previews the local copy\'s folder, then shows the synced '
+        'one', (WidgetTester tester) async {
+      await pumpForm(tester, synced: false, folders: staleCopy());
+
+      expect(fieldText(tester), 'Servers');
+      expect(tester.widget<TextField>(folderField()).enabled, isFalse);
+      expect(formFolder(tester).picked, isFalse);
+
+      folderRepo.stored = syncedData();
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(folderBloc.state.editable, isTrue);
+      expect(formFolder(tester).picked, isFalse);
+      expect(formFolder(tester).state, (folderId: 'g-desktops', newName: null));
+      expect(fieldText(tester), 'Desktops');
+      expect(tester.widget<TextField>(folderField()).enabled, isTrue);
+    });
+
+    testWidgets('shows No folder when the synced data has the connection in '
+        'no folder', (WidgetTester tester) async {
+      await pumpForm(tester, synced: false, folders: staleCopy());
+      expect(fieldText(tester), 'Servers');
+
+      folderRepo.stored = otherFolders;
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(formFolder(tester).state, (folderId: null, newName: null));
+      expect(fieldText(tester), strings.folderNone);
+    });
+
+    testWidgets('previews a newer local copy from a round that has not '
+        'caught up', (WidgetTester tester) async {
+      await pumpForm(tester, synced: false, folders: staleCopy());
+
+      folderRepo.stored = syncedData();
+      folderBloc.add(const ProfileFolderRefreshEvent());
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(folderBloc.state.editable, isFalse);
+      expect(formFolder(tester).picked, isFalse);
+      expect(fieldText(tester), 'Desktops');
+      expect(tester.widget<TextField>(folderField()).enabled, isFalse);
+
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+
+      expect(formFolder(tester).picked, isFalse);
+      expect(fieldText(tester), 'Desktops');
+    });
+
+    testWidgets('Submit without touching the field sends no folder event and '
+        'leaves the connection in the synced folder', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester, synced: false, folders: staleCopy());
+      folderRepo.stored = syncedData();
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+      expect(fieldText(tester), 'Desktops');
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(profileRepo.puts, hasLength(1));
+      expect(savedBloc().state, isA<ProfileLoaded>());
+      expect(folderEvents(), isEmpty);
+      expect(folderRepo.puts, isEmpty);
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-desktops');
+      expect(currentData().folderById('g-servers')!.profileIds, <String>['s1']);
+      expect(fieldText(tester), 'Desktops');
+    });
+
+    testWidgets('Submit before the sync sends no folder event and leaves the '
+        'connection in the synced folder', (WidgetTester tester) async {
+      await pumpForm(tester, synced: false, folders: staleCopy());
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(profileRepo.puts, hasLength(1));
+      expect(folderEvents(), isEmpty);
+
+      folderRepo.stored = syncedData();
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+
+      expect(folderEvents(), isEmpty);
+      expect(folderRepo.puts, isEmpty);
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-desktops');
+      expect(fieldText(tester), 'Desktops');
+    });
+
+    testWidgets('a form opened before the folders loaded previews the local '
+        'copy\'s folder, then shows the synced one', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester, loadFolders: false, folders: staleCopy());
+      expect(formFolder(tester).picked, isFalse);
+      expect(folderField(), findsNothing);
+
+      await loadFolders(tester, synced: false);
+
+      expect(fieldText(tester), 'Servers');
+      expect(tester.widget<TextField>(folderField()).enabled, isFalse);
+      expect(formFolder(tester).picked, isFalse);
+
+      folderRepo.stored = syncedData();
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(formFolder(tester).picked, isFalse);
+      expect(formFolder(tester).state, (folderId: 'g-desktops', newName: null));
+      expect(fieldText(tester), 'Desktops');
+      expect(tester.widget<TextField>(folderField()).enabled, isTrue);
+    });
+
+    testWidgets('a form opened before the folders loaded sends no folder '
+        'event on Submit without touching the field', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester, loadFolders: false, folders: staleCopy());
+      await loadFolders(tester, synced: false);
+      folderRepo.stored = syncedData();
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+      expect(fieldText(tester), 'Desktops');
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(profileRepo.puts, hasLength(1));
+      expect(folderEvents(), isEmpty);
+      expect(folderRepo.puts, isEmpty);
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-desktops');
+      expect(currentData().folderById('g-servers')!.profileIds, <String>['s1']);
+    });
+
+    testWidgets('a folder picked once the folders have synced is applied', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester, synced: false, folders: staleCopy());
+      folderRepo.stored = syncedData();
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+
+      await openMenu(tester);
+      await pickEntry(tester, 'Servers');
+      await submit(tester);
+      await settle(tester);
+
+      expect(folderEvents(), <ProfileFolderEvent>[
+        const ProfileFolderMoveProfilesEvent(
+          profileIds: <String>[uuid],
+          folderId: 'g-servers',
+        ),
+      ]);
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-servers');
+      expect(currentData().folderById('g-desktops')!.profileIds, <String>[
+        'd1',
+      ]);
+    });
+  });
+
+  group('A connection moved while its form is open', () {
+    testWidgets('by another device: the field follows and Submit leaves it '
+        'there', (WidgetTester tester) async {
+      await pumpForm(tester, folders: withConnectionIn('g-servers'));
+      expect(fieldText(tester), 'Servers');
+
+      folderRepo.stored = withConnectionIn('g-desktops');
+      folderBloc.add(const ProfileFolderRefreshEvent(caughtUp: true));
+      await tester.pumpAndSettle();
+      expect(fieldText(tester), 'Desktops');
+      expect(formFolder(tester).picked, isFalse);
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(profileRepo.puts, hasLength(1));
+      expect(folderEvents(), isEmpty);
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-desktops');
+    });
+
+    testWidgets('by an edit made before sync: the field shows it once applied '
+        'and Submit leaves it there', (WidgetTester tester) async {
+      await pumpForm(tester, synced: false);
+      expect(fieldText(tester), strings.folderNone);
+
+      // E.g. a copy submitted before sync is put in its original's folder.
+      folderBloc.add(
+        const ProfileFolderMoveProfilesEvent(
+          profileIds: <String>[uuid],
+          folderId: 'g-servers',
+        ),
+      );
+      await tester.pump();
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-servers');
+      expect(fieldText(tester), 'Servers');
+      folderBloc.events.clear();
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(profileRepo.puts, hasLength(1));
+      expect(folderEvents(), isEmpty);
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-servers');
+    });
+
+    testWidgets('after the user picked a folder: the pick wins', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester, folders: withConnectionIn('g-servers'));
+      await openMenu(tester);
+      await pickEntry(tester, strings.folderNone);
+
+      folderRepo.stored = withConnectionIn('g-desktops');
+      folderBloc.add(const ProfileFolderRefreshEvent(caughtUp: true));
+      await tester.pumpAndSettle();
+      expect(fieldText(tester), strings.folderNone);
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(currentData().folderForProfile(uuid), isNull);
+    });
+  });
+
+  group('A copy of a connection', () {
+    Profile original(String id) => Profile(
+      id,
+      displayName: 'Original',
+      sshnpdAtsign: '@device'.toAtsign(),
+      relayAtsign: '@rv_am'.toAtsign(),
+      deviceName: 'device',
+      remotePort: 22,
+      localPort: 2222,
+    );
+
+    testWidgets('starts in its original\'s folder and goes there on Submit', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester, copyFrom: original('s1'));
+      expect(fieldText(tester), 'Servers');
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(folderEvents(), <ProfileFolderEvent>[
+        const ProfileFolderMoveProfilesEvent(
+          profileIds: <String>[uuid],
+          folderId: 'g-servers',
+        ),
+      ]);
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-servers');
+    });
+
+    testWidgets('follows its original to the synced folder', (
+      WidgetTester tester,
+    ) async {
+      // The local copy has s1 in Servers; the synced data has it in Desktops.
+      await pumpForm(tester, synced: false, copyFrom: original('s1'));
+      expect(fieldText(tester), 'Servers');
+
+      folderRepo.stored = const ProfileFolderData(
+        folders: <ProfileFolder>[
+          ProfileFolder(uuid: 'g-servers', name: 'Servers'),
+          ProfileFolder(
+            uuid: 'g-desktops',
+            name: 'Desktops',
+            profileIds: <String>['d1', 's1'],
+          ),
+        ],
+      );
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+      expect(fieldText(tester), 'Desktops');
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-desktops');
+    });
+
+    testWidgets('submitted before sync goes to the folder the field showed', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester, synced: false, copyFrom: original('s1'));
+      expect(fieldText(tester), 'Servers');
+
+      await submit(tester);
+      await settle(tester);
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-servers');
+    });
+  });
+
+  group('The Folder field that was never tapped', () {
+    // The menu is rebuilt when what it shows changes; with the field not
+    // focused, nothing else is there to hold the old menu's state.
+    testWidgets('shows a folder chosen through the cubit', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester);
+
+      formFolder(tester).choose('g-servers');
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(fieldText(tester), 'Servers');
+
+      await openMenu(tester);
+      await pickEntry(tester, 'Desktops');
+
+      expect(formFolder(tester).state, (folderId: 'g-desktops', newName: null));
+      expect(fieldText(tester), 'Desktops');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('shows No folder chosen through the cubit', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester, folderId: 'g-servers');
+      expect(fieldText(tester), 'Servers');
+
+      formFolder(tester).choose(null);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(fieldText(tester), strings.folderNone);
+    });
+
+    testWidgets('shows a new folder created through the cubit', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester);
+
+      formFolder(tester).create('Databases');
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(fieldText(tester), 'Databases');
+
+      await openMenu(tester);
+      expect(menuLabels(), <String>[
+        strings.folderNone,
+        strings.folderNew,
+        'Databases',
+        'Servers',
+        'Desktops',
+      ]);
+    });
+
+    testWidgets('survives several changes through the cubit in a row', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester);
+
+      formFolder(tester).choose('g-servers');
+      await tester.pumpAndSettle();
+      expect(fieldText(tester), 'Servers');
+
+      formFolder(tester).create('Databases');
+      await tester.pumpAndSettle();
+      expect(fieldText(tester), 'Databases');
+
+      formFolder(tester).choose('g-desktops');
+      await tester.pumpAndSettle();
+      expect(fieldText(tester), 'Desktops');
+
+      formFolder(tester).choose(null);
+      await tester.pumpAndSettle();
+      expect(fieldText(tester), strings.folderNone);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('shows the new name of the folder it shows when it is renamed '
+        'through the bloc', (WidgetTester tester) async {
+      await pumpForm(tester, folderId: 'g-servers');
+      expect(fieldText(tester), 'Servers');
+
+      folderBloc.add(
+        const ProfileFolderRenameEvent(folderId: 'g-servers', name: 'Machines'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(currentData().folderById('g-servers')!.name, 'Machines');
+      expect(formFolder(tester).state.folderId, 'g-servers');
+      expect(fieldText(tester), 'Machines');
+
+      await openMenu(tester);
+      expect(menuLabels(), <String>[
+        strings.folderNone,
+        strings.folderNew,
+        'Machines',
+        'Desktops',
+      ]);
+    });
+
+    testWidgets('keeps showing the folder when another folder is renamed', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester, folderId: 'g-servers');
+
+      folderBloc.add(
+        const ProfileFolderRenameEvent(
+          folderId: 'g-desktops',
+          name: 'Workstations',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(fieldText(tester), 'Servers');
+
+      await openMenu(tester);
+      expect(menuLabels(), contains('Workstations'));
     });
   });
 }

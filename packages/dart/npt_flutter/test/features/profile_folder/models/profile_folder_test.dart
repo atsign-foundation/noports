@@ -657,6 +657,104 @@ void main() {
         );
       });
 
+      group('with a tie on each side on screen and others between them', () {
+        test('a connection goes before the next tie, not after the previous '
+            'one', () {
+          // Screen before: B, D, A, C, E. A is dropped between C and E, and
+          // the favorite D sits between C and E in the manual order, so the
+          // two candidate places differ:
+          //   before E (the next tie):    B, C, D, A, E
+          //   after C (the previous tie): B, C, A, D, E
+          final List<String> result = place(
+            <String>['A', 'B', 'C', 'D', 'E'],
+            <String>['B', 'D', 'C', 'A', 'E'],
+            <String>['A'],
+          );
+
+          expect(result, <String>['B', 'C', 'D', 'A', 'E']);
+          expect(result, isNot(<String>['B', 'C', 'A', 'D', 'E']));
+        });
+
+        test('a favorite goes before the next favorite, not after the previous '
+            'one', () {
+          // Three favorites: B, D and F. Screen before: B, D, F, A, C. B is
+          // dropped between D and F, and the connection C sits between D and F
+          // in the manual order:
+          //   before F (the next tie):    A, D, C, B, F
+          //   after D (the previous tie): A, D, B, C, F
+          final Set<String> threeFavorites = <String>{'B', 'D', 'F'};
+          final List<String> result = ProfileFolderData.placeInManualOrder(
+            manual: <String>['B', 'A', 'D', 'C', 'F'],
+            released: <String>['D', 'B', 'F', 'A', 'C'],
+            moved: <String>['B'],
+            tie: (String a, String b) =>
+                threeFavorites.contains(a) == threeFavorites.contains(b),
+          );
+
+          expect(result, <String>['A', 'D', 'C', 'B', 'F']);
+          expect(result, isNot(<String>['A', 'D', 'B', 'C', 'F']));
+        });
+
+        test('holds for every such drop of five ids', () {
+          const List<String> ids = <String>['A', 'B', 'C', 'D', 'E'];
+          int checked = 0;
+          for (final List<String> manual in _permutations(ids)) {
+            final List<String> screen = _favoritesFirst(manual, favorites);
+            for (final String moved in ids) {
+              final List<String> others = screen
+                  .where((String id) => id != moved)
+                  .toList();
+              for (int at = 0; at <= others.length; at++) {
+                final List<String> released = <String>[
+                  ...others.take(at),
+                  moved,
+                  ...others.skip(at),
+                ];
+                final List<String> onScreen = released
+                    .where((String id) => tie(moved, id))
+                    .toList();
+                final int index = onScreen.indexOf(moved);
+                if (index <= 0 || index + 1 >= onScreen.length) continue;
+                // An unchanged order among ties is left as saved.
+                if (listEquals(
+                  manual.where((String id) => tie(moved, id)).toList(),
+                  onScreen,
+                )) {
+                  continue;
+                }
+                final List<String> rest = manual
+                    .where((String id) => id != moved)
+                    .toList();
+                final String previous = onScreen[index - 1];
+                final String next = onScreen[index + 1];
+                // Only ids of the other kind can sit between the two ties.
+                if (rest.indexOf(next) - rest.indexOf(previous) < 2) continue;
+                checked++;
+
+                final List<String> result = place(manual, released, <String>[
+                  moved,
+                ]);
+                final String reason =
+                    'manual $manual, $moved dropped to $released gave $result';
+                expect(
+                  result.indexOf(moved) + 1,
+                  result.indexOf(next),
+                  reason: reason,
+                );
+                expect(
+                  result.indexOf(moved),
+                  isNot(result.indexOf(previous) + 1),
+                  reason: reason,
+                );
+              }
+            }
+          }
+          // Of the 120 * 5 * 5 drops, 96 have a tie on each side, an id of
+          // the other kind between them and a changed order among the ties.
+          expect(checked, 96);
+        });
+      });
+
       test('moved ids that tie move together', () {
         // Nothing is lifted: every id ties with every other.
         expect(

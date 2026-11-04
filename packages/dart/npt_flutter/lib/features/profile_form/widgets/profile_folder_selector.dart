@@ -11,37 +11,31 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 typedef ProfileFormFolder = ({String? folderId, String? newName});
 
 class ProfileFormFolderCubit extends Cubit<ProfileFormFolder> {
-  bool _known;
+  bool _picked;
 
-  /// [known] is false when the form opened before the folders synced, so
-  /// the connection's folder isn't known yet.
-  ProfileFormFolderCubit(String? folderId, {bool known = true})
-    : _known = known,
+  /// [picked] is true when the form opens on a folder chosen beforehand,
+  /// e.g. a new connection made from a folder's menu.
+  ProfileFormFolderCubit(String? folderId, {bool picked = false})
+    : _picked = picked,
       super((folderId: folderId, newName: null));
 
-  /// False until the folders sync or the user picks a folder; nothing is
-  /// moved until then.
-  bool get known => _known;
+  /// True once the user picks a folder. Until then the field follows the
+  /// folders, which may change on sync or on another device.
+  bool get picked => _picked;
 
   void choose(String? folderId) {
-    _known = true;
+    _picked = true;
     emit((folderId: folderId, newName: null));
   }
 
   void create(String name) {
-    _known = true;
+    _picked = true;
     emit((folderId: Uuid.generate(), newName: name));
   }
 
-  /// Shows the connection's folder once the folders sync, unless the user
-  /// has picked one meanwhile.
-  void resolve(String? folderId) {
-    if (!_known) choose(folderId);
-  }
-
-  /// Shows the folder an unsynced copy has, without counting it as known.
-  void preview(String? folderId) {
-    if (!_known) emit((folderId: folderId, newName: null));
+  /// Shows [folderId] unless the user has picked a folder.
+  void follow(String? folderId) {
+    if (!_picked) emit((folderId: folderId, newName: null));
   }
 }
 
