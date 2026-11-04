@@ -79,7 +79,8 @@ class ProfileFormView extends StatelessWidget {
                   (folders is ProfileFoldersLoaded
                       ? folders.data.folderForProfile(uuid)?.uuid
                       : null),
-              known: folderId != null || folders is ProfileFoldersLoaded,
+              // A copy that hasn't synced may show an old folder.
+              known: folderId != null || folders.editable,
             );
           },
         ),
@@ -104,18 +105,18 @@ class ProfileFormView extends StatelessWidget {
                           children: [
                             const ProfileDisplayNameTextField(),
                             // The connection's folder is known once the
-                            // folders have loaded.
+                            // folders have synced.
                             BlocListener<ProfileFolderBloc, ProfileFolderState>(
                               listener: (context, folders) {
-                                if (folders is ProfileFoldersLoaded) {
-                                  context
-                                      .read<ProfileFormFolderCubit>()
-                                      .resolve(
-                                        folders.data
-                                            .folderForProfile(uuid)
-                                            ?.uuid,
-                                      );
-                                }
+                                if (folders is! ProfileFoldersLoaded) return;
+                                final cubit = context
+                                    .read<ProfileFormFolderCubit>();
+                                final String? current = folders.data
+                                    .folderForProfile(uuid)
+                                    ?.uuid;
+                                folders.editable
+                                    ? cubit.resolve(current)
+                                    : cubit.preview(current);
                               },
                               child: const ProfileFolderSelector(),
                             ),

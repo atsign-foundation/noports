@@ -51,11 +51,24 @@ class FakeProfileBloc extends Fake implements ProfileBloc {
 class FakeProfileCache extends Fake implements ProfileCacheCubit {
   final Map<String, FakeProfileBloc> blocs = <String, FakeProfileBloc>{};
 
+  int _lookups = 0;
+  int _lookupLimit = 1 << 30;
+
+  /// Makes the lookups after the next [count] throw. A queue loop that should
+  /// have stopped then fails the test instead of spinning forever, which no
+  /// test timeout could interrupt.
+  void failAfterLookups(int count) => _lookupLimit = _lookups + count;
+
   @override
-  ProfileBloc getProfileBloc(String uuid) => blocs.putIfAbsent(
-    uuid,
-    () => FakeProfileBloc(uuid, ProfileInitial(uuid)),
-  );
+  ProfileBloc getProfileBloc(String uuid) {
+    if (++_lookups > _lookupLimit) {
+      throw StateError('Looked up $uuid again and again');
+    }
+    return blocs.putIfAbsent(
+      uuid,
+      () => FakeProfileBloc(uuid, ProfileInitial(uuid)),
+    );
+  }
 }
 
 Profile profileOf(String uuid) => Profile(
@@ -206,6 +219,21 @@ void main() {
 
       expect(d.starts, 1);
     });
+
+    test(
+      'starts the last connection again once the queue has run dry',
+      () async {
+        final FakeProfileBloc a = connection('a', loaded('a'));
+        cubit.add(<String>['a']);
+        a.moveTo(started('a'));
+        await settle();
+
+        a.moveTo(loaded('a'));
+        cubit.add(<String>['a']);
+
+        expect(a.starts, 2);
+      },
+    );
 
     test('queues more connections while one is starting', () async {
       final FakeProfileBloc a = connection('a', loaded('a'));
@@ -503,6 +531,22 @@ void main() {
       expect(b.starts, 1);
     });
 
+    test('does not stop the next connection once it has started', () async {
+      final FakeProfileBloc a = connection('a', loaded('a'));
+      final FakeProfileBloc b = connection('b', loaded('b'));
+      cubit.add(<String>['a', 'b']);
+
+      cubit.remove(<String>['a']);
+      a.moveTo(started('a'));
+      await settle();
+      expect(a.stops, 1);
+      expect(b.starts, 1);
+
+      b.moveTo(started('b'));
+      await settle();
+      expect(b.stops, 0);
+    });
+
     test('does not stop the connection if it failed to start', () async {
       final FakeProfileBloc a = connection('a', loaded('a'));
       final FakeProfileBloc b = connection('b', loaded('b'));
@@ -649,6 +693,67 @@ void main() {
 
       expect(cubit.isClosed, isTrue);
       expect(a.events.single, isA<ProfileStartEvent>());
+    });
+
+    test('starts no more connections when closed while others wait', () async {
+      final FakeProfileBloc a = connection('a', loaded('a'));
+      final FakeProfileBloc b = connection('b', loaded('b'));
+      final FakeProfileBloc c = connection('c', loaded('c'));
+      cubit.add(<String>['a', 'b', 'c']);
+      cache.failAfterLookups(10);
+
+      await cubit.close();
+      await settle();
+
+      expect(a.starts, 1);
+      expect(b.events, isEmpty);
+      expect(c.events, isEmpty);
+    });
+
+    // The test binding fails a test that ends with a timer still pending, and
+    // the wait on a start that never reports ends with a 90 second timer.
+    testWidgets('ends the wait on the connection that is starting', (
+      WidgetTester tester,
+    ) async {
+      final ProfileStartQueueCubit closing = ProfileStartQueueCubit(cache);
+      final FakeProfileBloc a = connection('a', loaded('a'));
+      closing.add(<String>['a']);
+      await tester.pump(const Duration(seconds: 1));
+      expect(a.starts, 1);
+
+      await closing.close();
+      await tester.pump();
+    });
+
+    test('can be closed twice', () async {
+      connection('a', loaded('a'));
+      cubit.add(<String>['a']);
+
+      await cubit.close();
+      await cubit.close();
+
+      expect(cubit.isClosed, isTrue);
+    });
+
+    test('can be cleared after it is closed', () async {
+      connection('a', loaded('a'));
+      connection('b', loaded('b'));
+      cubit.add(<String>['a', 'b']);
+      await cubit.close();
+
+      expect(cubit.clear, returnsNormally);
+      expect(cubit.clear, returnsNormally);
+    });
+
+    test('starts nothing that is added after it is closed', () async {
+      final FakeProfileBloc x = connection('x', loaded('x'));
+      await cubit.close();
+
+      expect(() => cubit.add(<String>['x']), returnsNormally);
+      expect(() => cubit.remove(<String>['x']), returnsNormally);
+      await settle();
+
+      expect(x.events, isEmpty);
     });
   });
 }

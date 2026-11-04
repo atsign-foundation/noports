@@ -122,10 +122,7 @@ void main() {
       windowChannel,
       (MethodCall call) async => null,
     );
-    final IgnoringTrayListener listener = IgnoringTrayListener();
-    trayManager.addListener(listener);
     addTearDown(() {
-      trayManager.removeListener(listener);
       messenger.setMockMethodCallHandler(trayChannel, null);
       messenger.setMockMethodCallHandler(windowChannel, null);
     });
@@ -198,6 +195,15 @@ void main() {
         await bloc.close();
       }
     });
+
+    if (!listening) {
+      // The plugin only reports menu clicks while something listens, and it
+      // calls each menu item once per listener, so the tray widget must be the
+      // only one when it is there.
+      final IgnoringTrayListener listener = IgnoringTrayListener();
+      trayManager.addListener(listener);
+      addTearDown(() => trayManager.removeListener(listener));
+    }
 
     final Widget app = MaterialApp(
       navigatorKey: App.navState,
@@ -512,6 +518,51 @@ void main() {
       );
       await settle(tester);
       expect(menuLabels(), <String>['---', strings.showWindow, strings.quit]);
+    });
+
+    testWidgets('rebuilds the menu when only the start queue changes', (
+      WidgetTester tester,
+    ) async {
+      await pumpTray(
+        tester,
+        folders: const <ProfileFolder>[servers],
+        listening: true,
+      );
+      await tray.reload();
+      final int menusBefore = menuCalls().length;
+
+      startQueue.setWaiting(<String>[dbUuid]);
+      await settle(tester);
+      expect(menuCalls().length, greaterThan(menusBefore));
+
+      await tapMenuItem('$off Servers (0/2)');
+
+      expect(startQueue.added, isEmpty);
+      expect(startQueue.removed, <List<String>>[
+        <String>[webUuid, dbUuid, cacheUuid],
+      ]);
+      expect(sentEvents(), isEmpty);
+    });
+
+    testWidgets('starts again once nothing in the folder is waiting', (
+      WidgetTester tester,
+    ) async {
+      await pumpTray(
+        tester,
+        folders: const <ProfileFolder>[servers],
+        listening: true,
+      );
+      startQueue.setWaiting(<String>[dbUuid]);
+      await settle(tester);
+
+      startQueue.setWaiting(const <String>[]);
+      await settle(tester);
+      await tapMenuItem('$off Servers (0/2)');
+
+      expect(startQueue.added, <List<String>>[
+        <String>[webUuid, dbUuid],
+      ]);
+      expect(startQueue.removed, isEmpty);
     });
 
     testWidgets('updates the running count when a connection starts', (

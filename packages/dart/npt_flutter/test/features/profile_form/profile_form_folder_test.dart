@@ -44,7 +44,7 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
   final List<ProfileFolderData> puts = <ProfileFolderData>[];
 
   /// Completes when the test says the local copy has caught up.
-  final Completer<bool> caughtUp = Completer<bool>();
+  Completer<bool> caughtUp = Completer<bool>();
 
   @override
   Future<ProfileFolderData?> getProfileFolders() async => stored;
@@ -239,6 +239,29 @@ void main() {
   ProfileFolderData currentData() =>
       (folderBloc.state as ProfileFoldersLoaded).data;
 
+  /// Loads the folders into a form that was opened before they were there.
+  Future<void> loadFolders(WidgetTester tester, {bool synced = true}) async {
+    folderBloc.add(const ProfileFolderLoadEvent());
+    await tester.pump();
+    if (synced) folderRepo.caughtUp.complete(true);
+    await tester.pumpAndSettle();
+    expect(folderBloc.state, isA<ProfileFoldersLoaded>());
+    expect(folderBloc.state.editable, synced);
+  }
+
+  String fieldText(WidgetTester tester) =>
+      tester.widget<TextField>(folderField()).controller!.text;
+
+  /// Folder data in which the connection being edited is in [folderId].
+  ProfileFolderData withConnectionIn(String folderId) => ProfileFolderData(
+    folders: <ProfileFolder>[
+      for (final ProfileFolder f in otherFolders.folders)
+        f.uuid == folderId
+            ? f.copyWith(profileIds: <String>[...f.profileIds, uuid])
+            : f,
+    ],
+  );
+
   group('Folder field entries', () {
     testWidgets('lists No folder, New folder and then every folder', (
       WidgetTester tester,
@@ -359,6 +382,138 @@ void main() {
       expect(menuLabels(), <String>['${strings.folderNew}: $exact']);
     });
 
+    testWidgets('does not offer a name that is an existing 64-character name '
+        'once cut', (WidgetTester tester) async {
+      final String existing = 'n' * ProfileFolderNameDialog.maxLength;
+      await pumpForm(
+        tester,
+        folders: ProfileFolderData(
+          folders: <ProfileFolder>[
+            ProfileFolder(uuid: 'g-long', name: existing),
+          ],
+        ),
+      );
+      await openMenu(tester);
+      await typeInField(tester, '${existing}extra');
+
+      expect(menuLabels(), <String>[existing]);
+    });
+
+    testWidgets('does not offer a long name that matches an existing '
+        '64-character name in another case once cut', (
+      WidgetTester tester,
+    ) async {
+      final String existing = 'N' * ProfileFolderNameDialog.maxLength;
+      await pumpForm(
+        tester,
+        folders: ProfileFolderData(
+          folders: <ProfileFolder>[
+            ProfileFolder(uuid: 'g-long', name: existing),
+          ],
+        ),
+      );
+      await openMenu(tester);
+      await typeInField(
+        tester,
+        '${'n' * ProfileFolderNameDialog.maxLength}xyz',
+      );
+
+      expect(menuLabels(), <String>[existing]);
+    });
+
+    testWidgets('offers a long name that differs from an existing one within '
+        'the first 64 characters', (WidgetTester tester) async {
+      final String existing = 'n' * ProfileFolderNameDialog.maxLength;
+      final String capped = '${'n' * (ProfileFolderNameDialog.maxLength - 1)}m';
+      await pumpForm(
+        tester,
+        folders: ProfileFolderData(
+          folders: <ProfileFolder>[
+            ProfileFolder(uuid: 'g-long', name: existing),
+          ],
+        ),
+      );
+      await openMenu(tester);
+      await typeInField(tester, '${capped}extra');
+
+      expect(menuLabels(), <String>['${strings.folderNew}: $capped']);
+    });
+
+    // Cutting by UTF-16 units would leave half of a surrogate pair or of a
+    // joined sequence in the folder name.
+    for (final (String, String) emoji in <(String, String)>[
+      ('a smiley', '\u{1F600}'),
+      ('a family', '\u{1F468}‍\u{1F469}‍\u{1F467}'),
+      ('a flag', '\u{1F1EB}\u{1F1F7}'),
+      ('a letter with an accent', 'é'),
+    ]) {
+      testWidgets('does not cut ${emoji.$1} at the 64th character in half', (
+        WidgetTester tester,
+      ) async {
+        final String kept =
+            '${'x' * (ProfileFolderNameDialog.maxLength - 1)}${emoji.$2}';
+        await pumpForm(tester);
+        await openMenu(tester);
+        await typeInField(tester, '${kept}zzzzzz');
+
+        expect(kept.characters, hasLength(ProfileFolderNameDialog.maxLength));
+        expect(menuLabels(), <String>['${strings.folderNew}: $kept']);
+
+        await pickEntry(tester, '${strings.folderNew}: $kept');
+
+        expect(formFolder(tester).state.newName, kept);
+      });
+    }
+
+    testWidgets('offers no new folder for an empty field', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester);
+      await openMenu(tester);
+      await typeInField(tester, 'Databases');
+      await typeInField(tester, '');
+
+      expect(menuLabels(), <String>[
+        strings.folderNone,
+        strings.folderNew,
+        'Servers',
+        'Desktops',
+      ]);
+    });
+
+    testWidgets('offers no new folder for a field of only spaces', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester);
+      await openMenu(tester);
+      await typeInField(tester, '    ');
+
+      expect(
+        menuLabels().where(
+          (String l) => l.startsWith('${strings.folderNew}: '),
+        ),
+        isEmpty,
+      );
+    });
+
+    testWidgets('finds an existing folder when the typed name has spaces '
+        'around it', (WidgetTester tester) async {
+      await pumpForm(tester);
+      await openMenu(tester);
+      await typeInField(tester, '  Servers  ');
+
+      expect(menuLabels(), <String>['Servers']);
+    });
+
+    testWidgets('lists the folders that match a partial name typed with '
+        'spaces around it', (WidgetTester tester) async {
+      await pumpForm(tester);
+      await openMenu(tester);
+      await typeInField(tester, '  desk  ');
+
+      expect(menuLabels(), <String>['Desktops', '${strings.folderNew}: desk']);
+    });
+
     for (final String typed in <String>['Servers', 'servers', 'SERVERS']) {
       testWidgets('does not offer to create "$typed" when Servers exists', (
         WidgetTester tester,
@@ -409,6 +564,88 @@ void main() {
       final ProfileFormFolder chosen = formFolder(tester).state;
       expect(chosen.folderId, 'g-servers');
       expect(chosen.newName, isNull);
+    });
+
+    testWidgets('choosing the new folder again keeps it as it was', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester);
+      await openMenu(tester);
+      await typeInField(tester, 'Databases');
+      await pickEntry(tester, '${strings.folderNew}: Databases');
+      final String newId = formFolder(tester).state.folderId!;
+
+      await openMenu(tester);
+      expect(menuLabels(), <String>[
+        strings.folderNone,
+        strings.folderNew,
+        'Databases',
+        'Servers',
+        'Desktops',
+      ]);
+      await pickEntry(tester, 'Databases');
+
+      expect(formFolder(tester).state, (folderId: newId, newName: 'Databases'));
+      expect(fieldText(tester), 'Databases');
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(folderEvents(), <ProfileFolderEvent>[
+        ProfileFolderCreateEvent(
+          uuid: newId,
+          name: 'Databases',
+          profileIds: const <String>[uuid],
+        ),
+      ]);
+    });
+
+    testWidgets('choosing an existing folder after typing a new name drops '
+        'the new name', (WidgetTester tester) async {
+      await pumpForm(tester);
+      await openMenu(tester);
+      await typeInField(tester, 'Databases');
+      await pickEntry(tester, '${strings.folderNew}: Databases');
+
+      await openMenu(tester);
+      await pickEntry(tester, 'Servers');
+
+      expect(formFolder(tester).state, (folderId: 'g-servers', newName: null));
+      expect(fieldText(tester), 'Servers');
+
+      await openMenu(tester);
+      expect(menuLabels(), <String>[
+        strings.folderNone,
+        strings.folderNew,
+        'Servers',
+        'Desktops',
+      ]);
+      await pickEntry(tester, 'Servers');
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(folderEvents(), <ProfileFolderEvent>[
+        const ProfileFolderMoveProfilesEvent(
+          profileIds: <String>[uuid],
+          folderId: 'g-servers',
+        ),
+      ]);
+      expect(currentData().folders, hasLength(2));
+    });
+
+    testWidgets('choosing No folder after typing a new name drops the new '
+        'name', (WidgetTester tester) async {
+      await pumpForm(tester);
+      await openMenu(tester);
+      await typeInField(tester, 'Databases');
+      await pickEntry(tester, '${strings.folderNew}: Databases');
+
+      await openMenu(tester);
+      await pickEntry(tester, strings.folderNone);
+
+      expect(formFolder(tester).state, (folderId: null, newName: null));
+      expect(fieldText(tester), strings.folderNone);
     });
   });
 
@@ -466,6 +703,53 @@ void main() {
         tester.widget<TextField>(folderField()).controller!.text,
         'Servers',
       );
+    });
+
+    testWidgets('shows No folder again when the dialog is cancelled from it', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester);
+      await openMenu(tester);
+      await pickEntry(tester, strings.folderNew);
+      expect(find.byType(ProfileFolderNameDialog), findsOneWidget);
+      await tester.tap(find.text(strings.cancel));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProfileFolderNameDialog), findsNothing);
+      expect(formFolder(tester).state, (folderId: null, newName: null));
+      expect(fieldText(tester), strings.folderNone);
+    });
+
+    testWidgets('shows the pending new folder again when the dialog is '
+        'cancelled', (WidgetTester tester) async {
+      await pumpForm(tester);
+      await openMenu(tester);
+      await typeInField(tester, 'Databases');
+      await pickEntry(tester, '${strings.folderNew}: Databases');
+      final ProfileFormFolder before = formFolder(tester).state;
+
+      await openMenu(tester);
+      await pickEntry(tester, strings.folderNew);
+      await tester.tap(find.text(strings.cancel));
+      await tester.pumpAndSettle();
+
+      expect(formFolder(tester).state, before);
+      expect(fieldText(tester), 'Databases');
+    });
+
+    testWidgets('shows the previous choice again when the dialog is '
+        'dismissed by tapping outside it', (WidgetTester tester) async {
+      await pumpForm(tester, folderId: 'g-desktops');
+      await openMenu(tester);
+      await pickEntry(tester, strings.folderNew);
+      expect(find.byType(ProfileFolderNameDialog), findsOneWidget);
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProfileFolderNameDialog), findsNothing);
+      expect(formFolder(tester).state.folderId, 'g-desktops');
+      expect(formFolder(tester).state.newName, isNull);
+      expect(fieldText(tester), 'Desktops');
     });
   });
 
@@ -775,6 +1059,192 @@ void main() {
     });
   });
 
+  group('A form opened before the folders load', () {
+    testWidgets('shows the connection\'s folder once they load', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(
+        tester,
+        loadFolders: false,
+        folders: withConnectionIn('g-desktops'),
+      );
+      expect(formFolder(tester).known, isFalse);
+      expect(folderField(), findsNothing);
+
+      await loadFolders(tester, synced: false);
+
+      // Shown from the local copy, but not known until it has synced.
+      expect(formFolder(tester).known, isFalse);
+      expect(formFolder(tester).state, (folderId: 'g-desktops', newName: null));
+      expect(fieldText(tester), 'Desktops');
+
+      folderRepo.caughtUp.complete(true);
+      await tester.pumpAndSettle();
+
+      expect(formFolder(tester).known, isTrue);
+      expect(fieldText(tester), 'Desktops');
+      expect(formFolder(tester).state.folderId, 'g-desktops');
+    });
+
+    testWidgets('shows No folder once they load for a connection in no '
+        'folder', (WidgetTester tester) async {
+      await pumpForm(tester, loadFolders: false);
+
+      await loadFolders(tester);
+
+      expect(formFolder(tester).known, isTrue);
+      expect(formFolder(tester).state, (folderId: null, newName: null));
+      expect(fieldText(tester), strings.folderNone);
+    });
+
+    testWidgets('sends no folder event on Submit once they have loaded and '
+        'the folder was not changed', (WidgetTester tester) async {
+      await pumpForm(
+        tester,
+        loadFolders: false,
+        folders: withConnectionIn('g-servers'),
+      );
+      await loadFolders(tester);
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(profileRepo.puts, hasLength(1));
+      expect(folderEvents(), isEmpty);
+      expect(folderRepo.puts, isEmpty);
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-servers');
+    });
+
+    testWidgets('sends no folder event on Submit before they load and leaves '
+        'the connection where it is', (WidgetTester tester) async {
+      await pumpForm(
+        tester,
+        loadFolders: false,
+        folders: withConnectionIn('g-servers'),
+      );
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(profileRepo.puts, hasLength(1));
+      expect(savedBloc().state, isA<ProfileLoaded>());
+      expect(folderEvents(), isEmpty);
+
+      await loadFolders(tester);
+
+      expect(folderEvents(), isEmpty);
+      expect(folderRepo.puts, isEmpty);
+      expect(currentData(), withConnectionIn('g-servers'));
+      expect(fieldText(tester), 'Servers');
+    });
+
+    testWidgets('sends no folder event on Submit while they are still '
+        'loading', (WidgetTester tester) async {
+      await pumpForm(tester, loadFolders: false);
+      folderBloc.add(const ProfileFolderLoadEvent());
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(profileRepo.puts, hasLength(1));
+      expect(folderEvents(), isEmpty);
+      expect(folderRepo.puts, isEmpty);
+    });
+
+    testWidgets('keeps a folder chosen before they load', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(
+        tester,
+        loadFolders: false,
+        folders: withConnectionIn('g-desktops'),
+      );
+      formFolder(tester).choose('g-servers');
+
+      await loadFolders(tester);
+
+      expect(formFolder(tester).state, (folderId: 'g-servers', newName: null));
+      expect(fieldText(tester), 'Servers');
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-servers');
+      expect(currentData().folderById('g-desktops')!.profileIds, <String>[
+        'd1',
+      ]);
+    });
+
+    testWidgets('keeps No folder chosen before they load', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(
+        tester,
+        loadFolders: false,
+        folders: withConnectionIn('g-desktops'),
+      );
+      formFolder(tester).choose(null);
+
+      await loadFolders(tester);
+
+      expect(formFolder(tester).state, (folderId: null, newName: null));
+      expect(fieldText(tester), strings.folderNone);
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(currentData().folderForProfile(uuid), isNull);
+      expect(currentData().unfiled, contains(uuid));
+    });
+
+    testWidgets('keeps a new folder started before they load', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(
+        tester,
+        loadFolders: false,
+        folders: withConnectionIn('g-desktops'),
+      );
+      formFolder(tester).create('Databases');
+      final String newId = formFolder(tester).state.folderId!;
+
+      await loadFolders(tester);
+
+      expect(formFolder(tester).state, (folderId: newId, newName: 'Databases'));
+      expect(fieldText(tester), 'Databases');
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(currentData().folderById(newId)!.profileIds, <String>[uuid]);
+      expect(currentData().folderById('g-desktops')!.profileIds, <String>[
+        'd1',
+      ]);
+    });
+
+    testWidgets('keeps the folder it was opened from when they load', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(
+        tester,
+        loadFolders: false,
+        folders: withConnectionIn('g-desktops'),
+        folderId: 'g-servers',
+      );
+      expect(formFolder(tester).known, isTrue);
+
+      await loadFolders(tester);
+
+      expect(formFolder(tester).state.folderId, 'g-servers');
+      expect(fieldText(tester), 'Servers');
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-servers');
+    });
+  });
+
   group('Folders that are not yet synced', () {
     testWidgets('disable the Folder field', (WidgetTester tester) async {
       await pumpForm(tester, synced: false);
@@ -821,6 +1291,142 @@ void main() {
         's1',
         uuid,
       ]);
+    });
+
+    testWidgets('create a new folder chosen before the sync once they '
+        'sync', (WidgetTester tester) async {
+      await pumpForm(tester);
+      await openMenu(tester);
+      await typeInField(tester, 'Databases');
+      await pickEntry(tester, '${strings.folderNew}: Databases');
+      final String newId = formFolder(tester).state.folderId!;
+
+      // The folders load again and have not caught up yet.
+      folderRepo.caughtUp = Completer<bool>();
+      folderBloc.add(const ProfileFolderLoadEvent());
+      await tester.pumpAndSettle();
+      expect(folderBloc.state.editable, isFalse);
+      expect(tester.widget<TextField>(folderField()).enabled, isFalse);
+      expect(fieldText(tester), 'Databases');
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(profileRepo.puts, hasLength(1));
+      expect(folderEvents(), <ProfileFolderEvent>[
+        ProfileFolderCreateEvent(
+          uuid: newId,
+          name: 'Databases',
+          profileIds: const <String>[uuid],
+        ),
+      ]);
+      expect(folderRepo.puts, isEmpty);
+      expect(currentData().folderById(newId), isNull);
+
+      folderRepo.caughtUp.complete(true);
+      await settle(tester);
+
+      expect(folderRepo.puts, hasLength(1));
+      expect(currentData().folders, hasLength(3));
+      final ProfileFolder created = currentData().folderById(newId)!;
+      expect(created.name, 'Databases');
+      expect(created.profileIds, <String>[uuid]);
+      expect(currentData().folderForProfile(uuid)?.uuid, newId);
+    });
+
+    testWidgets('take the connection out of its folder once they sync', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(
+        tester,
+        loadFolders: false,
+        folders: withConnectionIn('g-servers'),
+      );
+      formFolder(tester).choose(null);
+      await loadFolders(tester, synced: false);
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(profileRepo.puts, hasLength(1));
+      expect(folderEvents(), hasLength(1));
+      expect(folderRepo.puts, isEmpty);
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-servers');
+
+      folderRepo.caughtUp.complete(true);
+      await settle(tester);
+
+      expect(folderRepo.puts, hasLength(1));
+      expect(currentData().folderForProfile(uuid), isNull);
+      expect(currentData().folderById('g-servers')!.profileIds, <String>['s1']);
+      expect(currentData().unfiled, contains(uuid));
+    });
+
+    testWidgets('move the connection to another folder once they sync', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(
+        tester,
+        loadFolders: false,
+        folders: withConnectionIn('g-servers'),
+      );
+      formFolder(tester).choose('g-desktops');
+      await loadFolders(tester, synced: false);
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(folderRepo.puts, isEmpty);
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-servers');
+
+      folderRepo.caughtUp.complete(true);
+      await settle(tester);
+
+      expect(folderRepo.puts, hasLength(1));
+      expect(currentData().folderForProfile(uuid)?.uuid, 'g-desktops');
+      expect(currentData().folderById('g-servers')!.profileIds, <String>['s1']);
+      expect(currentData().folderById('g-desktops')!.profileIds, <String>[
+        'd1',
+        uuid,
+      ]);
+    });
+
+    testWidgets('send no folder event when the folder was not changed', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(
+        tester,
+        synced: false,
+        folders: withConnectionIn('g-servers'),
+      );
+
+      await submit(tester);
+      await settle(tester);
+      folderRepo.caughtUp.complete(true);
+      await settle(tester);
+
+      expect(profileRepo.puts, hasLength(1));
+      expect(folderEvents(), isEmpty);
+      expect(folderRepo.puts, isEmpty);
+    });
+
+    testWidgets('apply nothing before the sync when the save fails', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester, loadFolders: false);
+      formFolder(tester).create('Databases');
+      await loadFolders(tester, synced: false);
+      profileRepo.saveSucceeds = false;
+
+      await submit(tester);
+      await settle(tester);
+      folderRepo.caughtUp.complete(true);
+      await settle(tester);
+
+      expect(savedBloc().state, isA<ProfileFailedSave>());
+      expect(folderEvents(), isEmpty);
+      expect(folderRepo.puts, isEmpty);
+      expect(currentData(), otherFolders);
     });
   });
 }

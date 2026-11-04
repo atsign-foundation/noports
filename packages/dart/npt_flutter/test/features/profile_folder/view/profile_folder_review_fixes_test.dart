@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,6 +26,19 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
   Future<bool> putProfileFolders(ProfileFolderData data) async {
     puts.add(data);
     return true;
+  }
+}
+
+/// Keeps every event it is given, to tell "sent nothing" from "sent a no-op".
+class RecordingProfileFolderBloc extends ProfileFolderBloc {
+  final List<ProfileFolderEvent> events = <ProfileFolderEvent>[];
+
+  RecordingProfileFolderBloc(super.repository);
+
+  @override
+  void onEvent(ProfileFolderEvent event) {
+    events.add(event);
+    super.onEvent(event);
   }
 }
 
@@ -93,7 +108,7 @@ void main() {
   late ProfilesRunningCubit runningCubit;
   late ProfileListFilterCubit filterCubit;
   late FakeProfileFolderRepository folderRepo;
-  late ProfileFolderBloc folderBloc;
+  late RecordingProfileFolderBloc folderBloc;
 
   setUp(() {
     provideDummy<ProfileState>(const ProfileInitial('dummy'));
@@ -149,7 +164,7 @@ void main() {
     runningCubit = ProfilesRunningCubit();
     filterCubit = ProfileListFilterCubit(mockCache);
     folderRepo = FakeProfileFolderRepository();
-    folderBloc = ProfileFolderBloc(folderRepo);
+    folderBloc = RecordingProfileFolderBloc(folderRepo);
     addTearDown(() async {
       await selectedCubit.close();
       await runningCubit.close();
@@ -704,6 +719,50 @@ void main() {
 
       expect(selectedCubit.state.selected, allUuids.toSet());
     });
+
+    testWidgets('is unchecked, not all checked, when a search shows nothing', (
+      WidgetTester tester,
+    ) async {
+      await pumpSelectAll(
+        tester,
+        const ProfileFoldersLoaded(twoFolders),
+        query: 'no connection is called this',
+      );
+
+      expect(boxValue(tester), isFalse);
+
+      await tapSelectAll(tester);
+
+      expect(selectedCubit.state.selected, isEmpty);
+      expect(boxValue(tester), isFalse);
+    });
+
+    testWidgets('is unchecked when every connection is in a collapsed folder', (
+      WidgetTester tester,
+    ) async {
+      await pumpSelectAll(
+        tester,
+        const ProfileFoldersLoaded(
+          ProfileFolderData(
+            folders: <ProfileFolder>[
+              ProfileFolder(
+                uuid: 'g-everything',
+                name: 'Everything',
+                profileIds: allUuids,
+                collapsed: true,
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(boxValue(tester), isFalse);
+
+      await tapSelectAll(tester);
+
+      expect(selectedCubit.state.selected, isEmpty);
+      expect(boxValue(tester), isFalse);
+    });
   });
 
   group('folder name dialog', () {
@@ -750,6 +809,22 @@ void main() {
       await tester.tap(find.text(strings.save));
       await tester.pumpAndSettle();
     }
+
+    Future<void> submitName(WidgetTester tester, String name) async {
+      await tester.enterText(find.byKey(nameFieldKey), name);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+    }
+
+    String typedName(WidgetTester tester) => tester
+        .widget<EditableText>(
+          find.descendant(
+            of: find.byKey(nameFieldKey),
+            matching: find.byType(EditableText),
+          ),
+        )
+        .controller
+        .text;
 
     testWidgets('refuses a name that is already in use', (
       WidgetTester tester,
@@ -805,6 +880,86 @@ void main() {
       expect(closed, isFalse);
     });
 
+    group('Enter', () {
+      testWidgets('saves the name like the Save button, trimmed', (
+        WidgetTester tester,
+      ) async {
+        await pumpNameDialog(tester, takenNames: <String>['Servers']);
+
+        await submitName(tester, '  Servers 2  ');
+
+        expect(closed, isTrue);
+        expect(result, 'Servers 2');
+      });
+
+      testWidgets('refuses a name that is already in use', (
+        WidgetTester tester,
+      ) async {
+        await pumpNameDialog(tester, takenNames: <String>['Servers']);
+
+        await submitName(tester, 'servers');
+
+        expect(find.text(strings.folderNameTaken), findsOneWidget);
+        expect(closed, isFalse);
+      });
+
+      testWidgets('refuses an empty name', (WidgetTester tester) async {
+        await pumpNameDialog(tester);
+
+        await submitName(tester, '   ');
+
+        expect(find.text(strings.folderNameRequired), findsOneWidget);
+        expect(closed, isFalse);
+      });
+    });
+
+    group('length', () {
+      testWidgets('stops at 64 characters', (WidgetTester tester) async {
+        await pumpNameDialog(tester);
+
+        await tester.enterText(find.byKey(nameFieldKey), 'a' * 70);
+        await tester.pump();
+        expect(typedName(tester), 'a' * 64);
+
+        await tester.tap(find.text(strings.save));
+        await tester.pumpAndSettle();
+        expect(result, 'a' * 64);
+      });
+
+      testWidgets('lets a name of exactly 64 characters through', (
+        WidgetTester tester,
+      ) async {
+        await pumpNameDialog(tester);
+
+        await saveName(tester, 'b' * 64);
+
+        expect(result, 'b' * 64);
+      });
+
+      testWidgets('keeps the first 64 when more are pasted over a name', (
+        WidgetTester tester,
+      ) async {
+        await pumpNameDialog(tester, initialName: 'Servers');
+
+        await tester.enterText(find.byKey(nameFieldKey), 'Servers ${'x' * 80}');
+        await tester.pump();
+
+        expect(typedName(tester), 'Servers ${'x' * 56}');
+      });
+
+      testWidgets('counts a letter and its combining accent as one character', (
+        WidgetTester tester,
+      ) async {
+        await pumpNameDialog(tester);
+        const String accented = 'é';
+
+        await tester.enterText(find.byKey(nameFieldKey), accented * 70);
+        await tester.pump();
+
+        expect(typedName(tester), accented * 64);
+      });
+    });
+
     group('from the folder menus', () {
       Future<void> startRename(WidgetTester tester) async {
         await pumpListView(tester, const ProfileFoldersLoaded(twoFolders));
@@ -839,7 +994,7 @@ void main() {
         expect(folderRepo.puts, isEmpty);
       });
 
-      testWidgets('renaming to the unchanged name saves nothing', (
+      testWidgets('renaming to the unchanged name sends no event', (
         WidgetTester tester,
       ) async {
         await startRename(tester);
@@ -847,7 +1002,62 @@ void main() {
         await saveName(tester, 'Servers');
 
         expect(find.byKey(nameFieldKey), findsNothing);
+        expect(folderBloc.events, isEmpty);
         expect(folderRepo.puts, isEmpty);
+      });
+
+      testWidgets('renaming to the unchanged name with spaces around it '
+          'sends no event', (WidgetTester tester) async {
+        await startRename(tester);
+
+        await saveName(tester, '  Servers  ');
+
+        expect(find.byKey(nameFieldKey), findsNothing);
+        expect(folderBloc.events, isEmpty);
+      });
+
+      testWidgets('renaming to another case does send the event', (
+        WidgetTester tester,
+      ) async {
+        await startRename(tester);
+
+        await saveName(tester, 'SERVERS');
+
+        expect(
+          folderBloc.events.single,
+          isA<ProfileFolderRenameEvent>()
+              .having((ProfileFolderRenameEvent e) => e.name, 'name', 'SERVERS')
+              .having(
+                (ProfileFolderRenameEvent e) => e.folderId,
+                'folderId',
+                serversFolder.uuid,
+              ),
+        );
+      });
+
+      testWidgets('pressing Enter renames the folder', (
+        WidgetTester tester,
+      ) async {
+        await startRename(tester);
+
+        await submitName(tester, 'Machines');
+
+        expect(find.byKey(nameFieldKey), findsNothing);
+        expect(find.text('Machines'), findsOneWidget);
+        expect(folderRepo.puts.single.folders.first.name, 'Machines');
+      });
+
+      testWidgets('cancelling the rename sends no event', (
+        WidgetTester tester,
+      ) async {
+        await startRename(tester);
+        await tester.enterText(find.byKey(nameFieldKey), 'Machines');
+
+        await tester.tap(find.text(strings.cancel));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(nameFieldKey), findsNothing);
+        expect(folderBloc.events, isEmpty);
       });
 
       testWidgets('New folder refuses every existing name in any case', (
@@ -1181,6 +1391,332 @@ void main() {
       );
 
       expect(tooltipIn(machines.uuid, strings.folderStartAll), findsOneWidget);
+    });
+  });
+
+  group('Choose connections to start', () {
+    const String missingUuid = 'uuid-not-loaded';
+    const ProfileFolder machines = ProfileFolder(
+      uuid: 'g-machines',
+      name: 'Machines',
+      profileIds: <String>[sshUuid, rdpUuid, vncUuid, missingUuid],
+    );
+
+    ProfileFoldersLoaded loadedWith(ProfileFolder folder) =>
+        ProfileFoldersLoaded(
+          ProfileFolderData(
+            folders: <ProfileFolder>[folder],
+            unfiled: const <String>[noneUuid, extraUuid],
+          ),
+        );
+
+    Finder tile(String uuid) =>
+        find.byKey(Key('ProfileFolderStartAllDialog-$uuid'));
+    bool isChecked(WidgetTester tester, String uuid) =>
+        tester.widget<CheckboxListTile>(tile(uuid)).value!;
+    Future<void> toggleTile(WidgetTester tester, String uuid) async {
+      await tester.tap(tile(uuid));
+      await tester.pump();
+    }
+
+    Future<void> pressSave(WidgetTester tester) async {
+      await tester.tap(find.text(strings.save));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> openChooser(WidgetTester tester, ProfileFolder folder) async {
+      await openMenu(tester, header(folder.uuid));
+      await tester.tap(find.text(strings.folderChooseStartAll));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> pumpAndChoose(
+      WidgetTester tester,
+      ProfileFolder folder,
+    ) async {
+      await pumpListView(tester, loadedWith(folder));
+      await openChooser(tester, folder);
+      expect(find.byType(AlertDialog), findsOneWidget);
+    }
+
+    ProfileStartQueueCubit queueOf(WidgetTester tester) =>
+        tester.element(find.byType(Scaffold)).read<ProfileStartQueueCubit>();
+
+    List<String> skippedInSaved() =>
+        folderRepo.puts.single.folders.single.skippedByStartAll;
+
+    testWidgets('opens with the connections Start all skips unchecked', (
+      WidgetTester tester,
+    ) async {
+      await pumpAndChoose(
+        tester,
+        machines.copyWith(skippedByStartAll: <String>[rdpUuid, missingUuid]),
+      );
+
+      expect(isChecked(tester, sshUuid), isTrue);
+      expect(isChecked(tester, rdpUuid), isFalse);
+      expect(isChecked(tester, vncUuid), isTrue);
+      expect(tile(missingUuid), findsNothing);
+    });
+
+    testWidgets('saves the unchecked ones as skipped and the checked ones as '
+        'started', (WidgetTester tester) async {
+      await pumpAndChoose(
+        tester,
+        machines.copyWith(skippedByStartAll: <String>[rdpUuid]),
+      );
+
+      await toggleTile(tester, rdpUuid);
+      await toggleTile(tester, sshUuid);
+      await pressSave(tester);
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(skippedInSaved(), <String>[sshUuid]);
+    });
+
+    testWidgets('keeps the skip flag of members the dialog does not list', (
+      WidgetTester tester,
+    ) async {
+      await pumpAndChoose(
+        tester,
+        machines.copyWith(skippedByStartAll: <String>[rdpUuid, missingUuid]),
+      );
+
+      await toggleTile(tester, rdpUuid);
+      await toggleTile(tester, vncUuid);
+      await pressSave(tester);
+
+      expect(skippedInSaved(), <String>[missingUuid, vncUuid]);
+    });
+
+    testWidgets('does not skip a member it does not list when none had been', (
+      WidgetTester tester,
+    ) async {
+      await pumpAndChoose(tester, machines);
+
+      await toggleTile(tester, vncUuid);
+      await pressSave(tester);
+
+      expect(skippedInSaved(), <String>[vncUuid]);
+    });
+
+    testWidgets(
+      'keeps what a sync set for unlisted members while it was open',
+      (WidgetTester tester) async {
+        await pumpAndChoose(tester, machines);
+
+        folderBloc.emit(
+          loadedWith(
+            machines.copyWith(skippedByStartAll: <String>[missingUuid]),
+          ),
+        );
+        await tester.pump();
+        await toggleTile(tester, vncUuid);
+        await pressSave(tester);
+
+        expect(skippedInSaved(), <String>[missingUuid, vncUuid]);
+      },
+    );
+
+    testWidgets('saves nothing when the folder was deleted while it was open', (
+      WidgetTester tester,
+    ) async {
+      await pumpAndChoose(tester, machines);
+
+      folderBloc.emit(const ProfileFoldersLoaded(ProfileFolderData()));
+      await tester.pump();
+      await toggleTile(tester, vncUuid);
+      await pressSave(tester);
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(folderBloc.events, isEmpty);
+      expect(folderRepo.puts, isEmpty);
+    });
+
+    testWidgets('Cancel saves nothing', (WidgetTester tester) async {
+      await pumpAndChoose(tester, machines);
+
+      await toggleTile(tester, vncUuid);
+      await tester.tap(find.text(strings.cancel));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(folderBloc.events, isEmpty);
+      expect(folderRepo.puts, isEmpty);
+    });
+
+    testWidgets('cannot be saved with every connection unchecked', (
+      WidgetTester tester,
+    ) async {
+      await pumpAndChoose(tester, machines);
+      final Finder save = find.widgetWithText(TextButton, strings.save);
+
+      for (final String uuid in <String>[sshUuid, rdpUuid, vncUuid]) {
+        await toggleTile(tester, uuid);
+      }
+      expect(tester.widget<TextButton>(save).onPressed, isNull);
+
+      await toggleTile(tester, rdpUuid);
+      expect(tester.widget<TextButton>(save).onPressed, isNotNull);
+    });
+
+    testWidgets('does not open for a folder with no connection loaded', (
+      WidgetTester tester,
+    ) async {
+      const ProfileFolder ghosts = ProfileFolder(
+        uuid: 'g-ghosts',
+        name: 'Ghosts',
+        profileIds: <String>[missingUuid],
+      );
+      await pumpListView(tester, loadedWith(ghosts));
+
+      await openChooser(tester, ghosts);
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(folderRepo.puts, isEmpty);
+    });
+
+    group('connections still waiting from an earlier Start all', () {
+      /// The first connection never reports back, so the rest keep waiting.
+      Future<ProfileStartQueueCubit> pumpWithStartAllRunning(
+        WidgetTester tester,
+        ProfileFolder folder,
+      ) async {
+        final StreamController<ProfileState> stuck =
+            StreamController<ProfileState>.broadcast();
+        addTearDown(stuck.close);
+        when(profileBlocs[sshUuid]!.stream).thenAnswer((_) => stuck.stream);
+
+        await pumpListView(tester, loadedWith(folder));
+        final ProfileStartQueueCubit queue = queueOf(tester);
+        await tester.tap(headerButton(folder.uuid, strings.folderStartAll));
+        await tester.pump();
+        return queue;
+      }
+
+      testWidgets('leave the queue when unchecked', (
+        WidgetTester tester,
+      ) async {
+        final ProfileStartQueueCubit queue = await pumpWithStartAllRunning(
+          tester,
+          machines,
+        );
+        expect(queue.state.waiting, <String>[rdpUuid, vncUuid]);
+
+        await openChooser(tester, machines);
+        await toggleTile(tester, rdpUuid);
+        await pressSave(tester);
+
+        expect(queue.state.waiting, <String>[vncUuid]);
+        expect(skippedInSaved(), <String>[rdpUuid]);
+
+        queue.clear();
+        await tester.pump();
+      });
+
+      testWidgets('stay in the queue when still checked', (
+        WidgetTester tester,
+      ) async {
+        final ProfileStartQueueCubit queue = await pumpWithStartAllRunning(
+          tester,
+          machines,
+        );
+
+        await openChooser(tester, machines);
+        await toggleTile(tester, sshUuid);
+        await pressSave(tester);
+
+        expect(queue.state.waiting, <String>[rdpUuid, vncUuid]);
+
+        queue.clear();
+        await tester.pump();
+      });
+
+      testWidgets('of another folder are left in the queue', (
+        WidgetTester tester,
+      ) async {
+        final ProfileStartQueueCubit queue = await pumpWithStartAllRunning(
+          tester,
+          machines,
+        );
+        queue.add(<String>[noneUuid, extraUuid]);
+        expect(queue.state.waiting, <String>[
+          rdpUuid,
+          vncUuid,
+          noneUuid,
+          extraUuid,
+        ]);
+
+        await openChooser(tester, machines);
+        await toggleTile(tester, rdpUuid);
+        await toggleTile(tester, vncUuid);
+        await pressSave(tester);
+
+        expect(queue.state.waiting, <String>[noneUuid, extraUuid]);
+
+        queue.clear();
+        await tester.pump();
+      });
+    });
+
+    group('connections never shown', () {
+      final ProfileFolder collapsedServers = serversFolder.copyWith(
+        collapsed: true,
+      );
+
+      setUp(() {
+        // A row loads its connection only once it is on screen.
+        final ProfileState notLoaded = const ProfileInitial(sshUuid);
+        when(profileBlocs[sshUuid]!.state).thenReturn(notLoaded);
+        when(
+          profileBlocs[sshUuid]!.stream,
+        ).thenAnswer((_) => Stream<ProfileState>.value(notLoaded));
+      });
+
+      testWidgets('are loaded before the dialog opens', (
+        WidgetTester tester,
+      ) async {
+        await pumpListView(tester, loadedWith(collapsedServers));
+        expect(row(sshUuid), findsNothing);
+        verifyNever(profileBlocs[sshUuid]!.add(const ProfileLoadEvent()));
+
+        await openChooser(tester, collapsedServers);
+
+        verify(profileBlocs[sshUuid]!.add(const ProfileLoadEvent())).called(1);
+        expect(find.byType(AlertDialog), findsOneWidget);
+      });
+
+      testWidgets('are not asked again when already loaded or not members', (
+        WidgetTester tester,
+      ) async {
+        await pumpListView(tester, loadedWith(collapsedServers));
+
+        await openChooser(tester, collapsedServers);
+
+        verifyNever(profileBlocs[rdpUuid]!.add(const ProfileLoadEvent()));
+        verifyNever(profileBlocs[vncUuid]!.add(const ProfileLoadEvent()));
+        verifyNever(profileBlocs[noneUuid]!.add(const ProfileLoadEvent()));
+      });
+
+      testWidgets('are listed as loading until their name is known', (
+        WidgetTester tester,
+      ) async {
+        await pumpListView(tester, loadedWith(collapsedServers));
+
+        await openChooser(tester, collapsedServers);
+
+        expect(
+          find.descendant(
+            of: tile(sshUuid),
+            matching: find.text(strings.profileStatusLoading),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: tile(rdpUuid), matching: find.text('Beta')),
+          findsOneWidget,
+        );
+      });
     });
   });
 }

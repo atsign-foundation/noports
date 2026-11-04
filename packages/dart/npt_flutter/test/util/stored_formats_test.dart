@@ -299,6 +299,100 @@ void main() {
       expect(data.toJson(), jsonDecode(_storedFolders));
     });
 
+    group('flags', () {
+      // [favorite, collapsed, unfiledCollapsed] as read from one stored folder
+      // with the given fields inside a stored document with the given fields.
+      List<bool> readFlags({
+        Map<String, dynamic> folder = const <String, dynamic>{},
+        Map<String, dynamic> document = const <String, dynamic>{},
+      }) {
+        final ProfileFolderData data = ProfileFolderData.fromJson(
+          <String, dynamic>{
+            ...document,
+            'folders': <dynamic>[
+              <String, dynamic>{'uuid': 'f1', 'name': 'Work', ...folder},
+            ],
+          },
+        );
+        return <bool>[
+          data.folders.single.favorite,
+          data.folders.single.collapsed,
+          data.unfiledCollapsed,
+        ];
+      }
+
+      test('each flag is read from its own key', () {
+        expect(readFlags(folder: <String, dynamic>{'favorite': true}), <bool>[
+          true,
+          false,
+          false,
+        ]);
+        expect(readFlags(folder: <String, dynamic>{'collapsed': true}), <bool>[
+          false,
+          true,
+          false,
+        ]);
+        expect(
+          readFlags(document: <String, dynamic>{'unfiledCollapsed': true}),
+          <bool>[false, false, true],
+        );
+      });
+
+      for (final Object? stored in <Object?>[false, null, 'yes', 'true', 1]) {
+        test('a flag stored as ${jsonEncode(stored)} reads as off', () {
+          expect(
+            readFlags(
+              folder: <String, dynamic>{
+                'favorite': stored,
+                'collapsed': stored,
+              },
+              document: <String, dynamic>{'unfiledCollapsed': stored},
+            ),
+            <bool>[false, false, false],
+          );
+        });
+      }
+
+      test('a flag stored as false is not written back', () {
+        final ProfileFolderData data = ProfileFolderData.fromJson(
+          <String, dynamic>{
+            'folders': <dynamic>[
+              <String, dynamic>{
+                'uuid': 'f1',
+                'name': 'Work',
+                'profileIds': <String>['a'],
+                'favorite': false,
+                'collapsed': false,
+              },
+            ],
+            'unfiledCollapsed': false,
+          },
+        );
+
+        expect(data.toJson(), <String, dynamic>{
+          'folders': <dynamic>[
+            <String, dynamic>{
+              'uuid': 'f1',
+              'name': 'Work',
+              'profileIds': <String>['a'],
+            },
+          ],
+          'unfiled': <String>[],
+        });
+      });
+    });
+
+    test('"skippedByStartAll" keeps only ids that are in the folder', () {
+      final ProfileFolder folder = ProfileFolder.fromJson(<String, dynamic>{
+        'uuid': 'f1',
+        'name': 'Work',
+        'profileIds': <String>['a', 'b'],
+        'skippedByStartAll': <dynamic>['b', 'gone', 'b', 7, null],
+      });
+
+      expect(folder.skippedByStartAll, <String>['b']);
+    });
+
     test(
       'fields from a newer version survive an edit and are written back',
       () {
@@ -641,5 +735,48 @@ void main() {
       expect(installation.profileRepository.put, hasLength(2));
       expect(installation.favoriteUuids, isEmpty);
     });
+
+    // The first profile carries the value under test and the second one
+    // "favorite": true, so a favorite is shown to be restored at all.
+    for (final ExportableProfileFiletype filetype
+        in ExportableProfileFiletype.values) {
+      // The same four values in JSON and in YAML.
+      for (final String literal in <String>['false', 'null', '"true"', '1']) {
+        testWidgets('a ${filetype.filetype} document with "favorite": $literal '
+            'imports that profile without a favorite', (tester) async {
+          final _Installation installation = await openInstallation(tester);
+
+          await importDocument(tester, filetype, switch (filetype) {
+            ExportableProfileFiletype.json =>
+              '{"profiles": ['
+                  '{"displayName": "Lab", "deviceName": "lab-device", '
+                  '"remotePort": 22, "localPort": 2222, '
+                  '"favorite": $literal}, '
+                  '{"displayName": "Printer", "deviceName": "printer", '
+                  '"remotePort": 631, "localPort": 6310, '
+                  '"favorite": true}]}',
+            ExportableProfileFiletype.yaml =>
+              'profiles:\n'
+                  '  - displayName: Lab\n'
+                  '    deviceName: lab-device\n'
+                  '    remotePort: 22\n'
+                  '    localPort: 2222\n'
+                  '    favorite: $literal\n'
+                  '  - displayName: Printer\n'
+                  '    deviceName: printer\n'
+                  '    remotePort: 631\n'
+                  '    localPort: 6310\n'
+                  '    favorite: true\n',
+          });
+
+          final List<Profile> imported = installation.profileRepository.put;
+          expect(imported.map((Profile p) => p.displayName), <String>[
+            'Lab',
+            'Printer',
+          ]);
+          expect(installation.favoriteUuids, <String>{imported.last.uuid});
+        });
+      }
+    }
   });
 }

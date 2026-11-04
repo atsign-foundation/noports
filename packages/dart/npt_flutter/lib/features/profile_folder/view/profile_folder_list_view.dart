@@ -70,6 +70,12 @@ class _DragSession {
 }
 
 class _ProfileFolderListViewState extends State<ProfileFolderListView> {
+  /// Shared by every list this builds, so swapping one for another (once the
+  /// folders sync, or a search starts) keeps the scroll position.
+  static const PageStorageKey<String> _scrollKey = PageStorageKey<String>(
+    'ProfileFolderListView',
+  );
+
   _DragSession? _drag;
 
   /// Shown until the bloc emits it, so a dropped row doesn't jump back.
@@ -123,6 +129,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
 
   Widget _buildPlain(List<String> profiles) {
     return ListView.builder(
+      key: _scrollKey,
       addAutomaticKeepAlives: false,
       addRepaintBoundaries: false,
       itemCount: profiles.length,
@@ -227,6 +234,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     if (!reorderable && !movable) {
       // A plain list, so screen readers aren't offered moves that do nothing.
       return ListView.builder(
+        key: _scrollKey,
         itemCount: layout.entries.length,
         itemBuilder: buildEntry,
       );
@@ -237,6 +245,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
         if (_drag?.dropped == false) _endDrag();
       },
       child: ReorderableListView.builder(
+        key: _scrollKey,
         buildDefaultDragHandles: false,
         itemCount: layout.entries.length,
         onReorderStart: (int index) => _onReorderStart(layout, index),
@@ -411,7 +420,8 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
 
   /// With favorites lifted, the screen order isn't the manual one, so a drop
   /// is placed in the manual order instead of saving what the screen shows.
-  ProfileFolderEvent _inManualOrder(
+  /// Null when the drop changes nothing.
+  ProfileFolderEvent? _inManualOrder(
     ProfileFolderEvent event,
     ProfileFolderData data,
     ProfileListEntry grabbed,
@@ -420,27 +430,38 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
       case ProfileFolderPlaceProfilesEvent(:final String? folderId)
           when widget.arrange != null:
         final List<String> Function(List<String>) arrange = widget.arrange!;
+        final List<String> manual = folderId == null
+            ? data.resolveUnfiled(widget.profiles)
+            : data.folderById(folderId)?.profileIds ?? const <String>[];
+        final List<String> order = ProfileFolderData.placeInManualOrder(
+          manual: manual,
+          released: event.sectionOrder,
+          moved: event.profileIds,
+          // Tied when the sort keeps both orders of the pair.
+          tie: (String a, String b) =>
+              listEquals(arrange(<String>[a, b]), <String>[a, b]) &&
+              listEquals(arrange(<String>[b, a]), <String>[b, a]),
+        );
+        if (listEquals(order, manual)) return null;
         return ProfileFolderPlaceProfilesEvent(
           profileIds: event.profileIds,
           folderId: folderId,
-          sectionOrder: ProfileFolderData.placeInManualOrder(
-            manual: folderId == null
-                ? data.resolveUnfiled(widget.profiles)
-                : data.folderById(folderId)?.profileIds ?? const <String>[],
-            released: event.sectionOrder,
-            moved: event.profileIds,
-            // Tied when the sort keeps both orders of the pair.
-            tie: (String a, String b) =>
-                listEquals(arrange(<String>[a, b]), <String>[a, b]) &&
-                listEquals(arrange(<String>[b, a]), <String>[b, a]),
-          ),
+          sectionOrder: order,
         );
       case ProfileFolderReorderEvent(:final List<String> folderIds)
           when grabbed is ProfileListHeaderEntry &&
               grabbed.section.folder != null:
-        return ProfileFolderReorderEvent(
-          _foldersInManualOrder(folderIds, grabbed.section.folder!, data),
+        final List<String> order = _foldersInManualOrder(
+          folderIds,
+          grabbed.section.folder!,
+          data,
         );
+        if (listEquals(order, <String>[
+          for (final ProfileFolder f in data.folders) f.uuid,
+        ])) {
+          return null;
+        }
+        return ProfileFolderReorderEvent(order);
       default:
         return event;
     }

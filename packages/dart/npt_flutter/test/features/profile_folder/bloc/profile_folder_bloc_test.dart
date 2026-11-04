@@ -15,6 +15,7 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
   /// Completes when the test says the local copy has caught up.
   Completer<bool> caughtUp = Completer<bool>();
   void Function(bool caughtUp)? onRound;
+  int watchSyncCalls = 0;
 
   /// Holds each put until the test completes it, when set.
   List<Completer<void>>? heldPuts;
@@ -43,8 +44,10 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
       caughtUp.future;
 
   @override
-  void watchSync(void Function(bool caughtUp) onRound) =>
-      this.onRound = onRound;
+  void watchSync(void Function(bool caughtUp) onRound) {
+    watchSyncCalls++;
+    this.onRound = onRound;
+  }
 
   @override
   void stopWatching() => onRound = null;
@@ -52,6 +55,8 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  Future<void> settle() => Future<void>.delayed(Duration.zero);
 
   const ProfileFolder folderA = ProfileFolder(
     uuid: 'ga',
@@ -111,7 +116,7 @@ void main() {
     );
 
     blocTest<ProfileFolderBloc, ProfileFolderState>(
-      'ignores edits until sync has caught up',
+      'does not save an edit made before sync has caught up',
       build: () {
         repo.loadResult = loadedData;
         return bloc;
@@ -710,4 +715,503 @@ void main() {
       ),
     ],
   );
+
+  group('edits made before sync has caught up', () {
+    final ProfileFolder renamedA = folderA.copyWith(name: 'Z');
+    final ProfileFolderData afterRename = ProfileFolderData(
+      folders: <ProfileFolder>[renamedA, folderB],
+      unfiled: const <String>['p4', 'p5'],
+    );
+    final ProfileFolderData afterMove = ProfileFolderData(
+      folders: <ProfileFolder>[
+        renamedA.copyWith(profileIds: <String>['p2']),
+        folderB.copyWith(profileIds: <String>['p3', 'p1']),
+      ],
+      unfiled: const <String>['p4', 'p5'],
+    );
+    final ProfileFolderData afterRemove = ProfileFolderData(
+      folders: <ProfileFolder>[
+        renamedA.copyWith(profileIds: <String>['p2']),
+        folderB.copyWith(profileIds: <String>['p1']),
+      ],
+      unfiled: const <String>['p4', 'p5'],
+    );
+    final ProfileFolderData afterDelete = ProfileFolderData(
+      folders: <ProfileFolder>[
+        renamedA.copyWith(profileIds: <String>['p2']),
+      ],
+      unfiled: const <String>['p4', 'p5', 'p1'],
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'are applied in the order they were made once it catches up, and '
+      'nothing is saved before',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        bloc
+          ..add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Z'))
+          ..add(
+            const ProfileFolderMoveProfilesEvent(
+              profileIds: <String>['p1'],
+              folderId: 'gb',
+            ),
+          )
+          // What deleting the connection p3 sends.
+          ..add(const ProfileFolderRemoveProfilesEvent(<String>['p3']))
+          ..add(
+            const ProfileFolderDeleteEvent(
+              folderId: 'gb',
+              visibleUnfiled: <String>['p4', 'p5'],
+            ),
+          );
+        await settle();
+        expect(repo.puts, isEmpty);
+        expect(
+          bloc.state,
+          const ProfileFoldersLoaded(loadedData, synced: false),
+        );
+        repo.loadResult = dataWithUnfiled;
+        repo.caughtUp.complete(true);
+        await settle();
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        const ProfileFoldersLoaded(dataWithUnfiled),
+        ProfileFoldersLoaded(afterRename),
+        ProfileFoldersLoaded(afterMove),
+        ProfileFoldersLoaded(afterRemove),
+        ProfileFoldersLoaded(afterDelete),
+      ],
+      verify: (_) => expect(repo.puts, <ProfileFolderData>[
+        afterRename,
+        afterMove,
+        afterRemove,
+        afterDelete,
+      ]),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'are kept through a sync round that has not caught up, and applied '
+      'once, on the round that has',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        bloc.add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Z'));
+        await settle();
+        repo.onRound!(false);
+        await settle();
+        expect(bloc.state.editable, isFalse);
+        expect(repo.puts, isEmpty);
+        repo.onRound!(true);
+        await settle();
+        // The atServer now holds the saved rename; another round adds nothing.
+        repo.loadResult = repo.puts.single;
+        repo.onRound!(true);
+        await settle();
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        const ProfileFoldersLoaded(loadedData),
+        ProfileFoldersLoaded(
+          ProfileFolderData(folders: <ProfileFolder>[renamedA, folderB]),
+        ),
+      ],
+      verify: (_) => expect(repo.puts, hasLength(1)),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'are kept when reading the folders after catching up fails, and applied '
+      'on the next round',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        bloc.add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Z'));
+        await settle();
+        repo.loadResult = null;
+        repo.onRound!(true);
+        await settle();
+        expect(bloc.state.editable, isFalse);
+        expect(repo.puts, isEmpty);
+        repo.loadResult = loadedData;
+        repo.onRound!(true);
+        await settle();
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        const ProfileFoldersLoaded(loadedData),
+        ProfileFoldersLoaded(
+          ProfileFolderData(folders: <ProfileFolder>[renamedA, folderB]),
+        ),
+      ],
+      verify: (_) => expect(repo.puts, hasLength(1)),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'for a folder that sync removed are harmless, and the rest still apply',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        bloc
+          ..add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Z'))
+          ..add(
+            const ProfileFolderMoveProfilesEvent(
+              profileIds: <String>['p3'],
+              folderId: 'ga',
+            ),
+          )
+          ..add(const ProfileFolderDeleteEvent(folderId: 'ga'))
+          ..add(const ProfileFolderRenameEvent(folderId: 'gb', name: 'Y'));
+        await settle();
+        repo.loadResult = const ProfileFolderData(
+          folders: <ProfileFolder>[folderB],
+        );
+        repo.caughtUp.complete(true);
+        await settle();
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        const ProfileFoldersLoaded(
+          ProfileFolderData(folders: <ProfileFolder>[folderB]),
+        ),
+        ProfileFoldersLoaded(
+          ProfileFolderData(
+            folders: <ProfileFolder>[folderB.copyWith(name: 'Y')],
+          ),
+        ),
+      ],
+      verify: (_) => expect(repo.puts, hasLength(1)),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'made while nothing is loaded are not kept for later',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc
+          ..add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Z'))
+          ..add(const ProfileFolderLoadEvent());
+        await settle();
+        repo.caughtUp.complete(true);
+        await settle();
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        const ProfileFoldersLoaded(loadedData),
+      ],
+      verify: (_) => expect(repo.puts, isEmpty),
+    );
+  });
+
+  group('collapsing a section before sync has caught up', () {
+    final ProfileFolder collapsedA = folderA.copyWith(collapsed: true);
+    final ProfileFolderData collapsedGa = ProfileFolderData(
+      folders: <ProfileFolder>[collapsedA, folderB],
+    );
+    // What the atServer sent while the user had ga collapsed here.
+    final ProfileFolderData serverWithCollapsedGa = ProfileFolderData(
+      folders: <ProfileFolder>[collapsedA, folderB],
+      unfiled: const <String>['p4', 'p5'],
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'shows at once and saves nothing',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        bloc.add(
+          const ProfileFolderSetCollapsedEvent(folderId: 'ga', collapsed: true),
+        );
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        ProfileFoldersLoaded(collapsedGa, synced: false),
+      ],
+      verify: (_) => expect(repo.puts, isEmpty),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'is kept when a refresh round has not caught up, and saved once on '
+      'top of what the atServer sent when one does',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        bloc.add(
+          const ProfileFolderSetCollapsedEvent(folderId: 'ga', collapsed: true),
+        );
+        await settle();
+        repo.loadResult = dataWithUnfiled;
+        repo.onRound!(false);
+        await settle();
+        expect(repo.puts, isEmpty);
+        repo.onRound!(true);
+        await settle();
+        // The atServer now holds what was saved; a later round saves nothing.
+        repo.loadResult = serverWithCollapsedGa;
+        repo.onRound!(true);
+        await settle();
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        ProfileFoldersLoaded(collapsedGa, synced: false),
+        ProfileFoldersLoaded(serverWithCollapsedGa, synced: false),
+        ProfileFoldersLoaded(serverWithCollapsedGa),
+      ],
+      verify: (_) =>
+          expect(repo.puts, <ProfileFolderData>[serverWithCollapsedGa]),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'collapsing the unfiled section is saved when it catches up',
+      build: () {
+        repo.loadResult = dataWithUnfiled;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        bloc.add(
+          const ProfileFolderSetCollapsedEvent(folderId: null, collapsed: true),
+        );
+        await settle();
+        expect(repo.puts, isEmpty);
+        repo.caughtUp.complete(true);
+        await settle();
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(dataWithUnfiled, synced: false),
+        ProfileFoldersLoaded(
+          dataWithUnfiled.copyWith(unfiledCollapsed: true),
+          synced: false,
+        ),
+        ProfileFoldersLoaded(dataWithUnfiled.copyWith(unfiledCollapsed: true)),
+      ],
+      verify: (_) => expect(repo.puts.single.unfiledCollapsed, isTrue),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'is saved before the edits made while waiting, which then build on it',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        bloc
+          ..add(
+            const ProfileFolderSetCollapsedEvent(
+              folderId: 'ga',
+              collapsed: true,
+            ),
+          )
+          ..add(const ProfileFolderRenameEvent(folderId: 'gb', name: 'Y'));
+        await settle();
+        expect(repo.puts, isEmpty);
+        repo.caughtUp.complete(true);
+        await settle();
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        ProfileFoldersLoaded(collapsedGa, synced: false),
+        ProfileFoldersLoaded(collapsedGa),
+        ProfileFoldersLoaded(
+          ProfileFolderData(
+            folders: <ProfileFolder>[
+              collapsedA,
+              folderB.copyWith(name: 'Y'),
+            ],
+          ),
+        ),
+      ],
+      verify: (_) => expect(repo.puts, hasLength(2)),
+    );
+  });
+
+  group('ProfileFolderSetCollapsedEvent', () {
+    final ProfileFolderData collapsedGa = ProfileFolderData(
+      folders: <ProfileFolder>[folderA.copyWith(collapsed: true), folderB],
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'once caught up, saves the collapse at once',
+      build: () => bloc,
+      seed: () => const ProfileFoldersLoaded(loadedData),
+      act: (ProfileFolderBloc bloc) => bloc.add(
+        const ProfileFolderSetCollapsedEvent(folderId: 'ga', collapsed: true),
+      ),
+      expect: () => <ProfileFolderState>[ProfileFoldersLoaded(collapsedGa)],
+      verify: (_) => expect(repo.puts, <ProfileFolderData>[collapsedGa]),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'is ignored when nothing is loaded',
+      build: () => bloc,
+      act: (ProfileFolderBloc bloc) => bloc.add(
+        const ProfileFolderSetCollapsedEvent(folderId: 'ga', collapsed: true),
+      ),
+      expect: () => <ProfileFolderState>[],
+      verify: (_) => expect(repo.puts, isEmpty),
+    );
+  });
+
+  group('sign-out and reload', () {
+    final ProfileFolder collapsedA = folderA.copyWith(collapsed: true);
+
+    Future<void> editAndCollapseBeforeSync(ProfileFolderBloc bloc) async {
+      bloc
+        ..add(const ProfileFolderRenameEvent(folderId: 'gb', name: 'Y'))
+        ..add(
+          const ProfileFolderSetCollapsedEvent(folderId: 'ga', collapsed: true),
+        );
+      await settle();
+      expect(repo.puts, isEmpty);
+    }
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'sign-out drops edits and collapses made before sync, so the next '
+      'sign-in does not save them',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        await editAndCollapseBeforeSync(bloc);
+        bloc.clearAll();
+        repo.caughtUp = Completer<bool>();
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        repo.caughtUp.complete(true);
+        await settle();
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        ProfileFoldersLoaded(
+          ProfileFolderData(folders: <ProfileFolder>[collapsedA, folderB]),
+          synced: false,
+        ),
+        const ProfileFoldersInitial(),
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        const ProfileFoldersLoaded(loadedData),
+      ],
+      verify: (_) => expect(repo.puts, isEmpty),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'a new load drops edits and collapses made before sync, and later '
+      'edits save without them',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        await editAndCollapseBeforeSync(bloc);
+        repo.caughtUp = Completer<bool>();
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        repo.caughtUp.complete(true);
+        await settle();
+        expect(repo.puts, isEmpty);
+        bloc.add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Z'));
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        ProfileFoldersLoaded(
+          ProfileFolderData(folders: <ProfileFolder>[collapsedA, folderB]),
+          synced: false,
+        ),
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        const ProfileFoldersLoaded(loadedData),
+        ProfileFoldersLoaded(
+          ProfileFolderData(
+            folders: <ProfileFolder>[
+              folderA.copyWith(name: 'Z'),
+              folderB,
+            ],
+          ),
+        ),
+      ],
+      verify: (_) => expect(repo.puts, hasLength(1)),
+    );
+  });
+
+  group('closing the bloc', () {
+    test('while a load waits behind a save, nothing throws and the sync '
+        'listener is not attached again', () async {
+      repo.loadResult = loadedData;
+      repo.heldPuts = <Completer<void>>[];
+      bloc.emit(const ProfileFoldersLoaded(loadedData));
+      bloc.add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Z'));
+      await settle();
+      expect(repo.puts, hasLength(1));
+
+      bloc.add(const ProfileFolderLoadEvent());
+      final Future<void> closed = bloc.close();
+      repo.heldPuts!.single.complete();
+      await closed;
+      await settle();
+
+      expect(bloc.isClosed, isTrue);
+      expect(repo.watchSyncCalls, 0);
+      expect(repo.onRound, isNull);
+    });
+
+    test('sync callbacks that arrive after it is closed are ignored', () async {
+      repo.loadResult = loadedData;
+      bloc.add(const ProfileFolderLoadEvent());
+      await settle();
+      final void Function(bool caughtUp) onRound = repo.onRound!;
+      await bloc.close();
+
+      onRound(true);
+      repo.caughtUp.complete(true);
+      await settle();
+
+      expect(bloc.isClosed, isTrue);
+      expect(repo.puts, isEmpty);
+    });
+  });
 }

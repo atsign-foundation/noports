@@ -13,13 +13,13 @@ typedef ProfileFormFolder = ({String? folderId, String? newName});
 class ProfileFormFolderCubit extends Cubit<ProfileFormFolder> {
   bool _known;
 
-  /// [known] is false when the form opened before the folders loaded, so
+  /// [known] is false when the form opened before the folders synced, so
   /// the connection's folder isn't known yet.
   ProfileFormFolderCubit(String? folderId, {bool known = true})
     : _known = known,
       super((folderId: folderId, newName: null));
 
-  /// False until the folders load or the user picks a folder; nothing is
+  /// False until the folders sync or the user picks a folder; nothing is
   /// moved until then.
   bool get known => _known;
 
@@ -33,10 +33,15 @@ class ProfileFormFolderCubit extends Cubit<ProfileFormFolder> {
     emit((folderId: Uuid.generate(), newName: name));
   }
 
-  /// Shows the connection's folder once the folders load, unless the user
+  /// Shows the connection's folder once the folders sync, unless the user
   /// has picked one meanwhile.
   void resolve(String? folderId) {
     if (!_known) choose(folderId);
+  }
+
+  /// Shows the folder an unsynced copy has, without counting it as known.
+  void preview(String? folderId) {
+    if (!_known) emit((folderId: folderId, newName: null));
   }
 }
 
@@ -53,7 +58,10 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
   static const String _createFolder = ':create';
   static const String _createNamed = ':create:';
 
-  final TextEditingController _text = TextEditingController();
+  /// One per DropdownMenu: a new key builds a new menu, and the old one must
+  /// not hear the new one's text while it is torn down.
+  TextEditingController _text = TextEditingController();
+  String? _textKey;
   final FocusNode _focus = FocusNode();
 
   /// Bumped to show the chosen folder again, e.g. after typing without
@@ -79,6 +87,16 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
         if (mounted && !_focus.hasFocus) setState(() => _resets++);
       });
     });
+  }
+
+  TextEditingController _controllerFor(String key) {
+    if (_textKey != null && _textKey != key) {
+      final TextEditingController old = _text;
+      WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+      _text = TextEditingController();
+    }
+    _textKey = key;
+    return _text;
   }
 
   @override
@@ -118,7 +136,8 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
         .trim()
         .characters
         .take(ProfileFolderNameDialog.maxLength)
-        .toString();
+        .toString()
+        .trimRight();
     final String typed = name.toLowerCase();
     final List<DropdownMenuEntry<String>> matches = entries
         .where(
@@ -157,6 +176,9 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
         final String selection = chosen.newName != null
             ? _newFolder
             : folder?.uuid ?? _noFolder;
+        final String menuKey =
+            'ProfileFolderSelector-$selection-${folder?.name}-'
+            '${chosen.newName}-$_resets';
         return Padding(
           padding: const EdgeInsets.only(
             left: Sizes.p50,
@@ -180,11 +202,8 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
                   // Changes wait until the folders have caught up.
                   enabled: state.editable,
                   // Rebuilt on a rename: DropdownMenu reads its selection once.
-                  key: ValueKey<String>(
-                    'ProfileFolderSelector-$selection-${folder?.name}-'
-                    '${chosen.newName}-$_resets',
-                  ),
-                  controller: _text,
+                  key: ValueKey<String>(menuKey),
+                  controller: _controllerFor(menuKey),
                   focusNode: _focus,
                   initialSelection: selection,
                   enableFilter: true,

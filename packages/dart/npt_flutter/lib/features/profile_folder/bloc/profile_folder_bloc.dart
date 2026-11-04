@@ -27,34 +27,38 @@ class ProfileFolderBloc
   /// saved once it has. A null key is the unfiled section.
   final Map<String?, bool> _collapsedWhileSyncing = <String?, bool>{};
 
+  /// A caught-up round whose re-read failed still counts for the next one.
+  bool _caughtUpSeen = false;
+
   ProfileFolderBloc(this._repo) : super(const ProfileFoldersInitial()) {
     // One event at a time, so saves land in the order they were made.
     on<ProfileFolderEvent>(
-      (ProfileFolderEvent event, Emitter<ProfileFolderState> emit) =>
-          switch (event) {
-            ProfileFolderLoadEvent() => _onLoad(event, emit),
-            ProfileFolderRefreshEvent() => _onRefresh(event, emit),
-            ProfileFolderCreateEvent() => _onCreate(event, emit),
-            ProfileFolderRenameEvent() => _onRename(event, emit),
-            ProfileFolderDeleteEvent() => _onDelete(event, emit),
-            ProfileFolderMoveProfilesEvent() => _onMoveProfiles(event, emit),
-            ProfileFolderRemoveProfilesEvent() => _onRemoveProfiles(
-              event,
-              emit,
-            ),
-            ProfileFolderPlaceProfilesEvent() => _onPlaceProfiles(event, emit),
-            ProfileFolderReorderEvent() => _onReorderFolders(event, emit),
-            ProfileFolderSetFavoriteEvent() => _onSetFavorite(event, emit),
-            ProfileFolderSetCollapsedEvent() => _onSetCollapsed(event, emit),
-            ProfileFolderSetSkippedByStartAllEvent() => _onSetSkippedByStartAll(
-              event,
-              emit,
-            ),
-          },
+      _handle,
       transformer: (Stream<ProfileFolderEvent> events, mapper) =>
           events.asyncExpand(mapper),
     );
   }
+
+  Future<void> _handle(
+    ProfileFolderEvent event,
+    Emitter<ProfileFolderState> emit,
+  ) => switch (event) {
+    ProfileFolderLoadEvent() => _onLoad(event, emit),
+    ProfileFolderRefreshEvent() => _onRefresh(event, emit),
+    ProfileFolderCreateEvent() => _onCreate(event, emit),
+    ProfileFolderRenameEvent() => _onRename(event, emit),
+    ProfileFolderDeleteEvent() => _onDelete(event, emit),
+    ProfileFolderMoveProfilesEvent() => _onMoveProfiles(event, emit),
+    ProfileFolderRemoveProfilesEvent() => _onRemoveProfiles(event, emit),
+    ProfileFolderPlaceProfilesEvent() => _onPlaceProfiles(event, emit),
+    ProfileFolderReorderEvent() => _onReorderFolders(event, emit),
+    ProfileFolderSetFavoriteEvent() => _onSetFavorite(event, emit),
+    ProfileFolderSetCollapsedEvent() => _onSetCollapsed(event, emit),
+    ProfileFolderSetSkippedByStartAllEvent() => _onSetSkippedByStartAll(
+      event,
+      emit,
+    ),
+  };
 
   void clearAll() {
     _session++;
@@ -74,6 +78,7 @@ class ProfileFolderBloc
   void _forgetUnsynced() {
     _deferred.clear();
     _collapsedWhileSyncing.clear();
+    _caughtUpSeen = false;
   }
 
   /// False when [event] can't change the folders now. One made before the
@@ -143,27 +148,32 @@ class ProfileFolderBloc
     final ProfileFolderState current = state;
     if (current is! ProfileFoldersLoaded) return;
     final int session = _session;
+    _caughtUpSeen = _caughtUpSeen || event.caughtUp;
     final ProfileFolderData? data = await _read();
     if (data == null || session != _session) return;
     _persisted = true;
-    final bool synced = current.synced || event.caughtUp;
-    if (!synced || current.synced) {
-      emit(ProfileFoldersLoaded(_withLocalCollapses(data), synced: synced));
+    if (current.synced || !_caughtUpSeen) {
+      emit(
+        ProfileFoldersLoaded(_withLocalCollapses(data), synced: current.synced),
+      );
       return;
     }
     final ProfileFolderData shown = _withLocalCollapses(data);
     final List<ProfileFolderEvent> deferred = List<ProfileFolderEvent>.of(
       _deferred,
     );
-    final bool collapsesChanged = _collapsedWhileSyncing.isNotEmpty;
     _forgetUnsynced();
-    if (collapsesChanged) {
+    if (shown != data) {
       _persisted = false;
       await _save(shown, emit);
     } else {
       emit(ProfileFoldersLoaded(data));
     }
-    deferred.forEach(add);
+    // Applied here, ahead of anything queued meanwhile, so later edits win.
+    for (final ProfileFolderEvent deferredEvent in deferred) {
+      if (_closing || session != _session) return;
+      await _handle(deferredEvent, emit);
+    }
   }
 
   Future<void> _save(

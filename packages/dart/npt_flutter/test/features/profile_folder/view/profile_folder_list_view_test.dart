@@ -16,14 +16,17 @@ import 'package:npt_flutter/util/language.dart';
 import '../../profile_list/view/profile_list_view_test.mocks.dart';
 
 class FakeProfileFolderRepository extends ProfileFolderRepository {
+  /// What a refresh reads; null reads as a failed read.
+  ProfileFolderData? stored;
   final List<ProfileFolderData> puts = <ProfileFolderData>[];
 
   @override
-  Future<ProfileFolderData?> getProfileFolders() async => null;
+  Future<ProfileFolderData?> getProfileFolders() async => stored;
 
   @override
   Future<bool> putProfileFolders(ProfileFolderData data) async {
     puts.add(data);
+    stored = data;
     return true;
   }
 }
@@ -978,6 +981,270 @@ void main() {
         );
         expect(moveUp.enabled, isFalse);
       });
+
+      List<String> Function(List<String>) lifting(Set<String> favorites) =>
+          (List<String> uuids) => <String>[
+            ...uuids.where(favorites.contains),
+            ...uuids.where((String id) => !favorites.contains(id)),
+          ];
+
+      Future<void> loadUnfiled(
+        WidgetTester tester, {
+        required List<String> saved,
+        required Set<String> favorites,
+      }) async {
+        createRealBlocs();
+        folderBloc.emit(
+          ProfileFoldersLoaded(ProfileFolderData(unfiled: saved)),
+        );
+        await tester.pumpWidget(
+          buildSubject(tester, arrange: lifting(favorites)),
+        );
+        await tester.pump();
+      }
+
+      List<String> savedUnfiled() =>
+          (folderBloc.state as ProfileFoldersLoaded).data.unfiled;
+
+      testWidgets('dropping a connection above a favorite leaves the saved '
+          'order unchanged', (WidgetTester tester) async {
+        await loadUnfiled(
+          tester,
+          saved: <String>[sshUuid, rdpUuid, noneUuid],
+          favorites: <String>{rdpUuid},
+        );
+        final List<Finder> onScreen = <Finder>[
+          row(rdpUuid),
+          row(sshUuid),
+          row(noneUuid),
+        ];
+        expectVerticalOrder(tester, onScreen);
+        final double rdpTop = tester.getTopLeft(row(rdpUuid)).dy;
+
+        await dragGrip(
+          tester,
+          row(sshUuid),
+          -heightOf(tester, row(rdpUuid)),
+          whileDragging: () async {
+            // The list opened a gap above rdp, so this is a real drop.
+            expect(tester.getTopLeft(row(rdpUuid)).dy, greaterThan(rdpTop));
+          },
+        );
+
+        // The screen still shows the favorite first.
+        expectVerticalOrder(tester, onScreen);
+        expect(folderRepo.puts, isEmpty);
+        expect(savedUnfiled(), <String>[sshUuid, rdpUuid, noneUuid]);
+      });
+
+      testWidgets('dropping a favorite below a connection that is not one '
+          'leaves the saved order unchanged', (WidgetTester tester) async {
+        await loadUnfiled(
+          tester,
+          saved: <String>[sshUuid, rdpUuid, noneUuid],
+          favorites: <String>{rdpUuid},
+        );
+        final List<Finder> onScreen = <Finder>[
+          row(rdpUuid),
+          row(sshUuid),
+          row(noneUuid),
+        ];
+        final double sshTop = tester.getTopLeft(row(sshUuid)).dy;
+
+        await dragGrip(
+          tester,
+          row(rdpUuid),
+          heightOf(tester, row(sshUuid)),
+          whileDragging: () async {
+            expect(tester.getTopLeft(row(sshUuid)).dy, lessThan(sshTop));
+          },
+        );
+
+        expectVerticalOrder(tester, onScreen);
+        expect(folderRepo.puts, isEmpty);
+        expect(savedUnfiled(), <String>[sshUuid, rdpUuid, noneUuid]);
+      });
+
+      group('a selection of one favorite and one other connection', () {
+        // Saved: ssh, none, rdp. On screen the favorites come first: ssh, rdp,
+        // none. Moving rdp above ssh changes the saved order; none keeps its
+        // place after ssh whichever of the two rows is grabbed.
+        const Map<String, int> rowsToTop = <String, int>{
+          rdpUuid: 1,
+          noneUuid: 2,
+        };
+        rowsToTop.forEach((String grabbed, int rows) {
+          testWidgets('dragged to the top by the ${grabbed.substring(5)} row '
+              'is placed per kind', (WidgetTester tester) async {
+            when(
+              mockSelectedCubit.state,
+            ).thenReturn(const ProfilesSelectedState({rdpUuid, noneUuid}));
+            await loadUnfiled(
+              tester,
+              saved: <String>[sshUuid, noneUuid, rdpUuid],
+              favorites: <String>{sshUuid, rdpUuid},
+            );
+            expectVerticalOrder(tester, <Finder>[
+              row(sshUuid),
+              row(rdpUuid),
+              row(noneUuid),
+            ]);
+
+            await dragGrip(
+              tester,
+              row(grabbed),
+              -heightOf(tester, row(sshUuid)) * rows,
+              whileDragging: () async {
+                expect(find.byKey(badgeKey), findsOneWidget);
+              },
+            );
+
+            expectVerticalOrder(tester, <Finder>[
+              row(rdpUuid),
+              row(sshUuid),
+              row(noneUuid),
+            ]);
+            expect(folderRepo.puts, hasLength(1));
+            expect(savedUnfiled(), <String>[rdpUuid, sshUuid, noneUuid]);
+            verify(mockSelectedCubit.deselectAll()).called(1);
+          });
+        });
+      });
+
+      group('dragging a folder header', () {
+        // Saved: Servers, Desktops, Other. Other is a favorite, so the screen
+        // shows Other, Servers, Desktops.
+        Future<void> loadWithFavoriteFolder(WidgetTester tester) async {
+          createRealBlocs();
+          folderBloc.emit(
+            const ProfileFoldersLoaded(
+              ProfileFolderData(
+                folders: <ProfileFolder>[
+                  serversFolder,
+                  desktopsFolder,
+                  otherFolder,
+                ],
+              ),
+            ),
+          );
+          await tester.pumpWidget(
+            buildSubject(tester, compareFolders: favoritesFirst),
+          );
+          await tester.pump();
+        }
+
+        List<String> savedFolderIds() =>
+            (folderBloc.state as ProfileFoldersLoaded).data.folders
+                .map((ProfileFolder f) => f.uuid)
+                .toList();
+
+        testWidgets('past another folder of its kind is saved in the manual '
+            'order', (WidgetTester tester) async {
+          await loadWithFavoriteFolder(tester);
+          expectVerticalOrder(tester, <Finder>[
+            header(otherFolder.uuid),
+            header(serversFolder.uuid),
+            header(desktopsFolder.uuid),
+          ]);
+
+          // Past the ssh row and the Desktops header, into the rdp row.
+          final double dy =
+              heightOf(tester, row(sshUuid)) +
+              heightOf(tester, header(desktopsFolder.uuid)) +
+              heightOf(tester, row(rdpUuid)) * 0.75;
+          await dragGrip(tester, header(serversFolder.uuid), dy);
+
+          expectVerticalOrder(tester, <Finder>[
+            header(otherFolder.uuid),
+            row(noneUuid),
+            header(desktopsFolder.uuid),
+            row(rdpUuid),
+            header(serversFolder.uuid),
+            row(sshUuid),
+          ]);
+          expect(folderRepo.puts, hasLength(1));
+          expect(savedFolderIds(), <String>[
+            desktopsFolder.uuid,
+            serversFolder.uuid,
+            otherFolder.uuid,
+          ]);
+        });
+
+        testWidgets(
+          'above a favorite folder leaves the saved order unchanged',
+          (WidgetTester tester) async {
+            await loadWithFavoriteFolder(tester);
+            final double otherTop = tester
+                .getTopLeft(header(otherFolder.uuid))
+                .dy;
+
+            // Past the none row and into the top half of the Other header.
+            final double dy =
+                heightOf(tester, row(noneUuid)) +
+                heightOf(tester, header(otherFolder.uuid)) * 0.75;
+            await dragGrip(
+              tester,
+              header(serversFolder.uuid),
+              -dy,
+              whileDragging: () async {
+                // The list opened a gap above Other, so this is a real drop.
+                expect(
+                  tester.getTopLeft(header(otherFolder.uuid)).dy,
+                  greaterThan(otherTop),
+                );
+              },
+            );
+
+            expectVerticalOrder(tester, <Finder>[
+              header(otherFolder.uuid),
+              header(serversFolder.uuid),
+              header(desktopsFolder.uuid),
+            ]);
+            expect(folderRepo.puts, isEmpty);
+            expect(savedFolderIds(), <String>[
+              serversFolder.uuid,
+              desktopsFolder.uuid,
+              otherFolder.uuid,
+            ]);
+          },
+        );
+
+        testWidgets('of a favorite folder below one that is not leaves the '
+            'saved order unchanged', (WidgetTester tester) async {
+          await loadWithFavoriteFolder(tester);
+          final double serversTop = tester
+              .getTopLeft(header(serversFolder.uuid))
+              .dy;
+
+          // Past the none row and into the lower half of the Servers header.
+          final double dy =
+              heightOf(tester, row(noneUuid)) +
+              heightOf(tester, header(serversFolder.uuid)) * 0.75;
+          await dragGrip(
+            tester,
+            header(otherFolder.uuid),
+            dy,
+            whileDragging: () async {
+              expect(
+                tester.getTopLeft(header(serversFolder.uuid)).dy,
+                lessThan(serversTop),
+              );
+            },
+          );
+
+          expectVerticalOrder(tester, <Finder>[
+            header(otherFolder.uuid),
+            header(serversFolder.uuid),
+            header(desktopsFolder.uuid),
+          ]);
+          expect(folderRepo.puts, isEmpty);
+          expect(savedFolderIds(), <String>[
+            serversFolder.uuid,
+            desktopsFolder.uuid,
+            otherFolder.uuid,
+          ]);
+        });
+      });
     });
 
     testWidgets('a lone folder has a grip and the Unfiled header has none', (
@@ -1045,6 +1312,110 @@ void main() {
         row(rdpUuid),
         row(noneUuid),
       ]);
+    });
+
+    group('before the folders have synced', () {
+      const ProfileFolderData unsynced = ProfileFolderData(
+        folders: <ProfileFolder>[serversFolder, desktopsFolder],
+      );
+
+      Future<void> loadUnsynced(WidgetTester tester) async {
+        createRealBlocs();
+        folderRepo.stored = unsynced;
+        folderBloc.emit(const ProfileFoldersLoaded(unsynced, synced: false));
+        await tester.pumpWidget(buildSubject(tester));
+        await tester.pump();
+      }
+
+      Finder toggle(String sectionId, String tooltip) => find.descendant(
+        of: header(sectionId),
+        matching: find.byTooltip(tooltip),
+      );
+
+      testWidgets('there are no grips and a drag where one would be does '
+          'nothing', (WidgetTester tester) async {
+        await loadUnsynced(tester);
+
+        expect(find.byType(ProfileFolderSectionHeader), findsNWidgets(3));
+        expect(find.byType(ProfileListRow), findsNWidgets(3));
+        expect(find.byKey(gripKey), findsNothing);
+
+        const Offset gripSpot = Offset(22, 20);
+        await dragFrom(
+          tester,
+          tester.getTopLeft(row(sshUuid)) + gripSpot,
+          heightOf(tester, header(desktopsFolder.uuid)) * 0.75,
+        );
+        await dragFrom(
+          tester,
+          tester.getTopLeft(header(serversFolder.uuid)) + gripSpot,
+          heightOf(tester, row(sshUuid)) * 2,
+        );
+
+        expect(folderRepo.puts, isEmpty);
+        expect(
+          folderBloc.state,
+          const ProfileFoldersLoaded(unsynced, synced: false),
+        );
+        expectVerticalOrder(tester, <Finder>[
+          header(serversFolder.uuid),
+          row(sshUuid),
+          header(desktopsFolder.uuid),
+          row(rdpUuid),
+          header(ProfileFolderListView.unfiledSectionId),
+          row(noneUuid),
+        ]);
+      });
+
+      testWidgets('the collapse toggle hides and shows the rows of a folder '
+          'and of the unfiled section', (WidgetTester tester) async {
+        await loadUnsynced(tester);
+
+        await tester.tap(toggle(serversFolder.uuid, strings.folderCollapse));
+        await tester.pump();
+        expect(row(sshUuid), findsNothing);
+        expect(row(rdpUuid), findsOneWidget);
+        expect(
+          toggle(serversFolder.uuid, strings.folderExpand),
+          findsOneWidget,
+        );
+
+        await tester.tap(
+          toggle(
+            ProfileFolderListView.unfiledSectionId,
+            strings.folderCollapse,
+          ),
+        );
+        await tester.pump();
+        expect(row(noneUuid), findsNothing);
+
+        await tester.tap(toggle(serversFolder.uuid, strings.folderExpand));
+        await tester.pump();
+        expect(row(sshUuid), findsOneWidget);
+        expect(row(noneUuid), findsNothing);
+        expect(folderRepo.puts, isEmpty);
+      });
+
+      testWidgets('a collapse made meanwhile is saved once they have synced '
+          'and the grips appear', (WidgetTester tester) async {
+        await loadUnsynced(tester);
+        await tester.tap(toggle(serversFolder.uuid, strings.folderCollapse));
+        await tester.pump();
+        expect(folderRepo.puts, isEmpty);
+
+        folderBloc.add(const ProfileFolderRefreshEvent(caughtUp: true));
+        await tester.pumpAndSettle();
+
+        expect(folderRepo.puts, hasLength(1));
+        expect(
+          folderRepo.puts.single.folders.map((ProfileFolder f) => f.collapsed),
+          <bool>[true, false],
+        );
+        expect((folderBloc.state as ProfileFoldersLoaded).synced, isTrue);
+        expect(row(sshUuid), findsNothing);
+        expect(grip(header(serversFolder.uuid)), findsOneWidget);
+        expect(grip(row(rdpUuid)), findsOneWidget);
+      });
     });
 
     testWidgets('every grip is ProfileDragHandle.width wide and rows and '
