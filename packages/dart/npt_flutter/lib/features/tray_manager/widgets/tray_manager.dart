@@ -98,8 +98,7 @@ class _TrayManagerState extends State<TrayManager>
           /// calls where we take the performance hit are:
           /// 1. In an asynchronous background task (who cares)
           /// 2. Worth it, compared to the potential maintenance costs
-          // NOTE: listens to the cached bloc without providing it; the cache
-          // owns it, and a provider would close it on dispose.
+          // NOTE: the profile cache owns these blocs; the tray only listens.
           ...profiles.map(
             (uuid) => BlocListener<ProfileBloc, ProfileState>(
               key: Key("TrayManager-$uuid"),

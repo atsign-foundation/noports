@@ -177,7 +177,7 @@ NptParams _relayParams() => NptParams(
   inline: true,
   authenticateClientToRvd: false,
   localHost: '127.0.0.1',
-  // Longer than the test, so the connector's own grace period can't close it
+  // NOTE: longer than the test, or the connector's own grace period closes it
   timeout: Duration(minutes: 5),
 );
 

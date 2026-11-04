@@ -76,8 +76,8 @@ void main() {
         retryDelay: const Duration(milliseconds: 10),
         maxRetryDelay: const Duration(milliseconds: 40),
         createNpt: ({required atClient, required params}) {
-          // Longer than the test, so the connector's own grace period can't
-          // end the session
+          // NOTE: longer than the test, or the connector's own grace period
+          // ends the session
           final npt = FakeNpt(connectorTimeout: const Duration(minutes: 10));
           attempts.add(npt);
           return npt;

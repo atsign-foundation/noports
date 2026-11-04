@@ -20,7 +20,8 @@ import '../../profile/bloc/profile_bloc_test.mocks.dart';
 
 /// Ends its session when its connector closes, as a real [Npt] does.
 class _ConnectorBoundNpt extends FakeNpt {
-  // Longer than the test, so the connector's own grace period can't close it
+  // NOTE: longer than the test, or the connector's own grace period ends the
+  // session
   _ConnectorBoundNpt() : super(connectorTimeout: const Duration(minutes: 10));
 
   @override
