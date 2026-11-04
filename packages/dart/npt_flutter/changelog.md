@@ -9,8 +9,18 @@
 - FIX: The activation dialog no longer stays on its spinner when the registrar
   fails or doesn't answer: after an error, or 30 seconds without an answer, it
   says the request failed and closes or returns to the PIN step.
-- CHORE: at_client_flutter is now 2.0.0, bringing at_client 4.0.0. Signing in,
-  activating and enrolling keep using the app's existing local store.
+- FIX: Tunnels reconnect automatically after the daemon's device reboots,
+  instead of leaving the profile stuck on "starting" until the app is
+  relaunched.
+- FIX: Keep-alive retry now covers startup failures too, not just drops after a
+  successful connection.
+- FIX: Keep-alive backs off when a tunnel keeps failing to start, from 5
+  seconds up to a minute between attempts, and stopping takes effect at once
+  rather than after the wait.
+- FIX: A profile that is connecting, or waiting to retry, can be stopped from
+  its status indicator in the main window, not only from the tray.
+- FIX: Signing out stops every profile, including ones still connecting or
+  waiting to retry, instead of leaving them retrying in the background.
 - FIX: The enrollment dialog keeps a request until it is approved, denied or
   expires. Leaving the waiting screen or quitting the app keeps it, and the
   next sign-in through the Authenticator waits on it again. Cancel asks first,
@@ -19,6 +29,8 @@
   denied in the Authenticator. A request the manager revokes returns to the
   OTP prompt and says so. A wait that ends because the atServer can't be
   reached keeps the request instead of reporting it denied.
+- CHORE: at_client_flutter is now 2.0.0, bringing at_client 4.0.0. Signing in,
+  activating and enrolling keep using the app's existing local store.
 
 ## 1.9.6+33
 

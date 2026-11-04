@@ -247,10 +247,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionRetrying => 'Reconectando (keep-alive)...';
 
   @override
-  String get connectionTimedOut =>
-      'Tempo limite da conexão, tentará novamente...';
-
-  @override
   String get connections => 'Conexões';
 
   @override
@@ -676,10 +672,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout =>
-      'Tempo limite de inicialização do Npt excedido';
-
-  @override
   String get ok => 'OK';
 
   @override
@@ -900,11 +892,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get resendPin => 'Reenviar Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return 'Falha ao tentar novamente: $errorMessage, tentará novamente...';
-  }
 
   @override
   String get roleAddNew => 'Adicionar Nova Função';
@@ -1399,10 +1386,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get connectionRetrying => 'Reconectando (keep-alive)...';
 
   @override
-  String get connectionTimedOut =>
-      'Tempo limite da conexão, tentará novamente...';
-
-  @override
   String get connections => 'Conexões';
 
   @override
@@ -1828,10 +1811,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout =>
-      'Tempo limite de inicialização do Npt excedido';
-
-  @override
   String get ok => 'OK';
 
   @override
@@ -2052,11 +2031,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get resendPin => 'Reenviar Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return 'Falha ao tentar novamente: $errorMessage, tentará novamente...';
-  }
 
   @override
   String get roleAddNew => 'Adicionar Nova Função';

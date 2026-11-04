@@ -112,6 +112,22 @@ void main() {
       ).called(1);
     }); // test Initialization
 
+    test('cancelSubscriptions detaches the session listener', () async {
+      whenInitialization();
+      await expectLater(stubbedSshnpdChannel.initialize(), completes);
+      expect(notificationStreamController.hasListener, isTrue);
+
+      await stubbedSshnpdChannel.cancelSubscriptions();
+      expect(
+        notificationStreamController.hasListener,
+        isFalse,
+        reason: 'a finished session must not stay attached to the AtClient',
+      );
+
+      // Npt.close may run more than once
+      await expectLater(stubbedSshnpdChannel.cancelSubscriptions(), completes);
+    });
+
     group('handlePingResponses', () {
       late SshnpdChannel c;
       pingTestParameterizedSetUp({required bool? daemonTwinKeys}) {
@@ -209,6 +225,26 @@ void main() {
         pingTestParameterizedSetUp(daemonTwinKeys: null);
         await c.featureCheck([DaemonFeature.srE2ee]);
         expect(c.twinKeys, false);
+      });
+      test(
+        'Given a ping, when the daemon answers, then the ping stops listening',
+        () async {
+          pingTestParameterizedSetUp(daemonTwinKeys: true);
+          await c.featureCheck([DaemonFeature.srE2ee]);
+          await pumpEventQueue();
+          expect(
+            notificationStreamController.hasListener,
+            isFalse,
+            reason: 'one answer is all a ping needs',
+          );
+        },
+      );
+      test('Given a ping, when the daemon answers with its atSign in another '
+          'case, then the answer is accepted', () async {
+        pingTestParameterizedSetUp(daemonTwinKeys: true);
+        when(() => mockParams.sshnpdAtSign).thenReturn('@Device');
+        await expectLater(c.featureCheck([DaemonFeature.srE2ee]), completes);
+        expect(c.twinKeys, true);
       });
     });
     group('handleSshnpdResponses', () {

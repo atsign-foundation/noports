@@ -72,8 +72,11 @@ class ProfileStatusIndicator extends StatelessWidget {
               tooltip: state.status ?? strings.profileFailedUnknownMessage,
               status: strings.profileStatusStarting,
               color: Colors.grey,
-              icon: PhosphorIcons.circleDashed(),
+              icon: PhosphorIcons.stop(PhosphorIconsStyle.fill),
               showSpinner: true,
+              onPressed: () {
+                context.read<ProfileBloc>().add(const ProfileStopEvent());
+              },
             );
           }
           if (state is ProfileStarted) {
@@ -127,12 +130,25 @@ class StatusMessage extends StatelessWidget {
   final bool showSpinner;
   @override
   Widget build(BuildContext context) {
+    const spinner = SizedBox(
+      width: Sizes.p20,
+      height: Sizes.p20,
+      child: CircularProgressIndicator(strokeWidth: 2.0),
+    );
     final Widget iconWidget = showSpinner
-        ? const SizedBox(
-            width: Sizes.p20,
-            height: Sizes.p20,
-            child: CircularProgressIndicator(strokeWidth: 2.0),
-          )
+        ? onPressed != null
+            ? InkWell(
+                borderRadius: BorderRadius.circular(Sizes.p12),
+                onTap: onPressed,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    spinner,
+                    PhosphorIcon(icon, color: color, size: Sizes.p10),
+                  ],
+                ),
+              )
+            : spinner
         : onPressed != null
             ? InkWell(
                 borderRadius: BorderRadius.circular(Sizes.p12),
