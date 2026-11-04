@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_form/profile_form.dart';
 import 'package:npt_flutter/features/profile_form/widgets/profile_local_host_text_field.dart';
-import 'package:npt_flutter/features/profile_group/profile_group.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
@@ -11,26 +11,28 @@ import 'package:npt_flutter/widgets/custom_card.dart';
 class ProfileFormView extends StatelessWidget {
   final String uuid;
   final Profile? copyFrom;
-  final String? groupId;
-  const ProfileFormView(this.uuid, {super.key, this.copyFrom, this.groupId});
+  final String? folderId;
+  const ProfileFormView(this.uuid, {super.key, this.copyFrom, this.folderId});
 
   void _applyFolder(BuildContext context) {
     final chosen = context.read<ProfileFormFolderCubit>().state;
-    final groupBloc = context.read<ProfileGroupBloc>();
-    final groups = groupBloc.state;
-    if (groups is! ProfileGroupsLoaded) return;
+    final folderBloc = context.read<ProfileFolderBloc>();
+    final folders = folderBloc.state;
+    if (folders is! ProfileFoldersLoaded) return;
     final newName = chosen.newName;
     if (newName != null) {
-      groupBloc.add(ProfileGroupCreateEvent(name: newName, profileIds: [uuid]));
+      folderBloc.add(
+        ProfileFolderCreateEvent(name: newName, profileIds: [uuid]),
+      );
       return;
     }
-    if (groups.data.groupForProfile(uuid)?.uuid == chosen.groupId) return;
-    groupBloc.add(
-      ProfileGroupMoveProfilesEvent(
+    if (folders.data.folderForProfile(uuid)?.uuid == chosen.folderId) return;
+    folderBloc.add(
+      ProfileFolderMoveProfilesEvent(
         profileIds: [uuid],
-        groupId: chosen.groupId,
-        visibleUngrouped: chosen.groupId == null
-            ? ProfileGroupActions.visibleUngrouped(context)
+        folderId: chosen.folderId,
+        visibleUnfiled: chosen.folderId == null
+            ? ProfileFolderActions.visibleUnfiled(context)
             : null,
       ),
     );
@@ -51,11 +53,11 @@ class ProfileFormView extends StatelessWidget {
         ),
         BlocProvider<ProfileFormFolderCubit>(
           create: (BuildContext context) {
-            final groups = context.read<ProfileGroupBloc>().state;
+            final folders = context.read<ProfileFolderBloc>().state;
             return ProfileFormFolderCubit(
-              groupId ??
-                  (groups is ProfileGroupsLoaded
-                      ? groups.data.groupForProfile(uuid)?.uuid
+              folderId ??
+                  (folders is ProfileFoldersLoaded
+                      ? folders.data.folderForProfile(uuid)?.uuid
                       : null),
             );
           },

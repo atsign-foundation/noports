@@ -9,7 +9,7 @@ final class ProfileListFilterState extends Loggable {
 
   final Set<String> failed;
 
-  final List<ProfileGroup> folders;
+  final List<ProfileFolder> folders;
 
   const ProfileListFilterState({
     this.query = '',
@@ -17,7 +17,7 @@ final class ProfileListFilterState extends Loggable {
     this.favoritesFirst = false,
     this.profiles = const <String, Profile>{},
     this.failed = const <String>{},
-    this.folders = const <ProfileGroup>[],
+    this.folders = const <ProfileFolder>[],
   });
 
   bool get searching => query.trim().isNotEmpty;
@@ -28,7 +28,7 @@ final class ProfileListFilterState extends Loggable {
 
   bool get reordered => sortMode != ProfileSortMode.manual || favoritesFirst;
 
-  /// With favorites first, drags still reorder and starred items stay on top.
+  /// With favorites first, drags still reorder and favorites stay on top.
   bool get manualOrder => !searching && sortMode == ProfileSortMode.manual;
 
   bool settled(String uuid) =>
@@ -39,14 +39,14 @@ final class ProfileListFilterState extends Loggable {
       searching && profiles.containsKey(uuid) && !matches(uuid);
 
   /// A folder whose name matches shows all of its connections.
-  bool folderMatches(ProfileGroup folder) =>
+  bool folderMatches(ProfileFolder folder) =>
       searching && folder.name.toLowerCase().contains(_needle);
 
   bool get anyFolderMatches => folders.any(folderMatches);
 
   bool matches(String uuid) {
     if (!searching) return true;
-    for (final ProfileGroup folder in folders) {
+    for (final ProfileFolder folder in folders) {
       if (folder.containsProfile(uuid) && folderMatches(folder)) return true;
     }
     final Profile? profile = profiles[uuid];
@@ -61,9 +61,9 @@ final class ProfileListFilterState extends Loggable {
   String get _needle => query.trim().toLowerCase();
 
   /// Null keeps the manual order.
-  int Function(ProfileGroup a, ProfileGroup b)? get folderOrder {
+  int Function(ProfileFolder a, ProfileFolder b)? get folderOrder {
     if (!reordered) return null;
-    return (ProfileGroup a, ProfileGroup b) {
+    return (ProfileFolder a, ProfileFolder b) {
       if (favoritesFirst && a.favorite != b.favorite) {
         return a.favorite ? -1 : 1;
       }
@@ -111,7 +111,7 @@ final class ProfileListFilterState extends Loggable {
     bool? favoritesFirst,
     Map<String, Profile>? profiles,
     Set<String>? failed,
-    List<ProfileGroup>? folders,
+    List<ProfileFolder>? folders,
   }) {
     return ProfileListFilterState(
       query: query ?? this.query,

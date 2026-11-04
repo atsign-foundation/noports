@@ -7,7 +7,7 @@ import 'package:npt_flutter/features/back_up_key/util/backup_key_utils.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile/view/profile_header_view.dart';
-import 'package:npt_flutter/features/profile_group/profile_group.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/cubit/sync_cubit.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/profile_list/widgets/demo_profile_info_widget.dart';
@@ -51,10 +51,12 @@ class _ProfileListViewState extends State<ProfileListView> {
         }
         final ProfileListState list = context.read<ProfileListBloc>().state;
         if (list is ProfileListLoaded) filter.setProfiles(list.profiles);
-        final ProfileGroupState folders = context
-            .read<ProfileGroupBloc>()
+        final ProfileFolderState folderState = context
+            .read<ProfileFolderBloc>()
             .state;
-        if (folders is ProfileGroupsLoaded) filter.setFolders(folders.groups);
+        if (folderState is ProfileFoldersLoaded) {
+          filter.setFolders(folderState.folders);
+        }
         return filter;
       },
       child: MultiBlocListener(
@@ -91,12 +93,12 @@ class _ProfileListViewState extends State<ProfileListView> {
               }
             },
           ),
-          BlocListener<ProfileGroupBloc, ProfileGroupState>(
-            listener: (BuildContext context, ProfileGroupState state) {
+          BlocListener<ProfileFolderBloc, ProfileFolderState>(
+            listener: (BuildContext context, ProfileFolderState state) {
               context.read<ProfileListFilterCubit>().setFolders(
-                state is ProfileGroupsLoaded
-                    ? state.groups
-                    : const <ProfileGroup>[],
+                state is ProfileFoldersLoaded
+                    ? state.folders
+                    : const <ProfileFolder>[],
               );
             },
           ),
@@ -149,18 +151,18 @@ class _ProfileListViewState extends State<ProfileListView> {
                                           gapW4,
                                           ProfileListSortChip(),
                                           gapW10,
-                                          ProfileGroupLoadRetryButton(),
+                                          ProfileFolderLoadRetryButton(),
                                         ],
                                       ),
                                     ),
                                     gapW10,
                                     ProfileListAddButton(),
                                     gapW10,
-                                    ProfileGroupCreateButton(),
+                                    ProfileFolderCreateButton(),
                                     gapW10,
                                     ProfileListImportButton(),
                                     gapW10,
-                                    ProfileGroupMoveButton(),
+                                    ProfileFolderMoveButton(),
                                     gapW10,
                                     ProfileSelectedExportButton(),
                                     gapW10,
@@ -243,7 +245,7 @@ class _FilteredList extends StatelessWidget {
               children: <Widget>[
                 Offstage(
                   offstage: noResults,
-                  child: ProfileGroupedListView(
+                  child: ProfileFolderListView(
                     profiles: profiles,
                     arrange: filter.isDefault
                         ? null
@@ -257,7 +259,7 @@ class _FilteredList extends StatelessWidget {
                     sortedDropMessage: filter.sortMode != ProfileSortMode.manual
                         ? strings.profileSortByNameMessage
                         : filter.favoritesFirst
-                        ? strings.profileSortPinnedMessage
+                        ? strings.profileSortFavoritesMessage
                         : null,
                   ),
                 ),

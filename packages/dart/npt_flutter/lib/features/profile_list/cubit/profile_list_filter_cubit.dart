@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
-import 'package:npt_flutter/features/profile_group/models/profile_group.dart';
+import 'package:npt_flutter/features/profile_folder/models/profile_folder.dart';
 import 'package:npt_flutter/features/settings/models/settings.dart';
 import 'package:npt_flutter/util/name_sort.dart';
 
@@ -41,7 +41,7 @@ class ProfileListFilterCubit extends Cubit<ProfileListFilterState> {
     _follow();
   }
 
-  void setFolders(List<ProfileGroup> folders) =>
+  void setFolders(List<ProfileFolder> folders) =>
       emit(state.copyWith(folders: folders));
 
   void setProfiles(Iterable<String> uuids) {

@@ -9,7 +9,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile/widgets/profile_delete_button.dart';
-import 'package:npt_flutter/features/profile_group/profile_group.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -19,9 +19,9 @@ import 'package:npt_flutter/widgets/spinner.dart';
 
 import 'profile_view_test.mocks.dart';
 
-class MockProfileGroupBloc
-    extends MockBloc<ProfileGroupEvent, ProfileGroupState>
-    implements ProfileGroupBloc {}
+class MockProfileFolderBloc
+    extends MockBloc<ProfileFolderEvent, ProfileFolderState>
+    implements ProfileFolderBloc {}
 
 // Mock classes for testing
 @GenerateNiceMocks([
@@ -40,7 +40,7 @@ void main() {
     late MockProfilesSelectedCubit mockProfilesSelectedCubit;
     late MockFavoriteBloc mockFavoriteBloc;
     late MockFavoriteRepository mockFavoriteRepository;
-    late MockProfileGroupBloc mockProfileGroupBloc;
+    late MockProfileFolderBloc mockProfileFolderBloc;
 
     const testUuid = 'test-uuid-123';
     final testProfile = Profile(
@@ -67,11 +67,11 @@ void main() {
       mockProfilesSelectedCubit = MockProfilesSelectedCubit();
       mockFavoriteBloc = MockFavoriteBloc();
       mockFavoriteRepository = MockFavoriteRepository();
-      mockProfileGroupBloc = MockProfileGroupBloc();
+      mockProfileFolderBloc = MockProfileFolderBloc();
       whenListen(
-        mockProfileGroupBloc,
-        const Stream<ProfileGroupState>.empty(),
-        initialState: const ProfileGroupsInitial(),
+        mockProfileFolderBloc,
+        const Stream<ProfileFolderState>.empty(),
+        initialState: const ProfileFoldersInitial(),
       );
 
       // Provide dummy values for the mocks
@@ -135,7 +135,9 @@ void main() {
                 value: mockProfilesSelectedCubit,
               ),
               BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
-              BlocProvider<ProfileGroupBloc>.value(value: mockProfileGroupBloc),
+              BlocProvider<ProfileFolderBloc>.value(
+                value: mockProfileFolderBloc,
+              ),
             ],
             child: const ProfileView(),
           ),
@@ -391,8 +393,8 @@ void main() {
                   value: mockProfilesSelectedCubit,
                 ),
                 BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
-                BlocProvider<ProfileGroupBloc>.value(
-                  value: mockProfileGroupBloc,
+                BlocProvider<ProfileFolderBloc>.value(
+                  value: mockProfileFolderBloc,
                 ),
               ],
               child: const ProfileViewMinimal(),
@@ -492,8 +494,8 @@ void main() {
                   value: mockProfilesSelectedCubit,
                 ),
                 BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
-                BlocProvider<ProfileGroupBloc>.value(
-                  value: mockProfileGroupBloc,
+                BlocProvider<ProfileFolderBloc>.value(
+                  value: mockProfileFolderBloc,
                 ),
               ],
               child: const ProfileViewSshStyle(),

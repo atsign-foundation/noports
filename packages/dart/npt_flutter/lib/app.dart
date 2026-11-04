@@ -38,8 +38,8 @@ class App extends StatelessWidget {
         RepositoryProvider<FavoriteRepository>(
           create: (_) => FavoriteRepository(),
         ),
-        RepositoryProvider<ProfileGroupRepository>(
-          create: (_) => ProfileGroupRepository(),
+        RepositoryProvider<ProfileFolderRepository>(
+          create: (_) => ProfileFolderRepository(),
         ),
         RepositoryProvider<BackUpKeyRepository>(
           create: (_) => BackUpKeyRepository(),
@@ -79,9 +79,9 @@ class App extends StatelessWidget {
             create: (ctx) => ProfileListBloc(ctx.read<ProfileRepository>()),
           ),
 
-          BlocProvider<ProfileGroupBloc>(
+          BlocProvider<ProfileFolderBloc>(
             create: (ctx) =>
-                ProfileGroupBloc(ctx.read<ProfileGroupRepository>()),
+                ProfileFolderBloc(ctx.read<ProfileFolderRepository>()),
           ),
 
           /// A cubit which caches [ProfileBloc] by uuid so they can be shared

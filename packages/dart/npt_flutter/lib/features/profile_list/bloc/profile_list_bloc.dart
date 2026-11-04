@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
-import 'package:npt_flutter/features/profile_group/profile_group.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 
 part 'profile_list_event.dart';
 part 'profile_list_state.dart';
@@ -79,8 +79,8 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
       unawaited(_repo.deleteProfile(uuid));
     }
     bloc?.add(FavoriteRemoveEvent(favoritesToRemove));
-    App.navState.currentContext?.read<ProfileGroupBloc>().add(
-      ProfileGroupRemoveProfilesEvent(event.toDelete.toList()),
+    App.navState.currentContext?.read<ProfileFolderBloc>().add(
+      ProfileFolderRemoveProfilesEvent(event.toDelete.toList()),
     );
   }
 

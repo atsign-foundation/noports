@@ -7,8 +7,8 @@ class ProfileFormPageArguments {
   final Profile? copyFrom;
 
   /// When set, the saved profile is placed in this folder.
-  final String? groupId;
-  ProfileFormPageArguments(this.uuid, {this.copyFrom, this.groupId});
+  final String? folderId;
+  ProfileFormPageArguments(this.uuid, {this.copyFrom, this.folderId});
 }
 
 class ProfileFormPage extends StatelessWidget {
@@ -22,7 +22,7 @@ class ProfileFormPage extends StatelessWidget {
       body: ProfileFormView(
         args.uuid,
         copyFrom: args.copyFrom,
-        groupId: args.groupId,
+        folderId: args.folderId,
       ),
     );
   }

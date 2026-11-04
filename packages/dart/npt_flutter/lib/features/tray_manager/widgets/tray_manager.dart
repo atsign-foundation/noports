@@ -7,7 +7,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
-import 'package:npt_flutter/features/profile_group/profile_group.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
@@ -47,8 +47,8 @@ class _TrayManagerState extends State<TrayManager>
         cubit.reload(localizations: localizations);
       case ProfileState _:
         cubit.reload(profileState: state);
-      case ProfileGroupState _:
-        cubit.reload(profileGroupState: state);
+      case ProfileFolderState _:
+        cubit.reload(profileFolderState: state);
       default:
         cubit.reload(localizations: AppLocalizations.of(context));
     }
@@ -76,7 +76,7 @@ class _TrayManagerState extends State<TrayManager>
           /// still have to check
           BlocListener<FavoriteBloc, FavoritesState>(listener: reloadTray),
           BlocListener<ProfileListBloc, ProfileListState>(listener: reloadTray),
-          BlocListener<ProfileGroupBloc, ProfileGroupState>(
+          BlocListener<ProfileFolderBloc, ProfileFolderState>(
             listener: reloadTray,
           ),
           BlocListener<ProfilesRunningCubit, ProfilesRunningState>(

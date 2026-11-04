@@ -530,81 +530,81 @@ class AppLocalizationsPt extends AppLocalizations {
       'A solicitação será exibida no Authenticator em Solicitações em qualquer aplicativo conectado ao seu Atsign com chaves de gerenciador.';
 
   @override
+  String get folderAddConnection => 'Adicionar conexão';
+
+  @override
+  String get folderChooseStartAll => 'Escolher ligações a iniciar';
+
+  @override
+  String get folderChooseStartAllDescription =>
+      'Iniciar todos inicia as ligações marcadas, uma após a outra.';
+
+  @override
+  String get folderCollapse => 'Recolher';
+
+  @override
+  String get folderDelete => 'Excluir pasta';
+
+  @override
+  String get folderDeleteMessage =>
+      'Esta pasta será excluída. As conexões dentro dela serão mantidas.';
+
+  @override
+  String get folderExpand => 'Expandir';
+
+  @override
+  String get folderLoadFailedRetry =>
+      'Falha ao carregar as pastas. Tentar novamente';
+
+  @override
+  String get folderMoveDown => 'Mover para baixo';
+
+  @override
+  String get folderMoveTo => 'Mover para';
+
+  @override
+  String get folderMoveToFolder => 'Mover para pasta';
+
+  @override
+  String get folderMoveUp => 'Mover para cima';
+
+  @override
+  String get folderName => 'Nome da pasta';
+
+  @override
+  String get folderNameRequired => 'Informe um nome para a pasta';
+
+  @override
+  String get folderNew => 'Nova pasta';
+
+  @override
+  String get folderNone => 'Sem pasta';
+
+  @override
+  String get folderRename => 'Renomear';
+
+  @override
+  String get folderRenameTitle => 'Renomear pasta';
+
+  @override
+  String get folderStartAll => 'Iniciar todos';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return 'Iniciar $count de $total';
+  }
+
+  @override
+  String get folderStopAll => 'Parar todos';
+
+  @override
   String get getStarted => 'Começar';
 
   @override
   String get groupAdd => 'Adicionar Grupo';
 
   @override
-  String get groupAddConnection => 'Adicionar conexão';
-
-  @override
-  String get groupChooseStartAll => 'Escolher ligações a iniciar';
-
-  @override
-  String get groupChooseStartAllDescription =>
-      'Iniciar todos inicia as ligações marcadas, uma após a outra.';
-
-  @override
-  String get groupCollapse => 'Recolher';
-
-  @override
-  String get groupDeleteFolder => 'Excluir pasta';
-
-  @override
-  String get groupDeleteFolderMessage =>
-      'Esta pasta será excluída. As conexões dentro dela serão mantidas.';
-
-  @override
-  String get groupExpand => 'Expandir';
-
-  @override
-  String get groupFolderName => 'Nome da pasta';
-
-  @override
-  String get groupFolderNameRequired => 'Informe um nome para a pasta';
-
-  @override
-  String get groupLoadFailedRetry =>
-      'Falha ao carregar as pastas. Tentar novamente';
-
-  @override
-  String get groupMoveDown => 'Mover para baixo';
-
-  @override
-  String get groupMoveTo => 'Mover para';
-
-  @override
-  String get groupMoveToFolder => 'Mover para pasta';
-
-  @override
-  String get groupMoveUp => 'Mover para cima';
-
-  @override
   String get groupName => 'Nome do Grupo';
-
-  @override
-  String get groupNewFolder => 'Nova pasta';
-
-  @override
-  String get groupNoFolder => 'Sem pasta';
-
-  @override
-  String get groupRename => 'Renomear';
-
-  @override
-  String get groupRenameFolder => 'Renomear pasta';
-
-  @override
-  String get groupStartAll => 'Iniciar todos';
-
-  @override
-  String groupStartSome(Object count, Object total) {
-    return 'Iniciar $count de $total';
-  }
-
-  @override
-  String get groupStopAll => 'Parar todos';
 
   @override
   String get import => 'Importar';
@@ -893,6 +893,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileSortFavoritesFirst => 'Favoritos primeiro';
 
   @override
+  String get profileSortFavoritesMessage =>
+      'Os favoritos ficam no topo enquanto Favoritos primeiro está ativado';
+
+  @override
   String get profileSortManual => 'Ordem manual';
 
   @override
@@ -900,10 +904,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileSortNameDescending => 'Nome, de Z a A';
-
-  @override
-  String get profileSortPinnedMessage =>
-      'Os favoritos ficam no topo enquanto Favoritos primeiro está ativado';
 
   @override
   String get profileSortReset => 'Voltar à ordem manual';
@@ -1778,81 +1778,81 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'A solicitação será exibida no Authenticator em Solicitações em qualquer aplicativo conectado ao seu Atsign com chaves de gerenciador.';
 
   @override
+  String get folderAddConnection => 'Adicionar conexão';
+
+  @override
+  String get folderChooseStartAll => 'Escolher conexões a iniciar';
+
+  @override
+  String get folderChooseStartAllDescription =>
+      'Iniciar todos inicia as conexões marcadas, uma após a outra.';
+
+  @override
+  String get folderCollapse => 'Recolher';
+
+  @override
+  String get folderDelete => 'Excluir pasta';
+
+  @override
+  String get folderDeleteMessage =>
+      'Esta pasta será excluída. As conexões dentro dela serão mantidas.';
+
+  @override
+  String get folderExpand => 'Expandir';
+
+  @override
+  String get folderLoadFailedRetry =>
+      'Falha ao carregar as pastas. Tentar novamente';
+
+  @override
+  String get folderMoveDown => 'Mover para baixo';
+
+  @override
+  String get folderMoveTo => 'Mover para';
+
+  @override
+  String get folderMoveToFolder => 'Mover para pasta';
+
+  @override
+  String get folderMoveUp => 'Mover para cima';
+
+  @override
+  String get folderName => 'Nome da pasta';
+
+  @override
+  String get folderNameRequired => 'Informe um nome para a pasta';
+
+  @override
+  String get folderNew => 'Nova pasta';
+
+  @override
+  String get folderNone => 'Sem pasta';
+
+  @override
+  String get folderRename => 'Renomear';
+
+  @override
+  String get folderRenameTitle => 'Renomear pasta';
+
+  @override
+  String get folderStartAll => 'Iniciar todos';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return 'Iniciar $count de $total';
+  }
+
+  @override
+  String get folderStopAll => 'Parar todos';
+
+  @override
   String get getStarted => 'Começar';
 
   @override
   String get groupAdd => 'Adicionar Grupo';
 
   @override
-  String get groupAddConnection => 'Adicionar conexão';
-
-  @override
-  String get groupChooseStartAll => 'Escolher conexões a iniciar';
-
-  @override
-  String get groupChooseStartAllDescription =>
-      'Iniciar todos inicia as conexões marcadas, uma após a outra.';
-
-  @override
-  String get groupCollapse => 'Recolher';
-
-  @override
-  String get groupDeleteFolder => 'Excluir pasta';
-
-  @override
-  String get groupDeleteFolderMessage =>
-      'Esta pasta será excluída. As conexões dentro dela serão mantidas.';
-
-  @override
-  String get groupExpand => 'Expandir';
-
-  @override
-  String get groupFolderName => 'Nome da pasta';
-
-  @override
-  String get groupFolderNameRequired => 'Informe um nome para a pasta';
-
-  @override
-  String get groupLoadFailedRetry =>
-      'Falha ao carregar as pastas. Tentar novamente';
-
-  @override
-  String get groupMoveDown => 'Mover para baixo';
-
-  @override
-  String get groupMoveTo => 'Mover para';
-
-  @override
-  String get groupMoveToFolder => 'Mover para pasta';
-
-  @override
-  String get groupMoveUp => 'Mover para cima';
-
-  @override
   String get groupName => 'Nome do Grupo';
-
-  @override
-  String get groupNewFolder => 'Nova pasta';
-
-  @override
-  String get groupNoFolder => 'Sem pasta';
-
-  @override
-  String get groupRename => 'Renomear';
-
-  @override
-  String get groupRenameFolder => 'Renomear pasta';
-
-  @override
-  String get groupStartAll => 'Iniciar todos';
-
-  @override
-  String groupStartSome(Object count, Object total) {
-    return 'Iniciar $count de $total';
-  }
-
-  @override
-  String get groupStopAll => 'Parar todos';
 
   @override
   String get import => 'Importar';
@@ -2141,6 +2141,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get profileSortFavoritesFirst => 'Favoritos primeiro';
 
   @override
+  String get profileSortFavoritesMessage =>
+      'Os favoritos ficam no topo enquanto Favoritos primeiro está ativado';
+
+  @override
   String get profileSortManual => 'Ordem manual';
 
   @override
@@ -2148,10 +2152,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get profileSortNameDescending => 'Nome, de Z a A';
-
-  @override
-  String get profileSortPinnedMessage =>
-      'Os favoritos ficam no topo enquanto Favoritos primeiro está ativado';
 
   @override
   String get profileSortReset => 'Voltar à ordem manual';

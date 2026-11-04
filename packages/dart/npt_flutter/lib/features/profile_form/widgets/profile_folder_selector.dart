@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_flutter/features/profile_group/profile_group.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-/// A null [groupId] is "No folder". A [newName] is created on submit.
-typedef ProfileFormFolder = ({String? groupId, String? newName});
+/// A null [folderId] is "No folder". A [newName] is created on submit.
+typedef ProfileFormFolder = ({String? folderId, String? newName});
 
 class ProfileFormFolderCubit extends Cubit<ProfileFormFolder> {
-  ProfileFormFolderCubit(String? groupId)
-    : super((groupId: groupId, newName: null));
+  ProfileFormFolderCubit(String? folderId)
+    : super((folderId: folderId, newName: null));
 
-  void choose(String? groupId) => emit((groupId: groupId, newName: null));
+  void choose(String? folderId) => emit((folderId: folderId, newName: null));
 
-  void create(String name) => emit((groupId: null, newName: name));
+  void create(String name) => emit((folderId: null, newName: name));
 }
 
 class ProfileFolderSelector extends StatefulWidget {
@@ -71,7 +71,7 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
     final String? name = await showDialog<String>(
       context: context,
       builder: (BuildContext _) =>
-          ProfileGroupNameDialog(title: strings.groupNewFolder),
+          ProfileFolderNameDialog(title: strings.folderNew),
     );
     if (name != null && name.isNotEmpty) {
       cubit.create(name);
@@ -103,7 +103,7 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
       ...matches,
       DropdownMenuEntry<String>(
         value: '$_createNamed$name',
-        label: '${AppLocalizations.of(context)!.groupNewFolder}: $name',
+        label: '${AppLocalizations.of(context)!.folderNew}: $name',
         leadingIcon: PhosphorIcon(PhosphorIcons.folderPlus(), size: Sizes.p20),
       ),
     ];
@@ -112,14 +112,14 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations strings = AppLocalizations.of(context)!;
-    return BlocBuilder<ProfileGroupBloc, ProfileGroupState>(
-      builder: (BuildContext context, ProfileGroupState groups) {
-        if (groups is! ProfileGroupsLoaded) return gap0;
+    return BlocBuilder<ProfileFolderBloc, ProfileFolderState>(
+      builder: (BuildContext context, ProfileFolderState state) {
+        if (state is! ProfileFoldersLoaded) return gap0;
         final ProfileFormFolder chosen = context
             .watch<ProfileFormFolderCubit>()
             .state;
-        final ProfileGroup? folder = groups.data.groupById(
-          chosen.groupId ?? '',
+        final ProfileFolder? folder = state.data.folderById(
+          chosen.folderId ?? '',
         );
         final String selection = chosen.newName != null
             ? _newFolder
@@ -158,11 +158,11 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
                   dropdownMenuEntries: <DropdownMenuEntry<String>>[
                     DropdownMenuEntry<String>(
                       value: _noFolder,
-                      label: strings.groupNoFolder,
+                      label: strings.folderNone,
                     ),
                     DropdownMenuEntry<String>(
                       value: _createFolder,
-                      label: strings.groupNewFolder,
+                      label: strings.folderNew,
                       leadingIcon: PhosphorIcon(
                         PhosphorIcons.folderPlus(),
                         size: Sizes.p20,
@@ -173,10 +173,10 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
                         value: _newFolder,
                         label: chosen.newName!,
                       ),
-                    for (final ProfileGroup group in groups.groups)
+                    for (final ProfileFolder option in state.folders)
                       DropdownMenuEntry<String>(
-                        value: group.uuid,
-                        label: group.name,
+                        value: option.uuid,
+                        label: option.name,
                       ),
                   ],
                   onSelected: (String? value) {

@@ -7,7 +7,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
-import 'package:npt_flutter/features/profile_group/profile_group.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -103,7 +103,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     ProfilesRunningState? profilesRunningState,
     OnboardingState? onboardingState,
     ProfileState? profileState,
-    ProfileGroupState? profileGroupState,
+    ProfileFolderState? profileFolderState,
   }) async {
     var context = App.navState.currentContext;
     if (context == null) return;
@@ -116,7 +116,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     favoriteState ??= context.read<FavoriteBloc>().state;
     profileListState ??= context.read<ProfileListBloc>().state;
     onboardingState ??= context.read<OnboardingCubit>().state;
-    profileGroupState ??= context.read<ProfileGroupBloc>().state;
+    profileFolderState ??= context.read<ProfileFolderBloc>().state;
     profilesRunningState ??= context.read<ProfilesRunningCubit>().state;
     var showSettings = onboardingState.status == OnboardingStatus.onboarded;
 
@@ -126,14 +126,14 @@ class TrayCubit extends LoggingCubit<TrayState> {
     if (favoriteState is! FavoritesLoaded) return;
     if (profileListState is! ProfileListLoaded) return;
 
-    /// Starred folders first, then starred connections, each sorted by name
+    /// Favorite folders first, then favorite connections, each sorted by name
     var loadedProfiles = profileListState.profiles.toSet();
     var running = profilesRunningState.socketConnectors;
-    var starredFolders = profileGroupState is ProfileGroupsLoaded
-        ? (profileGroupState.groups.where((folder) => folder.favorite).toList()
+    var favoriteFolders = profileFolderState is ProfileFoldersLoaded
+        ? (profileFolderState.folders.where((folder) => folder.favorite).toList()
             ..sort((a, b) => nameSortKey(a.name).compareTo(nameSortKey(b.name))))
-        : <ProfileGroup>[];
-    var folderMenuItems = starredFolders.map((folder) {
+        : <ProfileFolder>[];
+    var folderMenuItems = favoriteFolders.map((folder) {
       var uuids = folder.profileIds.where(loadedProfiles.contains).toList();
       var startable = uuids.where(folder.startsWithAll).toList();
       var startableRunning = startable.where(running.containsKey).length;
@@ -146,9 +146,9 @@ class TrayCubit extends LoggingCubit<TrayState> {
           var context = App.navState.currentContext;
           if (context == null) return;
           if (anyRunning || waiting) {
-            ProfileGroupActions.stopAll(context, uuids);
+            ProfileFolderActions.stopAll(context, uuids);
           } else {
-            ProfileGroupActions.startAll(context, startable);
+            ProfileFolderActions.startAll(context, startable);
             // Show the main window on Windows only when initiating a connection
             if (Platform.isWindows) windowManager.show();
           }

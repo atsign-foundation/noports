@@ -523,80 +523,80 @@ class AppLocalizationsEn extends AppLocalizations {
       'The request will be displayed in the Authenticator under Requests in any app connected to your Atsign with manager keys.';
 
   @override
+  String get folderAddConnection => 'Add connection';
+
+  @override
+  String get folderChooseStartAll => 'Choose connections to start';
+
+  @override
+  String get folderChooseStartAllDescription =>
+      'Start all starts the checked connections, one after another.';
+
+  @override
+  String get folderCollapse => 'Collapse';
+
+  @override
+  String get folderDelete => 'Delete folder';
+
+  @override
+  String get folderDeleteMessage =>
+      'This folder will be deleted. The connections inside it will be kept.';
+
+  @override
+  String get folderExpand => 'Expand';
+
+  @override
+  String get folderLoadFailedRetry => 'Folders failed to load. Retry';
+
+  @override
+  String get folderMoveDown => 'Move down';
+
+  @override
+  String get folderMoveTo => 'Move to';
+
+  @override
+  String get folderMoveToFolder => 'Move to folder';
+
+  @override
+  String get folderMoveUp => 'Move up';
+
+  @override
+  String get folderName => 'Folder name';
+
+  @override
+  String get folderNameRequired => 'Please enter a folder name';
+
+  @override
+  String get folderNew => 'New folder';
+
+  @override
+  String get folderNone => 'No folder';
+
+  @override
+  String get folderRename => 'Rename';
+
+  @override
+  String get folderRenameTitle => 'Rename folder';
+
+  @override
+  String get folderStartAll => 'Start all';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return 'Start $count of $total';
+  }
+
+  @override
+  String get folderStopAll => 'Stop all';
+
+  @override
   String get getStarted => 'Get Started';
 
   @override
   String get groupAdd => 'Add Group';
 
   @override
-  String get groupAddConnection => 'Add connection';
-
-  @override
-  String get groupChooseStartAll => 'Choose connections to start';
-
-  @override
-  String get groupChooseStartAllDescription =>
-      'Start all starts the checked connections, one after another.';
-
-  @override
-  String get groupCollapse => 'Collapse';
-
-  @override
-  String get groupDeleteFolder => 'Delete folder';
-
-  @override
-  String get groupDeleteFolderMessage =>
-      'This folder will be deleted. The connections inside it will be kept.';
-
-  @override
-  String get groupExpand => 'Expand';
-
-  @override
-  String get groupFolderName => 'Folder name';
-
-  @override
-  String get groupFolderNameRequired => 'Please enter a folder name';
-
-  @override
-  String get groupLoadFailedRetry => 'Folders failed to load. Retry';
-
-  @override
-  String get groupMoveDown => 'Move down';
-
-  @override
-  String get groupMoveTo => 'Move to';
-
-  @override
-  String get groupMoveToFolder => 'Move to folder';
-
-  @override
-  String get groupMoveUp => 'Move up';
-
-  @override
   String get groupName => 'Group Name';
-
-  @override
-  String get groupNewFolder => 'New folder';
-
-  @override
-  String get groupNoFolder => 'No folder';
-
-  @override
-  String get groupRename => 'Rename';
-
-  @override
-  String get groupRenameFolder => 'Rename folder';
-
-  @override
-  String get groupStartAll => 'Start all';
-
-  @override
-  String groupStartSome(Object count, Object total) {
-    return 'Start $count of $total';
-  }
-
-  @override
-  String get groupStopAll => 'Stop all';
 
   @override
   String get import => 'Import';
@@ -880,6 +880,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSortFavoritesFirst => 'Favorites first';
 
   @override
+  String get profileSortFavoritesMessage =>
+      'Favorites stay on top while Favorites first is on';
+
+  @override
   String get profileSortManual => 'Manual order';
 
   @override
@@ -887,10 +891,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileSortNameDescending => 'Name, Z to A';
-
-  @override
-  String get profileSortPinnedMessage =>
-      'Starred items stay on top while Favorites first is on';
 
   @override
   String get profileSortReset => 'Back to manual order';

@@ -496,78 +496,78 @@ class AppLocalizationsZh extends AppLocalizations {
       '请求将在 Authenticator 的“请求”中显示在任何通过管理员密钥连接到您的 Atsign 的应用中。';
 
   @override
+  String get folderAddConnection => '添加连接';
+
+  @override
+  String get folderChooseStartAll => '选择要启动的连接';
+
+  @override
+  String get folderChooseStartAllDescription => '“全部启动”会依次启动已勾选的连接。';
+
+  @override
+  String get folderCollapse => '折叠';
+
+  @override
+  String get folderDelete => '删除文件夹';
+
+  @override
+  String get folderDeleteMessage => '此文件夹将被删除。其中的连接将被保留。';
+
+  @override
+  String get folderExpand => '展开';
+
+  @override
+  String get folderLoadFailedRetry => '文件夹加载失败。重试';
+
+  @override
+  String get folderMoveDown => '下移';
+
+  @override
+  String get folderMoveTo => '移动到';
+
+  @override
+  String get folderMoveToFolder => '移动到文件夹';
+
+  @override
+  String get folderMoveUp => '上移';
+
+  @override
+  String get folderName => '文件夹名称';
+
+  @override
+  String get folderNameRequired => '请输入文件夹名称';
+
+  @override
+  String get folderNew => '新建文件夹';
+
+  @override
+  String get folderNone => '无文件夹';
+
+  @override
+  String get folderRename => '重命名';
+
+  @override
+  String get folderRenameTitle => '重命名文件夹';
+
+  @override
+  String get folderStartAll => '全部启动';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return '启动 $count/$total 个';
+  }
+
+  @override
+  String get folderStopAll => '全部停止';
+
+  @override
   String get getStarted => '开始使用';
 
   @override
   String get groupAdd => '添加组';
 
   @override
-  String get groupAddConnection => '添加连接';
-
-  @override
-  String get groupChooseStartAll => '选择要启动的连接';
-
-  @override
-  String get groupChooseStartAllDescription => '“全部启动”会依次启动已勾选的连接。';
-
-  @override
-  String get groupCollapse => '折叠';
-
-  @override
-  String get groupDeleteFolder => '删除文件夹';
-
-  @override
-  String get groupDeleteFolderMessage => '此文件夹将被删除。其中的连接将被保留。';
-
-  @override
-  String get groupExpand => '展开';
-
-  @override
-  String get groupFolderName => '文件夹名称';
-
-  @override
-  String get groupFolderNameRequired => '请输入文件夹名称';
-
-  @override
-  String get groupLoadFailedRetry => '文件夹加载失败。重试';
-
-  @override
-  String get groupMoveDown => '下移';
-
-  @override
-  String get groupMoveTo => '移动到';
-
-  @override
-  String get groupMoveToFolder => '移动到文件夹';
-
-  @override
-  String get groupMoveUp => '上移';
-
-  @override
   String get groupName => '组名';
-
-  @override
-  String get groupNewFolder => '新建文件夹';
-
-  @override
-  String get groupNoFolder => '无文件夹';
-
-  @override
-  String get groupRename => '重命名';
-
-  @override
-  String get groupRenameFolder => '重命名文件夹';
-
-  @override
-  String get groupStartAll => '全部启动';
-
-  @override
-  String groupStartSome(Object count, Object total) {
-    return '启动 $count/$total 个';
-  }
-
-  @override
-  String get groupStopAll => '全部停止';
 
   @override
   String get import => '导入';
@@ -836,6 +836,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileSortFavoritesFirst => '收藏优先';
 
   @override
+  String get profileSortFavoritesMessage => '开启收藏优先时，收藏项始终置顶';
+
+  @override
   String get profileSortManual => '手动排序';
 
   @override
@@ -843,9 +846,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profileSortNameDescending => '名称（Z 到 A）';
-
-  @override
-  String get profileSortPinnedMessage => '开启收藏优先时，收藏项始终置顶';
 
   @override
   String get profileSortReset => '恢复手动排序';
@@ -1665,78 +1665,78 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
       '请求将在 Authenticator 的“请求”中显示在任何通过管理员密钥连接到您的 Atsign 的应用中。';
 
   @override
+  String get folderAddConnection => '添加连接';
+
+  @override
+  String get folderChooseStartAll => '选择要启动的连接';
+
+  @override
+  String get folderChooseStartAllDescription => '“全部启动”会依次启动已勾选的连接。';
+
+  @override
+  String get folderCollapse => '折叠';
+
+  @override
+  String get folderDelete => '删除文件夹';
+
+  @override
+  String get folderDeleteMessage => '此文件夹将被删除。其中的连接将被保留。';
+
+  @override
+  String get folderExpand => '展开';
+
+  @override
+  String get folderLoadFailedRetry => '文件夹加载失败。重试';
+
+  @override
+  String get folderMoveDown => '下移';
+
+  @override
+  String get folderMoveTo => '移动到';
+
+  @override
+  String get folderMoveToFolder => '移动到文件夹';
+
+  @override
+  String get folderMoveUp => '上移';
+
+  @override
+  String get folderName => '文件夹名称';
+
+  @override
+  String get folderNameRequired => '请输入文件夹名称';
+
+  @override
+  String get folderNew => '新建文件夹';
+
+  @override
+  String get folderNone => '无文件夹';
+
+  @override
+  String get folderRename => '重命名';
+
+  @override
+  String get folderRenameTitle => '重命名文件夹';
+
+  @override
+  String get folderStartAll => '全部启动';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return '启动 $count/$total 个';
+  }
+
+  @override
+  String get folderStopAll => '全部停止';
+
+  @override
   String get getStarted => '开始使用';
 
   @override
   String get groupAdd => '添加组';
 
   @override
-  String get groupAddConnection => '添加连接';
-
-  @override
-  String get groupChooseStartAll => '选择要启动的连接';
-
-  @override
-  String get groupChooseStartAllDescription => '“全部启动”会依次启动已勾选的连接。';
-
-  @override
-  String get groupCollapse => '折叠';
-
-  @override
-  String get groupDeleteFolder => '删除文件夹';
-
-  @override
-  String get groupDeleteFolderMessage => '此文件夹将被删除。其中的连接将被保留。';
-
-  @override
-  String get groupExpand => '展开';
-
-  @override
-  String get groupFolderName => '文件夹名称';
-
-  @override
-  String get groupFolderNameRequired => '请输入文件夹名称';
-
-  @override
-  String get groupLoadFailedRetry => '文件夹加载失败。重试';
-
-  @override
-  String get groupMoveDown => '下移';
-
-  @override
-  String get groupMoveTo => '移动到';
-
-  @override
-  String get groupMoveToFolder => '移动到文件夹';
-
-  @override
-  String get groupMoveUp => '上移';
-
-  @override
   String get groupName => '组名';
-
-  @override
-  String get groupNewFolder => '新建文件夹';
-
-  @override
-  String get groupNoFolder => '无文件夹';
-
-  @override
-  String get groupRename => '重命名';
-
-  @override
-  String get groupRenameFolder => '重命名文件夹';
-
-  @override
-  String get groupStartAll => '全部启动';
-
-  @override
-  String groupStartSome(Object count, Object total) {
-    return '启动 $count/$total 个';
-  }
-
-  @override
-  String get groupStopAll => '全部停止';
 
   @override
   String get import => '导入';
@@ -2005,6 +2005,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileSortFavoritesFirst => '收藏优先';
 
   @override
+  String get profileSortFavoritesMessage => '开启收藏优先时，收藏项始终置顶';
+
+  @override
   String get profileSortManual => '手动排序';
 
   @override
@@ -2012,9 +2015,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get profileSortNameDescending => '名称（Z 到 A）';
-
-  @override
-  String get profileSortPinnedMessage => '开启收藏优先时，收藏项始终置顶';
 
   @override
   String get profileSortReset => '恢复手动排序';
@@ -2834,78 +2834,78 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
       '該請求將顯示在 Authenticator 的「請求」中，位於任何透過管理員金鑰連接至您 Atsign 的應用程式。';
 
   @override
+  String get folderAddConnection => '新增連線';
+
+  @override
+  String get folderChooseStartAll => '選擇要啟動的連線';
+
+  @override
+  String get folderChooseStartAllDescription => '「全部啟動」會依次啟動已勾選的連線。';
+
+  @override
+  String get folderCollapse => '收合';
+
+  @override
+  String get folderDelete => '刪除資料夾';
+
+  @override
+  String get folderDeleteMessage => '此資料夾將被刪除。其中的連線將被保留。';
+
+  @override
+  String get folderExpand => '展開';
+
+  @override
+  String get folderLoadFailedRetry => '資料夾載入失敗。重試';
+
+  @override
+  String get folderMoveDown => '下移';
+
+  @override
+  String get folderMoveTo => '移至';
+
+  @override
+  String get folderMoveToFolder => '移至資料夾';
+
+  @override
+  String get folderMoveUp => '上移';
+
+  @override
+  String get folderName => '資料夾名稱';
+
+  @override
+  String get folderNameRequired => '請輸入資料夾名稱';
+
+  @override
+  String get folderNew => '新增資料夾';
+
+  @override
+  String get folderNone => '無資料夾';
+
+  @override
+  String get folderRename => '重新命名';
+
+  @override
+  String get folderRenameTitle => '重新命名資料夾';
+
+  @override
+  String get folderStartAll => '全部啟動';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return '啟動 $count/$total 個';
+  }
+
+  @override
+  String get folderStopAll => '全部停止';
+
+  @override
   String get getStarted => '開始使用';
 
   @override
   String get groupAdd => '新增群組';
 
   @override
-  String get groupAddConnection => '新增連線';
-
-  @override
-  String get groupChooseStartAll => '選擇要啟動的連線';
-
-  @override
-  String get groupChooseStartAllDescription => '「全部啟動」會依次啟動已勾選的連線。';
-
-  @override
-  String get groupCollapse => '收合';
-
-  @override
-  String get groupDeleteFolder => '刪除資料夾';
-
-  @override
-  String get groupDeleteFolderMessage => '此資料夾將被刪除。其中的連線將被保留。';
-
-  @override
-  String get groupExpand => '展開';
-
-  @override
-  String get groupFolderName => '資料夾名稱';
-
-  @override
-  String get groupFolderNameRequired => '請輸入資料夾名稱';
-
-  @override
-  String get groupLoadFailedRetry => '資料夾載入失敗。重試';
-
-  @override
-  String get groupMoveDown => '下移';
-
-  @override
-  String get groupMoveTo => '移至';
-
-  @override
-  String get groupMoveToFolder => '移至資料夾';
-
-  @override
-  String get groupMoveUp => '上移';
-
-  @override
   String get groupName => '群組名稱';
-
-  @override
-  String get groupNewFolder => '新增資料夾';
-
-  @override
-  String get groupNoFolder => '無資料夾';
-
-  @override
-  String get groupRename => '重新命名';
-
-  @override
-  String get groupRenameFolder => '重新命名資料夾';
-
-  @override
-  String get groupStartAll => '全部啟動';
-
-  @override
-  String groupStartSome(Object count, Object total) {
-    return '啟動 $count/$total 個';
-  }
-
-  @override
-  String get groupStopAll => '全部停止';
 
   @override
   String get import => '匯入';
@@ -3173,6 +3173,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get profileSortFavoritesFirst => '最愛優先';
 
   @override
+  String get profileSortFavoritesMessage => '開啟最愛優先時，最愛項目會保持在頂部';
+
+  @override
   String get profileSortManual => '手動排序';
 
   @override
@@ -3180,9 +3183,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get profileSortNameDescending => '名稱（Z 至 A）';
-
-  @override
-  String get profileSortPinnedMessage => '開啟最愛優先時，最愛項目會保持在頂部';
 
   @override
   String get profileSortReset => '恢復手動排序';
