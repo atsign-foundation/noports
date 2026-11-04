@@ -51,7 +51,7 @@ Feature: The enrollment dialog keeps a request until it is decided or the user a
   Scenario: A restart resumes the wait
     Given the keychain holds e1, sent from this device for NoPorts and awaiting approval
     When the dialog opens for that atSign
-    Then it waits on e1 without asking for an OTP, and sends no new request
+    Then it waits on e1, asked for under the app and the device name e1 was filed under, without asking for an OTP, and sends no new request
 
   Scenario: Cancel asks first
     Given the dialog waiting for approval of e1

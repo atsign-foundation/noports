@@ -978,6 +978,16 @@ void main() {
       await _open(tester, pending, _Keychain(), flows: flows, waiting: false);
 
       expect(
+        flows.resumedApp,
+        'noports',
+        reason: 'resume asks for the app the request was filed under',
+      );
+      expect(
+        flows.resumedDevice,
+        'testdevice',
+        reason: 'resume asks for the device name the request was filed under',
+      );
+      expect(
         find.byKey(const Key('activating')),
         findsOneWidget,
         reason: 'the dialog shows it is waiting for approval',
@@ -1183,9 +1193,9 @@ class _Pending extends Fake implements PendingEnrollment {
   }
 }
 
-/// Resumes [pending], as if this device had submitted it before, submits
-/// requests, counting the [enrolls], and opens a client with [onOpen],
-/// counting the [opens].
+/// Resumes [pending], as if this device had submitted it before under the
+/// names [_pendingKeys] files e1 under, submits requests, counting the
+/// [enrolls], and opens a client with [onOpen], counting the [opens].
 class _Flows extends Fake implements AtsignFlows {
   _Flows(this.pending);
 
@@ -1233,6 +1243,13 @@ class _Flows extends Fake implements AtsignFlows {
     return onOpen();
   }
 
+  /// The app and the device name the lookup for a request to resume asked
+  /// for.
+  String? resumedApp;
+  String? resumedDevice;
+
+  /// Finds nothing when [app] or [device] is given and differs from the name
+  /// e1 is filed under in [_pendingKeys], as `resumeEnrollment` matches them.
   @override
   Future<PendingEnrollment?> resumeEnrollment(
     String atSign, {
@@ -1241,7 +1258,16 @@ class _Flows extends Fake implements AtsignFlows {
     required WrittenAtKeysIo keys,
     required AtClientPreference preference,
     AtLookUpFactory? lookUps,
-  }) => resumed ?? Future.value(pending);
+  }) {
+    resumedApp = app;
+    resumedDevice = device;
+    final filed = _pendingKeys().enrollmentInfo('e1');
+    if ((app != null && app != filed?.appName) ||
+        (device != null && device != filed?.deviceName)) {
+      return Future.value(null);
+    }
+    return resumed ?? Future.value(pending);
+  }
 }
 
 /// A keychain holding an entry for @alice with nothing live in it, as a
