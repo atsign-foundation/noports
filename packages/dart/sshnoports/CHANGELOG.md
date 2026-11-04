@@ -27,6 +27,12 @@
   where it stops being valid, and a field that isn't valid base64 with its
   name and position
 * fix: when an atServer refuses an activation, at_activate reports its reason
+* fix: npp_client says whether the atServer refused the policy atSign, and
+  why, or the atDirectory has no atServer for it, or its atServer could not be
+  reached, rather than calling every failure unreachable
+* fix: sshnp, sshnpd, srvd, npp and npp_atserver report an atSign the
+  atDirectory has no atServer for as not found, rather than unreachable, when
+  this device has opened it before
 * chore: sshnpd logs a session lock it can't take at warning
 * chore: load-balanced sshnpd instances, and srvd serving clients older than
   v5.11.2, need their atServer at p3.13.0 or later; on an older one every

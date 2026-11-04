@@ -55,30 +55,30 @@ Future<AtClient> createAtClientCli({
     );
   } on AtOpenRefusedException catch (e) {
     if (e.state.cause == AtConnectionCause.noAtServer) {
-      throw SecondaryNotFoundException(
-        '$atsign is not in the atDirectory at $rootDomain: check the atSign,'
-        ' and that it has been activated',
-      );
+      throw _notInAtDirectory(atsign, rootDomain);
     }
     throw UnAuthenticatedException(
       'Unable to authenticate $atsign: ${e.message}',
     );
   }
 
-  await onlineOrThrow(client, atsign, onlineBudget);
+  await onlineOrThrow(client, atsign, onlineBudget, rootDomain: rootDomain);
   AtClientManager.getInstance().use(client);
   return client;
 }
 
 /// Waits up to [onlineBudget] for [client] to come online, retrying every
 /// three seconds. Stops the client and throws [UnAuthenticatedException]
-/// with the atServer's reason when it is refused, or
-/// [SecondaryServerConnectivityException] when it is still offline.
+/// with the atServer's reason when it is refused,
+/// [SecondaryNotFoundException] when the atDirectory at [rootDomain] has no
+/// atServer for [atsign], or [SecondaryServerConnectivityException] when it
+/// is still offline.
 Future<void> onlineOrThrow(
   AtClient client,
   String atsign,
-  Duration onlineBudget,
-) async {
+  Duration onlineBudget, {
+  required String rootDomain,
+}) async {
   final state = await client.connection.awaitOnline(
     budget: onlineBudget,
     retryInterval: const Duration(seconds: 3),
@@ -93,8 +93,20 @@ Future<void> onlineOrThrow(
       'Unable to authenticate $atsign: the atServer refused it$reason',
     );
   }
+  if (state.cause == AtConnectionCause.noAtServer) {
+    throw _notInAtDirectory(atsign, rootDomain);
+  }
   throw SecondaryServerConnectivityException(
     '$atsign could not connect to its atServer within'
     ' ${onlineBudget.inSeconds} seconds: ${state.outcome.name}$reason',
   );
 }
+
+SecondaryNotFoundException _notInAtDirectory(
+  String atsign,
+  String rootDomain,
+) =>
+    SecondaryNotFoundException(
+      '$atsign is not in the atDirectory at $rootDomain: check the atSign,'
+      ' and that it has been activated',
+    );

@@ -20,7 +20,12 @@ void main() {
   group('onlineOrThrow', () {
     test('returns once the client is online', () async {
       final client = _clientWhoseAttempts(() => AtConnectionState.online());
-      await onlineOrThrow(client, '@alice', const Duration(seconds: 1));
+      await onlineOrThrow(
+        client,
+        '@alice',
+        const Duration(seconds: 1),
+        rootDomain: 'root.example',
+      );
       verifyNever(() => client.stop());
     });
 
@@ -34,7 +39,12 @@ void main() {
         ),
       );
       await expectLater(
-        onlineOrThrow(client, '@alice', const Duration(seconds: 15)),
+        onlineOrThrow(
+          client,
+          '@alice',
+          const Duration(seconds: 15),
+          rootDomain: 'root.example',
+        ),
         throwsA(
           isA<UnAuthenticatedException>().having(
             (e) => e.message,
@@ -57,7 +67,12 @@ void main() {
         ),
       );
       await expectLater(
-        onlineOrThrow(client, '@alice', const Duration(seconds: 1)),
+        onlineOrThrow(
+          client,
+          '@alice',
+          const Duration(seconds: 1),
+          rootDomain: 'root.example',
+        ),
         throwsA(
           isA<SecondaryServerConnectivityException>().having(
             (e) => e.message,
@@ -66,6 +81,33 @@ void main() {
               contains('within 1 seconds'),
               contains('offline (unreachable): Connection refused'),
             ),
+          ),
+        ),
+      );
+      verify(() => client.stop()).called(1);
+    });
+
+    test(
+        'An atSign with no atServer in the atDirectory is reported as not'
+        ' found: when the atDirectory has no atServer for an atSign this'
+        ' device has opened before, then it is reported as not found, not'
+        ' as unreachable', () async {
+      final client = _clientWhoseAttempts(
+        () => AtConnectionState.offline(AtConnectionCause.noAtServer),
+      );
+      await expectLater(
+        onlineOrThrow(
+          client,
+          '@alice',
+          const Duration(seconds: 15),
+          rootDomain: 'root.example',
+        ),
+        throwsA(
+          isA<SecondaryNotFoundException>().having(
+            (e) => e.message,
+            'message',
+            '@alice is not in the atDirectory at root.example: check the'
+                ' atSign, and that it has been activated',
           ),
         ),
       );

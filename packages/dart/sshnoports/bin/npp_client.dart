@@ -8,6 +8,7 @@ import 'package:chalkdart/chalk.dart';
 import 'package:cli_menu/cli_menu.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/cli_menu_helper.dart';
+import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:noports_core/npa.dart';
 import 'package:path/path.dart' as path;
 
@@ -58,15 +59,13 @@ Future<void> main(List<String> args) async {
   if (nppCLIParams.verbose) {
     AtSignLogger.root_level = 'info';
   }
-  final AtClient? opened = await openNppClient(nppCLIParams);
-  if (opened == null || !opened.connection.current.isOnline) {
-    stderr.writeln('Error: ${nppCLIParams.atSign} could not be opened: '
-        '${opened == null ? 'the atServer refused it' : 'its atServer could not be reached'}'
-        '${nppCLIParams.verbose ? '' : '; run with -v for the reason'}');
+  final AtClient atClient;
+  try {
+    atClient = await openNppClient(nppCLIParams);
+  } catch (e) {
+    stderr.writeln('Error: ${e is AtException ? e.message : e}');
     exit(1);
   }
-
-  final AtClient atClient = opened;
 
   final NppClient nppClient = NppClient(
     atClient: atClient,
@@ -758,39 +757,20 @@ String showMenuAndGetSelection() {
   return (result.index + 1).toString();
 }
 
-/// Opens the atSign [nppCLIParams] names from its keyfile, as the manager's
-/// current client, or returns null when its atServer refuses it.
-Future<AtClient?> openNppClient(NPPCLIParams nppCLIParams) async {
+/// Opens the atSign [nppCLIParams] names from its keyfile, once it is online,
+/// as the manager's current client; throws as [createAtClientCli] does,
+/// saying why, when the atServer refuses it, the atDirectory has no atServer
+/// for it, or its atServer cannot be reached.
+Future<AtClient> openNppClient(NPPCLIParams nppCLIParams) {
   final atSign = nppCLIParams.atSign.toAtsign();
-  final preference = AtClientPreference()
-    ..rootDomain = nppCLIParams.rootServer.split(':')[0]
-    ..rootPort = int.parse(nppCLIParams.rootServer.split(':')[1]);
-  // NOTE open refuses while a client for the atSign is live in this process
-  for (final live in AtClientImpl.liveClientsFor(atSign)) {
-    await live.stop();
-  }
-  final AtClient client;
-  try {
-    client = await Atsign(atSign).open(
-      keys: CliKeys.fileFor(atSign, path: nppCLIParams.atKeysFilePath),
-      preference: preference,
-      storage: HiveAtClientStorage(
-        atSign: atSign,
-        storagePath: nppCLIParams.storagePath ??
-            path.join(getHomeDirectory(throwIfNull: true)!, '.atsign',
-                'at_onboarding_cli', 'storage', atSign, 'hive'),
-        closedByClient: true,
-      ),
-      lookUps: lookUpsFor(preference.rootDomain),
-      secondaryAddressFinder: CacheableSecondaryAddressFinder(
-        preference.rootDomain,
-        preference.rootPort,
-      ),
-    );
-  } on AtOpenRefusedException catch (e) {
-    AtSignLogger(' npp_client ').warning(e.message);
-    return null;
-  }
-  AtClientManager.getInstance().use(client);
-  return client;
+  return createAtClientCli(
+    atsign: atSign,
+    atKeysFilePath: nppCLIParams.atKeysFilePath,
+    rootDomain: nppCLIParams.rootServer,
+    atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+    namespace: nppCLIParams.baseNamespace,
+    storagePath: nppCLIParams.storagePath ??
+        path.join(getHomeDirectory(throwIfNull: true)!, '.atsign',
+            'at_onboarding_cli', 'storage', atSign, 'hive'),
+  );
 }
