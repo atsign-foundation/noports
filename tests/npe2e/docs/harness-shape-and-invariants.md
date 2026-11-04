@@ -71,8 +71,10 @@ not re-parallelise these two flows without first giving each its own atSigns.
 
 **Policy tests that administer the same policy atSign run one at a time,
 whatever `--batch-size` says.** `runPolicyTestCases`
-(`lib/policy_tests/policy_tests.dart:357`) starts no test while another for
-the same policy atSign is running. Each test's `createPolicyAtClient` stops
+(`lib/policy_tests/policy_tests.dart:358`) starts no test while another for
+the same policy atSign is running, and a timed-out attempt, which the runner
+cannot cancel, holds its policy atSign until its run ends, so a run that never
+ends holds its flow until the CI job's own timeout. Each test's `createPolicyAtClient` stops
 every live client of the policy atSign before it opens its own, because
 at_client lets a process hold one client per atSign and enrollment, so two
 tests at once stopped each other's admin client mid-flow. Every npp test
@@ -100,7 +102,7 @@ point (`coreTests`, `policyTests`, `relayTests`). A failed revoke is printed,
 not thrown, so it cannot mask the run's own result.
 
 **Tests are `Future<T> Function()` factories, not futures.** Each pack's runner
-(`lib/core_tests/core_tests.dart:445`, `lib/policy_tests/policy_tests.dart:357`,
+(`lib/core_tests/core_tests.dart:445`, `lib/policy_tests/policy_tests.dart:358`,
 `lib/relay_tests/relay_tests.dart:364`) takes factories so a retry re-invokes
 the test rather than re-awaiting a settled future, and so nothing starts before
 its concurrency slot opens. Runners keep `batchSize` tests in flight, stagger

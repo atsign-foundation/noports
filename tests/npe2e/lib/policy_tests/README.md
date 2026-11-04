@@ -20,7 +20,8 @@ flow once with each.
 
 `--batch-size` caps how many tests run at once, but tests that administer the
 same policy atSign run one at a time whatever it says, since each one's setup
-stops every other client of that atSign. Every npp test administers
+stops every other client of that atSign; a test that timed out holds its
+policy atSign until its run has ended. Every npp test administers
 `--npp-atsign` and every npp_atserver test `--npp-atserver-atsign`, so each
 flow runs one test at a time.
 

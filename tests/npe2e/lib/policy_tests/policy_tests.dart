@@ -353,7 +353,8 @@ List<NoPortsVersion> _parseVersions(final String versions) {
 
 /// Runs [testCases] in order, up to [batchSize] at once, retrying a case
 /// that fails or times out up to [maxRetries] times; a case does not start
-/// while another administering the same policy atSign is running.
+/// while another administering the same policy atSign is running, and an
+/// attempt that timed out holds its policy atSign until its run has ended.
 Future<List<PolicyTestResult>> runPolicyTestCases(
   List<PolicyTestCase> testCases, {
   required Transcript transcript,
@@ -375,10 +376,16 @@ Future<List<PolicyTestResult>> runPolicyTestCases(
     int attempt,
   ) async {
     final Transcript caseTranscript = transcript.withTag(testCase.tag);
+    final Future<PolicyTestResult> running = testCase.run();
     PolicyTestResult result;
     try {
-      result = await testCase.run().timeout(testTimeout);
+      result = await running.timeout(testTimeout);
     } on TimeoutException {
+      caseTranscript.warn(
+        '${testCase.testName} timed out after ${testTimeout.inSeconds}s; '
+        'waiting for that attempt to end before its policy atSign is used again',
+      );
+      await running.then((_) {}, onError: (_) {});
       if (attempt < maxRetries) {
         caseTranscript.warn(
           '↺ ${testCase.testName} timed out after ${testTimeout.inSeconds}s '
@@ -398,8 +405,8 @@ Future<List<PolicyTestResult>> runPolicyTestCases(
         detail:
             'The harness gave up from outside the test, so there is no '
             'stage-level detail. The transcript shows the last step reached; '
-            'note that a timed-out attempt is not cancelled, so its containers '
-            'may have still been running when the retry started.',
+            'a timed-out attempt is not cancelled, so each retry waited for '
+            'the attempt before it to end.',
       );
       caseTranscript.error(
         '${testCase.testName} gave up: ${timedOut.failure!.reason}',
