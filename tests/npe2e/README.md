@@ -185,8 +185,7 @@ start of each run.
 
 **The tag** (`9a67193a_npp_dc_dc`) is the device name, and it is also embedded in
 the daemon container name and in the per-stage log filenames. Every transcript
-line carries one, which is how you attribute interleaved output when
-`--batch-size` is greater than 1:
+line carries one, which is how you attribute a line to its test:
 
 ```
 grep 9a67193a_npp_dc_dc npe2e_policy_tests/<testRunId>/logs/npe2e_policy_transcript.log

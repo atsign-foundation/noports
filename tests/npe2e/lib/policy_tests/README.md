@@ -18,6 +18,12 @@ dart run tests/npe2e/bin/policy_tests.dart \
 default, `c:current` for the C daemon built from this checkout. CI runs the
 flow once with each.
 
+`--batch-size` caps how many tests run at once, but tests that administer the
+same policy atSign run one at a time whatever it says, since each one's setup
+stops every other client of that atSign. Every npp test administers
+`--npp-atsign` and every npp_atserver test `--npp-atserver-atsign`, so each
+flow runs one test at a time.
+
 The flow waits 15 seconds after each rule change, which is also how long every
 daemon reuses a policy decision, so each stage gets a fresh check.
 

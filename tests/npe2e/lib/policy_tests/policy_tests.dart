@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:at_client/at_client.dart' show Atsign, AtsignString;
 import 'package:npe2e/apkam_setup.dart';
 import 'package:npe2e/client_binary.dart';
 import 'package:npe2e/client_binary_utils.dart';
@@ -262,14 +263,13 @@ Future<void> _policyTests(
         maxRetries: params.maxRetries,
         testTimeout: testTimeout,
       );
-  final List<PolicyTestResult> nppAtServerResults =
-      await _runFuturesWithConcurrency(
-        nppAtServerTestCases,
-        transcript: transcript,
-        batchSize: params.batchSize,
-        maxRetries: params.maxRetries,
-        testTimeout: testTimeout,
-      );
+  final List<PolicyTestResult> nppAtServerResults = await runPolicyTestCases(
+    nppAtServerTestCases,
+    transcript: transcript,
+    batchSize: params.batchSize,
+    maxRetries: params.maxRetries,
+    testTimeout: testTimeout,
+  );
   final List<PolicyTestResult> testResults = [
     ...nppResults,
     ...nppAtServerResults,
@@ -351,7 +351,10 @@ List<NoPortsVersion> _parseVersions(final String versions) {
       .toList();
 }
 
-Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
+/// Runs [testCases] in order, up to [batchSize] at once, retrying a case
+/// that fails or times out up to [maxRetries] times; a case does not start
+/// while another administering the same policy atSign is running.
+Future<List<PolicyTestResult>> runPolicyTestCases(
   List<PolicyTestCase> testCases, {
   required Transcript transcript,
   required int batchSize,
@@ -414,22 +417,29 @@ Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
     return result;
   }
 
-  Future<void> startNextTest() async {
-    if (nextIndex < testCases.length) {
-      if (nextIndex > 0) {
-        await Future.delayed(Duration(seconds: 1));
-      }
-
-      final PolicyTestCase testCase = testCases[nextIndex];
-      final Future<PolicyTestResult> testFuture = runWithRetry(testCase, 0);
-      active.add((testFuture, testCase));
-      nextIndex++;
+  Future<bool> startNextTest() async {
+    if (nextIndex >= testCases.length) return false;
+    final PolicyTestCase testCase = testCases[nextIndex];
+    final Atsign policyAtsign = testCase.policyAtsign.toAtsign();
+    if (active.any(
+      (entry) => entry.$2.policyAtsign.toAtsign() == policyAtsign,
+    )) {
+      return false;
     }
+    if (nextIndex > 0) {
+      await Future.delayed(Duration(seconds: 1));
+    }
+    final Future<PolicyTestResult> testFuture = runWithRetry(testCase, 0);
+    active.add((testFuture, testCase));
+    nextIndex++;
+    return true;
   }
 
-  for (int i = 0; i < batchSize && i < testCases.length; i++) {
-    await startNextTest();
+  Future<void> fillSlots() async {
+    while (active.length < batchSize && await startNextTest()) {}
   }
+
+  await fillSlots();
 
   while (active.isNotEmpty) {
     final completedEntry = await Future.any(
@@ -459,7 +469,7 @@ Future<List<PolicyTestResult>> _runFuturesWithConcurrency(
       caseTranscript.error('✗ $progress');
     }
 
-    await startNextTest();
+    await fillSlots();
   }
 
   return allResults;
@@ -475,7 +485,7 @@ Future<List<PolicyTestResult>> _runFactoryBatchesWithConcurrency(
   final List<PolicyTestResult> allResults = [];
   for (final List<PolicyTestCase> testCases in testCaseBatches) {
     allResults.addAll(
-      await _runFuturesWithConcurrency(
+      await runPolicyTestCases(
         testCases,
         transcript: transcript,
         batchSize: batchSize,

@@ -96,6 +96,7 @@ List<PolicyTestCase> _getNppTestFactoriesForPolicyVersions({
         clientVersion: clientVersion,
         daemonVersion: daemonVersion,
         policyVersion: policyVersion,
+        policyAtsign: context.nppAtsign,
         run: () => _runNppTest(
           context: context,
           testLogger: testLogger,
