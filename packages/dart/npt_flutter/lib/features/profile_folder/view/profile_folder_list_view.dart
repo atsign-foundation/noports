@@ -137,6 +137,13 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
 
   Widget _buildReorderable(ProfileFolderLayout layout) {
     final List<String> folderIds = layout.folderIds;
+    final List<ProfileFolder> shownFolders = <ProfileFolder>[
+      for (final ProfileFolderSection section in layout.sections)
+        if (section.folder != null) section.folder!,
+    ];
+    // Favorites first keeps a folder on its side of the favorites.
+    bool canPrecede(ProfileFolder a, ProfileFolder b) =>
+        (widget.compareFolders?.call(a, b) ?? 0) <= 0;
     final bool dimRows = _drag?.isFolder ?? false;
     // Item count must stay fixed during a drag or it gets cancelled, so the
     // empty unfiled header stays in the list and only shows on a drag.
@@ -171,13 +178,17 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
                   ),
             reorderIndex: folder != null && widget.reorderable ? index : null,
             dragEnabled: dragEnabled,
-            onMoveUp: widget.reorderable && folderIndex > 0
+            onMoveUp:
+                widget.reorderable &&
+                    folderIndex > 0 &&
+                    canPrecede(folder!, shownFolders[folderIndex - 1])
                 ? () => _moveFolder(folderIds, folderIndex, -1)
                 : null,
             onMoveDown:
                 widget.reorderable &&
                     folderIndex >= 0 &&
-                    folderIndex < folderIds.length - 1
+                    folderIndex < folderIds.length - 1 &&
+                    canPrecede(shownFolders[folderIndex + 1], folder!)
                 ? () => _moveFolder(folderIds, folderIndex, 1)
                 : null,
           );
@@ -303,7 +314,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
 
     final ProfileFolderData current = _pending ?? state.data;
     final ProfileFolderEvent? applied = widget.reorderable
-        ? event
+        ? _inManualOrder(event, current, layout.entries[oldIndex])
         : _intoFolder(event, current);
     if (applied == null) {
       _explainIfMoved(event, _layoutFor(current));
@@ -389,11 +400,73 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     );
   }
 
+  /// With favorites lifted, the screen order isn't the manual one, so a drop
+  /// is placed in the manual order instead of saving what the screen shows.
+  ProfileFolderEvent _inManualOrder(
+    ProfileFolderEvent event,
+    ProfileFolderData data,
+    ProfileListEntry grabbed,
+  ) {
+    switch (event) {
+      case ProfileFolderPlaceProfilesEvent(:final String? folderId)
+          when widget.arrange != null && grabbed is ProfileListRowEntry:
+        final List<String> Function(List<String>) arrange = widget.arrange!;
+        return ProfileFolderPlaceProfilesEvent(
+          profileIds: event.profileIds,
+          folderId: folderId,
+          sectionOrder: ProfileFolderData.placeBeforeNext(
+            manual: folderId == null
+                ? data.resolveUnfiled(widget.profiles)
+                : data.folderById(folderId)?.profileIds ?? const <String>[],
+            released: event.sectionOrder,
+            moved: event.profileIds,
+            canFollow: (String id) =>
+                arrange(<String>[grabbed.uuid, id]).firstOrNull == grabbed.uuid,
+          ),
+        );
+      case ProfileFolderReorderEvent(:final List<String> folderIds)
+          when grabbed is ProfileListHeaderEntry &&
+              grabbed.section.folder != null:
+        return ProfileFolderReorderEvent(
+          _foldersInManualOrder(folderIds, grabbed.section.folder!, data),
+        );
+      default:
+        return event;
+    }
+  }
+
+  List<String> _foldersInManualOrder(
+    List<String> released,
+    ProfileFolder moved,
+    ProfileFolderData data,
+  ) {
+    final int Function(ProfileFolder a, ProfileFolder b)? compare =
+        widget.compareFolders;
+    if (compare == null) return released;
+    return ProfileFolderData.placeBeforeNext(
+      manual: <String>[for (final ProfileFolder f in data.folders) f.uuid],
+      released: released,
+      moved: <String>[moved.uuid],
+      canFollow: (String id) {
+        final ProfileFolder? next = data.folderById(id);
+        return next == null || compare(moved, next) <= 0;
+      },
+    );
+  }
+
   void _moveFolder(List<String> folderIds, int index, int delta) {
+    final ProfileFolderBloc bloc = context.read<ProfileFolderBloc>();
+    final ProfileFolderState state = bloc.state;
+    if (state is! ProfileFoldersLoaded) return;
+    final ProfileFolderData data = _pending ?? state.data;
     final List<String> order = List<String>.of(folderIds);
-    final String moved = order.removeAt(index);
-    order.insert(index + delta, moved);
-    context.read<ProfileFolderBloc>().add(ProfileFolderReorderEvent(order));
+    final String movedId = order.removeAt(index);
+    order.insert(index + delta, movedId);
+    final ProfileFolder? moved = data.folderById(movedId);
+    if (moved == null) return;
+    bloc.add(
+      ProfileFolderReorderEvent(_foldersInManualOrder(order, moved, data)),
+    );
   }
 
   Widget _proxyDecorator(Widget child, int index, Animation<double> animation) {

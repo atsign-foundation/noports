@@ -114,6 +114,7 @@ void main() {
       seed: () => const ProfileFoldersLoaded(loadedData),
       act: (ProfileFolderBloc bloc) => bloc.add(
         const ProfileFolderCreateEvent(
+          uuid: 'gc',
           name: 'C',
           profileIds: <String>['p2', 'p4', 'p4'],
         ),
@@ -125,7 +126,7 @@ void main() {
         expect(state.folders[1], folderB);
         final ProfileFolder created = state.folders[2];
         expect(created.name, 'C');
-        expect(created.uuid, isNotEmpty);
+        expect(created.uuid, 'gc');
         expect(created.profileIds, <String>['p2', 'p4']);
         expect(repo.puts.single, state.data);
       },
@@ -135,7 +136,7 @@ void main() {
       'is ignored when not loaded',
       build: () => bloc,
       act: (ProfileFolderBloc bloc) =>
-          bloc.add(const ProfileFolderCreateEvent(name: 'C')),
+          bloc.add(const ProfileFolderCreateEvent(uuid: 'gc', name: 'C')),
       expect: () => <ProfileFolderState>[],
       verify: (_) => expect(repo.puts, isEmpty),
     );
@@ -146,7 +147,11 @@ void main() {
       build: () => bloc,
       seed: () => const ProfileFoldersLoaded(dataWithUnfiled),
       act: (ProfileFolderBloc bloc) => bloc.add(
-        const ProfileFolderCreateEvent(name: 'C', profileIds: <String>['p4']),
+        const ProfileFolderCreateEvent(
+          uuid: 'gc',
+          name: 'C',
+          profileIds: <String>['p4'],
+        ),
       ),
       verify: (ProfileFolderBloc bloc) {
         final ProfileFoldersLoaded state = bloc.state as ProfileFoldersLoaded;
@@ -154,6 +159,36 @@ void main() {
         expect(state.data.folders[1], folderB);
         expect(state.data.folders[2].profileIds, <String>['p4']);
         expect(state.data.unfiled, <String>['p5']);
+      },
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
+      'a second create with the same uuid is ignored',
+      build: () => bloc,
+      seed: () => const ProfileFoldersLoaded(loadedData),
+      act: (ProfileFolderBloc bloc) => bloc
+        ..add(
+          const ProfileFolderCreateEvent(
+            uuid: 'gc',
+            name: 'C',
+            profileIds: <String>['p4'],
+          ),
+        )
+        ..add(
+          const ProfileFolderCreateEvent(
+            uuid: 'gc',
+            name: 'C',
+            profileIds: <String>['p4'],
+          ),
+        ),
+      verify: (ProfileFolderBloc bloc) {
+        final ProfileFoldersLoaded state = bloc.state as ProfileFoldersLoaded;
+        expect(state.folders.map((ProfileFolder f) => f.uuid), <String>[
+          folderA.uuid,
+          folderB.uuid,
+          'gc',
+        ]);
+        expect(repo.puts, hasLength(1));
       },
     );
   });

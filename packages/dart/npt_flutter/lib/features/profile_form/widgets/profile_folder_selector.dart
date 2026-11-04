@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/uuid.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-/// A null [folderId] is "No folder". A [newName] is created on submit.
+/// A null [folderId] is "No folder". A [newName] is created on submit, with
+/// [folderId] as its uuid so a second submit can't create it twice.
 typedef ProfileFormFolder = ({String? folderId, String? newName});
 
 class ProfileFormFolderCubit extends Cubit<ProfileFormFolder> {
@@ -14,7 +16,7 @@ class ProfileFormFolderCubit extends Cubit<ProfileFormFolder> {
 
   void choose(String? folderId) => emit((folderId: folderId, newName: null));
 
-  void create(String name) => emit((folderId: null, newName: name));
+  void create(String name) => emit((folderId: Uuid.generate(), newName: name));
 }
 
 class ProfileFolderSelector extends StatefulWidget {

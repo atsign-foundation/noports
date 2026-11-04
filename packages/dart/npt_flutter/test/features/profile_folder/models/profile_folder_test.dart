@@ -352,6 +352,58 @@ void main() {
       });
     });
 
+    group('placeBeforeNext', () {
+      // A, B, C, D with B and D favorites shows B, D, A, C.
+      bool notFavorite(String id) => id != 'B' && id != 'D';
+
+      test('dragging C above A keeps the favorites where they were', () {
+        expect(
+          ProfileFolderData.placeBeforeNext(
+            manual: <String>['A', 'B', 'C', 'D'],
+            released: <String>['B', 'D', 'C', 'A'],
+            moved: <String>['C'],
+            canFollow: notFavorite,
+          ),
+          <String>['C', 'A', 'B', 'D'],
+        );
+      });
+
+      test('skips a next id that has to stay above the moved one', () {
+        // A dropped above B: B is lifted above it whatever the order.
+        expect(
+          ProfileFolderData.placeBeforeNext(
+            manual: <String>['A', 'B', 'C', 'D'],
+            released: <String>['A', 'B', 'D', 'C'],
+            moved: <String>['A'],
+            canFollow: notFavorite,
+          ),
+          <String>['B', 'A', 'C', 'D'],
+        );
+      });
+
+      test('goes last when nothing that can follow it comes after it', () {
+        expect(
+          ProfileFolderData.placeBeforeNext(
+            manual: <String>['A', 'B', 'C'],
+            released: <String>['B', 'C', 'A'],
+            moved: <String>['A'],
+          ),
+          <String>['B', 'C', 'A'],
+        );
+      });
+
+      test('a selection moves together and new ids join it', () {
+        expect(
+          ProfileFolderData.placeBeforeNext(
+            manual: <String>['A', 'B', 'C'],
+            released: <String>['A', 'x', 'C', 'B'],
+            moved: <String>['x', 'C'],
+          ),
+          <String>['A', 'x', 'C', 'B'],
+        );
+      });
+    });
+
     group('placeProfiles', () {
       test('into a folder at a position', () {
         const ProfileFolderData base = ProfileFolderData(

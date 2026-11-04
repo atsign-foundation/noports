@@ -2,7 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile_folder/models/profile_folder.dart';
 import 'package:npt_flutter/features/profile_folder/repository/profile_folder_repository.dart';
-import 'package:npt_flutter/util/uuid.dart';
 
 part 'profile_folder_event.dart';
 part 'profile_folder_state.dart';
@@ -134,9 +133,10 @@ class ProfileFolderBloc
   ) async {
     if (state is! ProfileFoldersLoaded) return;
     final ProfileFolderData data = (state as ProfileFoldersLoaded).data;
+    if (data.folderById(event.uuid) != null) return;
 
     final ProfileFolder folder = ProfileFolder(
-      uuid: Uuid.generate(),
+      uuid: event.uuid,
       name: event.name,
       profileIds: event.profileIds.toSet().toList(),
     );

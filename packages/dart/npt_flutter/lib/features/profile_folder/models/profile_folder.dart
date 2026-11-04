@@ -325,6 +325,32 @@ final class ProfileFolderData extends Loggable {
     return result;
   }
 
+  /// Puts [moved] into [manual] just before the first id after them in
+  /// [released] that [canFollow] them, or last when none does, so a drop
+  /// on a sorted screen leaves the other ids in their manual order.
+  static List<String> placeBeforeNext({
+    required List<String> manual,
+    required List<String> released,
+    required List<String> moved,
+    bool Function(String id)? canFollow,
+  }) {
+    final Set<String> movedSet = moved.toSet();
+    final int start = released.indexWhere(movedSet.contains);
+    final String? next = start < 0
+        ? null
+        : released
+              .skip(start)
+              .where((String id) => !movedSet.contains(id))
+              .where(canFollow ?? (String _) => true)
+              .firstOrNull;
+    final List<String> result = manual
+        .where((String id) => !movedSet.contains(id))
+        .toList();
+    final int at = next == null ? -1 : result.indexOf(next);
+    result.insertAll(at < 0 ? result.length : at, moved);
+    return result;
+  }
+
   static const String _foldersKey = 'folders';
   static const String _unfiledKey = 'unfiled';
   static const String _unfiledCollapsedKey = 'unfiledCollapsed';

@@ -148,7 +148,12 @@ void main() {
     });
   }
 
-  Widget buildSubject(WidgetTester tester, {List<String> profiles = allUuids}) {
+  Widget buildSubject(
+    WidgetTester tester, {
+    List<String> profiles = allUuids,
+    List<String> Function(List<String> uuids)? arrange,
+    int Function(ProfileFolder a, ProfileFolder b)? compareFolders,
+  }) {
     tester.view.physicalSize = const Size(1053, 691);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -166,7 +171,13 @@ void main() {
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(body: ProfileFolderListView(profiles: profiles)),
+        home: Scaffold(
+          body: ProfileFolderListView(
+            profiles: profiles,
+            arrange: arrange,
+            compareFolders: compareFolders,
+          ),
+        ),
       ),
     );
   }
@@ -850,6 +861,120 @@ void main() {
         desktopsFolder,
         serversFolder,
       ]);
+    });
+
+    group('with favorites first', () {
+      List<String> rdpFirst(List<String> uuids) => <String>[
+        ...uuids.where((String id) => id == rdpUuid),
+        ...uuids.where((String id) => id != rdpUuid),
+      ];
+      int favoritesFirst(ProfileFolder a, ProfileFolder b) =>
+          a.favorite == b.favorite ? 0 : (a.favorite ? -1 : 1);
+
+      testWidgets('a drop is saved in the manual order', (
+        WidgetTester tester,
+      ) async {
+        createRealBlocs();
+        folderBloc.emit(const ProfileFoldersLoaded(ProfileFolderData()));
+        await tester.pumpWidget(buildSubject(tester, arrange: rdpFirst));
+        await tester.pump();
+        expectVerticalOrder(tester, <Finder>[
+          row(rdpUuid),
+          row(sshUuid),
+          row(noneUuid),
+        ]);
+
+        await dragGrip(tester, row(noneUuid), -heightOf(tester, row(sshUuid)));
+
+        expectVerticalOrder(tester, <Finder>[
+          row(rdpUuid),
+          row(noneUuid),
+          row(sshUuid),
+        ]);
+        expect(folderRepo.puts.single.unfiled, <String>[
+          noneUuid,
+          sshUuid,
+          rdpUuid,
+        ]);
+      });
+
+      const ProfileFolder otherFolder = ProfileFolder(
+        uuid: 'g-other',
+        name: 'Other',
+        profileIds: <String>[noneUuid],
+        favorite: true,
+      );
+
+      Future<void> openMenu(WidgetTester tester, ProfileFolder folder) async {
+        await tester.tap(
+          find.descendant(
+            of: header(folder.uuid),
+            matching: find.byType(PopupMenuButton<PopupMenuEntry>),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('Move up is saved in the manual order', (
+        WidgetTester tester,
+      ) async {
+        createRealBlocs();
+        folderBloc.emit(
+          const ProfileFoldersLoaded(
+            ProfileFolderData(
+              folders: <ProfileFolder>[
+                serversFolder,
+                desktopsFolder,
+                otherFolder,
+              ],
+            ),
+          ),
+        );
+        await tester.pumpWidget(
+          buildSubject(tester, compareFolders: favoritesFirst),
+        );
+        await tester.pump();
+
+        await openMenu(tester, desktopsFolder);
+        await tester.tap(find.text(strings.folderMoveUp));
+        await tester.pumpAndSettle();
+
+        expectVerticalOrder(tester, <Finder>[
+          header(otherFolder.uuid),
+          header(desktopsFolder.uuid),
+          header(serversFolder.uuid),
+        ]);
+        expect(
+          folderRepo.puts.single.folders.map((ProfileFolder f) => f.uuid),
+          <String>[desktopsFolder.uuid, serversFolder.uuid, otherFolder.uuid],
+        );
+      });
+
+      testWidgets('Move up is off for the first folder after the favorites', (
+        WidgetTester tester,
+      ) async {
+        createRealBlocs();
+        folderBloc.emit(
+          const ProfileFoldersLoaded(
+            ProfileFolderData(
+              folders: <ProfileFolder>[serversFolder, otherFolder],
+            ),
+          ),
+        );
+        await tester.pumpWidget(
+          buildSubject(tester, compareFolders: favoritesFirst),
+        );
+        await tester.pump();
+
+        await openMenu(tester, serversFolder);
+        final PopupMenuItem<dynamic> moveUp = tester.widget(
+          find.ancestor(
+            of: find.text(strings.folderMoveUp),
+            matching: find.byType(PopupMenuItem<PopupMenuEntry>),
+          ),
+        );
+        expect(moveUp.enabled, isFalse);
+      });
     });
 
     testWidgets('a lone folder has a grip and the Unfiled header has none', (

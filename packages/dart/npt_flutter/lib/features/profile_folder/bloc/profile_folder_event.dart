@@ -26,20 +26,24 @@ final class ProfileFolderRefreshEvent extends ProfileFolderEvent {
   }
 }
 
+/// Ignored when a folder with [uuid] already exists.
 final class ProfileFolderCreateEvent extends ProfileFolderEvent {
+  final String uuid;
   final String name;
   final Iterable<String> profileIds;
   const ProfileFolderCreateEvent({
+    required this.uuid,
     required this.name,
     this.profileIds = const <String>[],
   });
 
   @override
-  List<Object?> get props => [name, profileIds];
+  List<Object?> get props => [uuid, name, profileIds];
 
   @override
   String toString() {
-    return 'ProfileFolderCreateEvent(name: $name, profileIds: $profileIds)';
+    return 'ProfileFolderCreateEvent(uuid: $uuid, name: $name, '
+        'profileIds: $profileIds)';
   }
 }
 

@@ -101,7 +101,7 @@ class ProfileFolderActions {
           ProfileFolderNameDialog(title: strings.folderNew),
     );
     if (name == null || name.isEmpty) return;
-    bloc.add(ProfileFolderCreateEvent(name: name));
+    bloc.add(ProfileFolderCreateEvent(uuid: Uuid.generate(), name: name));
   }
 
   static Future<void> renameFolder(
@@ -169,7 +169,13 @@ class ProfileFolderActions {
               ProfileFolderNameDialog(title: strings.folderNew),
         );
         if (name == null || name.isEmpty) return false;
-        bloc.add(ProfileFolderCreateEvent(name: name, profileIds: ids));
+        bloc.add(
+          ProfileFolderCreateEvent(
+            uuid: Uuid.generate(),
+            name: name,
+            profileIds: ids,
+          ),
+        );
     }
     return true;
   }

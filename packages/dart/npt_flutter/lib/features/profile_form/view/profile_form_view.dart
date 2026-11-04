@@ -14,28 +14,45 @@ class ProfileFormView extends StatelessWidget {
   final String? folderId;
   const ProfileFormView(this.uuid, {super.key, this.copyFrom, this.folderId});
 
-  void _applyFolder(BuildContext context) {
+  /// Read before saving: the page closes when the save succeeds.
+  ProfileFolderEvent? _folderEvent(BuildContext context) {
     final chosen = context.read<ProfileFormFolderCubit>().state;
-    final folderBloc = context.read<ProfileFolderBloc>();
-    final folders = folderBloc.state;
-    if (folders is! ProfileFoldersLoaded) return;
+    final folders = context.read<ProfileFolderBloc>().state;
+    if (folders is! ProfileFoldersLoaded) return null;
     final newName = chosen.newName;
     if (newName != null) {
-      folderBloc.add(
-        ProfileFolderCreateEvent(name: newName, profileIds: [uuid]),
-      );
-      return;
-    }
-    if (folders.data.folderForProfile(uuid)?.uuid == chosen.folderId) return;
-    folderBloc.add(
-      ProfileFolderMoveProfilesEvent(
+      return ProfileFolderCreateEvent(
+        uuid: chosen.folderId!,
+        name: newName,
         profileIds: [uuid],
-        folderId: chosen.folderId,
-        visibleUnfiled: chosen.folderId == null
-            ? ProfileFolderActions.visibleUnfiled(context)
-            : null,
-      ),
+      );
+    }
+    if (folders.data.folderForProfile(uuid)?.uuid == chosen.folderId) {
+      return null;
+    }
+    return ProfileFolderMoveProfilesEvent(
+      profileIds: [uuid],
+      folderId: chosen.folderId,
+      visibleUnfiled: chosen.folderId == null
+          ? ProfileFolderActions.visibleUnfiled(context)
+          : null,
     );
+  }
+
+  /// The folder is applied only once the connection is saved.
+  Future<void> _submit(BuildContext context, Profile profile) async {
+    final ProfileBloc saved = context.read<ProfileCacheCubit>().getProfileBloc(
+      uuid,
+    );
+    final ProfileFolderBloc folderBloc = context.read<ProfileFolderBloc>();
+    final ProfileFolderEvent? folderEvent = _folderEvent(context);
+    final Future<ProfileState> done = saved.stream.firstWhere(
+      (ProfileState s) => s is ProfileLoaded || s is ProfileFailedSave,
+    );
+    saved.add(ProfileSaveEvent(profile: profile));
+    if (await done is ProfileLoaded && folderEvent != null) {
+      folderBloc.add(folderEvent);
+    }
   }
 
   @override
@@ -154,36 +171,37 @@ class ProfileFormView extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: Sizes.p50,
                               ),
-                              child: Builder(
-                                builder: (context) => SizedBox(
+                              // Off while saving, so a double click saves once.
+                              child: BlocBuilder<ProfileBloc, ProfileState>(
+                                bloc: context
+                                    .read<ProfileCacheCubit>()
+                                    .getProfileBloc(uuid),
+                                builder: (context, saveState) => SizedBox(
                                   width: Sizes.p743,
                                   child: ElevatedButton(
-                                    onPressed: () {
-                                      if (!formkey.currentState!.validate()) {
-                                        return;
-                                      }
+                                    onPressed: saveState is ProfileLoading
+                                        ? null
+                                        : () {
+                                            if (!formkey.currentState!
+                                                .validate()) {
+                                              return;
+                                            }
 
-                                      var localBloc = context
-                                          .read<ProfileBloc>();
-                                      if (localBloc.state
-                                          is! ProfileLoadedState) {
-                                        return;
-                                      }
+                                            var localBloc = context
+                                                .read<ProfileBloc>();
+                                            if (localBloc.state
+                                                is! ProfileLoadedState) {
+                                              return;
+                                            }
 
-                                      /// Now take the localBloc and upload it back to the global bloc
-                                      context
-                                          .read<ProfileCacheCubit>()
-                                          .getProfileBloc(uuid)
-                                          .add(
-                                            ProfileSaveEvent(
-                                              profile:
-                                                  (localBloc.state
-                                                          as ProfileLoadedState)
-                                                      .profile,
-                                            ),
-                                          );
-                                      _applyFolder(context);
-                                    },
+                                            /// Now take the localBloc and upload it back to the global bloc
+                                            _submit(
+                                              context,
+                                              (localBloc.state
+                                                      as ProfileLoadedState)
+                                                  .profile,
+                                            );
+                                          },
                                     child: Text(strings.submit),
                                   ),
                                 ),
