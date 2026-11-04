@@ -98,13 +98,13 @@ class _TrayManagerState extends State<TrayManager>
           /// calls where we take the performance hit are:
           /// 1. In an asynchronous background task (who cares)
           /// 2. Worth it, compared to the potential maintenance costs
+          // NOTE: listens to the cached bloc without providing it; the cache
+          // owns it, and a provider would close it on dispose.
           ...profiles.map(
-            (uuid) => BlocProvider<ProfileBloc>(
+            (uuid) => BlocListener<ProfileBloc, ProfileState>(
               key: Key("TrayManager-$uuid"),
-              create: (context) => profileCacheCubit.getProfileBloc(uuid),
-              child: BlocListener<ProfileBloc, ProfileState>(
-                listener: reloadTray,
-              ),
+              bloc: profileCacheCubit.getProfileBloc(uuid),
+              listener: reloadTray,
             ),
           ),
         ],
