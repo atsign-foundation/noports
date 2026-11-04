@@ -276,15 +276,7 @@ class NoPortsOnboardingUtil {
         keys: atKeysIo,
         rootDomain: rootDomain,
       );
-      final state = client.connection.current;
-      if (state.isRefused) {
-        await client.stop();
-        return NoPortsOnboardingResult.error(
-          message: describeOnboardingError(state.error, strings),
-        );
-      }
-      await backUpToKeychain(atsign, atKeysIo, accepted: state.isOnline);
-      return NoPortsOnboardingResult.success(atsign: atsign);
+      return await completeAtKeysFileSignIn(atsign, client, atKeysIo, strings);
     } on AtTimeoutException {
       return NoPortsOnboardingResult.error(
         message: strings.errorAuthenticationTimedOut,
@@ -292,6 +284,45 @@ class NoPortsOnboardingUtil {
     } catch (e) {
       return atKeysLoginFailure(atsign, e, strings);
     }
+  }
+
+  /// The outcome of a sign-in from an atKeys file once [client] has opened on
+  /// [source]: an error, with [client] stopped, when the atServer refused the
+  /// keys; otherwise success, with the keys backed up to the keychain as
+  /// [backUpToKeychain] does, accepted when [client] is online.
+  ///
+  /// A backup that fails is logged, and the sign-in still succeeds, since
+  /// [client] is already the one the app uses.
+  @visibleForTesting
+  static Future<NoPortsOnboardingResult> completeAtKeysFileSignIn(
+    Atsign atsign,
+    AtClient client,
+    AtKeysIo source,
+    AppLocalizations strings, {
+    KeychainStorage? keychain,
+  }) async {
+    final state = client.connection.current;
+    if (state.isRefused) {
+      await client.stop();
+      return NoPortsOnboardingResult.error(
+        message: describeOnboardingError(state.error, strings),
+      );
+    }
+    try {
+      await backUpToKeychain(
+        atsign,
+        source,
+        accepted: state.isOnline,
+        keychain: keychain,
+      );
+    } catch (e) {
+      App.log(
+        'Signed in to $atsign with an atKeys file, but could not back its keys'
+                ' up to the keychain: $e'
+            .loggable,
+      );
+    }
+    return NoPortsOnboardingResult.success(atsign: atsign);
   }
 
   /// Logs a failed sign-in from an atKeys file and returns its result.
@@ -326,7 +357,8 @@ class NoPortsOnboardingUtil {
   /// requests this device was waiting on is replaced once the atServer has
   /// [accepted] the file's keys, and the app log names each request dropped,
   /// to be denied in the Authenticator; until then it is kept. The entry is
-  /// read, judged and replaced under the keychain's write lock.
+  /// read and judged under the keychain's write lock, and replaced in one
+  /// write, so the keychain never holds nothing for [atsign] meanwhile.
   @visibleForTesting
   static Future<List<String>> backUpToKeychain(
     Atsign atsign,
@@ -342,14 +374,14 @@ class NoPortsOnboardingUtil {
       } on AtKeyException {
         held = null;
       }
-      if (held != null) {
-        if (held.holdsAuthenticationMaterial || !accepted) return <String>[];
-        await storage.removeAtsignFromKeychain(atsign);
+      final keychainIo = KeychainAtKeysIo(keychainStorage: storage);
+      if (held == null) {
+        await keychainIo.write(atsign, await source.read(atsign));
+        return <String>[];
       }
-      await KeychainAtKeysIo(
-        keychainStorage: storage,
-      ).write(atsign, await source.read(atsign));
-      return held?.pendingEnrollmentIds.toList() ?? <String>[];
+      if (held.holdsAuthenticationMaterial || !accepted) return <String>[];
+      await keychainIo.flush(atsign, await source.read(atsign));
+      return held.pendingEnrollmentIds.toList();
     });
     if (dropped.isNotEmpty) {
       App.log(

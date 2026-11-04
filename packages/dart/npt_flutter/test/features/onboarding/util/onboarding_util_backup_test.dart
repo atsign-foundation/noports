@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/features/onboarding/model/onboarding_result.dart';
 import 'package:npt_flutter/features/onboarding/util/onboarding_util.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 
 void main() {
   group('Signing in from an atKeys file backs its keys up to the keychain', () {
@@ -41,6 +43,101 @@ void main() {
         keychain.callsOutsideWriteSection,
         0,
         reason: 'the entry is read and replaced in one write section',
+      );
+      expect(
+        keychain.writes,
+        1,
+        reason: 'the entry is replaced in one keychain write',
+      );
+      expect(
+        keychain.absentAfterAWrite,
+        0,
+        reason: 'the keychain never holds nothing for the atSign',
+      );
+    });
+
+    test('A sign-in from an atKeys file replaces a pending-only keychain entry:'
+        " when the client the file's keys opened is online, then the keychain"
+        " holds the file's keys", () async {
+      final keychain = _Keychain(_pendingKeys());
+
+      final result = await NoPortsOnboardingUtil.completeAtKeysFileSignIn(
+        _alice,
+        await _clientWhose(AtConnectionState.online()),
+        InMemoryAtKeysIo.holding('@alice', _fileKeys()),
+        _strings,
+        keychain: keychain,
+      );
+
+      expect(
+        keychain.entries['@alice']?.enrollmentToAuthenticateAs(),
+        'e9',
+        reason: "the keychain holds the file's keys",
+      );
+      expect(result.status, NoPortsOnboardingResultStatus.success);
+    });
+
+    test('A sign-in the atServer has not accepted keeps a pending request:'
+        " when the client the file's keys opened is offline, then e1's keys"
+        ' stay, nothing is written, and the sign-in succeeds', () async {
+      final held = _pendingKeys();
+      final keychain = _Keychain(held);
+
+      final result = await NoPortsOnboardingUtil.completeAtKeysFileSignIn(
+        _alice,
+        await _clientWhose(
+          AtConnectionState.offline(AtConnectionCause.unreachable),
+        ),
+        InMemoryAtKeysIo.holding('@alice', _fileKeys()),
+        _strings,
+        keychain: keychain,
+      );
+
+      expect(
+        keychain.entries['@alice'],
+        same(held),
+        reason: "e1's pending keys stay in the keychain",
+      );
+      expect(keychain.writes, 0, reason: 'nothing is written to the keychain');
+      expect(
+        result.status,
+        NoPortsOnboardingResultStatus.success,
+        reason: 'the sign-in succeeds on the file',
+      );
+    });
+
+    testWidgets('A sign-in whose keychain backup fails still signs in: when'
+        ' the keychain refuses the write, then the sign-in succeeds, its client'
+        " keeps running, e1's keys stay, and the app log says the keys were"
+        ' not backed up', (tester) async {
+      await _pumpApp(tester);
+      final held = _pendingKeys();
+      final keychain = _Keychain(held)..refusesWrites = true;
+      final client = await _clientWhose(AtConnectionState.online());
+
+      final result = await NoPortsOnboardingUtil.completeAtKeysFileSignIn(
+        _alice,
+        client,
+        InMemoryAtKeysIo.holding('@alice', _fileKeys()),
+        _strings,
+        keychain: keychain,
+      );
+
+      expect(
+        result.status,
+        NoPortsOnboardingResultStatus.success,
+        reason: 'the sign-in succeeds on the file',
+      );
+      expect(client.stops, 0, reason: 'the client keeps running');
+      expect(
+        keychain.entries['@alice'],
+        same(held),
+        reason: "e1's pending keys stay in the keychain",
+      );
+      expect(
+        _logLines.where((line) => line.contains('could not back its keys up')),
+        hasLength(1),
+        reason: 'the app log says the keys were not backed up',
       );
     });
 
@@ -137,9 +234,36 @@ void main() {
 
 final _alice = '@alice'.toAtsign();
 
+final AppLocalizations _strings = lookupAppLocalizations(const Locale('en'));
+
+/// A client for @alice whose connection has reached [state].
+Future<_Client> _clientWhose(AtConnectionState state) async {
+  final connection = AtConnection(
+    atSign: '@alice',
+    attempt: (_) async => state,
+  );
+  await connection.attempt();
+  return _Client(connection);
+}
+
+class _Client extends Fake implements AtClient {
+  _Client(this.connection);
+
+  @override
+  final AtConnection connection;
+
+  var stops = 0;
+
+  @override
+  Future<void> stop() async {
+    stops++;
+  }
+}
+
 /// A keychain holding [alice] for @alice, or nothing at all. [writes] counts
-/// the entries added and removed, and [callsOutsideWriteSection] the reads,
-/// additions and removals made outside [writing].
+/// the entries added, replaced and removed, [absentAfterAWrite] the writes
+/// that left nothing for @alice, and [callsOutsideWriteSection] the reads and
+/// writes made outside [writing]. While [refusesWrites], every write throws.
 class _Keychain extends Fake implements KeychainStorage {
   _Keychain([AtKeys? alice]) {
     if (alice != null) entries['@alice'] = alice;
@@ -147,11 +271,21 @@ class _Keychain extends Fake implements KeychainStorage {
 
   final entries = <String, AtKeys>{};
   var writes = 0;
+  var absentAfterAWrite = 0;
   var callsOutsideWriteSection = 0;
+  var refusesWrites = false;
   var _writeSections = 0;
 
   void _call() {
     if (_writeSections == 0) callsOutsideWriteSection++;
+  }
+
+  void _write(void Function() change) {
+    _call();
+    if (refusesWrites) throw StateError('the keychain refused the write');
+    change();
+    writes++;
+    if (!entries.containsKey('@alice')) absentAfterAWrite++;
   }
 
   /// Throws as `KeychainStorage.getAtsign` does when the keychain holds no
@@ -174,18 +308,26 @@ class _Keychain extends Fake implements KeychainStorage {
   }
 
   @override
-  Future<void> appendAtKeysToKeychain({required AtKeys keys}) async {
-    _call();
-    writes++;
-    entries[keys.atsign.toString()] = keys;
-  }
+  Future<void> appendAtKeysToKeychain({required AtKeys keys}) async =>
+      _write(() => entries[keys.atsign.toString()] = keys);
+
+  /// Replaces the entry as `KeychainStorage.updateAtKeysInKeychain` does,
+  /// once [assureUpdate] has accepted it.
+  @override
+  Future<void> updateAtKeysInKeychain({
+    required String atSign,
+    required AtKeys keys,
+    void Function(AtKeys existing)? assureUpdate,
+    bool requireExisting = false,
+  }) async => _write(() {
+    final existing = entries[atSign];
+    if (existing != null) assureUpdate?.call(existing);
+    entries[atSign] = keys;
+  });
 
   @override
-  Future<void> removeAtsignFromKeychain(String atSign) async {
-    _call();
-    writes++;
-    entries.remove(atSign);
-  }
+  Future<void> removeAtsignFromKeychain(String atSign) async =>
+      _write(() => entries.remove(atSign));
 }
 
 /// What a request awaiting a decision leaves in the keychain: its keypair,
