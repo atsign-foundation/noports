@@ -47,17 +47,15 @@ class ProfileFolderCreateButton extends StatelessWidget {
       selector: (ProfilesSelectedState state) => state.selected.isNotEmpty,
       builder: (BuildContext context, bool anySelected) {
         if (anySelected) return gap0;
-        return BlocSelector<ProfileFolderBloc, ProfileFolderState, bool>(
-          selector: (ProfileFolderState state) => state.editable,
-          builder: (BuildContext context, bool foldersEnabled) {
-            if (!foldersEnabled) return gap0;
-            return ElevatedButton.icon(
-              key: const Key('ProfileFolderCreateButton'),
-              onPressed: () => ProfileFolderActions.createFolder(context),
-              label: Text(strings.folderNew),
-              icon: PhosphorIcon(PhosphorIcons.folderPlus()),
-            );
-          },
+        return _FolderEditGate(
+          builder: (BuildContext context, bool editable) => ElevatedButton.icon(
+            key: const Key('ProfileFolderCreateButton'),
+            onPressed: editable
+                ? () => ProfileFolderActions.createFolder(context)
+                : null,
+            label: Text(strings.folderNew),
+            icon: PhosphorIcon(PhosphorIcons.folderPlus()),
+          ),
         );
       },
     );
@@ -80,26 +78,49 @@ class ProfileFolderMoveButton extends StatelessWidget {
       selector: (ProfilesSelectedState state) => state.selected,
       builder: (BuildContext context, Set<String> selected) {
         if (selected.isEmpty) return gap0;
-        return BlocSelector<ProfileFolderBloc, ProfileFolderState, bool>(
-          selector: (ProfileFolderState state) => state.editable,
-          builder: (BuildContext context, bool foldersEnabled) {
-            if (!foldersEnabled) return gap0;
+        return _FolderEditGate(
+          builder: (BuildContext context, bool editable) {
             return ElevatedButton.icon(
               key: const Key('ProfileFolderMoveButton'),
-              onPressed: () async {
-                final ProfilesSelectedCubit selectedCubit = context
-                    .read<ProfilesSelectedCubit>();
-                if (await ProfileFolderActions.moveToFolder(
-                  context,
-                  selected,
-                )) {
-                  selectedCubit.deselectAll();
-                }
-              },
+              onPressed: !editable
+                  ? null
+                  : () async {
+                      final ProfilesSelectedCubit selectedCubit = context
+                          .read<ProfilesSelectedCubit>();
+                      if (await ProfileFolderActions.moveToFolder(
+                        context,
+                        selected,
+                      )) {
+                        selectedCubit.deselectAll();
+                      }
+                    },
               label: Text(strings.folderMoveTo),
               icon: PhosphorIcon(PhosphorIcons.folderOpen()),
             );
           },
+        );
+      },
+    );
+  }
+}
+
+/// Hidden until the folders load, and off with a reason until they sync.
+class _FolderEditGate extends StatelessWidget {
+  final Widget Function(BuildContext context, bool editable) builder;
+  const _FolderEditGate({required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<ProfileFolderBloc, ProfileFolderState, (bool, bool)>(
+      selector: (ProfileFolderState state) =>
+          (state is ProfileFoldersLoaded, state.editable),
+      builder: (BuildContext context, (bool, bool) folders) {
+        final (bool loaded, bool editable) = folders;
+        if (!loaded) return gap0;
+        if (editable) return builder(context, true);
+        return Tooltip(
+          message: AppLocalizations.of(context)!.folderSyncing,
+          child: builder(context, false),
         );
       },
     );

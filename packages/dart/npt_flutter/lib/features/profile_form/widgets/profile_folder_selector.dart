@@ -11,12 +11,33 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 typedef ProfileFormFolder = ({String? folderId, String? newName});
 
 class ProfileFormFolderCubit extends Cubit<ProfileFormFolder> {
-  ProfileFormFolderCubit(String? folderId)
-    : super((folderId: folderId, newName: null));
+  bool _known;
 
-  void choose(String? folderId) => emit((folderId: folderId, newName: null));
+  /// [known] is false when the form opened before the folders loaded, so
+  /// the connection's folder isn't known yet.
+  ProfileFormFolderCubit(String? folderId, {bool known = true})
+    : _known = known,
+      super((folderId: folderId, newName: null));
 
-  void create(String name) => emit((folderId: Uuid.generate(), newName: name));
+  /// False until the folders load or the user picks a folder; nothing is
+  /// moved until then.
+  bool get known => _known;
+
+  void choose(String? folderId) {
+    _known = true;
+    emit((folderId: folderId, newName: null));
+  }
+
+  void create(String name) {
+    _known = true;
+    emit((folderId: Uuid.generate(), newName: name));
+  }
+
+  /// Shows the connection's folder once the folders load, unless the user
+  /// has picked one meanwhile.
+  void resolve(String? folderId) {
+    if (!_known) choose(folderId);
+  }
 }
 
 class ProfileFolderSelector extends StatefulWidget {
@@ -92,7 +113,13 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
     List<DropdownMenuEntry<String>> entries,
     String filter,
   ) {
-    final String typed = filter.trim().toLowerCase();
+    // Cut first, as the name dialog does, so a cut name can't repeat one.
+    final String name = filter
+        .trim()
+        .characters
+        .take(ProfileFolderNameDialog.maxLength)
+        .toString();
+    final String typed = name.toLowerCase();
     final List<DropdownMenuEntry<String>> matches = entries
         .where(
           (DropdownMenuEntry<String> e) =>
@@ -105,10 +132,6 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
         )) {
       return matches;
     }
-    final String trimmed = filter.trim();
-    final String name = trimmed.length > ProfileFolderNameDialog.maxLength
-        ? trimmed.substring(0, ProfileFolderNameDialog.maxLength)
-        : trimmed;
     return <DropdownMenuEntry<String>>[
       ...matches,
       DropdownMenuEntry<String>(

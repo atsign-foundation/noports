@@ -2,7 +2,7 @@
 
 - FEAT: Connection folders, saved with the atSign and ordered by drag and drop.
 - FEAT: A folder's Start all starts the chosen connections one at a time.
-- FEAT: Starred folders in the menu bar menu.
+- FEAT: Favorite folders in the menu bar menu.
 - FEAT: Search and sort connections, with favorites first.
 - FEAT: A Folder field in the connection form.
 - FEAT: Exported profiles keep their favorites.

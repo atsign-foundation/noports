@@ -124,7 +124,7 @@ void main() {
           ],
         },
       );
-      expect(parsed.folders.map((ProfileFolder g) => g.uuid), <String>['ok']);
+      expect(parsed.folders.map((ProfileFolder f) => f.uuid), <String>['ok']);
     });
 
     test('folderForProfile and folderById', () {
@@ -375,54 +375,90 @@ void main() {
       });
     });
 
-    group('placeBeforeNext', () {
-      // A, B, C, D with B and D favorites shows B, D, A, C.
-      bool notFavorite(String id) => id != 'B' && id != 'D';
+    group('placeInManualOrder', () {
+      // B and D are favorites: Favorites first lifts them above A and C.
+      const Set<String> favorites = <String>{'B', 'D'};
+      bool tie(String a, String b) =>
+          favorites.contains(a) == favorites.contains(b);
+      List<String> place(
+        List<String> manual,
+        List<String> released,
+        List<String> moved,
+      ) => ProfileFolderData.placeInManualOrder(
+        manual: manual,
+        released: released,
+        moved: moved,
+        tie: tie,
+      );
 
       test('dragging C above A keeps the favorites where they were', () {
         expect(
-          ProfileFolderData.placeBeforeNext(
-            manual: <String>['A', 'B', 'C', 'D'],
-            released: <String>['B', 'D', 'C', 'A'],
-            moved: <String>['C'],
-            canFollow: notFavorite,
+          place(
+            <String>['A', 'B', 'C', 'D'],
+            <String>['B', 'D', 'C', 'A'],
+            <String>['C'],
           ),
           <String>['C', 'A', 'B', 'D'],
         );
       });
 
-      test('skips a next id that has to stay above the moved one', () {
-        // A dropped above B: B is lifted above it whatever the order.
+      test('a drop that leaves the screen as it was changes nothing', () {
+        // A dropped above the favorites still shows below them.
         expect(
-          ProfileFolderData.placeBeforeNext(
-            manual: <String>['A', 'B', 'C', 'D'],
-            released: <String>['A', 'B', 'D', 'C'],
-            moved: <String>['A'],
-            canFollow: notFavorite,
+          place(
+            <String>['A', 'B', 'C', 'D'],
+            <String>['A', 'B', 'D', 'C'],
+            <String>['A'],
           ),
-          <String>['B', 'A', 'C', 'D'],
+          <String>['A', 'B', 'C', 'D'],
         );
       });
 
-      test('goes last when nothing that can follow it comes after it', () {
+      test('a drop below every tie goes after the last of them', () {
         expect(
-          ProfileFolderData.placeBeforeNext(
-            manual: <String>['A', 'B', 'C'],
-            released: <String>['B', 'C', 'A'],
-            moved: <String>['A'],
+          place(
+            <String>['A', 'B', 'C', 'D'],
+            <String>['B', 'D', 'C', 'A'],
+            <String>['A'],
           ),
-          <String>['B', 'C', 'A'],
+          <String>['B', 'C', 'A', 'D'],
         );
       });
 
-      test('a selection moves together and new ids join it', () {
+      test('a favorite dragged to the top goes before the first favorite', () {
         expect(
-          ProfileFolderData.placeBeforeNext(
-            manual: <String>['A', 'B', 'C'],
-            released: <String>['A', 'x', 'C', 'B'],
-            moved: <String>['x', 'C'],
+          place(
+            <String>['A', 'B', 'C', 'D'],
+            <String>['D', 'B', 'A', 'C'],
+            <String>['D'],
           ),
-          <String>['A', 'x', 'C', 'B'],
+          <String>['A', 'D', 'B', 'C'],
+        );
+      });
+
+      test('a mixed selection places each kind among its own', () {
+        // Screen before: B, D, A, C. C and B are dragged to the top.
+        expect(
+          place(
+            <String>['A', 'B', 'C', 'D'],
+            <String>['B', 'C', 'D', 'A'],
+            <String>['B', 'C'],
+          ),
+          <String>['C', 'A', 'B', 'D'],
+        );
+      });
+
+      test('an id moved in from elsewhere goes before its next tie', () {
+        expect(
+          place(<String>['A', 'B'], <String>['B', 'X', 'A'], <String>['X']),
+          <String>['X', 'A', 'B'],
+        );
+      });
+
+      test('an id with nothing to tie with goes last', () {
+        expect(
+          place(<String>['B'], <String>['X', 'B'], <String>['X']),
+          <String>['B', 'X'],
         );
       });
     });
@@ -615,7 +651,7 @@ void main() {
           'g2',
           'g1',
         ]);
-        expect(result.folders.map((ProfileFolder g) => g.uuid), <String>[
+        expect(result.folders.map((ProfileFolder f) => f.uuid), <String>[
           'g2',
           'g1',
           'g3',

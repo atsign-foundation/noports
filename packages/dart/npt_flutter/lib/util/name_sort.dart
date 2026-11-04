@@ -34,6 +34,8 @@ final Map<int, String> _foldByRune = <int, String>{
 String nameSortKey(String name) {
   final StringBuffer key = StringBuffer();
   for (final int rune in name.toLowerCase().runes) {
+    // Combining accents typed after their letter.
+    if (rune >= 0x0300 && rune <= 0x036F) continue;
     final String? folded = _foldByRune[rune];
     if (folded != null) {
       key.write(folded);

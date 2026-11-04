@@ -82,6 +82,9 @@ class _TrayManagerState extends State<TrayManager>
           BlocListener<ProfilesRunningCubit, ProfilesRunningState>(
             listener: reloadTray,
           ),
+          BlocListener<ProfileStartQueueCubit, ProfileStartQueueState>(
+            listener: reloadTray,
+          ),
           BlocListener<SettingsBloc, SettingsState>(
             listener: reloadTray,
             // Only call listener when the language changes in settings

@@ -52,14 +52,14 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
 
   void clear() {
     _setWaiting(const <String>[]);
-    _cleared.complete();
+    if (!_cleared.isCompleted) _cleared.complete();
     _cleared = Completer<void>();
   }
 
   /// Stops a start in progress without emitting: nothing listens any more.
   @override
   Future<void> close() {
-    _cleared.complete();
+    if (!_cleared.isCompleted) _cleared.complete();
     return super.close();
   }
 
@@ -80,7 +80,8 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
   Future<void> _drain() async {
     _draining = true;
     try {
-      while (state.waiting.isNotEmpty) {
+      // Once closed the waiting list can't shrink, so the loop has to stop.
+      while (!isClosed && state.waiting.isNotEmpty) {
         final String uuid = state.waiting.first;
         _setWaiting(state.waiting.skip(1).toList());
         _current = uuid;

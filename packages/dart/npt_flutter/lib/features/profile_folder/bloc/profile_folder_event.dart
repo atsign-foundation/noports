@@ -83,7 +83,8 @@ final class ProfileFolderDeleteEvent extends ProfileFolderEvent {
 }
 
 /// Moves [profileIds] into the folder [folderId].
-/// A null [folderId] takes them out of every folder instead, ordered by [visibleUnfiled]
+/// A null [folderId] takes them out of every folder instead, ordered by
+/// [visibleUnfiled]
 /// when given.
 final class ProfileFolderMoveProfilesEvent extends ProfileFolderEvent {
   final Iterable<String> profileIds;
@@ -169,7 +170,7 @@ final class ProfileFolderSetFavoriteEvent extends ProfileFolderEvent {
   }
 }
 
-/// A null [folderId] is the "No folder" section.
+/// A null [folderId] is the unfiled section.
 final class ProfileFolderSetCollapsedEvent extends ProfileFolderEvent {
   final String? folderId;
   final bool collapsed;

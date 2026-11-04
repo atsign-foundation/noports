@@ -1157,6 +1157,12 @@ abstract class AppLocalizations {
   /// **'Stop all'**
   String get folderStopAll;
 
+  /// No description provided for @folderSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders can be changed once they have synced'**
+  String get folderSyncing;
+
   /// No description provided for @getStarted.
   ///
   /// In en, this message translates to:

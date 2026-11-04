@@ -14,11 +14,13 @@ class ProfileFormView extends StatelessWidget {
   final String? folderId;
   const ProfileFormView(this.uuid, {super.key, this.copyFrom, this.folderId});
 
-  /// Read before saving: the page closes when the save succeeds.
+  /// Read before saving: the page closes when the save succeeds. Folders not
+  /// synced yet apply it once they are.
   ProfileFolderEvent? _folderEvent(BuildContext context) {
-    final chosen = context.read<ProfileFormFolderCubit>().state;
+    final folderCubit = context.read<ProfileFormFolderCubit>();
+    final chosen = folderCubit.state;
     final folders = context.read<ProfileFolderBloc>().state;
-    if (folders is! ProfileFoldersLoaded || !folders.editable) return null;
+    if (folders is! ProfileFoldersLoaded || !folderCubit.known) return null;
     final newName = chosen.newName;
     if (newName != null) {
       return ProfileFolderCreateEvent(
@@ -69,6 +71,7 @@ class ProfileFormView extends StatelessWidget {
                 ..add(ProfileLoadOrCreateEvent(copyFrom: copyFrom)),
         ),
         BlocProvider<ProfileFormFolderCubit>(
+          lazy: false,
           create: (BuildContext context) {
             final folders = context.read<ProfileFolderBloc>().state;
             return ProfileFormFolderCubit(
@@ -76,6 +79,7 @@ class ProfileFormView extends StatelessWidget {
                   (folders is ProfileFoldersLoaded
                       ? folders.data.folderForProfile(uuid)?.uuid
                       : null),
+              known: folderId != null || folders is ProfileFoldersLoaded,
             );
           },
         ),
@@ -99,7 +103,22 @@ class ProfileFormView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const ProfileDisplayNameTextField(),
-                            const ProfileFolderSelector(),
+                            // The connection's folder is known once the
+                            // folders have loaded.
+                            BlocListener<ProfileFolderBloc, ProfileFolderState>(
+                              listener: (context, folders) {
+                                if (folders is ProfileFoldersLoaded) {
+                                  context
+                                      .read<ProfileFormFolderCubit>()
+                                      .resolve(
+                                        folders.data
+                                            .folderForProfile(uuid)
+                                            ?.uuid,
+                                      );
+                                }
+                              },
+                              child: const ProfileFolderSelector(),
+                            ),
                             gapH10,
                             const Padding(
                               padding: EdgeInsets.symmetric(

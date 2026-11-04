@@ -6,7 +6,12 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile_folder/models/profile_folder.dart';
 import 'package:npt_flutter/util/constants.dart';
 
+/// Every folder is in one document under one key, so when two devices change
+/// folders before syncing, the last one to sync wins.
 class ProfileFolderRepository {
+  /// A read or write that hangs would hold up every later folder event.
+  static const Duration _timeout = Duration(seconds: 30);
+
   final AtClient? _atClient;
   SyncService? _watchedSync;
   SyncProgressListener? _syncListener;
@@ -31,7 +36,7 @@ class ProfileFolderRepository {
     final AtKey key = getProfileFolderAtKey(sharedBy: atsign);
 
     try {
-      final AtValue value = await _client.get(key);
+      final AtValue value = await _client.get(key).timeout(_timeout);
       if (value.value == null) return const ProfileFolderData();
       final dynamic json = jsonDecode(value.value);
       if (json is! Map) {
@@ -64,8 +69,9 @@ class ProfileFolderRepository {
     return true;
   }
 
-  /// Calls [onRound] after each sync round, with whether it left nothing to
-  /// pull or push.
+  /// Calls [onRound] after each sync round, with whether it pulled everything
+  /// the atServer had. Pushes still waiting don't count: one the atServer
+  /// keeps refusing would otherwise hold the folders read-only.
   void watchSync(void Function(bool caughtUp) onRound) {
     stopWatching();
     try {
@@ -90,7 +96,9 @@ class ProfileFolderRepository {
     final Atsign? atsign = _client.getCurrentAtSign()?.toAtsign();
     final AtKey key = getProfileFolderAtKey(sharedBy: atsign);
     try {
-      return await _client.put(key, jsonEncode(data.toJson()));
+      return await _client
+          .put(key, jsonEncode(data.toJson()))
+          .timeout(_timeout);
     } catch (e) {
       App.log('[ERROR] putProfileFolders: $e'.loggable);
       return false;
@@ -108,9 +116,10 @@ class _SyncRoundListener extends SyncProgressListener {
     final SyncStatus? status = syncProgress.syncStatus;
     // A failed round may still have pulled the folders, so every round counts.
     if (status == SyncStatus.success || status == SyncStatus.failure) {
+      final int? server = syncProgress.serverCommitId;
       onRound(
         status == SyncStatus.success &&
-            (syncProgress.pendingPushCount ?? 0) == 0,
+            (server == null || (syncProgress.localCommitId ?? -1) >= server),
       );
     }
   }

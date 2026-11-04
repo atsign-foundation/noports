@@ -158,7 +158,7 @@ class ProfileFolderActions {
     if (pick == null) return false;
 
     switch (pick) {
-      case ProfileFolderPickNone():
+      case ProfileFolderPickUnfiled():
         bloc.add(
           ProfileFolderMoveProfilesEvent(
             profileIds: ids,

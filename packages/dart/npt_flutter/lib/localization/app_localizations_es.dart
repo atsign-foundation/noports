@@ -502,7 +502,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get fastest => 'Más rápido';
 
   @override
-  String get favoriteAdd => 'Añadir a favoritos';
+  String get favoriteAdd => 'Agregar a favoritos';
 
   @override
   String get favoriteRemove => 'Quitar de favoritos';
@@ -532,7 +532,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'La solicitud se mostrará en el Authenticator en Solicitudes en cualquier aplicación conectada a tu Atsign con claves de administrador.';
 
   @override
-  String get folderAddConnection => 'Añadir conexión';
+  String get folderAddConnection => 'Agregar conexión';
 
   @override
   String get folderChooseStartAll => 'Elegir conexiones a iniciar';
@@ -574,7 +574,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get folderName => 'Nombre de la carpeta';
 
   @override
-  String get folderNameRequired => 'Introduce un nombre de carpeta';
+  String get folderNameRequired => 'Ingresa un nombre de carpeta';
 
   @override
   String get folderNameTaken => 'Ya existe una carpeta con este nombre';
@@ -601,6 +601,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get folderStopAll => 'Detener todo';
+
+  @override
+  String get folderSyncing =>
+      'Las carpetas se podrán cambiar cuando terminen de sincronizarse';
 
   @override
   String get getStarted => 'Comenzar';

@@ -533,11 +533,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get folderAddConnection => 'Adicionar conexão';
 
   @override
-  String get folderChooseStartAll => 'Escolher ligações a iniciar';
+  String get folderChooseStartAll => 'Escolher conexões a iniciar';
 
   @override
   String get folderChooseStartAllDescription =>
-      'Iniciar todos inicia as ligações marcadas, uma após a outra.';
+      'Iniciar todos inicia as conexões marcadas, uma após a outra.';
 
   @override
   String get folderCollapse => 'Recolher';
@@ -572,7 +572,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get folderName => 'Nome da pasta';
 
   @override
-  String get folderNameRequired => 'Informe um nome para a pasta';
+  String get folderNameRequired => 'Insira um nome para a pasta';
 
   @override
   String get folderNameTaken => 'Já existe uma pasta com este nome';
@@ -599,6 +599,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get folderStopAll => 'Parar todos';
+
+  @override
+  String get folderSyncing =>
+      'As pastas poderão ser alteradas quando terminarem de sincronizar';
 
   @override
   String get getStarted => 'Começar';
@@ -837,7 +841,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileFolder => 'Pasta';
 
   @override
-  String get profileFolderDescription => 'A pasta em que esta ligação aparece.';
+  String get profileFolderDescription => 'A pasta em que esta conexão aparece.';
 
   @override
   String get profileImportDialogTitle => 'Escolha o Método de Importação';
@@ -937,7 +941,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileStatusQueuedMessage =>
-      'Aguarda que as ligações anteriores iniciem. Clique para a iniciar agora.';
+      'Aguarda que as conexões anteriores iniciem. Clique para a iniciar agora.';
 
   @override
   String get profileStatusStarted => 'Conectado';
@@ -1823,7 +1827,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get folderName => 'Nome da pasta';
 
   @override
-  String get folderNameRequired => 'Informe um nome para a pasta';
+  String get folderNameRequired => 'Insira um nome para a pasta';
 
   @override
   String get folderNameTaken => 'Já existe uma pasta com este nome';
@@ -1850,6 +1854,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get folderStopAll => 'Parar todos';
+
+  @override
+  String get folderSyncing =>
+      'As pastas poderão ser alteradas quando terminarem de sincronizar';
 
   @override
   String get getStarted => 'Começar';

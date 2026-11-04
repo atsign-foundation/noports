@@ -417,7 +417,7 @@ void main() {
       final ProfileFolderData result = data.withFoldersOrdered(
         reorderEvent.folderIds,
       );
-      expect(result.folders.map((ProfileFolder g) => g.uuid), <String>[
+      expect(result.folders.map((ProfileFolder f) => f.uuid), <String>[
         'g2',
         'g1',
         'g3',
@@ -439,7 +439,7 @@ void main() {
       final ProfileFolderData result = data.withFoldersOrdered(
         reorderEvent.folderIds,
       );
-      expect(result.folders.map((ProfileFolder g) => g.uuid), <String>[
+      expect(result.folders.map((ProfileFolder f) => f.uuid), <String>[
         'g2',
         'g3',
         'g1',

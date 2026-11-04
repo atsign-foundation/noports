@@ -176,7 +176,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
             folder: folder,
             collapsed: layout.collapsed.contains(section.id),
             // Folders stay open while searching and move only in manual order.
-            onToggleCollapsed: widget.searching || !editable
+            onToggleCollapsed: widget.searching
                 ? null
                 : () => context.read<ProfileFolderBloc>().add(
                     ProfileFolderSetCollapsedEvent(
@@ -340,8 +340,8 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
       ),
       _ => current,
     };
-    // Marking a favorite lifts an item without changing the manual order, so a drop
-    // above it can match what is already saved and still be put back.
+    // Marking a favorite lifts an item without changing the manual order, so a
+    // drop above it can match what is already saved and still be put back.
     if (next == current) {
       _explainIfMoved(event, _layoutFor(current));
       return;
@@ -418,19 +418,21 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
   ) {
     switch (event) {
       case ProfileFolderPlaceProfilesEvent(:final String? folderId)
-          when widget.arrange != null && grabbed is ProfileListRowEntry:
+          when widget.arrange != null:
         final List<String> Function(List<String>) arrange = widget.arrange!;
         return ProfileFolderPlaceProfilesEvent(
           profileIds: event.profileIds,
           folderId: folderId,
-          sectionOrder: ProfileFolderData.placeBeforeNext(
+          sectionOrder: ProfileFolderData.placeInManualOrder(
             manual: folderId == null
                 ? data.resolveUnfiled(widget.profiles)
                 : data.folderById(folderId)?.profileIds ?? const <String>[],
             released: event.sectionOrder,
             moved: event.profileIds,
-            canFollow: (String id) =>
-                arrange(<String>[grabbed.uuid, id]).firstOrNull == grabbed.uuid,
+            // Tied when the sort keeps both orders of the pair.
+            tie: (String a, String b) =>
+                listEquals(arrange(<String>[a, b]), <String>[a, b]) &&
+                listEquals(arrange(<String>[b, a]), <String>[b, a]),
           ),
         );
       case ProfileFolderReorderEvent(:final List<String> folderIds)
@@ -452,13 +454,16 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     final int Function(ProfileFolder a, ProfileFolder b)? compare =
         widget.compareFolders;
     if (compare == null) return released;
-    return ProfileFolderData.placeBeforeNext(
+    return ProfileFolderData.placeInManualOrder(
       manual: <String>[for (final ProfileFolder f in data.folders) f.uuid],
       released: released,
       moved: <String>[moved.uuid],
-      canFollow: (String id) {
-        final ProfileFolder? next = data.folderById(id);
-        return next == null || compare(moved, next) <= 0;
+      tie: (String a, String b) {
+        final ProfileFolder? folderA = data.folderById(a);
+        final ProfileFolder? folderB = data.folderById(b);
+        return folderA == null ||
+            folderB == null ||
+            compare(folderA, folderB) == 0;
       },
     );
   }

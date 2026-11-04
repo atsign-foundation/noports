@@ -34,7 +34,7 @@ void main() {
 
     test('builds a self key in the noports namespace', () {
       final AtKey key = ProfileFolderRepository.getProfileFolderAtKey();
-      expect(key.key, Constants.profileFolderKeyName);
+      expect(key.key, 'folders');
       expect(key.namespace, Constants.namespace);
       expect(key.sharedBy, '');
 

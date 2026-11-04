@@ -593,6 +593,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get folderStopAll => 'Stop all';
 
   @override
+  String get folderSyncing => 'Folders can be changed once they have synced';
+
+  @override
   String get getStarted => 'Get Started';
 
   @override

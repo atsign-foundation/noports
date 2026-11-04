@@ -13,7 +13,7 @@ import 'package:npt_flutter/widgets/confirmation_dialog.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ProfileFolderSectionHeader extends StatelessWidget {
-  /// Same widths as a row's star and menu, so the columns line up.
+  /// Same widths as a row's favorite button and menu, so the columns line up.
   static const double _slotWidth = Sizes.p40;
 
   final String title;

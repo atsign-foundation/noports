@@ -80,18 +80,9 @@ class _ProfileListViewState extends State<ProfileListView> {
               }
             },
           ),
-          // Selected connections the search hides would still be exported,
-          // moved or deleted.
           BlocListener<ProfileListFilterCubit, ProfileListFilterState>(
-            listener: (BuildContext context, ProfileListFilterState filter) {
-              final ProfilesSelectedCubit selected = context
-                  .read<ProfilesSelectedCubit>();
-              if (selected.state.selected.any(filter.hides)) {
-                selected.selectOnly(
-                  selected.state.selected.where((id) => !filter.hides(id)),
-                );
-              }
-            },
+            listener: (BuildContext context, ProfileListFilterState _) =>
+                _deselectHidden(context),
           ),
           BlocListener<ProfileFolderBloc, ProfileFolderState>(
             listener: (BuildContext context, ProfileFolderState state) {
@@ -100,6 +91,7 @@ class _ProfileListViewState extends State<ProfileListView> {
                     ? state.folders
                     : const <ProfileFolder>[],
               );
+              _deselectHidden(context);
             },
           ),
           BlocListener<ProfileListBloc, ProfileListState>(
@@ -221,6 +213,24 @@ class _ProfileListViewState extends State<ProfileListView> {
 /// Not the defaults a failed load falls back to.
 bool _isUserSettings(SettingsState state) =>
     state is SettingsLoadedState && state is! SettingsFailedLoad;
+
+/// Selected connections a search or a collapsed folder hides would still be
+/// exported, moved or deleted.
+void _deselectHidden(BuildContext context) {
+  final ProfileListFilterState filter = context
+      .read<ProfileListFilterCubit>()
+      .state;
+  final ProfileFolderState folders = context.read<ProfileFolderBloc>().state;
+  bool hidden(String id) =>
+      filter.hides(id) ||
+      (!filter.searching &&
+          folders is ProfileFoldersLoaded &&
+          folders.data.isCollapsed(id));
+  final ProfilesSelectedCubit selected = context.read<ProfilesSelectedCubit>();
+  if (selected.state.selected.any(hidden)) {
+    selected.selectOnly(selected.state.selected.where((id) => !hidden(id)));
+  }
+}
 
 class _FilteredList extends StatelessWidget {
   final List<String> profiles;

@@ -564,6 +564,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get folderStopAll => '全部停止';
 
   @override
+  String get folderSyncing => '文件夹同步完成后即可修改';
+
+  @override
   String get getStarted => '开始使用';
 
   @override
@@ -1736,6 +1739,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get folderStopAll => '全部停止';
 
   @override
+  String get folderSyncing => '文件夹同步完成后即可修改';
+
+  @override
   String get getStarted => '开始使用';
 
   @override
@@ -2906,6 +2912,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get folderStopAll => '全部停止';
+
+  @override
+  String get folderSyncing => '資料夾同步完成後即可修改';
 
   @override
   String get getStarted => '開始使用';

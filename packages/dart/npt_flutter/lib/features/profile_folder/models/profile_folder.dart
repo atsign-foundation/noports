@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:npt_flutter/app.dart';
 
 Map<String, dynamic> _unknownFields(
@@ -182,6 +183,19 @@ final class ProfileFolderData extends Loggable {
     return null;
   }
 
+  /// A null [folderId] is the unfiled section.
+  ProfileFolderData withCollapsed(String? folderId, bool collapsed) {
+    if (folderId == null) return copyWith(unfiledCollapsed: collapsed);
+    return copyWith(
+      folders: folders
+          .map(
+            (ProfileFolder f) =>
+                f.uuid == folderId ? f.copyWith(collapsed: collapsed) : f,
+          )
+          .toList(),
+    );
+  }
+
   /// Whether [profileId]'s section is collapsed, so its row isn't shown.
   /// Without folders there are no sections to collapse.
   bool isCollapsed(String profileId) =>
@@ -219,7 +233,7 @@ final class ProfileFolderData extends Loggable {
     final Set<String> remove = ids.toSet();
     return copyWith(
       folders: folders
-          .map((ProfileFolder g) => g.withoutProfiles(remove))
+          .map((ProfileFolder f) => f.withoutProfiles(remove))
           .toList(),
       unfiled: unfiled.where((String id) => !remove.contains(id)).toList(),
     );
@@ -240,7 +254,7 @@ final class ProfileFolderData extends Loggable {
     if (movedOut.isEmpty) return this;
     final Set<String> movedSet = movedOut.toSet();
     final List<ProfileFolder> folders = this.folders
-        .map((ProfileFolder g) => g.withoutProfiles(movedSet))
+        .map((ProfileFolder f) => f.withoutProfiles(movedSet))
         .toList();
     if (visibleUnfiled == null) return copyWith(folders: folders);
 
@@ -277,8 +291,8 @@ final class ProfileFolderData extends Loggable {
     final List<String> targetStored = target?.profileIds ?? unfiled;
     final Set<String> targetSet = targetStored.toSet();
     final Set<String> claimedElsewhere = <String>{
-      for (final ProfileFolder g in folders)
-        if (g.uuid != folderId) ...g.profileIds,
+      for (final ProfileFolder f in folders)
+        if (f.uuid != folderId) ...f.profileIds,
     };
 
     final List<String> order = <String>[];
@@ -304,15 +318,15 @@ final class ProfileFolderData extends Loggable {
     return stripped.copyWith(
       folders: stripped.folders
           .map(
-            (ProfileFolder g) => g.uuid == folderId
-                ? g.copyWith(
+            (ProfileFolder f) => f.uuid == folderId
+                ? f.copyWith(
                     profileIds: newTarget,
                     // Reordering within the folder keeps what Start all skips.
                     skippedByStartAll: target!.skippedByStartAll
                         .where(newTarget.contains)
                         .toList(),
                   )
-                : g,
+                : f,
           )
           .toList(),
     );
@@ -360,29 +374,49 @@ final class ProfileFolderData extends Loggable {
     return result;
   }
 
-  /// Puts [moved] into [manual] just before the first id after them in
-  /// [released] that [canFollow] them, or last when none does, so a drop
-  /// on a sorted screen leaves the other ids in their manual order.
-  static List<String> placeBeforeNext({
+  /// Where a drop puts [moved] in [manual] when the screen order lifts some
+  /// ids above others, so that only ids that [tie] keep their manual order on
+  /// screen. [released] is the screen order after the drop. Moved ids that
+  /// tie move together, and only when their order among their ties changed:
+  /// just before the next of those on screen, or else after the previous.
+  static List<String> placeInManualOrder({
     required List<String> manual,
     required List<String> released,
     required List<String> moved,
-    bool Function(String id)? canFollow,
+    required bool Function(String a, String b) tie,
   }) {
-    final Set<String> movedSet = moved.toSet();
-    final int start = released.indexWhere(movedSet.contains);
-    final String? next = start < 0
-        ? null
-        : released
-              .skip(start)
-              .where((String id) => !movedSet.contains(id))
-              .where(canFollow ?? (String _) => true)
-              .firstOrNull;
-    final List<String> result = manual
-        .where((String id) => !movedSet.contains(id))
-        .toList();
-    final int at = next == null ? -1 : result.indexOf(next);
-    result.insertAll(at < 0 ? result.length : at, moved);
+    final Set<String> shown = released.toSet();
+    final List<List<String>> sets = <List<String>>[];
+    for (final String id in moved) {
+      final List<String>? same = sets
+          .where((List<String> s) => tie(s.first, id))
+          .firstOrNull;
+      same == null ? sets.add(<String>[id]) : same.add(id);
+    }
+    List<String> result = List<String>.of(manual);
+    for (final List<String> set in sets) {
+      bool peer(String id) => tie(set.first, id);
+      final List<String> onScreen = released.where(peer).toList();
+      final List<String> before = result
+          .where((String id) => shown.contains(id) && peer(id))
+          .toList();
+      if (listEquals(before, onScreen)) continue;
+      final Set<String> setIds = set.toSet();
+      final int first = onScreen.indexWhere(setIds.contains);
+      final int last = onScreen.lastIndexWhere(setIds.contains);
+      final String? next = first < 0
+          ? null
+          : onScreen.skip(last + 1).firstOrNull;
+      final String? previous = first > 0 ? onScreen[first - 1] : null;
+      result = result.where((String id) => !setIds.contains(id)).toList();
+      int at = result.length;
+      if (next != null && result.contains(next)) {
+        at = result.indexOf(next);
+      } else if (previous != null && result.contains(previous)) {
+        at = result.indexOf(previous) + 1;
+      }
+      result.insertAll(at, set);
+    }
     return result;
   }
 

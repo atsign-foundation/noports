@@ -173,6 +173,7 @@
   "folderStartAll": "全部启动",
   "folderStartSome": "启动 {count}/{total} 个",
   "folderStopAll": "全部停止",
+  "folderSyncing": "文件夹同步完成后即可修改",
   "getStarted": "开始使用",
   "groupAdd": "添加组",
   "groupName": "组名",

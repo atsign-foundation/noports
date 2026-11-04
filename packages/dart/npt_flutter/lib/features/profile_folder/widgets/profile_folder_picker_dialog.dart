@@ -9,8 +9,8 @@ sealed class ProfileFolderPick {
   const ProfileFolderPick();
 }
 
-final class ProfileFolderPickNone extends ProfileFolderPick {
-  const ProfileFolderPickNone();
+final class ProfileFolderPickUnfiled extends ProfileFolderPick {
+  const ProfileFolderPickUnfiled();
 }
 
 final class ProfileFolderPickNew extends ProfileFolderPick {
@@ -62,7 +62,7 @@ class ProfileFolderPickerDialog extends StatelessWidget {
           label: strings.folderNone,
           selected: hasCurrent && currentFolderId == null,
           onPressed: () =>
-              Navigator.of(context).pop(const ProfileFolderPickNone()),
+              Navigator.of(context).pop(const ProfileFolderPickUnfiled()),
         ),
         _PickOption(
           key: const Key('ProfileFolderPickerDialog-new'),
