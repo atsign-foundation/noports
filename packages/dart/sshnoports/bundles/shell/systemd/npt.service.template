@@ -26,7 +26,9 @@ Environment=remote_port="1234"
 Environment=local_port="1234"
 
 # Additional args
-Environment=additional_args=""
+# -K to keepalive the connection
+# Also consider setting -T for timeout
+Environment=additional_args="-K"
 
 # Replace with the exact binary path and command-line flags
 ExecStart=/usr/bin/npt -f "$from_atsign" -t "$to_atsign" -d "$device_name" -p "$remote_port" -l "$local_port" $additional_args
