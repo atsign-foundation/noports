@@ -334,9 +334,13 @@ class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
       await progressSub?.cancel();
       await errorSub?.cancel();
       _activeNpt = null;
-      // NOTE: keep-alive may start another session, so the profile stays
-      // listed as running until [_onStart] ends.
-      running?.release(uuid);
+      // NOTE: unless stopping, keep-alive may start another session, so the
+      // profile stays listed as running until [_onStart] ends.
+      if (_stopRequested) {
+        running?.invalidate(uuid);
+      } else {
+        running?.release(uuid);
+      }
     }
   }
 
