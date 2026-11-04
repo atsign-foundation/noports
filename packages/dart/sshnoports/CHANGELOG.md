@@ -36,6 +36,8 @@
   logging Atsign, and on SIGINT or SIGTERM sends stopped before it exits
 * feat: npp logs manager RPC rule changes and refused senders to the event
   logging Atsign
+* fix: npp saves manager RPC deletes and checks puts before saving them, so
+  the rules it loads on a restart match the changes it accepted
 * build: at_client 3.15.0-rc8, at_auth 4.0.0-rc7, at_lookup 3.7.0-rc4,
   at_onboarding_cli 2.0.0-rc8 and at_utils 3.5.0
 

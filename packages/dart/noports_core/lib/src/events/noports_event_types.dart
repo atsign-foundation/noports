@@ -158,8 +158,9 @@ enum PolicyEventType {
 /// request) and the request's `reqId`. Only the policy service's own Atsign
 /// may change rules, so on [ruleChanged] and [ruleChangeFailed] `fromAtsign`
 /// is always `policyAtsign`; it doesn't say which manager made the change.
-/// These events are sent when a request finishes, so they come in finish
-/// order, which for concurrent requests may not be the order the rules changed.
+/// Rule changes are made one at a time, and each one's event is sent before
+/// the next starts, so [ruleChanged] and [ruleChangeFailed] come in the order
+/// the rules changed. Auth check events and refusals can come between them.
 abstract class PolicyEvent {
   /// The policy check authorised the client, with the answer's `message` and
   /// `permitOpen`.
@@ -276,8 +277,9 @@ abstract class PolicyEvent {
   };
 
   /// A manager RPC changed a rule. `operation` is `put` or `delete`, `target`
-  /// is the kind of rule, and `rule` is the rule as stored, or as it was just
-  /// before it was deleted.
+  /// is the kind of rule, and `rule` is the rule as the policy service now
+  /// holds it, in its cache and in any persistence, or as it was just before
+  /// it was deleted from both.
   static Map<String, dynamic> ruleChanged({
     required Atsign policyAtsign,
     required Atsign fromAtsign,
