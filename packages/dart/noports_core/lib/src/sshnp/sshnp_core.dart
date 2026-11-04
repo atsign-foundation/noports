@@ -147,6 +147,10 @@ abstract class SshnpCore
       requiredFeatures,
       timeout: params.daemonPingTimeout,
     );
+    // NOTE: awaited only after the relay step. A failure before then, or one
+    // never awaited because an earlier step threw, must not go unhandled; the
+    // await below still sees it.
+    featureCheckFuture.ignore();
 
     /// Set the remote username to use for the ssh session
     sendProgress('Resolving remote username for user session');
