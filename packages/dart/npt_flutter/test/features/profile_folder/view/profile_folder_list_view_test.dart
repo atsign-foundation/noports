@@ -496,6 +496,119 @@ void main() {
     });
   });
 
+  group('start all with a connection already going', () {
+    IconButton startButton(WidgetTester tester, String folderId) =>
+        tester.widget<IconButton>(
+          find
+              .descendant(
+                of: header(folderId),
+                matching: find.ancestor(
+                  of: find.byTooltip(strings.folderStartAll),
+                  matching: find.byType(IconButton),
+                ),
+              )
+              .first,
+        );
+
+    testWidgets('is off while it is still connecting', (
+      WidgetTester tester,
+    ) async {
+      when(profileBlocs[rdpUuid]!.state).thenReturn(
+        ProfileStarting(rdpUuid, profile: buildProfile(rdpUuid, 'rdp')),
+      );
+      createRealBlocs();
+      folderBloc.emit(
+        const ProfileFoldersLoaded(
+          ProfileFolderData(folders: <ProfileFolder>[desktopsFolder]),
+        ),
+      );
+      await tester.pumpWidget(buildSubject(tester));
+      await tester.pump();
+
+      expect(startButton(tester, desktopsFolder.uuid).onPressed, isNull);
+    });
+
+    testWidgets('stays off when a running one moves into the folder', (
+      WidgetTester tester,
+    ) async {
+      for (final String uuid in <String>[sshUuid, rdpUuid]) {
+        when(
+          profileBlocs[uuid]!.state,
+        ).thenReturn(ProfileStarted(uuid, profile: buildProfile(uuid, 'ssh')));
+      }
+      createRealBlocs();
+      runningCubit.prepare(rdpUuid);
+      folderBloc.emit(
+        const ProfileFoldersLoaded(
+          ProfileFolderData(
+            folders: <ProfileFolder>[serversFolder, desktopsFolder],
+          ),
+        ),
+      );
+      await tester.pumpWidget(buildSubject(tester));
+      await tester.pump();
+      runningCubit.prepare(sshUuid);
+      await tester.pump();
+
+      folderBloc.emit(
+        ProfileFoldersLoaded(
+          ProfileFolderData(
+            folders: <ProfileFolder>[
+              serversFolder.copyWith(profileIds: <String>['uuid-not-loaded']),
+              desktopsFolder.copyWith(profileIds: <String>[sshUuid, rdpUuid]),
+            ],
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(startButton(tester, desktopsFolder.uuid).onPressed, isNull);
+    });
+  });
+
+  testWidgets('choose connections to start is off for an empty folder', (
+    WidgetTester tester,
+  ) async {
+    createRealBlocs();
+    folderBloc.emit(
+      const ProfileFoldersLoaded(
+        ProfileFolderData(
+          folders: <ProfileFolder>[
+            serversFolder,
+            ProfileFolder(uuid: 'g-empty', name: 'Empty'),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpWidget(buildSubject(tester));
+    await tester.pump();
+
+    PopupMenuItem<PopupMenuEntry> chooseItem() =>
+        tester.widget<PopupMenuItem<PopupMenuEntry>>(
+          find.ancestor(
+            of: find.text(strings.folderChooseStartAll),
+            matching: find.byType(PopupMenuItem<PopupMenuEntry>),
+          ),
+        );
+    Future<void> openMenu(String folderId) async {
+      await tester.tap(
+        find.descendant(
+          of: header(folderId),
+          matching: find.byType(PopupMenuButton<PopupMenuEntry>),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await openMenu('g-empty');
+    expect(chooseItem().enabled, isFalse);
+    await tester.tapAt(Offset.zero);
+    await tester.pumpAndSettle();
+
+    await openMenu(serversFolder.uuid);
+    expect(chooseItem().enabled, isTrue);
+  });
+
   testWidgets('deleting a folder through its menu keeps the connections', (
     WidgetTester tester,
   ) async {

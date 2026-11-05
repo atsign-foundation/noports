@@ -34,7 +34,7 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
       }
       if (next.contains(uuid)) continue;
       final ProfileBloc bloc = _cache.getProfileBloc(uuid);
-      if (!bloc.isClosed && _canQueue(bloc.state)) next.add(uuid);
+      if (!bloc.isClosed && canQueue(bloc.state)) next.add(uuid);
     }
     _setWaiting(next);
     if (!_draining) _drain();
@@ -68,7 +68,7 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
     emit(ProfileStartQueueState(List<String>.unmodifiable(waiting)));
   }
 
-  static bool _canQueue(ProfileState state) => switch (state) {
+  static bool canQueue(ProfileState state) => switch (state) {
     ProfileInitial() ||
     ProfileLoading() ||
     ProfileLoaded() ||

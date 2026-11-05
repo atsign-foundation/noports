@@ -137,6 +137,7 @@ class ProfileFolderSectionHeader extends StatelessWidget {
                 : _ProfileFolderMenuButton(
                     folder: folder!,
                     editable: editable,
+                    empty: (total ?? uuids.length) == 0,
                     onMoveUp: onMoveUp,
                     onMoveDown: onMoveDown,
                   ),
@@ -215,8 +216,7 @@ class _StartStopButtonsState extends State<_StartStopButtons> {
         .where((String uuid) => folder?.startsWithAll(uuid) ?? true)
         .toList();
     return BlocBuilder<ProfileStartQueueCubit, ProfileStartQueueState>(
-      builder: (BuildContext context, ProfileStartQueueState queue) {
-        final List<String> waiting = queue.waiting;
+      builder: (BuildContext context, ProfileStartQueueState _) {
         return BlocBuilder<ProfilesRunningCubit, ProfilesRunningState>(
           buildWhen: (ProfilesRunningState a, ProfilesRunningState b) =>
               uuids.any(
@@ -224,11 +224,10 @@ class _StartStopButtonsState extends State<_StartStopButtons> {
                     a.socketConnectors.containsKey(uuid) !=
                     b.socketConnectors.containsKey(uuid),
               ),
-          builder: (BuildContext context, ProfilesRunningState running) {
-            bool isRunning(String uuid) =>
-                running.socketConnectors.containsKey(uuid);
-            final bool canStart = startable.any(
-              (String uuid) => !isRunning(uuid) && !waiting.contains(uuid),
+          builder: (BuildContext context, ProfilesRunningState _) {
+            final bool canStart = ProfileFolderActions.canStartAll(
+              context,
+              startable,
             );
             final bool canStop = ProfileFolderActions.canStopAll(
               context,
@@ -276,11 +275,13 @@ class _StartStopButtonsState extends State<_StartStopButtons> {
 class _ProfileFolderMenuButton extends StatelessWidget {
   final ProfileFolder folder;
   final bool editable;
+  final bool empty;
   final VoidCallback? onMoveUp;
   final VoidCallback? onMoveDown;
   const _ProfileFolderMenuButton({
     required this.folder,
     required this.editable,
+    required this.empty,
     required this.onMoveUp,
     required this.onMoveDown,
   });
@@ -305,7 +306,7 @@ class _ProfileFolderMenuButton extends StatelessWidget {
                 ProfileFolderActions.addConnectionToFolder(folder.uuid),
           ),
           PopupMenuItem(
-            enabled: editable,
+            enabled: editable && !empty,
             child: Row(
               children: <Widget>[
                 PhosphorIcon(PhosphorIcons.listChecks()),

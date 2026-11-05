@@ -38,6 +38,17 @@ class ProfileFolderActions {
     }
   }
 
+  /// Whether [startAll] would queue any of [uuids].
+  static bool canStartAll(BuildContext context, Iterable<String> uuids) {
+    final ProfileStartQueueCubit queue = context.read<ProfileStartQueueCubit>();
+    final ProfileCacheCubit cache = context.read<ProfileCacheCubit>();
+    return uuids.any(
+      (String uuid) =>
+          !queue.isWaiting(uuid) &&
+          ProfileStartQueueCubit.canQueue(cache.getProfileBloc(uuid).state),
+    );
+  }
+
   /// Whether [stopAll] has anything among [uuids] to stop or to take out of
   /// the start queue.
   static bool canStopAll(BuildContext context, Iterable<String> uuids) {
