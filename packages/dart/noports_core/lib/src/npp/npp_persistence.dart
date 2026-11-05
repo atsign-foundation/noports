@@ -25,10 +25,19 @@ const List<String> _fileKinds = [
 ];
 
 /// Whether [name], the part of a stored rule's key or file name before its
-/// kind, is the id in [json]. Compared folded, as atServer keys are.
-bool _carriesId(String name, Map<String, dynamic> json) {
+/// kind, is the id in [json]. [folded] compares them folded, as atServer
+/// keys are; file names are compared as they are, as the delete hook names
+/// the file.
+bool _carriesId(
+  String name,
+  Map<String, dynamic> json, {
+  required bool folded,
+}) {
   final Object? id = json['id'];
-  return id is String && id.toLowerCase() == name.toLowerCase();
+  if (id is! String) {
+    return false;
+  }
+  return folded ? id.toLowerCase() == name.toLowerCase() : id == name;
 }
 
 /// Removes from [nppCache] each rule naming a rule it doesn't hold, with a
@@ -112,7 +121,7 @@ Future<NppCache> nppCacheFromAtServer({
 
       final Map<String, dynamic> jsonData = jsonDecode(atValue.value);
       final String name = keyParts.sublist(0, keyParts.length - 2).join('.');
-      if (!_carriesId(name, jsonData)) {
+      if (!_carriesId(name, jsonData, folded: true)) {
         _logger.warning(
           'Not loading ${atKey.toString()}: its key does not carry its id '
           '${jsonData['id']}',
@@ -247,7 +256,7 @@ Future<NppCache> nppCacheFromFiles({
           0,
           fileName.length - suffix.length,
         );
-        if (!_carriesId(name, jsonData)) {
+        if (!_carriesId(name, jsonData, folded: false)) {
           _logger.warning(
             'Not loading ${file.path}: its name does not carry its id '
             '${jsonData['id']}',

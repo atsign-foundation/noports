@@ -530,18 +530,34 @@ void main() {
           'name': 'Bob',
           'atSign': '@bob',
         });
+        await store.save('client', 'carol-id', {
+          'id': 'Carol-ID',
+          'name': 'Carol',
+          'atSign': '@carol',
+        });
 
         late NppCache loaded;
         final warnings = await warningsDuring(
           () async => loaded = await store.load(),
         );
 
-        expect(ruleIds(loaded), ['Bob-ID'], reason: store.name);
+        expect(
+          ruleIds(loaded),
+          unorderedEquals(store.foldsNames ? ['Bob-ID', 'Carol-ID'] : ['Bob-ID']),
+          reason: store.name,
+        );
         expect(
           warnings.where((w) => w.contains('alice-id')),
           isNotEmpty,
           reason: store.name,
         );
+        if (!store.foldsNames) {
+          expect(
+            warnings.where((w) => w.contains('Carol-ID')),
+            isNotEmpty,
+            reason: store.name,
+          );
+        }
       }
     });
   });
@@ -560,6 +576,10 @@ List<String?> ruleIds(NppCache cache) => [
 /// Where npp keeps its rules, as `--persistence-method` chooses.
 abstract class _Store {
   String get name;
+
+  /// Whether names are folded, as atServer keys are, so `carol-id` names the
+  /// rule `Carol-ID`.
+  bool get foldsNames;
   AtClient get atClient;
   Future<NppCache> load();
   NppOperationHooks hooks();
@@ -578,6 +598,9 @@ class _FileStore implements _Store {
 
   @override
   String get name => 'file';
+
+  @override
+  bool get foldsNames => false;
 
   @override
   Future<NppCache> load() => nppCacheFromFiles(policyDirectory: directory);
@@ -601,6 +624,9 @@ class _AtServerStore implements _Store {
 
   @override
   String get name => 'atserver';
+
+  @override
+  bool get foldsNames => true;
 
   @override
   Future<NppCache> load() => nppCacheFromAtServer(
