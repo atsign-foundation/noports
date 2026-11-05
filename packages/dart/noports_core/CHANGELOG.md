@@ -1,3 +1,19 @@
+# 6.17.0
+
+- feat: npp logs manager RPC rule changes and refused senders to the event
+  logging Atsign
+- fix: npp saves a manager RPC delete, so the rule isn't loaded again on the
+  next start
+- fix: npp checks a manager RPC put before saving it, so a rejected put saves
+  nothing
+- fix: npp makes one manager RPC change at a time, so two puts can't share an
+  id
+- feat: `NppOperationHooks` has pre-delete hooks, `NppCache` has `checkPut*`,
+  and `npp.dart` exports npp's rule loaders and hooks
+- fix: npp assigns every new rule a random id
+- fix: improved handling of npp rule ids, references and deletes
+- fix: tightened how npp loads its stored rules
+
 # 6.16.0
 
 - fix: `Npt.done` now completes when startup fails, instead of never
@@ -115,19 +131,6 @@
 - fix: `--list-devices` lists a daemon on the client's own atSign
 - feat: npp logs rulesLoaded, heartbeat and stopped events to the event
   logging Atsign
-- feat: npp logs manager RPC rule changes and refused senders to the event
-  logging Atsign
-- fix: npp saves a manager RPC delete, so the rule isn't loaded again on the
-  next start
-- fix: npp checks a manager RPC put before saving it, so a rejected put saves
-  nothing
-- fix: npp makes one manager RPC change at a time, so two puts can't share an
-  id
-- feat: `NppOperationHooks` has pre-delete hooks, `NppCache` has `checkPut*`,
-  and `npp.dart` exports npp's rule loaders and hooks
-- fix: npp assigns every new rule a random id
-- fix: improved handling of npp rule ids, references and deletes
-- fix: tightened how npp loads its stored rules
 
 # 6.15.0
 
