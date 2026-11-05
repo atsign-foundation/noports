@@ -61,6 +61,12 @@ String describeOnboardingError(Object? error, AppLocalizations strings) {
 bool isEnrollmentExpired(Object error) =>
     error is AtEnrollmentException && error.message.contains('AT0028');
 
+/// Whether [error] ended an enrollment wait because the atServer has revoked
+/// the request (AT0027): approved, then withdrawn by a manager, so the way on
+/// is a new request rather than a report of denial.
+bool isEnrollmentRevoked(Object error) =>
+    error is AtEnrollmentException && error.message.contains('AT0027');
+
 /// The human-readable part of [error], without the `Exception: ` noise that
 /// [AtException.toString] prepends.
 String onboardingErrorDetail(Object error) {

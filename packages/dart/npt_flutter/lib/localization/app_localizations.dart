@@ -113,6 +113,36 @@ abstract class AppLocalizations {
     ),
   ];
 
+  /// No description provided for @abandonFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not abandon enrollment {enrollmentId}: its keys are still in the keychain. Choose Cancel to try again.'**
+  String abandonFailed(Object enrollmentId);
+
+  /// No description provided for @abandonRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Abandon'**
+  String get abandonRequest;
+
+  /// No description provided for @abandonRequestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This abandons enrollment {enrollmentId} of {atsign}. Trying again needs a new OTP from another enrollment of {atsign}.'**
+  String abandonRequestBody(Object atsign, Object enrollmentId);
+
+  /// No description provided for @abandonRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Abandon this request?'**
+  String get abandonRequestTitle;
+
+  /// No description provided for @abandoningRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Abandoning the request...'**
+  String get abandoningRequest;
+
   /// No description provided for @activate.
   ///
   /// In en, this message translates to:
@@ -502,12 +532,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retrying connection (keep-alive)...'**
   String get connectionRetrying;
-
-  /// No description provided for @connectionTimedOut.
-  ///
-  /// In en, this message translates to:
-  /// **'Connection timed out, will retry...'**
-  String get connectionTimedOut;
 
   /// No description provided for @connections.
   ///
@@ -1229,6 +1253,12 @@ abstract class AppLocalizations {
   /// **'JSON payload copied to clipboard'**
   String get jsonPayloadCopiedToClipboard;
 
+  /// No description provided for @keepWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep waiting'**
+  String get keepWaiting;
+
   /// No description provided for @keys.
   ///
   /// In en, this message translates to:
@@ -1414,12 +1444,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'NoPorts'**
   String get noPorts;
-
-  /// No description provided for @nptStartupTimedout.
-  ///
-  /// In en, this message translates to:
-  /// **'Npt startup timed out'**
-  String get nptStartupTimedout;
 
   /// No description provided for @ok.
   ///
@@ -1889,6 +1913,12 @@ abstract class AppLocalizations {
   /// **'Remove Atsign'**
   String get removeAtsign;
 
+  /// No description provided for @requestAbandoned.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrollment {enrollmentId} abandoned. To try again, enter a new OTP from another enrollment, and deny {enrollmentId} under Requests in the Authenticator.'**
+  String requestAbandoned(Object enrollmentId);
+
   /// No description provided for @requestExpired.
   ///
   /// In en, this message translates to:
@@ -1906,12 +1936,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resend Pin'**
   String get resendPin;
-
-  /// No description provided for @retryFailedWithDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry failed: {errorMessage}, will retry...'**
-  String retryFailedWithDetails(Object errorMessage);
 
   /// No description provided for @roleAddNew.
   ///

@@ -5,7 +5,7 @@ import 'package:mutex/mutex.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
-import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:path/path.dart' as path;
 import 'package:posix/posix.dart' show PosixException, chmod;
 

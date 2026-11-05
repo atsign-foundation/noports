@@ -9,6 +9,25 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return 'No se pudo abandonar la inscripción $enrollmentId: sus claves siguen en el llavero. Elige Cancelar para intentarlo de nuevo.';
+  }
+
+  @override
+  String get abandonRequest => 'Abandonar';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return 'Esto abandona la inscripción $enrollmentId de $atsign. Para volver a intentarlo se necesita un nuevo OTP de otra inscripción de $atsign.';
+  }
+
+  @override
+  String get abandonRequestTitle => '¿Abandonar esta solicitud?';
+
+  @override
+  String get abandoningRequest => 'Abandonando la solicitud...';
+
+  @override
   String get activate => 'Activar';
 
   @override
@@ -229,10 +248,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get connectionRetrying =>
       'Reintentando la conexión (mantener activa)...';
-
-  @override
-  String get connectionTimedOut =>
-      'Tiempo de espera de la conexión agotado, se reintentará...';
 
   @override
   String get connections => 'Conexiones';
@@ -641,6 +656,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Carga útil JSON copiada al portapapeles';
 
   @override
+  String get keepWaiting => 'Seguir esperando';
+
+  @override
   String get keys => 'Subir atKeys';
 
   @override
@@ -737,9 +755,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get noPorts => 'NoPorts';
-
-  @override
-  String get nptStartupTimedout => 'Tiempo de espera de inicio de Npt agotado';
 
   @override
   String get ok => 'OK';
@@ -999,6 +1014,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get removeAtsign => 'Eliminar Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return 'Inscripción $enrollmentId abandonada. Para volver a intentarlo, ingresa un nuevo OTP de otra inscripción y rechaza $enrollmentId en Solicitudes en el Authenticator.';
+  }
+
+  @override
   String get requestExpired =>
       'La solicitud original ha expirado. Por favor, vuelve a enviar';
 
@@ -1007,11 +1027,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get resendPin => 'Reenviar Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return 'El reintento falló: $errorMessage, se reintentará...';
-  }
 
   @override
   String get roleAddNew => 'Agregar Nuevo Rol';

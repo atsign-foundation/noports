@@ -1,4 +1,6 @@
 import 'package:at_client/at_client.dart';
+// ignore: implementation_imports
+import 'package:at_client/src/client/remote_secondary.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
@@ -64,9 +66,13 @@ class StubbedSshnpdChannel extends SshnpdChannel {
     required Duration ttln,
     int maxTries = 3,
     String? cryptoProviderId,
+    String? sealToNamespace,
   }) async {
     if (cryptoProviderId != null) {
       throw UnimplementedError('StubbedSshnpdChannel drops cryptoProviderId');
+    }
+    if (sealToNamespace != null) {
+      throw UnimplementedError('StubbedSshnpdChannel drops sealToNamespace');
     }
     return _notify.call(
       atKey,

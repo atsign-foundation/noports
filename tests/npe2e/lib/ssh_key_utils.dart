@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:npe2e/process_utils.dart';
 import 'package:path/path.dart' as path;
 

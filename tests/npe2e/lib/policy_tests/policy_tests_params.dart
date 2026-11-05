@@ -124,7 +124,9 @@ class PolicyTestsParams {
     parser.addOption(
       'batch-size',
       defaultsTo: '1',
-      help: 'Number of tests to run in parallel',
+      help:
+          'Number of tests to run in parallel; tests that administer the same'
+          ' policy atSign run one at a time whatever this says',
     );
     parser.addOption(
       'max-retries',

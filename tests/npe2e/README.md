@@ -185,8 +185,7 @@ start of each run.
 
 **The tag** (`9a67193a_npp_dc_dc`) is the device name, and it is also embedded in
 the daemon container name and in the per-stage log filenames. Every transcript
-line carries one, which is how you attribute interleaved output when
-`--batch-size` is greater than 1:
+line carries one, which is how you attribute a line to its test:
 
 ```
 grep 9a67193a_npp_dc_dc npe2e_policy_tests/<testRunId>/logs/npe2e_policy_transcript.log
@@ -227,6 +226,6 @@ Notes when interpreting a failure:
   reachable from the containers. Confirm it's up and started with
   `-i vip.ve.atsign.zone` (not `-i 127.0.0.1`).
 - **`Failed to compile current binary for at_activate: ... Couldn't resolve the
-  package 'at_onboarding_cli'`.** `dart pub get` hasn't been run for
+  package 'at_client_cli'`.** `dart pub get` hasn't been run for
   `packages/dart/sshnoports` (no `.dart_tool/package_config.json`). Run
   `melos bootstrap` from the repo root.
