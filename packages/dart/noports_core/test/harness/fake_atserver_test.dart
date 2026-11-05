@@ -24,6 +24,7 @@ void main() {
         ..fetchOfflineNotifications = false,
       storage: InMemoryAtClientStorage(atSign: atSign),
       lookUps: server.lookUps,
+      secondaryAddressFinder: server.addressFinder,
       serviceFactory: server.serviceFactory,
     );
     addTearDown(client.stop);
@@ -52,6 +53,16 @@ void main() {
         reason: 'a root predecessor keeps its life');
     expect(alice.recordAt('public:__nskey.test@alice'), isNotNull,
         reason: "a * grant seeds the client's own namespace");
+    expect(successor.apskLinks, isNotEmpty,
+        reason: "enroll:link stores a link on the enrollment's _apsk"
+            ' record');
+    final read = await client.get(
+        AtKey.fromString('public:_apsk.${successor.id}.a.__e@alice'),
+        getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+    expect(read.metadata?.appMetadata?.additional?['apskLinks'],
+        successor.apskLinks,
+        reason: 'the client reads the stored links back from the _apsk'
+            ' record');
     expect(server.unhandled, isEmpty);
   });
 
@@ -142,6 +153,7 @@ void main() {
         ..fetchOfflineNotifications = false,
       storage: InMemoryAtClientStorage(atSign: '@alice'),
       lookUps: server.lookUps,
+      secondaryAddressFinder: server.addressFinder,
       serviceFactory: server.serviceFactory,
     );
     addTearDown(client.stop);

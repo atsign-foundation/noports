@@ -27,6 +27,12 @@
   where it stops being valid, and a field that isn't valid base64 with its
   name and position
 * fix: when an atServer refuses an activation, at_activate reports its reason
+* fix: npp_client says whether the atServer refused the atSign it signs in as
+  (`-a`), and why, or the atDirectory has no atServer for it, or its atServer
+  could not be reached, rather than calling every failure unreachable
+* fix: sshnp, sshnpd, srvd, npp, npp_atserver and policy services built on
+  npa_bootstrapper report an atSign the atDirectory has no atServer for as not
+  found, rather than unreachable, when this device has opened it before
 * chore: sshnpd logs a session lock it can't take at warning
 * chore: load-balanced sshnpd instances, and srvd serving clients older than
   v5.11.2, need their atServer at p3.13.0 or later; on an older one every
@@ -34,8 +40,23 @@
   from those clients
 * feat: npp logs rulesLoaded, heartbeat and stopped events to the event
   logging Atsign, and on SIGINT or SIGTERM sends stopped before it exits
-* build: at_client 3.15.0-rc8, at_auth 4.0.0-rc7, at_lookup 3.7.0-rc4,
-  at_onboarding_cli 2.0.0-rc8 and at_utils 3.5.0
+* feat: at_activate is at_client_cli's at_activate: its --help reports
+  at_client_cli's version, and --arx and --drx match app and device names
+  whatever their case
+* feat(BREAKING CHANGE): np_admin and npevents take the root domain only as
+  `-r` or `--root-server`, not `-d` or `--legacy-root-domain`, and
+  at_activate no longer accepts `--hashingAlgoType`, which it ignored
+* feat: npt, npevents and np_admin, given an atKeys file that holds only an
+  enrollment request, wait for its approval and then run, rather than
+  failing; a denial or expiry ends them
+* feat: npt, npevents and np_admin, given an atKeys file whose enrollment was
+  denied, cancelled or expired, say so and stop at once
+* feat: npt, npevents and np_admin print warnings to stderr without `-v`,
+  such as a notification they could not decrypt
+* fix: after an enrollment request expires, the next at_activate or noports
+  activate run submits a new request rather than resuming the expired one
+* build: at_client 4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli
+  and at_cli_commons, at_auth 4.0.0, at_lookup 4.0.0 and at_utils 4.0.0
 
 ## v5.18.1
 

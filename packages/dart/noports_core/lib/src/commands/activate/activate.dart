@@ -1,9 +1,6 @@
 import 'dart:io';
 
-import 'package:at_cli_commons/at_cli_commons.dart' show getHomeDirectory;
-import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
-import 'package:at_utils/at_logger.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/commands.dart';
 import 'package:noports_core/src/commands/activate/activate_params.dart';
@@ -20,13 +17,16 @@ class ActivateFlows {
     required String cramSecret,
     required WrittenAtKeysIo keys,
     required AtClientPreference preference,
-    AtClientStorage? storage,
+    required AtClientStorage storage,
   }) =>
       atsign.activate(
           cramSecret: cramSecret,
           keys: keys,
           preference: preference,
-          storage: storage);
+          storage: storage,
+          lookUps: secureSocketLookUps(),
+          secondaryAddressFinder: CacheableSecondaryAddressFinder(
+              preference.rootDomain, preference.rootPort));
 
   /// The enrollment submitted earlier from [keys] for [app] on [device] and
   /// not yet decided, or null when there is none.
@@ -38,7 +38,13 @@ class ActivateFlows {
     required AtClientPreference preference,
   }) =>
       atsign.resumeEnrollment(
-          app: app, device: device, keys: keys, preference: preference);
+          app: app,
+          device: device,
+          keys: keys,
+          preference: preference,
+          lookUps: secureSocketLookUps(),
+          secondaryAddressFinder: CacheableSecondaryAddressFinder(
+              preference.rootDomain, preference.rootPort));
 
   /// Submits the enrollment, filing its keys in [keys] as pending; the
   /// request's `client` waits for the decision. A store that refuses a new
@@ -58,7 +64,10 @@ class ActivateFlows {
           device: device,
           namespaces: namespaces,
           keys: keys,
-          preference: preference);
+          preference: preference,
+          lookUps: secureSocketLookUps(),
+          secondaryAddressFinder: CacheableSecondaryAddressFinder(
+              preference.rootDomain, preference.rootPort));
 }
 
 class Activate {
@@ -108,9 +117,17 @@ class Activate {
           path.join(getHomeDirectory(throwIfNull: true)!, '.atsign', 'keys',
               '${_params.atsign}_key.atKeys'));
 
-  AtOnboardingPreference _preference() => AtOnboardingPreference()
+  AtClientPreference _preference() => AtClientPreference()
     ..rootDomain = _params.rootDomain
     ..namespace = _params.appName;
+
+  /// The atSign's store under `~/.atsign/at_onboarding_cli/storage`, which
+  /// the client closes when it stops.
+  AtClientStorage _storage() => HiveAtClientStorage(
+      atSign: _params.atsign,
+      storagePath: path.join(getHomeDirectory(throwIfNull: true)!, '.atsign',
+          'at_onboarding_cli', 'storage', _params.atsign, 'hive'),
+      closedByClient: true);
 
   /// Activates a newly registered atSign with its CRAM secret, writing its
   /// keys to the keyfile. The client the activation opens is stopped at
@@ -131,7 +148,7 @@ class Activate {
           cramSecret: _params.cramSecret!,
           keys: _keys(),
           preference: preference,
-          storage: preference.storageFor(_params.atsign));
+          storage: _storage());
       await client.stop();
     } catch (e) {
       logger.shout('Activation Failed: $e');
@@ -186,8 +203,7 @@ class Activate {
     }
     logger.info('Waiting for approval of enrollment ${pending.enrollmentId}');
     try {
-      final client = await pending.client(preference,
-          storage: preference.storageFor(_params.atsign));
+      final client = await pending.client(preference, storage: _storage());
       await client.stop();
     } on AtEnrollmentException catch (e) {
       logger.shout('Enrollment not approved: ${e.message}');
