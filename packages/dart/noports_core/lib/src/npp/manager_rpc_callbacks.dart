@@ -79,7 +79,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     required String target,
     required T entry,
     required Future<void> Function(T)? preDelete,
-    required bool Function() removeEntry,
+    required void Function() removeEntry,
     Iterable<ClientGroupMember> members = const [],
     Iterable<ServiceACL> serviceACLs = const [],
     required List<Map<String, dynamic>> removed,
@@ -111,9 +111,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     if (error != null) {
       return error;
     }
-    if (!removeEntry()) {
-      return 'Failed to delete $target with id ${entry.id}.';
-    }
+    removeEntry();
     return null;
   }
 
