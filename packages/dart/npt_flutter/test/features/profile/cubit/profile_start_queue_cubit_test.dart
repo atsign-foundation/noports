@@ -384,6 +384,40 @@ void main() {
       expect(a.starts, 1);
     });
 
+    test(
+      'keeps a loading connection waiting until its start is sent',
+      () async {
+        final FakeProfileBloc a = connection('a');
+
+        cubit.add(<String>['a']);
+        a.moveTo(ProfileLoading('a'));
+        await settle();
+        expect(cubit.isWaiting('a'), isTrue);
+
+        a.moveTo(loaded('a'));
+        await settle();
+        expect(a.starts, 1);
+        expect(cubit.isWaiting('a'), isFalse);
+      },
+    );
+
+    test('keeps a loading connection waiting when it is removed and added '
+        'again', () async {
+      final FakeProfileBloc a = connection('a');
+      cubit.add(<String>['a']);
+      a.moveTo(ProfileLoading('a'));
+      await settle();
+
+      cubit.remove(<String>['a']);
+      cubit.add(<String>['a']);
+      expect(cubit.isWaiting('a'), isTrue);
+
+      a.moveTo(loaded('a'));
+      await settle();
+      expect(a.starts, 1);
+      expect(cubit.isWaiting('a'), isFalse);
+    });
+
     test('waits for a connection that is already loading', () async {
       final FakeProfileBloc a = connection('a', ProfileLoading('a'));
 

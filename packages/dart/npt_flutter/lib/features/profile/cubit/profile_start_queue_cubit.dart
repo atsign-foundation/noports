@@ -17,6 +17,7 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
   static const Duration _stepTimeout = Duration(seconds: 90);
 
   String? _current;
+  bool _currentSent = false;
   bool _stopCurrent = false;
   bool _draining = false;
 
@@ -30,6 +31,7 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
     for (final String uuid in uuids) {
       if (uuid == _current) {
         _stopCurrent = false;
+        if (!_currentSent && !next.contains(uuid)) next.insert(0, uuid);
         continue;
       }
       if (next.contains(uuid)) continue;
@@ -82,17 +84,20 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
     try {
       while (!isClosed && state.waiting.isNotEmpty) {
         final String uuid = state.waiting.first;
-        _setWaiting(state.waiting.skip(1).toList());
         _current = uuid;
+        _currentSent = false;
         _stopCurrent = false;
-        final ProfileBloc bloc = _cache.getProfileBloc(uuid);
-        if (bloc.isClosed) continue;
         try {
-          await _start(bloc);
+          final ProfileBloc bloc = _cache.getProfileBloc(uuid);
+          if (bloc.isClosed) continue;
+          await _start(bloc, uuid);
           if (_stopCurrent && !bloc.isClosed && bloc.state is ProfileStarted) {
             bloc.add(const ProfileStopEvent());
           }
-        } catch (_) {}
+        } catch (_) {
+        } finally {
+          _leave(uuid);
+        }
       }
     } finally {
       _current = null;
@@ -100,7 +105,12 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
     }
   }
 
-  Future<void> _start(ProfileBloc bloc) async {
+  void _leave(String uuid) {
+    if (!state.isWaiting(uuid)) return;
+    _setWaiting(state.waiting.where((String w) => w != uuid).toList());
+  }
+
+  Future<void> _start(ProfileBloc bloc, String uuid) async {
     ProfileState state = bloc.state;
     if (state is ProfileInitial || state is ProfileLoading) {
       if (state is ProfileInitial) bloc.add(const ProfileLoadEvent());
@@ -116,6 +126,8 @@ class ProfileStartQueueCubit extends LoggingCubit<ProfileStartQueueState> {
         state is! ProfileFailedStart) {
       return;
     }
+    _leave(uuid);
+    _currentSent = true;
     bloc.add(const ProfileStartEvent());
     await _next(bloc, (ProfileState s) => s is! ProfileStarting);
   }
