@@ -322,8 +322,6 @@ void main() {
   });
 
   group('connection order', () {
-    /// Manual order p1..p5. Folding puts Écran between banana and Zebra, and
-    /// lowercasing puts apple before Zebra. p4 and p5 tie.
     final Map<String, Profile> profiles = named(<String, String>{
       'p1': 'Zebra',
       'p2': 'apple',
@@ -854,7 +852,6 @@ void main() {
       );
     });
 
-    /// Blocs are created in the test body so their streams run in FakeAsync.
     void createRealBlocs() {
       runningCubit = ProfilesRunningCubit();
       folderRepo = _FakeFolderRepository();

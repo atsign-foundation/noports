@@ -136,6 +136,16 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
     );
   }
 
+  /// For a list where nothing can move: ReorderableListView would still offer
+  /// screen readers moves.
+  Widget _buildFixed(ProfileFolderLayout layout, IndexedWidgetBuilder entry) {
+    return ListView.builder(
+      key: _scrollKey,
+      itemCount: layout.entries.length,
+      itemBuilder: entry,
+    );
+  }
+
   /// Keeps an empty Unfiled header, hidden until a row drag: a change in item
   /// count cancels a drag.
   Widget _buildReorderable(ProfileFolderLayout layout, bool editable) {
@@ -221,15 +231,7 @@ class _ProfileFolderListViewState extends State<ProfileFolderListView> {
       }
     }
 
-    /// ReorderableListView would still offer screen readers moves.
-    final bool nothingMoves = !reorderable && !movable;
-    if (nothingMoves) {
-      return ListView.builder(
-        key: _scrollKey,
-        itemCount: layout.entries.length,
-        itemBuilder: buildEntry,
-      );
-    }
+    if (!reorderable && !movable) return _buildFixed(layout, buildEntry);
     return Listener(
       onPointerCancel: (_) => _endCancelledDrag(),
       child: ReorderableListView.builder(

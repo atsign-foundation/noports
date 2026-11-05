@@ -615,7 +615,6 @@ void main() {
       return installation;
     }
 
-    /// Schedules a frame: the import reports from a post-frame callback.
     Future<void> importDocument(
       WidgetTester tester,
       ExportableProfileFiletype filetype,

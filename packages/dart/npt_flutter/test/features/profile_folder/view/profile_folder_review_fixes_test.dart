@@ -157,7 +157,6 @@ void main() {
     );
   });
 
-  /// The real cubits are created here so their streams run in FakeAsync.
   void createRealBlocs() {
     selectedCubit = ProfilesSelectedCubit();
     runningCubit = ProfilesRunningCubit();

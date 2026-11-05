@@ -565,7 +565,6 @@ void main() {
     });
 
     group('placeInManualOrder', () {
-      /// B and D are favorites, so Favorites first lifts them above A and C.
       const Set<String> favorites = <String>{'B', 'D'};
       bool tie(String a, String b) =>
           favorites.contains(a) == favorites.contains(b);

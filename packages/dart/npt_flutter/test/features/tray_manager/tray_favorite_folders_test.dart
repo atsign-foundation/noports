@@ -129,8 +129,6 @@ void main() {
     });
   });
 
-  /// Blocs are created in the test body so their streams run in FakeAsync.
-  /// With [listening] the tray reloads itself on state changes, as in the app.
   Future<void> pumpTray(
     WidgetTester tester, {
     Map<String, String> loaded = defaultNames,

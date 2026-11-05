@@ -88,7 +88,6 @@ void main() {
     profileIds: <String>[vncUuid],
   );
 
-  /// Alpha and Beta in Servers, Gamma in Desktops, Delta and Zeta unfiled.
   const ProfileFolderData openFolders = ProfileFolderData(
     folders: <ProfileFolder>[serversFolder, desktopsFolder],
   );

@@ -160,7 +160,6 @@ void main() {
     );
   });
 
-  /// Creates the real blocs in the test body so their streams run in FakeAsync.
   void createRealBlocs() {
     runningCubit = ProfilesRunningCubit();
     folderRepo = FakeProfileFolderRepository();
@@ -171,7 +170,6 @@ void main() {
     });
   }
 
-  /// A [sortedDropMessage] snack bar goes through [App.navState], which logs.
   Widget buildSubject(
     WidgetTester tester, {
     List<String> profiles = allUuids,
@@ -747,7 +745,6 @@ void main() {
 
     const Duration frame = Duration(milliseconds: 16);
 
-    /// Drags from [start] by [dy], then pumps frames until the drop settles.
     Future<void> dragFrom(
       WidgetTester tester,
       Offset start,
@@ -1553,7 +1550,6 @@ void main() {
       });
 
       group('dragging a folder header', () {
-        /// Saved: Servers, Desktops, Other. Shown: Other, the favorite, first.
         Future<void> loadWithFavoriteFolder(
           WidgetTester tester, {
           String? message,
@@ -2016,7 +2012,6 @@ void main() {
   });
 
   group('scroll position', () {
-    /// 40 connections: the first ten in a folder, the rest unfiled.
     final List<String> many = <String>[
       for (int i = 0; i < 40; i++) 'uuid-many-$i',
     ];
@@ -2054,7 +2049,6 @@ void main() {
       await tester.pump();
     }
 
-    /// Search shows no reordering and no moves, whatever the sort.
     Future<void> setSearching(WidgetTester tester, bool searching) async {
       await tester.pumpWidget(
         buildSubject(

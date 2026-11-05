@@ -101,7 +101,6 @@ class App extends StatelessWidget {
             create: (_) => ProfilesRunningCubit(),
           ),
 
-          /// - Start all's queue, which starts connections one at a time
           BlocProvider<ProfileStartQueueCubit>(
             create: (ctx) =>
                 ProfileStartQueueCubit(ctx.read<ProfileCacheCubit>()),

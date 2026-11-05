@@ -123,7 +123,6 @@ void main() {
 
   ProfileBloc savedBloc() => cache.getProfileBloc(uuid);
 
-  /// Blocs are created in the test body so their streams run in FakeAsync.
   Future<void> pumpForm(
     WidgetTester tester, {
     ProfileFolderData folders = otherFolders,
@@ -138,15 +137,14 @@ void main() {
 
     final void Function(FlutterErrorDetails)? onError = FlutterError.onError;
 
-    /// The test font is wider than the real one, so the device row overflows.
-    void ignoreRowOverflow(FlutterErrorDetails details) {
+    void ignoreTestFontOverflow(FlutterErrorDetails details) {
       if (details.exception.toString().contains('RenderFlex overflowed')) {
         return;
       }
       onError?.call(details);
     }
 
-    FlutterError.onError = ignoreRowOverflow;
+    FlutterError.onError = ignoreTestFontOverflow;
     addTearDown(() => FlutterError.onError = onError);
 
     profileRepo = FakeProfileRepository();
@@ -1530,7 +1528,6 @@ void main() {
   });
 
   group('A local copy of the folders that is out of date', () {
-    /// The local copy has the connection in Servers; synced data has Desktops.
     ProfileFolderData staleCopy() => withConnectionIn('g-servers');
     ProfileFolderData syncedData() => withConnectionIn('g-desktops');
 

@@ -1132,7 +1132,6 @@ void main() {
       folders: <ProfileFolder>[collapsedA, folderB],
     );
 
-    /// What the atServer sent while the user had ga collapsed here.
     final ProfileFolderData serverWithCollapsedGa = ProfileFolderData(
       folders: <ProfileFolder>[collapsedA, folderB],
       unfiled: const <String>['p4', 'p5'],
