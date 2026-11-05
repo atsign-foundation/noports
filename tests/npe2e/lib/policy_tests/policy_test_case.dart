@@ -12,6 +12,9 @@ class PolicyTestCase {
   final NoPortsVersion daemonVersion;
   final NoPortsVersion policyVersion;
 
+  /// The atSign of the policy service the case administers.
+  final String policyAtsign;
+
   final Future<PolicyTestResult> Function() run;
 
   PolicyTestCase({
@@ -20,6 +23,7 @@ class PolicyTestCase {
     required this.clientVersion,
     required this.daemonVersion,
     required this.policyVersion,
+    required this.policyAtsign,
     required this.run,
   });
 
