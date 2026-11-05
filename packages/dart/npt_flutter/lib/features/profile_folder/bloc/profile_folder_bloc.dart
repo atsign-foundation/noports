@@ -1,7 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/widgets/custom_snack_bar.dart';
 import 'package:npt_flutter/features/profile_folder/models/profile_folder.dart';
 import 'package:npt_flutter/features/profile_folder/repository/profile_folder_repository.dart';
 
@@ -12,7 +15,8 @@ class ProfileFolderBloc
     extends LoggingBloc<ProfileFolderEvent, ProfileFolderState> {
   final ProfileFolderRepository _repo;
 
-  /// False after a failed save, so the next save retries unchanged data.
+  /// False after a failed save that couldn't be undone on screen: the next
+  /// save then retries even unchanged data.
   bool _persisted = true;
 
   /// Bumped on load and sign out, so an older session's callbacks drop.
@@ -180,12 +184,46 @@ class ProfileFolderBloc
     if (_persisted && current is ProfileFoldersLoaded && current.data == data) {
       return;
     }
+    final int session = _session;
     emit(ProfileFoldersLoaded(data));
     try {
       _persisted = await _repo.putProfileFolders(data);
     } catch (_) {
       _persisted = false;
     }
+    if (!_persisted) await _showStoredAfterFailedSave(data, session, emit);
+  }
+
+  /// Shows what is stored instead of [edited] and says the save failed,
+  /// unless the write landed after all, as a timed out put can.
+  Future<void> _showStoredAfterFailedSave(
+    ProfileFolderData edited,
+    int session,
+    Emitter<ProfileFolderState> emit,
+  ) async {
+    bool signedOut() => _closing || session != _session;
+    if (signedOut()) return;
+    final ProfileFolderData? stored = await _read();
+    if (signedOut()) return;
+    if (stored == edited) {
+      _persisted = true;
+      return;
+    }
+    if (stored != null) {
+      _persisted = true;
+      emit(ProfileFoldersLoaded(stored));
+    }
+    _reportSaveFailed();
+  }
+
+  /// Replaces the bar a previous failure left, so failures don't queue up.
+  void _reportSaveFailed() {
+    final BuildContext? context = App.navState.currentContext;
+    if (context == null || !context.mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    CustomSnackBar.error(
+      content: AppLocalizations.of(context)!.folderSaveFailed,
+    );
   }
 
   Future<void> _onCreate(

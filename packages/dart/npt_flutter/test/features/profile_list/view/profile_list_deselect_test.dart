@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -473,6 +475,47 @@ void main() {
       await clearSearch(tester);
 
       expect(selectedCubit.state.selected, <String>{vncUuid});
+    });
+  });
+
+  group('when the connection list is cleared', () {
+    testWidgets('the search is cleared, so it does not filter the next '
+        "atSign's connections", (WidgetTester tester) async {
+      final StreamController<ProfileListState> lists =
+          StreamController<ProfileListState>.broadcast();
+      addTearDown(lists.close);
+      ProfileListState list = const ProfileListLoaded(profiles: allUuids);
+      when(mockListBloc.state).thenAnswer((_) => list);
+      when(mockListBloc.stream).thenAnswer((_) => lists.stream);
+      await pumpList(tester, openFolders);
+      await search(tester, 'al');
+      expect(find.byType(ProfileListRow), findsOneWidget);
+      ProfileListFilterCubit filter() => tester
+          .element(find.byType(ProfileListSearchField))
+          .read<ProfileListFilterCubit>();
+      filter().sort(ProfileSortMode.nameDescending);
+
+      list = const ProfileListInitial();
+      lists.add(list);
+      await tester.pump();
+      list = const ProfileListLoaded(profiles: allUuids);
+      lists.add(list);
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('ProfileListSearchField')))
+            .controller!
+            .text,
+        isEmpty,
+      );
+      expect(find.byType(ProfileListRow), findsNWidgets(allUuids.length));
+      expect(
+        filter().state.sortMode,
+        ProfileSortMode.manual,
+        reason: "the next atSign's settings may fail to load",
+      );
     });
   });
 }

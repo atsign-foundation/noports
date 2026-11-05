@@ -1139,6 +1139,12 @@ abstract class AppLocalizations {
   /// **'Rename folder'**
   String get folderRenameTitle;
 
+  /// No description provided for @folderSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders failed to save'**
+  String get folderSaveFailed;
+
   /// No description provided for @folderStartAll.
   ///
   /// In en, this message translates to:

@@ -553,6 +553,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get folderRenameTitle => '重命名文件夹';
 
   @override
+  String get folderSaveFailed => '文件夹保存失败';
+
+  @override
   String get folderStartAll => '全部启动';
 
   @override
@@ -1728,6 +1731,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get folderRenameTitle => '重命名文件夹';
 
   @override
+  String get folderSaveFailed => '文件夹保存失败';
+
+  @override
   String get folderStartAll => '全部启动';
 
   @override
@@ -2901,6 +2907,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get folderRenameTitle => '重新命名資料夾';
+
+  @override
+  String get folderSaveFailed => '資料夾儲存失敗';
 
   @override
   String get folderStartAll => '全部啟動';

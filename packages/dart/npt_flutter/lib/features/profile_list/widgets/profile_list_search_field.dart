@@ -31,30 +31,40 @@ class _ProfileListSearchFieldState extends State<ProfileListSearchField> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations strings = AppLocalizations.of(context)!;
-    return SizedBox(
-      width: Sizes.p240,
-      child: TextField(
-        key: const Key('ProfileListSearchField'),
-        controller: _controller,
-        onChanged: _onChanged,
-        decoration: InputDecoration(
-          hintText: strings.profileSearchHint,
-          isDense: true,
-          constraints: const BoxConstraints(maxHeight: Sizes.p44),
-          prefixIcon: PhosphorIcon(
-            PhosphorIcons.magnifyingGlass(),
-            size: Sizes.p16,
+    return BlocListener<ProfileListFilterCubit, ProfileListFilterState>(
+      listenWhen: (_, ProfileListFilterState current) =>
+          current.query != _controller.text,
+      listener: (_, ProfileListFilterState current) => setState(
+        () => _controller.value = TextEditingValue(
+          text: current.query,
+          selection: TextSelection.collapsed(offset: current.query.length),
+        ),
+      ),
+      child: SizedBox(
+        width: Sizes.p240,
+        child: TextField(
+          key: const Key('ProfileListSearchField'),
+          controller: _controller,
+          onChanged: _onChanged,
+          decoration: InputDecoration(
+            hintText: strings.profileSearchHint,
+            isDense: true,
+            constraints: const BoxConstraints(maxHeight: Sizes.p44),
+            prefixIcon: PhosphorIcon(
+              PhosphorIcons.magnifyingGlass(),
+              size: Sizes.p16,
+            ),
+            suffixIcon: _controller.text.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: strings.profileSearchClear,
+                    icon: PhosphorIcon(PhosphorIcons.x(), size: Sizes.p16),
+                    onPressed: () {
+                      _controller.clear();
+                      _onChanged('');
+                    },
+                  ),
           ),
-          suffixIcon: _controller.text.isEmpty
-              ? null
-              : IconButton(
-                  tooltip: strings.profileSearchClear,
-                  icon: PhosphorIcon(PhosphorIcons.x(), size: Sizes.p16),
-                  onPressed: () {
-                    _controller.clear();
-                    _onChanged('');
-                  },
-                ),
         ),
       ),
     );

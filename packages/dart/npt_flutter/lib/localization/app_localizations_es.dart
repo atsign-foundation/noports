@@ -592,6 +592,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get folderRenameTitle => 'Renombrar carpeta';
 
   @override
+  String get folderSaveFailed => 'No se pudieron guardar las carpetas';
+
+  @override
   String get folderStartAll => 'Iniciar todo';
 
   @override

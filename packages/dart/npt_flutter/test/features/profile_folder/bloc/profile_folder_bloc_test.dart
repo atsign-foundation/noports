@@ -10,6 +10,9 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
   ProfileFolderData? loadResult;
   bool throwOnLoad = false;
   bool throwOnPut = false;
+
+  /// Reports a failed put whose write still lands, as a timed out put can.
+  bool putLandsButFails = false;
   final List<ProfileFolderData> puts = <ProfileFolderData>[];
 
   Completer<bool> caughtUp = Completer<bool>();
@@ -42,6 +45,10 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
       await release.future;
     }
     if (throwOnPut) throw Exception('put failed');
+    if (putLandsButFails) {
+      loadResult = data;
+      return false;
+    }
     return true;
   }
 
@@ -704,7 +711,7 @@ void main() {
   );
 
   blocTest<ProfileFolderBloc, ProfileFolderState>(
-    'keeps the optimistic state when the repository put throws',
+    "keeps the edit shown when the put throws and the folders can't be read",
     build: () {
       repo.throwOnPut = true;
       return bloc;
@@ -716,6 +723,66 @@ void main() {
       const ProfileFoldersLoaded(
         ProfileFolderData(folders: <ProfileFolder>[folderA]),
       ),
+    ],
+  );
+
+  blocTest<ProfileFolderBloc, ProfileFolderState>(
+    'shows the stored folders again when the repository put throws',
+    build: () {
+      repo.throwOnPut = true;
+      repo.loadResult = loadedData;
+      return bloc;
+    },
+    seed: () => const ProfileFoldersLoaded(loadedData),
+    act: (ProfileFolderBloc bloc) =>
+        bloc.add(const ProfileFolderDeleteEvent(folderId: 'gb')),
+    expect: () => <ProfileFolderState>[
+      const ProfileFoldersLoaded(
+        ProfileFolderData(folders: <ProfileFolder>[folderA]),
+      ),
+      const ProfileFoldersLoaded(loadedData),
+    ],
+  );
+
+  blocTest<ProfileFolderBloc, ProfileFolderState>(
+    'keeps the edit shown without an error when a failed put landed after all',
+    build: () {
+      repo.putLandsButFails = true;
+      return bloc;
+    },
+    seed: () => const ProfileFoldersLoaded(loadedData),
+    act: (ProfileFolderBloc bloc) =>
+        bloc.add(const ProfileFolderDeleteEvent(folderId: 'gb')),
+    expect: () => <ProfileFolderState>[
+      const ProfileFoldersLoaded(
+        ProfileFolderData(folders: <ProfileFolder>[folderA]),
+      ),
+    ],
+    verify: (ProfileFolderBloc bloc) {
+      expect(bloc.state.editable, isTrue);
+      expect(repo.puts, hasLength(1));
+    },
+  );
+
+  blocTest<ProfileFolderBloc, ProfileFolderState>(
+    'a sign-out while a failing put is held shows nothing after it',
+    build: () {
+      repo.loadResult = loadedData;
+      repo.throwOnPut = true;
+      repo.heldPuts = <Completer<void>>[];
+      return bloc;
+    },
+    seed: () => const ProfileFoldersLoaded(loadedData),
+    act: (ProfileFolderBloc bloc) async {
+      bloc.add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Renamed'));
+      await Future<void>.delayed(Duration.zero);
+      bloc.clearAll();
+      repo.heldPuts!.single.complete();
+      await Future<void>.delayed(Duration.zero);
+    },
+    expect: () => <Object>[
+      isA<ProfileFoldersLoaded>(),
+      const ProfileFoldersInitial(),
     ],
   );
 

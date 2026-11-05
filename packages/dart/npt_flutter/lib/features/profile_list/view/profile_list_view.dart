@@ -96,10 +96,12 @@ class _ProfileListViewState extends State<ProfileListView> {
           ),
           BlocListener<ProfileListBloc, ProfileListState>(
             listener: (BuildContext context, ProfileListState state) {
+              final ProfileListFilterCubit filter = context
+                  .read<ProfileListFilterCubit>();
               if (state is ProfileListLoaded) {
-                context.read<ProfileListFilterCubit>().setProfiles(
-                  state.profiles,
-                );
+                filter.setProfiles(state.profiles);
+              } else if (state is ProfileListInitial) {
+                filter.reset();
               }
             },
           ),

@@ -49,6 +49,14 @@ class ProfileListFilterCubit extends Cubit<ProfileListFilterState> {
     _follow();
   }
 
+  /// Called when the list is cleared, so nothing carries over to the next
+  /// atSign, whose settings may fail to load.
+  void reset() {
+    _uuids = const <String>[];
+    emit(const ProfileListFilterState());
+    _follow();
+  }
+
   /// Sorting by name or searching needs every profile, not just those shown.
   void _follow() {
     final Set<String> wanted = state.needsProfiles

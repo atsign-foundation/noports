@@ -582,6 +582,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get folderRenameTitle => 'Rename folder';
 
   @override
+  String get folderSaveFailed => 'Folders failed to save';
+
+  @override
   String get folderStartAll => 'Start all';
 
   @override

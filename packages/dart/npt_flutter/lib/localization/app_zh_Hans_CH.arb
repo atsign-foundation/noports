@@ -170,6 +170,7 @@
   "folderNone": "无文件夹",
   "folderRename": "重命名",
   "folderRenameTitle": "重命名文件夹",
+  "folderSaveFailed": "文件夹保存失败",
   "folderStartAll": "全部启动",
   "folderStartSome": "启动 {count}/{total} 个",
   "folderStopAll": "全部停止",

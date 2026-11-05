@@ -20,6 +20,10 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
   /// What a refresh reads; null reads as a failed read.
   ProfileFolderData? stored;
   final List<ProfileFolderData> puts = <ProfileFolderData>[];
+  bool putSucceeds = true;
+
+  /// Reports a failed put whose write still lands, as a timed out put can.
+  bool putLandsButFails = false;
 
   @override
   Future<ProfileFolderData?> getProfileFolders() async => stored;
@@ -27,8 +31,9 @@ class FakeProfileFolderRepository extends ProfileFolderRepository {
   @override
   Future<bool> putProfileFolders(ProfileFolderData data) async {
     puts.add(data);
+    if (!putSucceeds) return false;
     stored = data;
-    return true;
+    return !putLandsButFails;
   }
 }
 
@@ -174,12 +179,13 @@ void main() {
     bool searching = false,
     bool reorderable = true,
     bool movable = false,
+    bool showsSnackBars = false,
   }) {
     tester.view.physicalSize = const Size(1053, 691);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    final bool snackBars = sortedDropMessage != null;
+    final bool snackBars = showsSnackBars || sortedDropMessage != null;
     return MultiBlocProvider(
       providers: <BlocProvider<dynamic>>[
         if (snackBars) ...<BlocProvider<dynamic>>[
@@ -321,6 +327,60 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('a change that fails to save says so and shows the stored '
+      'folders', (WidgetTester tester) async {
+    createRealBlocs();
+    const ProfileFolderData stored = ProfileFolderData(
+      folders: <ProfileFolder>[serversFolder, desktopsFolder],
+    );
+    folderRepo.stored = stored;
+    folderRepo.putSucceeds = false;
+    folderBloc.emit(const ProfileFoldersLoaded(stored));
+    await tester.pumpWidget(buildSubject(tester, showsSnackBars: true));
+    await tester.pump();
+
+    await tester.tap(
+      find.descendant(
+        of: header(serversFolder.uuid),
+        matching: find.byTooltip(strings.folderCollapse),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(folderRepo.puts, hasLength(1));
+    expect(find.textContaining(strings.folderSaveFailed), findsOneWidget);
+    expect(folderBloc.state, const ProfileFoldersLoaded(stored));
+    expect(row(sshUuid), findsOneWidget);
+  });
+
+  testWidgets('a change whose failed save landed after all shows no error', (
+    WidgetTester tester,
+  ) async {
+    createRealBlocs();
+    const ProfileFolderData stored = ProfileFolderData(
+      folders: <ProfileFolder>[serversFolder, desktopsFolder],
+    );
+    folderRepo.stored = stored;
+    folderRepo.putLandsButFails = true;
+    folderBloc.emit(const ProfileFoldersLoaded(stored));
+    await tester.pumpWidget(buildSubject(tester, showsSnackBars: true));
+    await tester.pump();
+
+    await tester.tap(
+      find.descendant(
+        of: header(serversFolder.uuid),
+        matching: find.byTooltip(strings.folderCollapse),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(folderRepo.puts, hasLength(1));
+    expect(find.textContaining(strings.folderSaveFailed), findsNothing);
+    expect(row(sshUuid), findsNothing);
   });
 
   testWidgets(

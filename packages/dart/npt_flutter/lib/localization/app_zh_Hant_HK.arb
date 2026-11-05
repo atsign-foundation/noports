@@ -170,6 +170,7 @@
   "folderNone": "無資料夾",
   "folderRename": "重新命名",
   "folderRenameTitle": "重新命名資料夾",
+  "folderSaveFailed": "資料夾儲存失敗",
   "folderStartAll": "全部啟動",
   "folderStartSome": "啟動 {count}/{total} 個",
   "folderStopAll": "全部停止",

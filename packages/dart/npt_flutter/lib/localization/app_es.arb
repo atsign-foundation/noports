@@ -170,6 +170,7 @@
   "folderNone": "Sin carpeta",
   "folderRename": "Renombrar",
   "folderRenameTitle": "Renombrar carpeta",
+  "folderSaveFailed": "No se pudieron guardar las carpetas",
   "folderStartAll": "Iniciar todo",
   "folderStartSome": "Iniciar {count} de {total}",
   "folderStopAll": "Detener todo",

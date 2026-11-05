@@ -170,6 +170,7 @@
    "folderNone": "No folder",
    "folderRename": "Rename",
    "folderRenameTitle": "Rename folder",
+   "folderSaveFailed": "Folders failed to save",
    "folderStartAll": "Start all",
    "folderStartSome": "Start {count} of {total}",
    "folderStopAll": "Stop all",

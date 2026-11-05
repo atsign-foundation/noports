@@ -590,6 +590,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get folderRenameTitle => 'Renomear pasta';
 
   @override
+  String get folderSaveFailed => 'Falha ao salvar as pastas';
+
+  @override
   String get folderStartAll => 'Iniciar todos';
 
   @override
@@ -1843,6 +1846,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get folderRenameTitle => 'Renomear pasta';
+
+  @override
+  String get folderSaveFailed => 'Falha ao salvar as pastas';
 
   @override
   String get folderStartAll => 'Iniciar todos';

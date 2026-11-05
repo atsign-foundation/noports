@@ -170,6 +170,7 @@
   "folderNone": "Sem pasta",
   "folderRename": "Renomear",
   "folderRenameTitle": "Renomear pasta",
+  "folderSaveFailed": "Falha ao salvar as pastas",
   "folderStartAll": "Iniciar todos",
   "folderStartSome": "Iniciar {count} de {total}",
   "folderStopAll": "Parar todos",
