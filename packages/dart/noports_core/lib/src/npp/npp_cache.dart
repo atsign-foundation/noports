@@ -209,8 +209,9 @@ class NppCache {
     return _serviceACLs.where((serviceACL) => serviceACL.id == serviceACLId).first;
   }
 
-  /// put* object into NppCache
-  bool putClient(final Client client) {
+  /// put* object into NppCache. Each checkPut* throws if that object can't be
+  /// put, so a caller can check before saving it anywhere else.
+  void checkPutClient(final Client client) {
     // ensure no other clients exist with the same atSign
     for(final Client c in _clients) {
       if(c.atSign == client.atSign) {
@@ -224,11 +225,15 @@ class NppCache {
           '${client.id} when that id already exists in the policy cache.');
       }
     }
+  }
+
+  bool putClient(final Client client) {
+    checkPutClient(client);
     client.id ??= (_maxId(_clients) + 1).toString();
     return _clients.add(client);
   }
 
-  bool putClientGroup(final ClientGroup clientGroup) {
+  void checkPutClientGroup(final ClientGroup clientGroup) {
     // ensure no duplicate client group names
     for(final ClientGroup cg in _clientGroups) {
       if(cg.name == clientGroup.name) {
@@ -238,11 +243,15 @@ class NppCache {
         throw Exception('Found duplicate client group id ${clientGroup.id}');
       }
     }
+  }
+
+  bool putClientGroup(final ClientGroup clientGroup) {
+    checkPutClientGroup(clientGroup);
     clientGroup.id ??= (_maxId(_clientGroups) + 1).toString();
     return _clientGroups.add(clientGroup);
   }
 
-  bool putClientGroupMember(final ClientGroupMember clientGroupMember) {
+  void checkPutClientGroupMember(final ClientGroupMember clientGroupMember) {
     // ensure no duplicate client group member (Client.id, ClientGroup.id)
     for(final ClientGroupMember cgm in _clientGroupMembers) {
       if(cgm.clientId == clientGroupMember.clientId && cgm.clientGroupId == clientGroupMember.clientGroupId) {
@@ -253,11 +262,15 @@ class NppCache {
         throw Exception('Found duplicate client group member id ${clientGroupMember.id}');
       }
     }
+  }
+
+  bool putClientGroupMember(final ClientGroupMember clientGroupMember) {
+    checkPutClientGroupMember(clientGroupMember);
     clientGroupMember.id ??= (_maxId(_clientGroupMembers) + 1).toString();
     return _clientGroupMembers.add(clientGroupMember);
   }
 
-  bool putDaemon(final Daemon daemon) {
+  void checkPutDaemon(final Daemon daemon) {
     // ensure policy cache only has one unique daemon atSign
     for(final Daemon d in _daemons) {
       if(d.atSign == daemon.atSign) {
@@ -267,11 +280,15 @@ class NppCache {
         throw Exception('Found duplicate daemon id ${daemon.id}');
       }
     }
+  }
+
+  bool putDaemon(final Daemon daemon) {
+    checkPutDaemon(daemon);
     daemon.id ??= (_maxId(_daemons) + 1).toString();
     return _daemons.add(daemon);
   }
 
-  bool putService(final Service service) {
+  void checkPutService(final Service service) {
     // ensure no duplicate services
     for(final Service s in _services) {
       if(s.daemonId == service.daemonId &&
@@ -285,11 +302,15 @@ class NppCache {
         throw Exception('Found duplicate service id ${service.id}');
       }
     }
+  }
+
+  bool putService(final Service service) {
+    checkPutService(service);
     service.id ??= (_maxId(_services) + 1).toString();
     return _services.add(service);
   }
 
-  bool putServiceACL(final ServiceACL serviceACL) {
+  void checkPutServiceACL(final ServiceACL serviceACL) {
     for(final ServiceACL sa in _serviceACLs) {
       if(sa.clientGroupId == serviceACL.clientGroupId &&
         sa.serviceId == serviceACL.serviceId &&
@@ -306,6 +327,10 @@ class NppCache {
         throw Exception('Found duplicate service ACL id ${serviceACL.id}');
       }
     }
+   }
+
+  bool putServiceACL(final ServiceACL serviceACL) {
+    checkPutServiceACL(serviceACL);
     serviceACL.id ??= (_maxId(_serviceACLs) + 1).toString();
     return _serviceACLs.add(serviceACL);
   }

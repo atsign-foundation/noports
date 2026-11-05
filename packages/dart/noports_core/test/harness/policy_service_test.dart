@@ -13,6 +13,7 @@ import 'package:noports_core/npp.dart'
         ClientGroupMember,
         Daemon,
         NppCache,
+        NppDataOperation,
         NppService,
         Service,
         ServiceACL;
@@ -315,6 +316,7 @@ void main() {
       'Given an npp policy service @policy whose rules hold a different number'
       ' of each kind', () {
     const policy = '@policy';
+    const other = '@other';
     const events = '@events';
 
     late NoPortsHarness harness;
@@ -325,7 +327,7 @@ void main() {
     NppService? startedNpp;
 
     setUp(() async {
-      harness = NoPortsHarness.create(atSigns: {policy, events});
+      harness = NoPortsHarness.create(atSigns: {policy, other, events});
       received = [];
       npaLogs.clear();
 
@@ -409,7 +411,7 @@ void main() {
         atClient:
             await harness.openClient(policy, namespace: DefaultArgs.namespace),
         nppCache: rulesOfEachKind(),
-        managerAllowList: {policy},
+        managerAllowList: {policy, other},
         binariesVersion: '1.2.3',
         persistenceMethod: 'file',
         homeDirectory: harness.home.path,
@@ -559,6 +561,87 @@ void main() {
       expect(received.last['uptime'],
           allOf(greaterThanOrEqualTo(1), lessThan(1000)),
           reason: 'it ran just over a second, so whole seconds, not 0 or ms');
+    });
+
+    test(
+        'when a manager puts a rule, then @events receives a ruleChanged event'
+        ' from @policy naming the manager and the stored rule', () async {
+      final npp = await start(eventLoggingAtSign: events);
+
+      final response = await npp.managerRpcListener.callbacks.handleRequest(
+          AtRpcReq(
+              reqId: 7,
+              payload: NppDataOperation.putClient(
+                      Client(name: 'Carol', atSign: '@carol'))
+                  .atRpcPayload),
+          policy);
+
+      expect(response.respType, AtRpcRespType.success);
+      for (var i = 0; i < 50 && received.length < 2; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      final event = received.singleWhere((e) => e['event'] == 'ruleChanged');
+      expect(event['sender'], policy);
+      expect(event['policyAtsign'], policy);
+      expect(event['fromAtsign'], policy);
+      expect(event['reqId'], 7);
+      expect(event['operation'], 'put');
+      expect(event['target'], 'Client');
+      expect(event['rule'], {'id': '3', 'name': 'Carol', 'atSign': '@carol'});
+    });
+
+    test(
+        'when @other, on the manager allow list, sends a put through AtRpc with'
+        ' a forged fromAtsign, then it is refused and @events receives'
+        ' managerRequestRefused naming @other', () async {
+      final npp = await start(eventLoggingAtSign: events);
+      final rpc = AtRpcClient(
+        serverAtsign: policy,
+        atClient:
+            await harness.openClient(other, namespace: DefaultArgs.namespace),
+        baseNameSpace: npp.baseNamespace,
+        domainNameSpace: npp.domainNamespace,
+      );
+
+      await expectLater(
+          rpc.call({
+            ...NppDataOperation.putClient(
+                    Client(name: 'Mallory', atSign: '@mallory'))
+                .atRpcPayload,
+            'fromAtsign': policy,
+          }),
+          throwsA(contains('Unauthorized atSign')));
+
+      for (var i = 0; i < 50 && received.length < 2; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      final event =
+          received.singleWhere((e) => e['event'] == 'managerRequestRefused');
+      expect(event['sender'], policy);
+      expect(event['policyAtsign'], policy);
+      expect(event['fromAtsign'], other);
+      expect(event['reqId'], isA<int>());
+      expect(event.keys, isNot(contains('rule')));
+      expect(npp.nppCache.clients, hasLength(2));
+    });
+
+    test(
+        'when it stops, then a manager put is refused and changes nothing',
+        () async {
+      final npp = await start(eventLoggingAtSign: events);
+      await npp.stop(reason: 'SIGINT');
+
+      final response = await npp.managerRpcListener.callbacks.handleRequest(
+          AtRpcReq(
+              reqId: 9,
+              payload: NppDataOperation.putClient(
+                      Client(name: 'Carol', atSign: '@carol'))
+                  .atRpcPayload),
+          policy);
+
+      expect(response.respType, AtRpcRespType.error);
+      expect(response.message, 'npp is stopping');
+      expect(npp.nppCache.clients, hasLength(2));
     });
   });
 }
