@@ -37,20 +37,6 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     this.nppOperationHooks,
   });
 
-  String _generateId(Set<PolicyEntry> entities) {
-    int maxId = 0;
-    for (final PolicyEntry entry in entities) {
-      if (entry.id == null) {
-        continue;
-      }
-      final int entryId = int.tryParse(entry.id!) ?? 0;
-      if (entryId > maxId) {
-        maxId = entryId;
-      }
-    }
-    return (maxId + 1).toString();
-  }
-
   /// Builds an event with [build] and hands it to [onEvent]. A failure in
   /// either is logged and swallowed: the event log must never change the
   /// answer a manager gets.
@@ -282,10 +268,15 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           break;
         }
         final Map<String, dynamic> valueAsMap = requestPayload['value'];
+        if (valueAsMap['id'] != null) {
+          success = false;
+          message = 'A put must not name an id: npp gives each new rule one.';
+          break;
+        }
         switch (target) {
           case 'Client': {
             final Client client = Client.fromJson(valueAsMap);
-            client.id ??= _generateId(nppCache.clients);
+            client.id = newPolicyEntryId();
             rule.addAll(client.toJson());
             nppCache.checkPutClient(client);
             if (nppOperationHooks?.prePutClient != null) {
@@ -322,7 +313,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ClientGroup': {
             final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
-            clientGroup.id ??= _generateId(nppCache.clientGroups);
+            clientGroup.id = newPolicyEntryId();
             rule.addAll(clientGroup.toJson());
             nppCache.checkPutClientGroup(clientGroup);
             if (nppOperationHooks?.prePutClientGroup != null) {
@@ -363,8 +354,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'ClientGroupMember': {
             final ClientGroupMember clientGroupMember =
                 ClientGroupMember.fromJson(valueAsMap);
-            clientGroupMember.id ??=
-                _generateId(nppCache.clientGroupMembers);
+            clientGroupMember.id = newPolicyEntryId();
             rule.addAll(clientGroupMember.toJson());
             nppCache.checkPutClientGroupMember(clientGroupMember);
             if (nppOperationHooks?.prePutClientGroupMember != null) {
@@ -405,7 +395,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Daemon': {
             final Daemon daemon = Daemon.fromJson(valueAsMap);
-            daemon.id ??= _generateId(nppCache.daemons);
+            daemon.id = newPolicyEntryId();
             rule.addAll(daemon.toJson());
             nppCache.checkPutDaemon(daemon);
             if (nppOperationHooks?.prePutDaemon != null) {
@@ -442,7 +432,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Service': {
             final Service service = Service.fromJson(valueAsMap);
-            service.id ??= _generateId(nppCache.services);
+            service.id = newPolicyEntryId();
             rule.addAll(service.toJson());
             nppCache.checkPutService(service);
             if (nppOperationHooks?.prePutService != null) {
@@ -480,7 +470,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ServiceACL': {
             final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
-            serviceACL.id ??= _generateId(nppCache.serviceACLs);
+            serviceACL.id = newPolicyEntryId();
             rule.addAll(serviceACL.toJson());
             nppCache.checkPutServiceACL(serviceACL);
             if (nppOperationHooks?.prePutServiceACL != null) {

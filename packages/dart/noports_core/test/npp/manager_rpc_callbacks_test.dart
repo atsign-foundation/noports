@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/npa.dart';
 import 'package:noports_core/npp.dart';
 import 'package:test/test.dart';
 
@@ -56,12 +57,27 @@ void main() {
       ),
     };
 
+    /// The rules the members, services and service ACLs above name.
+    void putNamedRules() => cache
+      ..putClient(Client(id: '1', name: 'Carol', atSign: '@carol'))
+      ..putClientGroup(ClientGroup(id: '2', name: 'g0'))
+      ..putDaemon(Daemon(id: '1', atSign: '@named'))
+      ..putService(
+        Service(
+          id: '1',
+          daemonId: '1',
+          deviceName: 'named',
+          deviceGroupName: 'grp',
+        ),
+      );
+
     kinds.forEach((target, kind) {
       final (idKey, value) = kind;
 
       test(
         'when a $target is put and deleted, then each logs ruleChanged with the rule',
         () async {
+          putNamedRules();
           final c = callbacks();
           final put = await c.handleRequest(
             req({
@@ -72,18 +88,18 @@ void main() {
             policy,
           );
           expect(put.respType, AtRpcRespType.success);
-          expect(put.payload[idKey], '1');
+          final String id = put.payload[idKey];
 
           await c.handleRequest(
             req({
               'operation': 'delete',
               'target': target,
-              'value': {idKey: '1'},
+              'value': {idKey: id},
             }, reqId: 6),
             policy,
           );
 
-          final rule = {'id': '1', ...value};
+          final rule = {'id': id, ...value};
           expect(events, hasLength(2));
           expect(events[0]['event'], 'ruleChanged');
           expect(events[0]['operation'], 'put');
@@ -275,7 +291,11 @@ void main() {
       expect(event['event'], 'ruleChanged');
       expect(event['fromAtsign'], policy);
       expect(event['policyAtsign'], policy);
-      expect(event['rule'], {'id': '1', 'name': 'Alice', 'atSign': '@alice'});
+      expect(event['rule'], {
+        'id': cache.clients.single.id,
+        'name': 'Alice',
+        'atSign': '@alice',
+      });
     },
   );
 
@@ -380,8 +400,9 @@ void main() {
         responses.map((r) => r.respType),
         everyElement(AtRpcRespType.success),
       );
-      expect(saved.keys, unorderedEquals(['1', '2']));
-      expect(cache.clients.map((c) => c.id), unorderedEquals(['1', '2']));
+      final ids = cache.clients.map((c) => c.id).toSet();
+      expect(ids, hasLength(2));
+      expect(saved.keys, unorderedEquals(ids));
       expect(events.map((e) => e['event']), ['ruleChanged', 'ruleChanged']);
       expect(events.map((e) => e['reqId']), [1, 2]);
     });
@@ -395,7 +416,7 @@ void main() {
           preDeleteClient: (_) async => throw Exception('disk full'),
         ),
       );
-      await c.handleRequest(
+      final put = await c.handleRequest(
         req({
           'operation': 'put',
           'target': 'Client',
@@ -408,7 +429,7 @@ void main() {
         req({
           'operation': 'delete',
           'target': 'Client',
-          'value': {'clientId': '1'},
+          'value': {'clientId': put.payload['clientId']},
         }, reqId: 2),
         policy,
       );
@@ -473,5 +494,218 @@ void main() {
         expect(events.single['event'], 'ruleChanged');
       },
     );
+  });
+
+  /// The key each kind of rule's id goes under, in a put's answer and in a
+  /// delete's value.
+  const idKeys = {
+    'Client': 'clientId',
+    'ClientGroup': 'clientGroupId',
+    'ClientGroupMember': 'clientGroupMemberId',
+    'Daemon': 'daemonId',
+    'Service': 'serviceId',
+    'ServiceACL': 'serviceACLId',
+  };
+
+  Future<AtRpcResp> putValue(
+    ManagerRpcCallbacks c,
+    String target,
+    Map<String, dynamic> value, {
+    int reqId = 1,
+  }) => c.handleRequest(
+    req({'operation': 'put', 'target': target, 'value': value}, reqId: reqId),
+    policy,
+  );
+
+  /// Puts [value] as a [target] and returns the id npp gave it.
+  Future<String> putRule(
+    ManagerRpcCallbacks c,
+    String target,
+    Map<String, dynamic> value,
+  ) async {
+    final response = await putValue(c, target, value);
+    expect(
+      response.respType,
+      AtRpcRespType.success,
+      reason: 'putting $target $value: ${response.message}',
+    );
+    return response.payload[idKeys[target]!] as String;
+  }
+
+  Future<AtRpcResp> deleteRule(
+    ManagerRpcCallbacks c,
+    String target,
+    String id, {
+    int reqId = 1,
+  }) => c.handleRequest(
+    req({
+      'operation': 'delete',
+      'target': target,
+      'value': {idKeys[target]!: id},
+    }, reqId: reqId),
+    policy,
+  );
+
+  /// Hooks keeping [stored] as the set of saved rules, each as `Kind:id`.
+  NppOperationHooks storing(Set<String> stored) => NppOperationHooks(
+    prePutClient: (r) async => stored.add('Client:${r.id}'),
+    prePutClientGroup: (r) async => stored.add('ClientGroup:${r.id}'),
+    prePutClientGroupMember: (r) async =>
+        stored.add('ClientGroupMember:${r.id}'),
+    prePutDaemon: (r) async => stored.add('Daemon:${r.id}'),
+    prePutService: (r) async => stored.add('Service:${r.id}'),
+    prePutServiceACL: (r) async => stored.add('ServiceACL:${r.id}'),
+    preDeleteClient: (r) async => stored.remove('Client:${r.id}'),
+    preDeleteClientGroup: (r) async => stored.remove('ClientGroup:${r.id}'),
+    preDeleteClientGroupMember: (r) async =>
+        stored.remove('ClientGroupMember:${r.id}'),
+    preDeleteDaemon: (r) async => stored.remove('Daemon:${r.id}'),
+    preDeleteService: (r) async => stored.remove('Service:${r.id}'),
+    preDeleteServiceACL: (r) async => stored.remove('ServiceACL:${r.id}'),
+  );
+
+  /// Puts alice in groups admins and ops, with service dev on @daemon open to
+  /// admins at localhost:22 and to ops at localhost:2222. Returns each rule's
+  /// id by name, and clears [events].
+  Future<Map<String, String>> putPolicy(ManagerRpcCallbacks c) async {
+    final ids = <String, String>{};
+    ids['alice'] = await putRule(c, 'Client', {
+      'name': 'Alice',
+      'atSign': '@alice',
+    });
+    ids['admins'] = await putRule(c, 'ClientGroup', {'name': 'admins'});
+    ids['ops'] = await putRule(c, 'ClientGroup', {'name': 'ops'});
+    ids['aliceAdmins'] = await putRule(c, 'ClientGroupMember', {
+      'clientId': ids['alice'],
+      'clientGroupId': ids['admins'],
+    });
+    ids['aliceOps'] = await putRule(c, 'ClientGroupMember', {
+      'clientId': ids['alice'],
+      'clientGroupId': ids['ops'],
+    });
+    ids['daemon'] = await putRule(c, 'Daemon', {'atSign': '@daemon'});
+    ids['dev'] = await putRule(c, 'Service', {
+      'daemonId': ids['daemon'],
+      'deviceName': 'dev',
+      'deviceGroupName': 'grp',
+    });
+    ids['admins22'] = await putRule(c, 'ServiceACL', {
+      'serviceId': ids['dev'],
+      'clientGroupId': ids['admins'],
+      'permitOpen': 'localhost:22',
+    });
+    ids['ops2222'] = await putRule(c, 'ServiceACL', {
+      'serviceId': ids['dev'],
+      'clientGroupId': ids['ops'],
+      'permitOpen': 'localhost:2222',
+    });
+    events.clear();
+    return ids;
+  }
+
+  Future<List<String>> permitOpenFor(String clientAtsign) async =>
+      (await NppRequestHandler(nppCache: cache).doAuthCheck(
+        NPAAuthCheckRequest(
+          daemonAtsign: '@daemon',
+          daemonDeviceName: 'dev',
+          daemonDeviceGroupName: 'grp',
+          clientAtsign: clientAtsign,
+        ),
+      )).permitOpen;
+
+  group('Given the client with the highest id was deleted', () {
+    test('when a new client is put, then its id is one no rule has had and it'
+        ' is a member of no group', () async {
+      final c = callbacks();
+      final ids = await putPolicy(c);
+      await deleteRule(c, 'Client', ids['alice']!);
+
+      final bob = await putRule(c, 'Client', {'name': 'Bob', 'atSign': '@bob'});
+
+      expect(ids.values, isNot(contains(bob)));
+      expect(cache.getClientGroupMembersByClientId(bob), isEmpty);
+      expect(await permitOpenFor('@bob'), isEmpty);
+    });
+  });
+
+  group('Given a group, a service and a daemon, each the highest id of its kind'
+      ' and each deleted', () {
+    test('when a new one of each kind is put, then each gets an id no rule of'
+        ' its kind has had', () async {
+      final c = callbacks();
+      final group = await putRule(c, 'ClientGroup', {'name': 'g1'});
+      final daemon = await putRule(c, 'Daemon', {'atSign': '@daemon'});
+      final service = await putRule(c, 'Service', {
+        'daemonId': daemon,
+        'deviceName': 'dev',
+        'deviceGroupName': 'grp',
+      });
+      await deleteRule(c, 'Service', service);
+      await deleteRule(c, 'ClientGroup', group);
+      await deleteRule(c, 'Daemon', daemon);
+      expect(cache.clientGroups, isEmpty);
+      expect(cache.daemons, isEmpty);
+
+      final newDaemon = await putRule(c, 'Daemon', {'atSign': '@daemon2'});
+      final newService = await putRule(c, 'Service', {
+        'daemonId': newDaemon,
+        'deviceName': 'other',
+        'deviceGroupName': 'grp',
+      });
+      final newGroup = await putRule(c, 'ClientGroup', {'name': 'g2'});
+
+      expect(newGroup, isNot(group));
+      expect(newDaemon, isNot(daemon));
+      expect(newService, isNot(service));
+    });
+  });
+
+  group('Given a put that names its own id', () {
+    test('when it is handled, then it is refused and nothing is stored',
+        () async {
+      final stored = <String>{};
+      final c = callbacks(hooks: storing(stored));
+      final alice = await putRule(c, 'Client', {
+        'name': 'Alice',
+        'atSign': '@alice',
+      });
+      final group = await putRule(c, 'ClientGroup', {'name': 'g1'});
+      final daemon = await putRule(c, 'Daemon', {'atSign': '@daemon'});
+      final service = await putRule(c, 'Service', {
+        'daemonId': daemon,
+        'deviceName': 'dev',
+        'deviceGroupName': 'grp',
+      });
+      final storedBefore = Set.of(stored);
+      final named = <String, Map<String, dynamic>>{
+        'Client': {'name': 'Bob', 'atSign': '@bob'},
+        'ClientGroup': {'name': 'g2'},
+        'ClientGroupMember': {'clientId': alice, 'clientGroupId': group},
+        'Daemon': {'atSign': '@daemon2'},
+        'Service': {
+          'daemonId': daemon,
+          'deviceName': 'other',
+          'deviceGroupName': 'grp',
+        },
+        'ServiceACL': {
+          'serviceId': service,
+          'clientGroupId': group,
+          'permitOpen': 'localhost:22',
+        },
+      };
+
+      for (final MapEntry(key: target, value: value) in named.entries) {
+        final response = await putValue(c, target, {'id': '7', ...value});
+        expect(response.respType, AtRpcRespType.error, reason: target);
+      }
+
+      expect(stored, storedBefore);
+      expect(cache.clients, hasLength(1));
+      expect(cache.clientGroups, hasLength(1));
+      expect(cache.clientGroupMembers, isEmpty);
+      expect(cache.daemons, hasLength(1));
+      expect(cache.services, hasLength(1));
+      expect(cache.serviceACLs, isEmpty);
+    });
   });
 }

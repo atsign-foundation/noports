@@ -1,9 +1,13 @@
 import 'package:at_commons/atsign.dart';
 import 'package:at_utils/at_utils.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:noports_core/src/common/validation_utils.dart';
 
 import './models.dart';
+
+/// A new policy entry id. Ids are random, so npp never gives one out twice.
+String newPolicyEntryId() => const Uuid().v4();
 
 class NppCache {
   static final AtSignLogger logger = AtSignLogger('NppCache');
@@ -229,7 +233,7 @@ class NppCache {
 
   bool putClient(final Client client) {
     checkPutClient(client);
-    client.id ??= (_maxId(_clients) + 1).toString();
+    client.id ??= newPolicyEntryId();
     return _clients.add(client);
   }
 
@@ -247,7 +251,7 @@ class NppCache {
 
   bool putClientGroup(final ClientGroup clientGroup) {
     checkPutClientGroup(clientGroup);
-    clientGroup.id ??= (_maxId(_clientGroups) + 1).toString();
+    clientGroup.id ??= newPolicyEntryId();
     return _clientGroups.add(clientGroup);
   }
 
@@ -266,7 +270,7 @@ class NppCache {
 
   bool putClientGroupMember(final ClientGroupMember clientGroupMember) {
     checkPutClientGroupMember(clientGroupMember);
-    clientGroupMember.id ??= (_maxId(_clientGroupMembers) + 1).toString();
+    clientGroupMember.id ??= newPolicyEntryId();
     return _clientGroupMembers.add(clientGroupMember);
   }
 
@@ -284,7 +288,7 @@ class NppCache {
 
   bool putDaemon(final Daemon daemon) {
     checkPutDaemon(daemon);
-    daemon.id ??= (_maxId(_daemons) + 1).toString();
+    daemon.id ??= newPolicyEntryId();
     return _daemons.add(daemon);
   }
 
@@ -306,7 +310,7 @@ class NppCache {
 
   bool putService(final Service service) {
     checkPutService(service);
-    service.id ??= (_maxId(_services) + 1).toString();
+    service.id ??= newPolicyEntryId();
     return _services.add(service);
   }
 
@@ -331,7 +335,7 @@ class NppCache {
 
   bool putServiceACL(final ServiceACL serviceACL) {
     checkPutServiceACL(serviceACL);
-    serviceACL.id ??= (_maxId(_serviceACLs) + 1).toString();
+    serviceACL.id ??= newPolicyEntryId();
     return _serviceACLs.add(serviceACL);
   }
 
@@ -363,21 +367,6 @@ class NppCache {
   bool deleteServiceACL(final String serviceACLId) {
     final ServiceACL serviceACL = getServiceACLById(serviceACLId);
     return _serviceACLs.remove(serviceACL);
-  }
-
-  int _maxId(final Set<PolicyEntry> entries) {
-    int maxId = 0;
-    for(final PolicyEntry entry in entries) {
-      if(entry.id == null) {
-        logger.warning('Encountered PolicyEntry with null id: $entry');
-        continue;
-      }
-      final int entryId = int.tryParse(entry.id!) ?? 0;
-      if(entryId > maxId) {
-        maxId = entryId;
-      }
-    }
-    return maxId;
   }
 
 }
