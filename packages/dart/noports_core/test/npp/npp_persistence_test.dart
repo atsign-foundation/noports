@@ -535,6 +535,69 @@ void main() {
     });
   });
 
+  group('Given a policy directory holding a rule file named other than its id'
+      ' and kind', () {
+    test('when npp loads its rules, then that rule is not loaded and a warning'
+        ' names the file', () async {
+      const rules = <String, Map<String, dynamic>>{
+        'client': {'id': '1', 'name': 'Alice', 'atSign': '@alice'},
+        'client_group': {'id': '1', 'name': 'g1'},
+        'client_group_member': {
+          'id': '1',
+          'clientId': 'none',
+          'clientGroupId': 'none',
+        },
+        'daemon': {'id': '1', 'atSign': '@daemon'},
+        'service': {
+          'id': '1',
+          'daemonId': 'none',
+          'deviceName': 'dev',
+          'deviceGroupName': 'grp',
+        },
+        'service_acl': {
+          'id': '1',
+          'serviceId': 'none',
+          'clientGroupId': 'none',
+          'permitOpen': 'localhost:22',
+        },
+      };
+      for (final MapEntry(key: kind, value: json) in rules.entries) {
+        await File(
+          '${directory.path}/alice_$kind.json',
+        ).writeAsString(jsonEncode(json));
+      }
+
+      final logger = nppPersistenceLogger.logger;
+      final level = logger.level;
+      logger.level = Level.ALL;
+      final warnings = <String>[];
+      final subscription = logger.onRecord
+          .where((r) => r.level == Level.WARNING)
+          .listen((r) => warnings.add(r.message));
+      late NppCache loaded;
+      try {
+        loaded = await nppCacheFromFiles(policyDirectory: directory);
+      } finally {
+        await subscription.cancel();
+        logger.level = level;
+      }
+
+      expect(loaded.clients, isEmpty);
+      expect(loaded.clientGroups, isEmpty);
+      expect(loaded.clientGroupMembers, isEmpty);
+      expect(loaded.daemons, isEmpty);
+      expect(loaded.services, isEmpty);
+      expect(loaded.serviceACLs, isEmpty);
+      for (final kind in rules.keys) {
+        expect(
+          warnings.where((w) => w.contains('alice_$kind.json')),
+          isNotEmpty,
+          reason: 'a warning naming alice_$kind.json',
+        );
+      }
+    });
+  });
+
   group("Given each persistence method and a stored rule whose key or file"
       " name doesn't carry its id", () {
     test('when npp loads its rules, then that rule is not loaded and a warning'
