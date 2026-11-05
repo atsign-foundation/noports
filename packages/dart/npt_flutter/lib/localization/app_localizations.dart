@@ -503,12 +503,6 @@ abstract class AppLocalizations {
   /// **'Retrying connection (keep-alive)...'**
   String get connectionRetrying;
 
-  /// No description provided for @connectionTimedOut.
-  ///
-  /// In en, this message translates to:
-  /// **'Connection timed out, will retry...'**
-  String get connectionTimedOut;
-
   /// No description provided for @connections.
   ///
   /// In en, this message translates to:
@@ -1259,12 +1253,6 @@ abstract class AppLocalizations {
   /// **'NoPorts'**
   String get noPorts;
 
-  /// No description provided for @nptStartupTimedout.
-  ///
-  /// In en, this message translates to:
-  /// **'Npt startup timed out'**
-  String get nptStartupTimedout;
-
   /// No description provided for @ok.
   ///
   /// In en, this message translates to:
@@ -1660,12 +1648,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resend Pin'**
   String get resendPin;
-
-  /// No description provided for @retryFailedWithDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry failed: {errorMessage}, will retry...'**
-  String retryFailedWithDetails(Object errorMessage);
 
   /// No description provided for @roleAddNew.
   ///

@@ -226,9 +226,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionRetrying => 'Retrying connection (keep-alive)...';
 
   @override
-  String get connectionTimedOut => 'Connection timed out, will retry...';
-
-  @override
   String get connections => 'Connections';
 
   @override
@@ -644,9 +641,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout => 'Npt startup timed out';
-
-  @override
   String get ok => 'OK';
 
   @override
@@ -861,11 +855,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resendPin => 'Resend Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return 'Retry failed: $errorMessage, will retry...';
-  }
 
   @override
   String get roleAddNew => 'Add New Role';
