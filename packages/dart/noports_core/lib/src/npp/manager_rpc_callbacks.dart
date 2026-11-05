@@ -24,6 +24,9 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
   /// order. Reads aren't held by it.
   final Mutex _changes = Mutex();
 
+  /// Set by [stopChanges]: once true, puts and deletes are refused.
+  bool _stopping = false;
+
   ManagerRpcCallbacks({
     required this.atClient,
     required this.nppCache,
@@ -108,6 +111,14 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     });
 
     return _changes.protect(() async {
+      if (_stopping) {
+        await logChange('npp is stopping');
+        return AtRpcResp(
+            reqId: reqId,
+            respType: AtRpcRespType.error,
+            message: 'npp is stopping',
+            payload: {'success': false});
+      }
       final AtRpcResp response;
       try {
         response = await _handleRequest(request, fromAtSign, rule);
@@ -122,6 +133,13 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
       return response;
     });
   }
+
+  /// Refuses every later put and delete, after waiting for one already
+  /// running to finish and send its event. Called when npp starts stopping,
+  /// so no rule changes once the event log can no longer record it.
+  Future<void> stopChanges() => _changes.protect(() async {
+    _stopping = true;
+  });
 
   /// Carries out [request]. [rule] receives the rule a put or delete acts on;
   /// it is per request, since reads aren't held by [_changes].

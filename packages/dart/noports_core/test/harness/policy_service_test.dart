@@ -624,5 +624,24 @@ void main() {
       expect(event.keys, isNot(contains('rule')));
       expect(npp.nppCache.clients, hasLength(2));
     });
+
+    test(
+        'when it stops, then a manager put is refused and changes nothing',
+        () async {
+      final npp = await start(eventLoggingAtSign: events);
+      await npp.stop(reason: 'SIGINT');
+
+      final response = await npp.managerRpcListener.callbacks.handleRequest(
+          AtRpcReq(
+              reqId: 9,
+              payload: NppDataOperation.putClient(
+                      Client(name: 'Carol', atSign: '@carol'))
+                  .atRpcPayload),
+          policy);
+
+      expect(response.respType, AtRpcRespType.error);
+      expect(response.message, 'npp is stopping');
+      expect(npp.nppCache.clients, hasLength(2));
+    });
   });
 }

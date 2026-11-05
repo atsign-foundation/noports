@@ -95,6 +95,7 @@ class NppService {
   late NPA npa; // responds to policy requests
   late AtRpc managerRpcListener; // policy api (put/get/delete/ping)
   Timer? _heartbeat;
+  late ManagerRpcCallbacks _managerCallbacks;
   DateTime? _startedAt;
   bool _stopped = false;
 
@@ -133,7 +134,7 @@ class NppService {
 
     managerRpcListener = AtRpc(
       atClient: atClient,
-      callbacks: ManagerRpcCallbacks(
+      callbacks: _managerCallbacks = ManagerRpcCallbacks(
         atClient: atClient,
         nppCache: nppCache,
         nppOperationHooks: nppOperationHooks,
@@ -183,14 +184,17 @@ class NppService {
   @visibleForTesting
   bool get heartbeatRunning => _heartbeat?.isActive ?? false;
 
-  /// Stops the heartbeat, tells the event logging Atsign the service is
+  /// Stops the heartbeat, refuses any further rule change (after one already
+  /// running finishes), tells the event logging Atsign the service is
   /// stopping and why, then waits (at most 5 s) for every event already sent
-  /// to reach our atServer. Only the first call does anything. Checks are
-  /// still answered until the process exits, since an AtRpc can't be stopped.
+  /// to reach our atServer. Only the first call does anything. Checks and
+  /// reads are still answered until the process exits, since an AtRpc can't
+  /// be stopped.
   Future<void> stop({required String reason}) async {
     if (_stopped) return;
     _stopped = true;
     _heartbeat?.cancel();
+    await _managerCallbacks.stopChanges();
     await npa.sendEvent(PolicyEvent.stopped(
       policyAtsign: npa.policyAtsign,
       reason: reason,

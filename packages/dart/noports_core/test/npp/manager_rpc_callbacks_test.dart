@@ -420,4 +420,58 @@ void main() {
       expect(events.last['error'], contains('disk full'));
     });
   });
+
+  group('Given changes have been stopped', () {
+    test('when a client is put, then it is refused, nothing is stored, and it'
+        ' logs ruleChangeFailed', () async {
+      final c = callbacks();
+      await c.stopChanges();
+
+      final response = await c.handleRequest(
+        req({
+          'operation': 'put',
+          'target': 'Client',
+          'value': {'name': 'Alice', 'atSign': '@alice'},
+        }),
+        policy,
+      );
+
+      expect(response.respType, AtRpcRespType.error);
+      expect(response.message, 'npp is stopping');
+      expect(cache.clients, isEmpty);
+      expect(events.single['event'], 'ruleChangeFailed');
+      expect(events.single['error'], 'npp is stopping');
+    });
+
+    test(
+      'when a put is already running, then stopping waits for it to finish',
+      () async {
+        final gate = Completer<void>();
+        final c = callbacks(
+          hooks: NppOperationHooks(prePutClient: (_) => gate.future),
+        );
+        final put = c.handleRequest(
+          req({
+            'operation': 'put',
+            'target': 'Client',
+            'value': {'name': 'Alice', 'atSign': '@alice'},
+          }),
+          policy,
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        var stopped = false;
+        final stopping = c.stopChanges().then((_) => stopped = true);
+        await Future<void>.delayed(Duration.zero);
+        expect(stopped, isFalse, reason: 'the put is still running');
+
+        gate.complete();
+        expect((await put).respType, AtRpcRespType.success);
+        await stopping;
+        expect(stopped, isTrue);
+        expect(cache.clients, hasLength(1));
+        expect(events.single['event'], 'ruleChanged');
+      },
+    );
+  });
 }
