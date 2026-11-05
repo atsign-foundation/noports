@@ -120,23 +120,25 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
   }
 
   /// Cuts the typed text as the name dialog does, so a cut name repeats none.
+  static String _typedName(String typed) => typed
+      .trim()
+      .characters
+      .take(ProfileFolderNameDialog.maxLength)
+      .toString()
+      .trimRight();
+
+  static bool _matches(DropdownMenuEntry<String> entry, String needle) =>
+      nameSortKey(entry.label).contains(needle);
+
   List<DropdownMenuEntry<String>> _filter(
     List<DropdownMenuEntry<String>> entries,
     String filter,
   ) {
-    final String name = filter
-        .trim()
-        .characters
-        .take(ProfileFolderNameDialog.maxLength)
-        .toString()
-        .trimRight();
+    final String name = _typedName(filter);
     final String typed = name.toLowerCase();
     final String needle = nameSortKey(name);
     final List<DropdownMenuEntry<String>> matches = entries
-        .where(
-          (DropdownMenuEntry<String> e) =>
-              nameSortKey(e.label).contains(needle),
-        )
+        .where((DropdownMenuEntry<String> e) => _matches(e, needle))
         .toList();
     if (typed.isEmpty ||
         entries.any(
@@ -154,6 +156,29 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
     ];
   }
 
+  /// Highlights what Enter picks: the same name, then the same name with
+  /// accents folded, then the first entry [_filter] lists for it.
+  static int? _search(List<DropdownMenuEntry<String>> entries, String query) {
+    final String name = _typedName(query);
+    if (name.isEmpty) return null;
+    final String lower = name.toLowerCase();
+    final String needle = nameSortKey(name);
+    int first(bool Function(String label) test) =>
+        entries.indexWhere((DropdownMenuEntry<String> e) => test(e.label));
+    int index = first((String label) => label.toLowerCase() == lower);
+    if (index == -1) {
+      index = first((String label) => nameSortKey(label) == needle);
+    }
+    if (index == -1) {
+      index = first((String label) => nameSortKey(label).contains(needle));
+    }
+    return index == -1 ? null : index;
+  }
+
+  /// DropdownMenu reads its initialSelection once, so a new key rebuilds it.
+  String _menuKey(String selection, String? folderName, String? newName) =>
+      'ProfileFolderSelector-$selection-$folderName-$newName-$_resets';
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations strings = AppLocalizations.of(context)!;
@@ -169,11 +194,11 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
         final String selection = chosen.newName != null
             ? _newFolder
             : folder?.uuid ?? _noFolder;
-
-        /// DropdownMenu reads [initialSelection] once; a new key rebuilds it.
-        final String selectionResetKey =
-            'ProfileFolderSelector-$selection-${folder?.name}-'
-            '${chosen.newName}-$_resets';
+        final String menuKey = _menuKey(
+          selection,
+          folder?.name,
+          chosen.newName,
+        );
         return Padding(
           padding: const EdgeInsets.only(
             left: Sizes.p50,
@@ -195,12 +220,13 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
                 width: double.infinity,
                 child: DropdownMenu<String>(
                   enabled: state.editable,
-                  key: ValueKey<String>(selectionResetKey),
-                  controller: _controllerFor(selectionResetKey),
+                  key: ValueKey<String>(menuKey),
+                  controller: _controllerFor(menuKey),
                   focusNode: _focus,
                   initialSelection: selection,
                   enableFilter: true,
                   filterCallback: _filter,
+                  searchCallback: _search,
                   expandedInsets: EdgeInsets.zero,
                   dropdownMenuEntries: <DropdownMenuEntry<String>>[
                     DropdownMenuEntry<String>(

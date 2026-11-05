@@ -571,6 +571,46 @@ void main() {
       expect(menuLabels(), <String>['Écran', '${strings.folderNew}: ecran']);
     });
 
+    testWidgets('Enter picks the folder listed first, accents aside', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(
+        tester,
+        folders: const ProfileFolderData(
+          folders: <ProfileFolder>[
+            ProfileFolder(uuid: 'g-ecran', name: 'Écran'),
+          ],
+        ),
+      );
+      await openMenu(tester);
+      await typeInField(tester, 'ecran');
+
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(formFolder(tester).state, (folderId: 'g-ecran', newName: null));
+    });
+
+    testWidgets('Enter keeps a folder whose name is typed as it is, even when '
+        'an earlier one matches it accents aside', (WidgetTester tester) async {
+      await pumpForm(
+        tester,
+        folders: const ProfileFolderData(
+          folders: <ProfileFolder>[
+            ProfileFolder(uuid: 'g-ecran-pro', name: 'Écran Pro'),
+            ProfileFolder(uuid: 'g-ecran', name: 'Ecran'),
+          ],
+        ),
+      );
+      await openMenu(tester);
+      await typeInField(tester, 'Ecran');
+
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(formFolder(tester).state, (folderId: 'g-ecran', newName: null));
+    });
+
     for (final String typed in <String>['Servers', 'servers', 'SERVERS']) {
       testWidgets('does not offer to create "$typed" when Servers exists', (
         WidgetTester tester,
