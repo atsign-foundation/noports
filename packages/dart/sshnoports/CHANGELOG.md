@@ -40,6 +40,10 @@
   from those clients
 * feat: npp logs rulesLoaded, heartbeat and stopped events to the event
   logging Atsign, and on SIGINT or SIGTERM sends stopped before it exits
+* feat: npp logs manager RPC rule changes and refused senders to the event
+  logging Atsign
+* fix: npp saves manager RPC deletes and checks puts before saving them, so
+  the rules it loads on a restart match the changes it accepted
 * feat: at_activate is at_client_cli's at_activate: its --help reports
   at_client_cli's version, and --arx and --drx match app and device names
   whatever their case
