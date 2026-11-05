@@ -11,6 +11,10 @@ void main() {
     test('The banner check reaches npt when srvd holds the same port number on'
         ' $family: when npt listens where the pack tells it to, on the port'
         " srvd holds, then the check reads sshd's banner from npt", () async {
+      expect(nptLocalHostArgs, [
+        '--local-host',
+        nptLocalHost,
+      ], reason: 'the pack tells npt to listen where the check connects');
       final ServerSocket srvd = await ServerSocket.bind(
         srvdAddress,
         0,
@@ -33,20 +37,16 @@ void main() {
   }
 }
 
-/// A listener on [port] where [nptLocalHostArgs] tell npt to listen, or at
-/// npt's own default, localhost, when they name nowhere; null, with the test
-/// marked skipped, when this platform refuses it the port beside srvd's.
+/// A listener on [port] at [nptLocalHost], where the pack tells npt to
+/// listen; null, with the test marked skipped, when this platform refuses it
+/// the port beside srvd's.
 Future<ServerSocket?> _bindAsNpt(int port) async {
-  final int flag = nptLocalHostArgs.indexOf('--local-host');
-  final String host = flag >= 0 && flag + 1 < nptLocalHostArgs.length
-      ? nptLocalHostArgs[flag + 1]
-      : 'localhost';
   try {
-    return await ServerSocket.bind(host, port);
+    return await ServerSocket.bind(nptLocalHost, port);
   } on SocketException catch (e) {
     markTestSkipped(
-      "this platform refuses npt's listener on $host the port beside srvd's:"
-      ' ${e.osError?.message ?? e.message}',
+      "this platform refuses npt's listener on $nptLocalHost the port beside"
+      " srvd's: ${e.osError?.message ?? e.message}",
     );
     return null;
   }
