@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:at_utils/at_logger.dart';
+import 'package:at_utils/at_utils_io.dart' show CLILoggingHandler;
 import 'package:chalkdart/chalk.dart';
 import 'package:noports_core/commands.dart';
 import 'package:sshnoports/src/print_version.dart';

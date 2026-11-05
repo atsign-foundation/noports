@@ -9,6 +9,25 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return 'Could not abandon enrollment $enrollmentId: its keys are still in the keychain. Choose Cancel to try again.';
+  }
+
+  @override
+  String get abandonRequest => 'Abandon';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return 'This abandons enrollment $enrollmentId of $atsign. Trying again needs a new OTP from another enrollment of $atsign.';
+  }
+
+  @override
+  String get abandonRequestTitle => 'Abandon this request?';
+
+  @override
+  String get abandoningRequest => 'Abandoning the request...';
+
+  @override
   String get activate => 'Activate';
 
   @override
@@ -224,9 +243,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectionRetrying => 'Retrying connection (keep-alive)...';
-
-  @override
-  String get connectionTimedOut => 'Connection timed out, will retry...';
 
   @override
   String get connections => 'Connections';
@@ -620,6 +636,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jsonPayloadCopiedToClipboard => 'JSON payload copied to clipboard';
 
   @override
+  String get keepWaiting => 'Keep waiting';
+
+  @override
   String get keys => 'Upload atKeys';
 
   @override
@@ -715,9 +734,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noPorts => 'NoPorts';
-
-  @override
-  String get nptStartupTimedout => 'Npt startup timed out';
 
   @override
   String get ok => 'OK';
@@ -975,6 +991,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeAtsign => 'Remove Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return 'Enrollment $enrollmentId abandoned. To try again, enter a new OTP from another enrollment, and deny $enrollmentId under Requests in the Authenticator.';
+  }
+
+  @override
   String get requestExpired =>
       'The original request has expired. Please submit again';
 
@@ -983,11 +1004,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resendPin => 'Resend Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return 'Retry failed: $errorMessage, will retry...';
-  }
 
   @override
   String get roleAddNew => 'Add New Role';

@@ -9,6 +9,25 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return 'Não foi possível abandonar a inscrição $enrollmentId: as suas chaves continuam no porta-chaves. Escolha Cancelar para tentar novamente.';
+  }
+
+  @override
+  String get abandonRequest => 'Abandonar';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return 'Isto abandona a inscrição $enrollmentId de $atsign. Para tentar novamente, é necessário um novo OTP de outra inscrição de $atsign.';
+  }
+
+  @override
+  String get abandonRequestTitle => 'Abandonar esta solicitação?';
+
+  @override
+  String get abandoningRequest => 'A abandonar a solicitação...';
+
+  @override
   String get activate => 'Ativar';
 
   @override
@@ -226,10 +245,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get connectionRetrying => 'Reconectando (keep-alive)...';
-
-  @override
-  String get connectionTimedOut =>
-      'Tempo limite da conexão, tentará novamente...';
 
   @override
   String get connections => 'Conexões';
@@ -629,6 +644,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Payload JSON copiado para a área de transferência';
 
   @override
+  String get keepWaiting => 'Continuar a aguardar';
+
+  @override
   String get keys => 'Enviar atKeys';
 
   @override
@@ -726,10 +744,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get noPorts => 'NoPorts';
-
-  @override
-  String get nptStartupTimedout =>
-      'Tempo limite de inicialização do Npt excedido';
 
   @override
   String get ok => 'OK';
@@ -988,6 +1002,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get removeAtsign => 'Remover Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return 'Inscrição $enrollmentId abandonada. Para tentar novamente, insira um novo OTP de outra inscrição e negue $enrollmentId em Solicitações no Authenticator.';
+  }
+
+  @override
   String get requestExpired =>
       'A solicitação original expirou. Por favor, envie novamente';
 
@@ -996,11 +1015,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get resendPin => 'Reenviar Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return 'Falha ao tentar novamente: $errorMessage, tentará novamente...';
-  }
 
   @override
   String get roleAddNew => 'Adicionar Nova Função';
@@ -1257,6 +1271,25 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return 'Não foi possível abandonar a inscrição $enrollmentId: suas chaves ainda estão no chaveiro. Escolha Cancelar para tentar novamente.';
+  }
+
+  @override
+  String get abandonRequest => 'Abandonar';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return 'Isso abandona a inscrição $enrollmentId de $atsign. Para tentar novamente, é preciso um novo OTP de outra inscrição de $atsign.';
+  }
+
+  @override
+  String get abandonRequestTitle => 'Abandonar esta solicitação?';
+
+  @override
+  String get abandoningRequest => 'Abandonando a solicitação...';
+
+  @override
   String get activate => 'Ativar';
 
   @override
@@ -1474,10 +1507,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get connectionRetrying => 'Reconectando (keep-alive)...';
-
-  @override
-  String get connectionTimedOut =>
-      'Tempo limite da conexão, tentará novamente...';
 
   @override
   String get connections => 'Conexões';
@@ -1877,6 +1906,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Payload JSON copiado para a área de transferência';
 
   @override
+  String get keepWaiting => 'Continuar aguardando';
+
+  @override
   String get keys => 'Enviar atKeys';
 
   @override
@@ -1974,10 +2006,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get noPorts => 'NoPorts';
-
-  @override
-  String get nptStartupTimedout =>
-      'Tempo limite de inicialização do Npt excedido';
 
   @override
   String get ok => 'OK';
@@ -2236,6 +2264,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get removeAtsign => 'Remover Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return 'Inscrição $enrollmentId abandonada. Para tentar novamente, insira um novo OTP de outra inscrição e negue $enrollmentId em Solicitações no Authenticator.';
+  }
+
+  @override
   String get requestExpired =>
       'A solicitação original expirou. Por favor, envie novamente';
 
@@ -2244,11 +2277,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get resendPin => 'Reenviar Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return 'Falha ao tentar novamente: $errorMessage, tentará novamente...';
-  }
 
   @override
   String get roleAddNew => 'Adicionar Nova Função';

@@ -76,7 +76,11 @@ void main() {
       registerFallbackValue(Duration(minutes: 1));
       registerFallbackValue(NotificationParams.forUpdate(AtKey()));
 
-      stubEncryptionKeys(mockAtClient, RsaKeyPair.generate());
+      stubEncryptionKeys(
+        mockAtClient,
+        RsaKeyPair.generate(),
+        apkamKeyPair: RsaKeyPair.generate(),
+      );
       stubSigningKeyPublish(mockAtClient);
       when(
         () => mockAtClient.get(
@@ -202,6 +206,23 @@ void main() {
       await expectLater(stubbedSrvdChannel.callInitialization(), completes);
       await expectLater(stubbedSrvdChannel.initialized, completes);
     });
+
+    test(
+      'Given an initialized channel, when its subscriptions are cancelled, '
+      'then the relay ack listener is detached',
+      () async {
+        whenInitializationWithSrvdHost();
+        await expectLater(stubbedSrvdChannel.callInitialization(), completes);
+        expect(notificationStreamController.hasListener, isTrue);
+
+        await stubbedSrvdChannel.cancelSubscriptions();
+        expect(
+          notificationStreamController.hasListener,
+          isFalse,
+          reason: 'a finished session must not stay attached to the AtClient',
+        );
+      },
+    );
 
     test('runSrv', () async {
       whenInitializationWithSrvdHost();

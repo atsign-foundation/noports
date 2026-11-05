@@ -9,6 +9,25 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return '无法放弃注册 $enrollmentId：其密钥仍在钥匙串中。请选择“取消”重试。';
+  }
+
+  @override
+  String get abandonRequest => '放弃';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return '这将放弃 $atsign 的注册 $enrollmentId。如需重试，需要从 $atsign 的另一个注册获取新的 OTP。';
+  }
+
+  @override
+  String get abandonRequestTitle => '放弃此请求？';
+
+  @override
+  String get abandoningRequest => '正在放弃请求...';
+
+  @override
   String get activate => '激活';
 
   @override
@@ -215,9 +234,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get connectionRetrying => '正在重试连接 (keep-alive)...';
-
-  @override
-  String get connectionTimedOut => '连接超时，将重试...';
 
   @override
   String get connections => '连接';
@@ -591,6 +607,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get jsonPayloadCopiedToClipboard => 'JSON 负载已复制到剪贴板';
 
   @override
+  String get keepWaiting => '继续等待';
+
+  @override
   String get keys => '上传 atKeys';
 
   @override
@@ -682,9 +701,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noPorts => 'NoPorts';
-
-  @override
-  String get nptStartupTimedout => 'Npt 启动超时';
 
   @override
   String get ok => '确定';
@@ -926,6 +942,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get removeAtsign => '删除 Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return '已放弃注册 $enrollmentId。如需重试，请输入来自另一个注册的新 OTP，并在 Authenticator 的“请求”中拒绝 $enrollmentId。';
+  }
+
+  @override
   String get requestExpired => '原始请求已过期。请再次提交';
 
   @override
@@ -933,11 +954,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resendPin => '重新发送 Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return '重试失败：$errorMessage，将重试...';
-  }
 
   @override
   String get roleAddNew => '添加新角色';
@@ -1178,6 +1194,25 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   AppLocalizationsZhHansCh() : super('zh_Hans_CH');
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return '无法放弃注册 $enrollmentId：其密钥仍在钥匙串中。请选择“取消”重试。';
+  }
+
+  @override
+  String get abandonRequest => '放弃';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return '这将放弃 $atsign 的注册 $enrollmentId。如需重试，需要从 $atsign 的另一个注册获取新的 OTP。';
+  }
+
+  @override
+  String get abandonRequestTitle => '放弃此请求？';
+
+  @override
+  String get abandoningRequest => '正在放弃请求...';
+
+  @override
   String get activate => '激活';
 
   @override
@@ -1384,9 +1419,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get connectionRetrying => '正在重试连接 (keep-alive)...';
-
-  @override
-  String get connectionTimedOut => '连接超时，将重试...';
 
   @override
   String get connections => '连接';
@@ -1760,6 +1792,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get jsonPayloadCopiedToClipboard => 'JSON 负载已复制到剪贴板';
 
   @override
+  String get keepWaiting => '继续等待';
+
+  @override
   String get keys => '上传 atKeys';
 
   @override
@@ -1851,9 +1886,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get noPorts => 'NoPorts';
-
-  @override
-  String get nptStartupTimedout => 'Npt 启动超时';
 
   @override
   String get ok => '确定';
@@ -2095,6 +2127,11 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get removeAtsign => '删除 Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return '已放弃注册 $enrollmentId。如需重试，请输入来自另一个注册的新 OTP，并在 Authenticator 的“请求”中拒绝 $enrollmentId。';
+  }
+
+  @override
   String get requestExpired => '原始请求已过期。请再次提交';
 
   @override
@@ -2102,11 +2139,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get resendPin => '重新发送 Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return '重试失败：$errorMessage，将重试...';
-  }
 
   @override
   String get roleAddNew => '添加新角色';
@@ -2347,6 +2379,25 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   AppLocalizationsZhHantHk() : super('zh_Hant_HK');
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return '無法放棄註冊 $enrollmentId：其金鑰仍在鑰匙圈中。請選擇「取消」重試。';
+  }
+
+  @override
+  String get abandonRequest => '放棄';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return '這將放棄 $atsign 的註冊 $enrollmentId。如需重試，需要從 $atsign 的另一個註冊取得新的 OTP。';
+  }
+
+  @override
+  String get abandonRequestTitle => '放棄此請求？';
+
+  @override
+  String get abandoningRequest => '正在放棄請求...';
+
+  @override
   String get activate => '啟動';
 
   @override
@@ -2553,9 +2604,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get connectionRetrying => '正在重試連線 (保持運作)...';
-
-  @override
-  String get connectionTimedOut => '連線逾時，將重試...';
 
   @override
   String get connections => '連線';
@@ -2929,6 +2977,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get jsonPayloadCopiedToClipboard => 'JSON 承載已複製到剪貼簿';
 
   @override
+  String get keepWaiting => '繼續等待';
+
+  @override
   String get keys => '上傳 atKeys';
 
   @override
@@ -3020,9 +3071,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get noPorts => 'NoPorts';
-
-  @override
-  String get nptStartupTimedout => 'Npt 啟動逾時';
 
   @override
   String get ok => '確定';
@@ -3263,6 +3311,11 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get removeAtsign => '移除 Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return '已放棄註冊 $enrollmentId。如需重試，請輸入來自另一個註冊的新 OTP，並在 Authenticator 的「請求」中拒絕 $enrollmentId。';
+  }
+
+  @override
   String get requestExpired => '原始請求已過期。請再次提交';
 
   @override
@@ -3270,11 +3323,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get resendPin => '重新傳送 Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return '重試失敗：$errorMessage，將重試...';
-  }
 
   @override
   String get roleAddNew => '新增角色';
