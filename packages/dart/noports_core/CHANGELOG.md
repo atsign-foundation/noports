@@ -125,6 +125,9 @@
   id
 - feat: `NppOperationHooks` has pre-delete hooks, `NppCache` has `checkPut*`,
   and `npp.dart` exports npp's rule loaders and hooks
+- fix: npp assigns every new rule a random id
+- fix: improved handling of npp rule ids, references and deletes
+- fix: tightened how npp loads its stored rules
 
 # 6.15.0
 
