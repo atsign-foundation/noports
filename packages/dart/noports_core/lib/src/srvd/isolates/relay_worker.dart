@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:isolate';
 
 import 'package:at_utils/at_logger.dart';
+import 'package:at_utils/at_utils_io.dart' show StdErrLoggingHandler;
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
@@ -32,7 +33,7 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     required this.loggingTag,
     this.relayAuthDetectWindowMs = defaultRelayAuthDetectWindowMs,
   }) {
-    AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+    AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
     AtSignLogger.root_level = verbose ? 'INFO' : 'WARNING';
     logger = AtSignLogger(' srvd / $runtimeType / $loggingTag ');
 

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:at_cli_commons/at_cli_commons.dart' show getHomeDirectory;
+import 'package:at_client_cli/at_client_cli.dart' show getHomeDirectory;
 import 'package:npe2e/apkam_setup.dart';
 import 'package:npe2e/client_binary.dart';
 import 'package:npe2e/client_binary_utils.dart';
@@ -15,6 +15,7 @@ import 'package:npe2e/language.dart';
 import 'package:npe2e/noports_version.dart';
 import 'package:npe2e/process_utils.dart';
 import 'package:npe2e/revocation_tests/revocation_tests_params.dart';
+import 'package:npe2e/revocation_tests/tunnel_check.dart';
 import 'package:npe2e/transcript.dart';
 import 'package:npe2e/utils.dart';
 import 'package:path/path.dart' as path;
@@ -414,6 +415,7 @@ Future<({int? port, String output})> _openTunnel(
     '-T',
     '60s',
     '-x',
+    ...nptLocalHostArgs,
     if (relayAuthMode != null) ...['--relay-auth-mode', relayAuthMode],
   ];
   context.transcript.withTag(tag).command(npt.file.path, args);
@@ -444,29 +446,6 @@ Future<({int? port, String output})> _openTunnel(
   );
 }
 
-/// Whether a fresh connection to [port] on localhost, which npt may bind on
-/// IPv6 alone, reads sshd's banner within 5s
-Future<bool> _bannerReadable(int port) async {
-  try {
-    final Socket socket = await Socket.connect(
-      'localhost',
-      port,
-      timeout: const Duration(seconds: 5),
-    );
-    try {
-      return await socket
-          .cast<List<int>>()
-          .transform(utf8.decoder)
-          .any((chunk) => chunk.contains('SSH-'))
-          .timeout(const Duration(seconds: 5), onTimeout: () => false);
-    } finally {
-      socket.destroy();
-    }
-  } catch (_) {
-    return false;
-  }
-}
-
 /// A connection through a tunnel, held open, that knows when it closes
 class _HeldConnection {
   _HeldConnection._(this._socket);
@@ -481,7 +460,7 @@ class _HeldConnection {
   static Future<_HeldConnection?> open(int port) async {
     try {
       final Socket socket = await Socket.connect(
-        'localhost',
+        nptLocalHost,
         port,
         timeout: const Duration(seconds: 5),
       );
@@ -541,8 +520,8 @@ Future<bool> _sessionEndsOnRevocation(
         keptHeld == null ||
         !revokedHeld.bannerSeen ||
         !keptHeld.bannerSeen ||
-        !await _bannerReadable(revokedPort) ||
-        !await _bannerReadable(keptPort)) {
+        !await bannerReadable(revokedPort) ||
+        !await bannerReadable(keptPort)) {
       t.error('A tunnel did not reach sshd before the revocation');
       return false;
     }
@@ -578,7 +557,7 @@ Future<bool> _sessionEndsOnRevocation(
     );
     bool ended = false;
     while (sinceRevoke.elapsed < allowed) {
-      if (revokedHeld.closed && !await _bannerReadable(revokedPort)) {
+      if (revokedHeld.closed && !await bannerReadable(revokedPort)) {
         ended = true;
         break;
       }
@@ -587,7 +566,7 @@ Future<bool> _sessionEndsOnRevocation(
     final String logSince = endedByLog().substring(logLengthBefore);
     final bool logged = logSince.contains(_withdrawnLogPhrase);
     final bool keptAlive =
-        !keptHeld.closed && await _bannerReadable(keptPort);
+        !keptHeld.closed && await bannerReadable(keptPort);
     if (ended) {
       t.ok('The revoked enrollment\'s tunnel ended after'
           ' ${sinceRevoke.elapsed.inSeconds}s');
@@ -626,8 +605,8 @@ Future<bool> _unsignedRefused(
   final Transcript t = context.transcript.withTag(tag);
   t.section('$deviceName requires an enrollment signature');
   final (port: int? unsignedPort, output: String unsignedOutput) =
-      await _openTunnel(
-          context, tag, context.unsignedNpt, deviceName, signed.keysFile);
+      await _openTunnel(context, '${tag}_unsigned', context.unsignedNpt,
+          deviceName, signed.keysFile);
   final bool refused = unsignedPort == null &&
       unsignedOutput.contains('requires session requests signed');
   if (refused) {
@@ -640,7 +619,7 @@ Future<bool> _unsignedRefused(
           context, tag, context.npt, deviceName, signed.keysFile))
       .port;
   final bool accepted =
-      signedPort != null && await _bannerReadable(signedPort);
+      signedPort != null && await bannerReadable(signedPort);
   if (accepted) {
     t.ok('The signed request was accepted');
   } else {

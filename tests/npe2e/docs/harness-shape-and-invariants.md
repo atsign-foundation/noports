@@ -61,13 +61,30 @@ avoid double-booking within a run; `if: !cancelled()`
 leg fails, so flaky shared infra cannot silently skip it.
 
 **The npp and npp_atServer policy flows run sequentially.**
-`lib/policy_tests/policy_tests.dart:251-272`. Both flows build their admin
+`lib/policy_tests/policy_tests.dart:252-272`. Both flows build their admin
 AtClient through the per-isolate `AtClientManager` singleton and share the
 client/daemon atSigns, and the npp flow's admin RPCs ride notifications on a
 single atSign — under that contention response notifications go missing and the
 RPC await never returns, producing 30+ minute hangs. Rejected: the previous
 `Future.wait` shape, which was faster and was the standing trigger. Tripwire: do
 not re-parallelise these two flows without first giving each its own atSigns.
+
+**Policy tests that administer the same policy atSign run one at a time,
+whatever `--batch-size` says.** `runPolicyTestCases`
+(`lib/policy_tests/policy_tests.dart:358`) starts no test while another for
+the same policy atSign is running, and a timed-out attempt, which the runner
+cannot cancel, holds its policy atSign until its run ends, so a run that never
+ends holds its flow until the CI job's own timeout. Each test's `createPolicyAtClient` stops
+every live client of the policy atSign before it opens its own, because
+at_client lets a process hold one client per atSign and enrollment, so two
+tests at once stopped each other's admin client mid-flow. Every npp test
+shares `--npp-atsign` and every npp_atserver test `--npp-atserver-atsign`, so
+each flow runs one test at a time; CI's batches hold one permutation each, so
+this costs CI nothing. Rejected: one admin client per policy atSign shared by
+a batch's tests, which keeps them parallel but needs every test to take the
+client, a stop at the end of the batch, and an EE run with two or more
+permutations to prove, and leaves those tests sharing one notification-based
+admin RPC channel.
 
 **Bootstrap failures are hard stops, not just failures.** `core_tests` abandons
 the run when any `001_minus_s_flag` test fails
@@ -85,7 +102,7 @@ point (`coreTests`, `policyTests`, `relayTests`). A failed revoke is printed,
 not thrown, so it cannot mask the run's own result.
 
 **Tests are `Future<T> Function()` factories, not futures.** Each pack's runner
-(`lib/core_tests/core_tests.dart:445`, `lib/policy_tests/policy_tests.dart:354`,
+(`lib/core_tests/core_tests.dart:445`, `lib/policy_tests/policy_tests.dart:358`,
 `lib/relay_tests/relay_tests.dart:364`) takes factories so a retry re-invokes
 the test rather than re-awaiting a settled future, and so nothing starts before
 its concurrency slot opens. Runners keep `batchSize` tests in flight, stagger
@@ -100,12 +117,6 @@ starts by 1s, and retry on either a timeout or a failed status.
 - **The three runners are near-identical copies.** All three result types extend
   `TestResult` (`lib/test_result.dart:3`), so one generic runner is possible;
   each copy exists only because it is typed on the pack's result class.
-- **`--batch-size` > 1 in `policy_tests` puts concurrent tests on one npp
-  atSign.** npp tests batch by npp version
-  (`lib/policy_tests/tests/npp_test.dart:36-56`) and batches run in sequence,
-  but within a batch every client×daemon permutation shares `context.nppAtsign`
-  and its notification-based admin RPC channel — the same contention class the
-  sequential-flow decision above removes. CI runs `--batch-size 2`.
 - **No `concurrency:` group in `.github/workflows/e2e_all.yaml`.** Overlapping
   workflow runs
   double-book the fixed `@npe2e_org_*` atSigns. CI run-history analysis put the

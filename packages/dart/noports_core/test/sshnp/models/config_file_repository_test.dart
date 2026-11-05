@@ -1,7 +1,7 @@
 import 'package:noports_core/sshnp_params.dart';
 import 'package:test/test.dart';
 import 'package:path/path.dart' as path;
-import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 
 void main() {
   group('', () {
