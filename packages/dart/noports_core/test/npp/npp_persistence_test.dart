@@ -5,6 +5,8 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/npp.dart';
+import 'package:noports_core/src/npp/npp_persistence.dart'
+    show nppPersistenceLogger;
 import 'package:test/test.dart';
 
 import '../harness/noports_harness.dart';
