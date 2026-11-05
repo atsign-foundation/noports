@@ -56,7 +56,7 @@ abstract interface class Npt {
 
   /// Ends this session, closing the tunnel [runInline] started, if any, and
   /// completing [done]. A [runInline] still starting then closes the tunnel it
-  /// opens and throws, rather than return it. A teardown step that fails is
+  /// opens and throws. A teardown step that fails is
   /// logged and the rest still run, so this never throws.
   Future<void> close();
 

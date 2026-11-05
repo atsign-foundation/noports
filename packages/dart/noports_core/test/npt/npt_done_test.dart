@@ -355,8 +355,8 @@ void main() {
         connector?.closed ?? true,
         isTrue,
         reason:
-            'close had completed and done had resolved, yet the startup went '
-            'on to open this connector (startup error: $startupError)',
+            'a startup still in flight when close completes must not hand '
+            'back an open connector (startup error: $startupError)',
       );
       expect(
         await controlSocketClosed.future

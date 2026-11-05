@@ -12,8 +12,8 @@
 - fix: an npt session whose daemon feature check, or relay signing key
   publish, failed before the relay answered no longer raises an unhandled
   error, which killed the npt binary.
-- fix: `runInline` no longer hands back an open tunnel after `Npt.close` was
-  called while it was starting; it closes the tunnel and throws.
+- fix: a `runInline` still starting when `Npt.close` is called closes its
+  tunnel and throws.
 - fix: `Npt.close` cancels both its daemon and relay channels' subscriptions
   even when cancelling one of them fails, and logs such a failure rather than
   throwing it.
