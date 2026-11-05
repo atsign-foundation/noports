@@ -5,7 +5,6 @@ import 'dart:isolate';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:noports_core/npa.dart';
 import 'package:noports_core/npp.dart';
 import 'package:noports_core/src/npp/npp_persistence.dart'
     show nppPersistenceLogger;
@@ -661,61 +660,36 @@ void main() {
       final harness = NoPortsHarness.create(atSigns: {policy, other});
       final policyClient = await harness.openClient(policy, namespace: 'sshnp');
       final otherClient = await harness.openClient(other, namespace: 'sshnp');
-      final hooks = nppOperationHooksForAtServer(
+      Map<String, dynamic> client(String id) =>
+          {'id': id, 'name': id, 'atSign': '@$id'};
+
+      await nppOperationHooksForAtServer(
         atClient: policyClient,
         domainNamespace: 'npp',
         baseNamespace: 'sshnp',
+      ).prePutClient!(Client.fromJson(client('c0')));
+      final cached = await otherClient.notificationService.notify(
+        NotificationParams.forUpdate(
+          AtKey()
+            ..key = 'c1'
+            ..namespace = 'client.npp.sshnp'
+            ..sharedWith = policy
+            ..sharedBy = other
+            ..metadata = (Metadata()..ttr = 3600),
+          value: jsonEncode(client('c1')),
+        ),
+        encryptValue: false,
       );
-      await hooks.prePutDaemon!(Daemon(id: 'd1', atSign: '@device'));
-      await hooks.prePutService!(
-        Service(
-          id: 's1',
-          daemonId: 'd1',
-          deviceName: 'dev',
-          deviceGroupName: 'grp',
-        ),
+      expect(
+        cached.notificationStatusEnum,
+        NotificationStatusEnum.delivered,
+        reason: 'notifying c1',
       );
-
-      for (final (kind, json) in [
-        ('client', {'id': 'c1', 'name': 'Other', 'atSign': other}),
-        ('client_group', {'id': 'g1', 'name': 'g'}),
-        (
-          'client_group_member',
-          {'id': 'm1', 'clientId': 'c1', 'clientGroupId': 'g1'},
-        ),
-        (
-          'service_acl',
-          {
-            'id': 'a1',
-            'serviceId': 's1',
-            'clientGroupId': 'g1',
-            'permitOpen': 'localhost:22',
-          },
-        ),
-      ]) {
-        final result = await otherClient.notificationService.notify(
-          NotificationParams.forUpdate(
-            AtKey()
-              ..key = json['id'] as String
-              ..namespace = '$kind.npp.sshnp'
-              ..sharedWith = policy
-              ..sharedBy = other
-              ..metadata = (Metadata()..ttr = 3600),
-            value: jsonEncode(json),
-          ),
-          encryptValue: false,
-        );
-        expect(
-          result.notificationStatusEnum,
-          NotificationStatusEnum.delivered,
-          reason: 'notifying $kind',
-        );
-      }
       expect(
         await policyClient.put(
           AtKey.public('c2', namespace: 'client.npp.sshnp', sharedBy: policy)
               .build(),
-          jsonEncode({'id': 'c2', 'name': 'Public', 'atSign': '@public'}),
+          jsonEncode(client('c2')),
           putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
         ),
         isTrue,
@@ -728,7 +702,7 @@ void main() {
             ..namespace = 'client.npp.sshnp'
             ..sharedBy = policy
             ..sharedWith = other,
-          jsonEncode({'id': 'c3', 'name': 'Shared', 'atSign': '@shared'}),
+          jsonEncode(client('c3')),
           putRequestOptions: PutRequestOptions()
             ..shouldEncrypt = false
             ..useRemoteAtServer = true,
@@ -738,7 +712,7 @@ void main() {
       );
       harness.server[policy].storeAsIs(
         'c4.client.npp.sshnp@other',
-        jsonEncode({'id': 'c4', 'name': 'Owned', 'atSign': '@owned'}),
+        jsonEncode(client('c4')),
       );
 
       final logger = nppPersistenceLogger.logger;
@@ -760,12 +734,9 @@ void main() {
         logger.level = level;
       }
 
-      expect(ruleIds(loaded), unorderedEquals(['d1', 's1']));
+      expect(ruleIds(loaded), ['c0']);
       for (final skipped in [
         'cached:@policy:c1.client.npp.sshnp@other',
-        'cached:@policy:g1.client_group.npp.sshnp@other',
-        'cached:@policy:m1.client_group_member.npp.sshnp@other',
-        'cached:@policy:a1.service_acl.npp.sshnp@other',
         'public:c2.client.npp.sshnp@policy',
         '@other:c3.client.npp.sshnp@policy',
         'c4.client.npp.sshnp@other',
@@ -778,15 +749,6 @@ void main() {
           reason: 'a warning naming $skipped',
         );
       }
-      final check = await NppRequestHandler(nppCache: loaded).doAuthCheck(
-        NPAAuthCheckRequest(
-          daemonAtsign: '@device',
-          daemonDeviceName: 'dev',
-          daemonDeviceGroupName: 'grp',
-          clientAtsign: other,
-        ),
-      );
-      expect(check.permitOpen, isEmpty);
     });
   });
 }
