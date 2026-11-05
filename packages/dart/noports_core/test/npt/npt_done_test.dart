@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/srvd.dart';
@@ -55,17 +56,22 @@ class _FakeNotificationService implements NotificationService {
       throw UnimplementedError('${invocation.memberName} is not available');
 }
 
-/// Lets a startup get as far as the relay: it holds no keys to sign with, and
-/// finds its signing key not yet published.
+final _apkamKeyPair = RsaKeyPair.generate();
+
+/// Lets a startup get as far as the relay: it holds an APKAM keypair, as every
+/// client does, and finds its signing key not yet published.
 class _StartableAtClient extends _FailingAtClient {
   @override
   String? get enrollmentId => null;
 
   @override
-  AtKeysIo? get atKeysIo => null;
-
-  @override
-  get atChops => null;
+  late final AtKeysIo atKeysIo = InMemoryAtKeysIo.holding(
+    '@alice',
+    AtKeys.legacy(
+      apkamPublicKey: _apkamKeyPair.atPublicKey.publicKey,
+      apkamPrivateKey: _apkamKeyPair.atPrivateKey.privateKey,
+    ),
+  );
 
   @override
   bool get isStopped => false;
