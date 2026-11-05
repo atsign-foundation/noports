@@ -1390,12 +1390,26 @@ void main() {
       verifyNever(profileBlocs[extraUuid]!.add(const ProfileStartEvent()));
     });
 
+    testWidgets('says how many of the folder\'s connections Stop all stops', (
+      WidgetTester tester,
+    ) async {
+      await pumpSearch(tester, 'alpha');
+
+      expect(strings.folderStopSome(1, 3), 'Stop 1 of 3');
+      expect(
+        tooltipIn(machines.uuid, strings.folderStopSome(1, 3)),
+        findsOneWidget,
+      );
+      expect(tooltipIn(machines.uuid, strings.folderStopAll), findsNothing);
+    });
+
     testWidgets('keeps Start all when the search shows every connection', (
       WidgetTester tester,
     ) async {
       await pumpSearch(tester, 'a');
 
       expect(tooltipIn(machines.uuid, strings.folderStartAll), findsOneWidget);
+      expect(tooltipIn(machines.uuid, strings.folderStopAll), findsOneWidget);
       expect(find.byType(ProfileListRow), findsNWidgets(5));
     });
 

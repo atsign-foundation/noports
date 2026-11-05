@@ -612,6 +612,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get folderStopAll => 'Stop all';
 
   @override
+  String folderStopSome(Object count, Object total) {
+    return 'Stop $count of $total';
+  }
+
+  @override
   String get folderSyncing => 'Folders can be changed once they have synced';
 
   @override

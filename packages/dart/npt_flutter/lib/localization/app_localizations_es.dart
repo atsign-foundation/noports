@@ -621,6 +621,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get folderStopAll => 'Detener todo';
 
   @override
+  String folderStopSome(Object count, Object total) {
+    return 'Detener $count de $total';
+  }
+
+  @override
   String get folderSyncing =>
       'Las carpetas se podrán cambiar cuando terminen de sincronizarse';
 

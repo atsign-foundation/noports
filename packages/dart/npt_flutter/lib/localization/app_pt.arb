@@ -178,6 +178,7 @@
   "folderStartAll": "Iniciar todos",
   "folderStartSome": "Iniciar {count} de {total}",
   "folderStopAll": "Parar todos",
+  "folderStopSome": "Parar {count} de {total}",
   "folderSyncing": "As pastas poderão ser alteradas quando terminarem de sincronizar",
   "getStarted": "Começar",
   "groupAdd": "Adicionar Grupo",

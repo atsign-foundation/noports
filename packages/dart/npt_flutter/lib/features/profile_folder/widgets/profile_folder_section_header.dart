@@ -209,7 +209,7 @@ class _StartStopButtonsState extends State<_StartStopButtons> {
   @override
   Widget build(BuildContext context) {
     final List<String> uuids = widget.uuids;
-    final int? total = widget.total;
+    final int total = widget.total ?? uuids.length;
     final ProfileFolder? folder = widget.folder;
     final AppLocalizations strings = AppLocalizations.of(context)!;
     final List<String> startable = uuids
@@ -237,11 +237,8 @@ class _StartStopButtonsState extends State<_StartStopButtons> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 IconButton(
-                  tooltip: startable.length < (total ?? uuids.length)
-                      ? strings.folderStartSome(
-                          startable.length,
-                          total ?? uuids.length,
-                        )
+                  tooltip: startable.length < total
+                      ? strings.folderStartSome(startable.length, total)
                       : strings.folderStartAll,
                   onPressed: canStart
                       ? () => ProfileFolderActions.startAll(context, startable)
@@ -253,7 +250,9 @@ class _StartStopButtonsState extends State<_StartStopButtons> {
                   ),
                 ),
                 IconButton(
-                  tooltip: strings.folderStopAll,
+                  tooltip: uuids.length < total
+                      ? strings.folderStopSome(uuids.length, total)
+                      : strings.folderStopAll,
                   onPressed: canStop
                       ? () => ProfileFolderActions.stopAll(context, uuids)
                       : null,

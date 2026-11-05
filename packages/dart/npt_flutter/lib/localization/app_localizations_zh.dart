@@ -583,6 +583,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get folderStopAll => '全部停止';
 
   @override
+  String folderStopSome(Object count, Object total) {
+    return '停止 $count/$total 个';
+  }
+
+  @override
   String get folderSyncing => '文件夹同步完成后即可修改';
 
   @override
@@ -1777,6 +1782,11 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get folderStopAll => '全部停止';
 
   @override
+  String folderStopSome(Object count, Object total) {
+    return '停止 $count/$total 个';
+  }
+
+  @override
   String get folderSyncing => '文件夹同步完成后即可修改';
 
   @override
@@ -2969,6 +2979,11 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get folderStopAll => '全部停止';
+
+  @override
+  String folderStopSome(Object count, Object total) {
+    return '停止 $count/$total 個';
+  }
 
   @override
   String get folderSyncing => '資料夾同步完成後即可修改';

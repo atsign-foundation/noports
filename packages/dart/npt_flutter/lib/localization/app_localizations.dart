@@ -1187,6 +1187,12 @@ abstract class AppLocalizations {
   /// **'Stop all'**
   String get folderStopAll;
 
+  /// No description provided for @folderStopSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop {count} of {total}'**
+  String folderStopSome(Object count, Object total);
+
   /// No description provided for @folderSyncing.
   ///
   /// In en, this message translates to:

@@ -619,6 +619,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get folderStopAll => 'Parar todos';
 
   @override
+  String folderStopSome(Object count, Object total) {
+    return 'Parar $count de $total';
+  }
+
+  @override
   String get folderSyncing =>
       'As pastas poderão ser alteradas quando terminarem de sincronizar';
 
@@ -1889,6 +1894,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get folderStopAll => 'Parar todos';
+
+  @override
+  String folderStopSome(Object count, Object total) {
+    return 'Parar $count de $total';
+  }
 
   @override
   String get folderSyncing =>

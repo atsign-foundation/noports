@@ -178,6 +178,7 @@
    "folderStartAll": "Start all",
    "folderStartSome": "Start {count} of {total}",
    "folderStopAll": "Stop all",
+   "folderStopSome": "Stop {count} of {total}",
    "folderSyncing": "Folders can be changed once they have synced",
    "getStarted": "Get Started",
    "groupAdd": "Add Group",

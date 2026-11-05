@@ -178,6 +178,7 @@
   "folderStartAll": "全部啟動",
   "folderStartSome": "啟動 {count}/{total} 個",
   "folderStopAll": "全部停止",
+  "folderStopSome": "停止 {count}/{total} 個",
   "folderSyncing": "資料夾同步完成後即可修改",
   "getStarted": "開始使用",
   "groupAdd": "新增群組",
