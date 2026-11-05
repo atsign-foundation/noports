@@ -44,13 +44,20 @@ void main() {
   ) async {
     final bloc = _RecordingProfileBloc(state);
     addTearDown(bloc.close);
+    final cache = ProfileCacheCubit(MockProfileRepository());
+    addTearDown(cache.close);
+    final queue = ProfileStartQueueCubit(cache);
+    addTearDown(queue.close);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
-          body: BlocProvider<ProfileBloc>.value(
-            value: bloc,
+          body: MultiBlocProvider(
+            providers: [
+              BlocProvider<ProfileStartQueueCubit>.value(value: queue),
+              BlocProvider<ProfileBloc>.value(value: bloc),
+            ],
             child: const ProfileStatusIndicator(),
           ),
         ),
