@@ -654,7 +654,12 @@ void main() {
       final c = callbacks();
       final ids = await putPolicy(c);
 
-      final response = await deleteRule(c, 'ClientGroup', ids['admins']!);
+      final response = await deleteRule(
+        c,
+        'ClientGroup',
+        ids['admins']!,
+        reqId: 5,
+      );
 
       expect(response.respType, AtRpcRespType.success);
       expect(idsOf(cache.clientGroups), [ids['ops']]);
@@ -662,6 +667,20 @@ void main() {
       expect(idsOf(cache.serviceACLs), [ids['ops2222']]);
       expect(idsOf(cache.clients), [ids['alice']]);
       expect(idsOf(cache.services), [ids['dev']]);
+      expect(response.payload['removed'], [
+        {'target': 'ClientGroupMember', 'id': ids['aliceAdmins']},
+        {'target': 'ServiceACL', 'id': ids['admins22']},
+      ]);
+      expect(
+        events.map((e) => (e['event'], e['target'], e['rule']['id'])),
+        [
+          ('ruleChanged', 'ClientGroupMember', ids['aliceAdmins']),
+          ('ruleChanged', 'ServiceACL', ids['admins22']),
+          ('ruleChanged', 'ClientGroup', ids['admins']),
+        ],
+      );
+      expect(events.map((e) => e['reqId']), everyElement(5));
+      expect(events.map((e) => e['operation']), everyElement('delete'));
     });
   });
 
@@ -861,6 +880,30 @@ void main() {
       expect(newGroup, isNot(group));
       expect(newDaemon, isNot(daemon));
       expect(newService, isNot(service));
+    });
+  });
+
+  group('Given a membership and a service ACL, each the highest id of its'
+      ' kind and each deleted', () {
+    test('when a new one of each kind is put, then each gets an id no rule of'
+        ' its kind has had', () async {
+      final c = callbacks();
+      final ids = await putPolicy(c);
+      await deleteRule(c, 'ClientGroupMember', ids['aliceOps']!);
+      await deleteRule(c, 'ServiceACL', ids['ops2222']!);
+
+      final membership = await putRule(c, 'ClientGroupMember', {
+        'clientId': ids['alice'],
+        'clientGroupId': ids['ops'],
+      });
+      final serviceACL = await putRule(c, 'ServiceACL', {
+        'serviceId': ids['dev'],
+        'clientGroupId': ids['ops'],
+        'permitOpen': 'localhost:2222',
+      });
+
+      expect(membership, isNot(anyOf(ids['aliceAdmins'], ids['aliceOps'])));
+      expect(serviceACL, isNot(anyOf(ids['admins22'], ids['ops2222'])));
     });
   });
 

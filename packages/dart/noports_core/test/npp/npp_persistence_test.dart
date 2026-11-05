@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:logging/logging.dart';
@@ -362,6 +363,12 @@ void main() {
         expect(loaded.clients, isEmpty, reason: store.name);
         expect(loaded.clientGroupMembers, isEmpty, reason: store.name);
         expect(loaded.clientGroups, hasLength(2), reason: store.name);
+        expect(await store.savedNames('client'), isEmpty, reason: store.name);
+        expect(
+          await store.savedNames('client_group_member'),
+          isEmpty,
+          reason: '${store.name}: membership rows left in storage',
+        );
       }
     });
   });
@@ -371,6 +378,16 @@ void main() {
     test('when npp loads its rules again and a new client is put, then its id'
         ' is one no rule has had', () async {
       for (final store in await newStores()) {
+        if (store is _FileStore) {
+          final had = await _inNewIsolate(
+            store.directory.path,
+            _putAndDeleteClient,
+          );
+          final bob = await _inNewIsolate(store.directory.path, _putClient);
+
+          expect(had, isNot(contains(bob.single)), reason: store.name);
+          continue;
+        }
         final c = await start(store);
         final had = <String>{
           await putRule(c, 'ClientGroup', {'name': 'admins'}),
@@ -537,6 +554,7 @@ void main() {
           'name': 'Carol',
           'atSign': '@carol',
         });
+        await store.save('client', 'dave', {'name': 'Dave', 'atSign': '@dave'});
 
         late NppCache loaded;
         final warnings = await warningsDuring(
@@ -552,6 +570,11 @@ void main() {
           warnings.where((w) => w.contains('alice-id')),
           isNotEmpty,
           reason: store.name,
+        );
+        expect(
+          warnings.where((w) => w.contains('dave')),
+          isNotEmpty,
+          reason: '${store.name}: a rule with no id',
         );
         if (!store.foldsNames) {
           expect(
@@ -589,6 +612,10 @@ abstract class _Store {
   /// Saves [json] as a [kind] rule (`client`, `service_acl` …) under [name],
   /// as something other than npp's own hooks might.
   Future<void> save(String kind, String name, Map<String, dynamic> json);
+
+  /// The names of the [kind] rules the store holds, read from the store
+  /// itself rather than through npp's loader.
+  Future<List<String>> savedNames(String kind);
 }
 
 class _FileStore implements _Store {
@@ -616,6 +643,14 @@ class _FileStore implements _Store {
       File('${directory.path}/${name}_$kind.json').writeAsString(
         jsonEncode(json),
       );
+
+  @override
+  Future<List<String>> savedNames(String kind) async => directory
+      .listSync()
+      .map((f) => f.uri.pathSegments.last)
+      .where((n) => n.endsWith('_$kind.json'))
+      .map((n) => n.substring(0, n.length - '_$kind.json'.length))
+      .toList();
 }
 
 class _AtServerStore implements _Store {
@@ -658,4 +693,93 @@ class _AtServerStore implements _Store {
     );
     expect(saved, isTrue, reason: 'saving $kind $name');
   }
+
+  @override
+  Future<List<String>> savedNames(String kind) async => [
+    for (final AtKey key in await atClient.getAtKeys(
+      regex: '.*\\.$kind\\.npp\\.sshnp',
+      useRemoteAtServer: true,
+    ))
+      key.key,
+  ];
+}
+
+/// Runs [npp] in a new isolate, as a new npp process on the policy files in
+/// [directory] would, and returns the ids it reports.
+Future<List<String>> _inNewIsolate(
+  String directory,
+  Future<List<String>> Function(String directory) npp,
+) => Isolate.run(() => npp(directory));
+
+/// A manager RPC handler on the rules in [directory], as npp has after it
+/// starts with `--persistence-method file`.
+Future<ManagerRpcCallbacks> _startOnFiles(String directory) async {
+  final cache = await nppCacheFromFiles(policyDirectory: Directory(directory));
+  return ManagerRpcCallbacks(
+    atClient: _PolicyAtClient(),
+    nppCache: cache,
+    binariesVersion: '1.2.3',
+    handler: NppRequestHandler(nppCache: cache),
+    nppOperationHooks: nppOperationHooksForFiles(
+      policyDirectory: Directory(directory),
+    ),
+    policyAtsign: '@policy'.toAtsign(),
+    onEvent: (_) async {},
+  );
+}
+
+Future<String> _putOnFiles(
+  ManagerRpcCallbacks c,
+  String target,
+  Map<String, dynamic> value,
+) async {
+  final response = await c.handleRequest(
+    AtRpcReq(
+      reqId: 1,
+      payload: {'operation': 'put', 'target': target, 'value': value},
+    ),
+    '@policy',
+  );
+  return response.payload.values.whereType<String>().single;
+}
+
+/// Puts group admins and client alice, deletes alice, and returns both ids.
+Future<List<String>> _putAndDeleteClient(String directory) async {
+  final c = await _startOnFiles(directory);
+  final group = await _putOnFiles(c, 'ClientGroup', {'name': 'admins'});
+  final alice = await _putOnFiles(c, 'Client', {
+    'name': 'Alice',
+    'atSign': '@alice',
+  });
+  await c.handleRequest(
+    AtRpcReq(
+      reqId: 2,
+      payload: {
+        'operation': 'delete',
+        'target': 'Client',
+        'value': {'clientId': alice},
+      },
+    ),
+    '@policy',
+  );
+  return [group, alice];
+}
+
+/// Puts client bob and returns its id.
+Future<List<String>> _putClient(String directory) async => [
+  await _putOnFiles(await _startOnFiles(directory), 'Client', {
+    'name': 'Bob',
+    'atSign': '@bob',
+  }),
+];
+
+/// The policy Atsign's client, as far as a manager RPC handler on files
+/// asks it anything.
+class _PolicyAtClient implements AtClient {
+  @override
+  String? getCurrentAtSign() => '@policy';
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('$invocation');
 }
