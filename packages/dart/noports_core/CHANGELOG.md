@@ -13,6 +13,7 @@
 - fix: npp assigns every new rule a random id
 - fix: improved handling of npp rule ids, references and deletes
 - fix: tightened how npp loads its stored rules
+- fix: tightened how npp_atserver loads its policy groups
 
 # 6.16.0
 

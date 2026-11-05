@@ -41,6 +41,7 @@
 * fix: npp assigns every new rule a random id
 * fix: improved handling of npp rule ids, references and deletes
 * fix: tightened how npp loads its stored rules
+* fix: tightened how npp_atserver loads its policy groups
 * build: at_client 3.15.0-rc8, at_auth 4.0.0-rc7, at_lookup 3.7.0-rc4,
   at_onboarding_cli 2.0.0-rc8 and at_utils 3.5.0
 
