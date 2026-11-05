@@ -23,23 +23,14 @@ class ProfileSelectAllBox extends StatelessWidget {
         final List<String>? shown = list is ProfileListLoaded
             ? list.profiles.where(shownRow).toList()
             : null;
-        return BlocSelector<
-          ProfilesSelectedCubit,
-          ProfilesSelectedState,
-          (bool, bool)?
-        >(
-          selector: (ProfilesSelectedState state) {
-            if (shown == null) return null;
+        return BlocBuilder<ProfilesSelectedCubit, ProfilesSelectedState>(
+          builder: (BuildContext context, ProfilesSelectedState state) {
+            if (shown == null) return gap0;
             // one - whether all elements are selected or not
             var allChecked =
                 shown.isNotEmpty && state.selected.containsAll(shown);
             // two - whether some elements are selected or not
-            var anyChecked = state.selected.isNotEmpty;
-            return (allChecked, anyChecked);
-          },
-          builder: (BuildContext context, (bool, bool)? tuple) {
-            if (tuple == null) return gap0;
-            var (allChecked, someChecked) = tuple;
+            var someChecked = state.selected.isNotEmpty;
             return Checkbox(
               tristate: true,
               value: allChecked
@@ -57,7 +48,7 @@ class ProfileSelectAllBox extends StatelessWidget {
                     context.read<ProfilesSelectedCubit>().deselectAll();
                   case true: // None checked transitions to true with tristate: true
                   case false: // Some checked transitions to false with tristate: true
-                    context.read<ProfilesSelectedCubit>().selectOnly(shown!);
+                    context.read<ProfilesSelectedCubit>().selectOnly(shown);
                 }
               },
             );

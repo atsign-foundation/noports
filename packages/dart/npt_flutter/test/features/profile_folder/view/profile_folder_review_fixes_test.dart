@@ -758,6 +758,44 @@ void main() {
       expect(selectedCubit.state.selected, isEmpty);
       expect(boxValue(tester), isFalse);
     });
+
+    testWidgets('is no longer all checked once a collapsed folder opens', (
+      WidgetTester tester,
+    ) async {
+      await pumpSelectAll(
+        tester,
+        const ProfileFoldersLoaded(
+          ProfileFolderData(
+            folders: <ProfileFolder>[collapsedServers, desktopsFolder],
+          ),
+        ),
+      );
+      await tapSelectAll(tester);
+      expect(boxValue(tester), isTrue);
+
+      folderBloc.emit(const ProfileFoldersLoaded(twoFolders));
+      await tester.pumpAndSettle();
+
+      expect(boxValue(tester), isNull);
+      await tapSelectAll(tester);
+      expect(selectedCubit.state.selected, allUuids.toSet());
+    });
+
+    testWidgets('is all checked once a search shows only selected ones', (
+      WidgetTester tester,
+    ) async {
+      await pumpSelectAll(tester, const ProfileFoldersLoaded(twoFolders));
+      selectedCubit.selectOnly(<String>{sshUuid});
+      await tester.pumpAndSettle();
+      expect(boxValue(tester), isNull);
+
+      filterCubit.search('alpha');
+      await tester.pumpAndSettle();
+
+      expect(boxValue(tester), isTrue);
+      await tapSelectAll(tester);
+      expect(selectedCubit.state.selected, isEmpty);
+    });
   });
 
   group('folder name dialog', () {
