@@ -99,9 +99,9 @@ jobs:
       - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
         with:
           sdk: stable
-      - name: dart pub get
+      - name: dart pub get enforce lockfile
         working-directory: tests/npe2e
-        run: dart pub get
+        run: dart pub get --enforce-lockfile
       - name: dart analyze
         working-directory: tests/npe2e
         run: dart analyze
