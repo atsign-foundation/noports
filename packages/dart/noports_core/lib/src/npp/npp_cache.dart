@@ -367,6 +367,28 @@ class NppCache {
     return missing;
   }
 
+  /// Removes every rule naming a rule this cache doesn't hold, services before
+  /// the service ACLs naming them, and returns each one removed with its
+  /// kind and [missingReferences].
+  List<(String, PolicyEntry, List<String>)> removeRulesNamingMissing() {
+    final List<(String, PolicyEntry, List<String>)> removed = [];
+    final Map<String, Set<PolicyEntry>> rulesByKind = {
+      'Service': _services,
+      'ServiceACL': _serviceACLs,
+      'ClientGroupMember': _clientGroupMembers,
+    };
+    rulesByKind.forEach((kind, rules) {
+      for (final PolicyEntry rule in rules.toList()) {
+        final List<String> missing = missingReferences(rule);
+        if (missing.isNotEmpty) {
+          rules.remove(rule);
+          removed.add((kind, rule, missing));
+        }
+      }
+    });
+    return removed;
+  }
+
   bool deleteClient(final String clientId) {
     final Client client = getClientById(clientId);
     return _clients.remove(client);

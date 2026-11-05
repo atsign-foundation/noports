@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/npp.dart';
 import 'package:test/test.dart';
@@ -317,6 +318,24 @@ void main() {
     policy,
   );
 
+  /// The messages npp's rule loaders log at warning while [body] runs.
+  Future<List<String>> warningsDuring(Future<void> Function() body) async {
+    final logger = nppPersistenceLogger.logger;
+    final level = logger.level;
+    logger.level = Level.ALL;
+    final warnings = <String>[];
+    final subscription = logger.onRecord
+        .where((r) => r.level == Level.WARNING)
+        .listen((r) => warnings.add(r.message));
+    try {
+      await body();
+    } finally {
+      await subscription.cancel();
+      logger.level = level;
+    }
+    return warnings;
+  }
+
   group('Given each persistence method and a client with memberships', () {
     test('when the client is deleted and npp loads its rules again, then'
         ' neither the client nor its memberships are loaded', () async {
@@ -368,6 +387,117 @@ void main() {
         });
 
         expect(had, isNot(contains(bob)), reason: store.name);
+      }
+    });
+  });
+
+  group("Given each persistence method and a stored membership naming a client"
+      " that isn't stored", () {
+    test('when npp loads its rules, then that membership is not loaded and a'
+        ' warning names it', () async {
+      const rule = 'rule-under-test';
+      const missing = 'missing-id';
+      const group = {'id': 'g1', 'name': 'g1'};
+      const client = {'id': 'c1', 'name': 'Alice', 'atSign': '@alice'};
+      const daemon = {'id': 'd1', 'atSign': '@daemon'};
+      const service = {
+        'id': 's1',
+        'daemonId': 'd1',
+        'deviceName': 'dev',
+        'deviceGroupName': 'grp',
+      };
+      final cases = <String, List<(String, Map<String, dynamic>)>>{
+        'membership naming a missing client': [
+          ('client_group', group),
+          ('client_group_member', {
+            'id': rule,
+            'clientId': missing,
+            'clientGroupId': 'g1',
+          }),
+        ],
+        'membership naming a missing group': [
+          ('client', client),
+          ('client_group_member', {
+            'id': rule,
+            'clientId': 'c1',
+            'clientGroupId': missing,
+          }),
+        ],
+        'service naming a missing daemon': [
+          ('service', {...service, 'id': rule, 'daemonId': missing}),
+        ],
+        'service ACL naming a missing service': [
+          ('client_group', group),
+          ('service_acl', {
+            'id': rule,
+            'serviceId': missing,
+            'clientGroupId': 'g1',
+            'permitOpen': 'localhost:22',
+          }),
+        ],
+        'service ACL naming a missing group': [
+          ('daemon', daemon),
+          ('service', service),
+          ('service_acl', {
+            'id': rule,
+            'serviceId': 's1',
+            'clientGroupId': missing,
+            'permitOpen': 'localhost:22',
+          }),
+        ],
+      };
+
+      for (final MapEntry(key: what, value: rules) in cases.entries) {
+        for (final store in await newStores()) {
+          final reason = '${store.name}: $what';
+          for (final (kind, json) in rules) {
+            await store.save(kind, json['id'] as String, json);
+          }
+
+          late NppCache loaded;
+          final warnings = await warningsDuring(
+            () async => loaded = await store.load(),
+          );
+
+          expect(ruleIds(loaded), isNot(contains(rule)), reason: reason);
+          expect(ruleIds(loaded), hasLength(rules.length - 1), reason: reason);
+          expect(
+            warnings.where((w) => w.contains(rule) && w.contains(missing)),
+            isNotEmpty,
+            reason: reason,
+          );
+        }
+      }
+    });
+  });
+
+  group("Given each persistence method and a stored rule whose key or file"
+      " name doesn't carry its id", () {
+    test('when npp loads its rules, then that rule is not loaded and a warning'
+        ' names it', () async {
+      for (final store in await newStores()) {
+        await store.save('client', 'alice', {
+          'id': 'alice-id',
+          'name': 'Alice',
+          'atSign': '@alice',
+        });
+        await store.save('client', 'bob-id', {
+          'id': 'bob-id',
+          'name': 'Bob',
+          'atSign': '@bob',
+        });
+
+        late NppCache loaded;
+        final warnings = await warningsDuring(
+          () async => loaded = await store.load(),
+        );
+
+        expect(ruleIds(loaded), ['bob-id'], reason: store.name);
+        expect(
+          warnings.where((w) => w.contains('alice-id')),
+          isNotEmpty,
+          reason: store.name,
+        );
       }
     });
   });

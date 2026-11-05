@@ -2,12 +2,45 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart';
+import 'package:meta/meta.dart';
 
 import './models.dart';
 import './npp_cache.dart';
 import './npp_operation_hooks.dart';
 
 final AtSignLogger _logger = AtSignLogger('npp');
+
+/// The logger the rule loaders and hooks write to.
+@visibleForTesting
+AtSignLogger get nppPersistenceLogger => _logger;
+
+/// The kinds of rule a policy file name can end with, as `<id>_<kind>.json`.
+const List<String> _fileKinds = [
+  'client',
+  'client_group',
+  'client_group_member',
+  'daemon',
+  'service',
+  'service_acl',
+];
+
+/// Whether [name], the part of a stored rule's key or file name before its
+/// kind, is the id in [json]. Compared folded, as atServer keys are.
+bool _carriesId(String name, Map<String, dynamic> json) {
+  final Object? id = json['id'];
+  return id is String && id.toLowerCase() == name.toLowerCase();
+}
+
+/// Removes from [nppCache] each rule naming a rule it doesn't hold, with a
+/// warning for each.
+void _removeRulesNamingMissing(NppCache nppCache) {
+  for (final (kind, rule, missing) in nppCache.removeRulesNamingMissing()) {
+    _logger.warning(
+      'Not loading $kind with id ${rule.id}: it names '
+      '${missing.join(' and ')}, which is not loaded',
+    );
+  }
+}
 
 /// Generate policy cache by fetching AtKeys from the atServer.
 /// 1) *.client.policy_v2.sshnp --> a client (e.g. "@alice", "Alice")
@@ -47,13 +80,6 @@ Future<NppCache> nppCacheFromAtServer({
 
   _logger.info('Found ${allPolicyAtKeys.length} policy AtKeys from atServer');
 
-  int clientsLoaded = 0;
-  int clientGroupsLoaded = 0;
-  int clientGroupMembersLoaded = 0;
-  int daemonsLoaded = 0;
-  int servicesLoaded = 0;
-  int serviceACLsLoaded = 0;
-
   for (final AtKey atKey in allPolicyAtKeys) {
     try {
       final String keyValue = atKey.key;
@@ -85,6 +111,14 @@ Future<NppCache> nppCacheFromAtServer({
       }
 
       final Map<String, dynamic> jsonData = jsonDecode(atValue.value);
+      final String name = keyParts.sublist(0, keyParts.length - 2).join('.');
+      if (!_carriesId(name, jsonData)) {
+        _logger.warning(
+          'Not loading ${atKey.toString()}: its key does not carry its id '
+          '${jsonData['id']}',
+        );
+        continue;
+      }
 
       if (entityType == 'client_group_member') {
         final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(
@@ -94,42 +128,36 @@ Future<NppCache> nppCacheFromAtServer({
         _logger.finer(
           'Loaded ClientGroupMember into cache: id=${clientGroupMember.id}, clientId=${clientGroupMember.clientId}, clientGroupId=${clientGroupMember.clientGroupId}',
         );
-        clientGroupMembersLoaded++;
       } else if (entityType == 'client_group') {
         final ClientGroup clientGroup = ClientGroup.fromJson(jsonData);
         nppCache.putClientGroup(clientGroup);
         _logger.finer(
           'Loaded ClientGroup into cache: id=${clientGroup.id}, name=${clientGroup.name}',
         );
-        clientGroupsLoaded++;
       } else if (entityType == 'client') {
         final Client client = Client.fromJson(jsonData);
         nppCache.putClient(client);
         _logger.finer(
           'Loaded Client into cache: id=${client.id}, atSign=${client.atSign}, name=${client.name}',
         );
-        clientsLoaded++;
       } else if (entityType == 'daemon') {
         final Daemon daemon = Daemon.fromJson(jsonData);
         nppCache.putDaemon(daemon);
         _logger.finer(
           'Loaded Daemon into cache: id=${daemon.id}, atSign=${daemon.atSign}',
         );
-        daemonsLoaded++;
       } else if (entityType == 'service_acl') {
         final ServiceACL serviceACL = ServiceACL.fromJson(jsonData);
         nppCache.putServiceACL(serviceACL);
         _logger.finer(
           'Loaded ServiceACL into cache: id=${serviceACL.id}, serviceId=${serviceACL.serviceId}, clientGroupId=${serviceACL.clientGroupId}, permitOpen=${serviceACL.permitOpen}',
         );
-        serviceACLsLoaded++;
       } else if (entityType == 'service') {
         final Service service = Service.fromJson(jsonData);
         nppCache.putService(service);
         _logger.finer(
           'Loaded Service into cache: id=${service.id}, daemonId=${service.daemonId}, deviceName=${service.deviceName}, deviceGroupName=${service.deviceGroupName}',
         );
-        servicesLoaded++;
       } else {
         _logger.warning(
           'Skipping atKey with unrecognized entity type: $entityType (atKey: ${atKey.toString()})',
@@ -144,14 +172,17 @@ Future<NppCache> nppCacheFromAtServer({
     }
   }
 
-  _logger.info('Loaded $clientsLoaded Clients into cache');
-  _logger.info('Loaded $clientGroupsLoaded ClientGroups into cache');
+  _removeRulesNamingMissing(nppCache);
+  _logger.info('Loaded ${nppCache.clients.length} Clients into cache');
   _logger.info(
-    'Loaded $clientGroupMembersLoaded ClientGroupMembers into cache',
+    'Loaded ${nppCache.clientGroups.length} ClientGroups into cache',
   );
-  _logger.info('Loaded $daemonsLoaded Daemons into cache');
-  _logger.info('Loaded $servicesLoaded Services into cache');
-  _logger.info('Loaded $serviceACLsLoaded ServiceACLs into cache');
+  _logger.info(
+    'Loaded ${nppCache.clientGroupMembers.length} ClientGroupMembers into cache',
+  );
+  _logger.info('Loaded ${nppCache.daemons.length} Daemons into cache');
+  _logger.info('Loaded ${nppCache.services.length} Services into cache');
+  _logger.info('Loaded ${nppCache.serviceACLs.length} ServiceACLs into cache');
 
   return nppCache;
 }
@@ -209,6 +240,20 @@ Future<NppCache> nppCacheFromFiles({
       try {
         final String fileContent = await file.readAsString();
         final Map<String, dynamic> jsonData = jsonDecode(fileContent);
+        final String suffix = _fileKinds
+            .map((kind) => '_$kind.json')
+            .firstWhere(fileName.endsWith);
+        final String name = fileName.substring(
+          0,
+          fileName.length - suffix.length,
+        );
+        if (!_carriesId(name, jsonData)) {
+          _logger.warning(
+            'Not loading ${file.path}: its name does not carry its id '
+            '${jsonData['id']}',
+          );
+          continue;
+        }
 
         // Check most specific suffixes first to avoid mismatches
         if (fileName.endsWith('_client_group_member.json')) {
@@ -257,6 +302,7 @@ Future<NppCache> nppCacheFromFiles({
       _logger.finer('Skipping non-file entity: ${file.path}');
     }
   }
+  _removeRulesNamingMissing(nppCache);
   _logger.info(
     'Finished populating NppCache from files in ${policyDirectory.path}',
   );
