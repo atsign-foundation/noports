@@ -340,7 +340,7 @@ NppOperationHooks nppOperationHooksForAtServer({
     final bool success = await atClient.put(
       AtKey()
         ..key =
-            '${client.id}' // e.g. '1' (assigned before pre-hook is called)
+            '${client.id}' // assigned before pre-hook is called
         ..namespace =
             'client.$domainNamespace.$baseNamespace' // client.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
@@ -362,7 +362,7 @@ NppOperationHooks nppOperationHooksForAtServer({
     final bool success = await atClient.put(
       AtKey()
         ..key =
-            '${clientGroup.id}' // e.g. '1' (assigned before pre-hook is called)
+            '${clientGroup.id}' // assigned before pre-hook is called
         ..namespace =
             'client_group.$domainNamespace.$baseNamespace' // client_group.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
@@ -386,7 +386,7 @@ NppOperationHooks nppOperationHooksForAtServer({
     final bool success = await atClient.put(
       AtKey()
         ..key =
-            '${clientGroupMember.id}' // e.g. '1' (assigned before pre-hook is called)
+            '${clientGroupMember.id}' // assigned before pre-hook is called
         ..namespace =
             'client_group_member.$domainNamespace.$baseNamespace' // client_group_member.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
@@ -409,7 +409,7 @@ NppOperationHooks nppOperationHooksForAtServer({
     final bool success = await atClient.put(
       AtKey()
         ..key =
-            '${daemon.id}' // e.g. '1' (assigned before pre-hook is called)
+            '${daemon.id}' // assigned before pre-hook is called
         ..namespace =
             'daemon.$domainNamespace.$baseNamespace' // daemon.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
@@ -430,7 +430,7 @@ NppOperationHooks nppOperationHooksForAtServer({
     final bool success = await atClient.put(
       AtKey()
         ..key =
-            '${service.id}' // e.g. '1' (assigned before pre-hook is called)
+            '${service.id}' // assigned before pre-hook is called
         ..namespace =
             'service.$domainNamespace.$baseNamespace' // service.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'
@@ -453,7 +453,7 @@ NppOperationHooks nppOperationHooksForAtServer({
     final bool success = await atClient.put(
       AtKey()
         ..key =
-            '${serviceACL.id}' // e.g. '1' (assigned before pre-hook is called)
+            '${serviceACL.id}' // assigned before pre-hook is called
         ..namespace =
             'service_acl.$domainNamespace.$baseNamespace' // service_acl.policy_v2.sshnp
         ..sharedBy = atClient.getCurrentAtSign(), // e.g. '@policy'

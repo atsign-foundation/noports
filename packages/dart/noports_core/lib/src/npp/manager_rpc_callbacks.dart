@@ -23,9 +23,9 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
   final Future<void> Function(Map<String, dynamic> event) onEvent;
   final AtSignLogger logger = AtSignLogger('ManagerRpcCallbacks');
 
-  /// Lets one put or delete run at a time, from choosing its id to sending its
-  /// event, so two can't get the same id and events follow the changes in
-  /// order. Reads aren't held by it.
+  /// Lets one put or delete run at a time, from checking it to sending its
+  /// events, so a put can't name a rule a delete is removing and events
+  /// follow the changes in order. Reads aren't held by it.
   final Mutex _changes = Mutex();
 
   /// Set by [stopChanges]: once true, puts and deletes are refused.
