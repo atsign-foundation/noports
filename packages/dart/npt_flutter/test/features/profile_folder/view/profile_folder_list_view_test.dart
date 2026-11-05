@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -436,6 +438,62 @@ void main() {
     runningCubit.prepare(sshUuid);
     await tester.pumpAndSettle();
     expect(stop().onPressed, isNotNull);
+  });
+
+  group('stop all with a connection still connecting', () {
+    Finder stopButton() => find.descendant(
+      of: header(serversFolder.uuid),
+      matching: find.ancestor(
+        of: find.byTooltip(strings.folderStopAll),
+        matching: find.byType(IconButton),
+      ),
+    );
+
+    Future<void> pumpServers(WidgetTester tester) async {
+      createRealBlocs();
+      folderBloc.emit(
+        const ProfileFoldersLoaded(
+          ProfileFolderData(folders: <ProfileFolder>[serversFolder]),
+        ),
+      );
+      await tester.pumpWidget(buildSubject(tester));
+      await tester.pump();
+    }
+
+    testWidgets('stops it', (WidgetTester tester) async {
+      when(profileBlocs[sshUuid]!.state).thenReturn(
+        ProfileStarting(sshUuid, profile: buildProfile(sshUuid, 'ssh')),
+      );
+      await pumpServers(tester);
+
+      await tester.tap(stopButton().first);
+      await tester.pump();
+
+      verify(profileBlocs[sshUuid]!.add(const ProfileStopEvent())).called(1);
+    });
+
+    testWidgets('is off again once it stops', (WidgetTester tester) async {
+      final StreamController<ProfileState> states =
+          StreamController<ProfileState>.broadcast();
+      addTearDown(states.close);
+      ProfileState current = ProfileStarting(
+        sshUuid,
+        profile: buildProfile(sshUuid, 'ssh'),
+      );
+      when(profileBlocs[sshUuid]!.state).thenAnswer((_) => current);
+      when(profileBlocs[sshUuid]!.stream).thenAnswer((_) => states.stream);
+      await pumpServers(tester);
+      expect(
+        tester.widget<IconButton>(stopButton().first).onPressed,
+        isNotNull,
+      );
+
+      current = ProfileStopping(sshUuid, profile: buildProfile(sshUuid, 'ssh'));
+      states.add(current);
+      await tester.pump();
+
+      expect(tester.widget<IconButton>(stopButton().first).onPressed, isNull);
+    });
   });
 
   testWidgets('deleting a folder through its menu keeps the connections', (

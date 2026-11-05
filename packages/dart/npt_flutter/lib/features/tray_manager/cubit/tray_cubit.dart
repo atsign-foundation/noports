@@ -118,7 +118,6 @@ class TrayCubit extends LoggingCubit<TrayState> {
     onboardingState ??= context.read<OnboardingCubit>().state;
     profileFolderState ??= context.read<ProfileFolderBloc>().state;
     profilesRunningState ??= context.read<ProfilesRunningCubit>().state;
-    var startQueue = context.read<ProfileStartQueueCubit>().state;
     var showSettings = onboardingState.status == OnboardingStatus.onboarded;
 
     await init;
@@ -138,14 +137,13 @@ class TrayCubit extends LoggingCubit<TrayState> {
       var startable = uuids.where(folder.startsWithAll).toList();
       var startableRunning = startable.where(running.containsKey).length;
       var anyRunning = uuids.any(running.containsKey);
-      var waiting = uuids.any(startQueue.isWaiting);
       var statusIcon = anyRunning ? ProfileStatus.on.emoji : ProfileStatus.off.emoji;
       return MenuItem(
         label: '$statusIcon ${folder.name} ($startableRunning/${startable.length})',
         onClick: (_) {
           var context = App.navState.currentContext;
           if (context == null) return;
-          if (anyRunning || waiting) {
+          if (ProfileFolderActions.canStopAll(context, uuids)) {
             ProfileFolderActions.stopAll(context, uuids);
           } else {
             ProfileFolderActions.startAll(context, startable);

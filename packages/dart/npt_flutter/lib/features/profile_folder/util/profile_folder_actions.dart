@@ -7,6 +7,7 @@ import 'package:npt_flutter/features/profile_folder/widgets/profile_folder_name_
 import 'package:npt_flutter/features/profile_folder/widgets/profile_folder_picker_dialog.dart';
 import 'package:npt_flutter/features/profile_folder/widgets/profile_folder_start_all_dialog.dart';
 import 'package:npt_flutter/features/profile_list/bloc/profile_list_bloc.dart';
+import 'package:npt_flutter/features/profile_list/cubit/profiles_running_cubit.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/pages/profile_form_page.dart';
@@ -33,11 +34,30 @@ class ProfileFolderActions {
     final ProfileCacheCubit cache = context.read<ProfileCacheCubit>();
     for (final String uuid in uuids) {
       final ProfileBloc bloc = cache.getProfileBloc(uuid);
-      if (bloc.state is ProfileStarted) {
-        bloc.add(const ProfileStopEvent());
-      }
+      if (_isStoppable(bloc.state)) bloc.add(const ProfileStopEvent());
     }
   }
+
+  /// Whether [stopAll] has anything among [uuids] to stop or to take out of
+  /// the start queue.
+  static bool canStopAll(BuildContext context, Iterable<String> uuids) {
+    final Map<String, Object?> running = context
+        .read<ProfilesRunningCubit>()
+        .state
+        .socketConnectors;
+    final ProfileStartQueueCubit queue = context.read<ProfileStartQueueCubit>();
+    final ProfileCacheCubit cache = context.read<ProfileCacheCubit>();
+    return uuids.any(
+      (String uuid) =>
+          running.containsKey(uuid) ||
+          queue.isWaiting(uuid) ||
+          _isStoppable(cache.getProfileBloc(uuid).state),
+    );
+  }
+
+  /// Connecting and waiting to retry count too, as a row's stop does.
+  static bool _isStoppable(ProfileState state) =>
+      state is ProfileStarted || state is ProfileStarting;
 
   static Future<void> chooseStartAll(
     BuildContext context,

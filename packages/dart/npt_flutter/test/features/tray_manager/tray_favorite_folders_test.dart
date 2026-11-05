@@ -470,6 +470,23 @@ void main() {
       ]);
       expect(sentEvents(), isEmpty);
     });
+
+    testWidgets('stops a connection that is still connecting', (
+      WidgetTester tester,
+    ) async {
+      await pumpTray(tester, folders: const <ProfileFolder>[servers]);
+      final ProfileLoadedState db =
+          profileBlocs[dbUuid]!.state as ProfileLoadedState;
+      profileBlocs[dbUuid]!.setState(
+        ProfileStarting(dbUuid, profile: db.profile),
+      );
+      await tray.reload();
+
+      await tapMenuItem('$off Servers (0/2)');
+
+      expect(startQueue.added, isEmpty);
+      expect(profileBlocs[dbUuid]!.events.single, isA<ProfileStopEvent>());
+    });
   });
 
   group('while the tray listens for changes', () {

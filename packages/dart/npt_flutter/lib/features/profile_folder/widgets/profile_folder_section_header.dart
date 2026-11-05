@@ -1,6 +1,9 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:npt_flutter/features/profile/cubit/profile_start_queue_cubit.dart';
+import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_folder/bloc/profile_folder_bloc.dart';
 import 'package:npt_flutter/features/profile_folder/models/profile_folder.dart';
 import 'package:npt_flutter/features/profile_folder/util/profile_folder_actions.dart';
@@ -144,7 +147,7 @@ class ProfileFolderSectionHeader extends StatelessWidget {
   }
 }
 
-class _StartStopButtons extends StatelessWidget {
+class _StartStopButtons extends StatefulWidget {
   final List<String> uuids;
   final int? total;
   final ProfileFolder? folder;
@@ -155,7 +158,58 @@ class _StartStopButtons extends StatelessWidget {
   });
 
   @override
+  State<_StartStopButtons> createState() => _StartStopButtonsState();
+}
+
+class _StartStopButtonsState extends State<_StartStopButtons> {
+  /// A connection still connecting or waiting to retry is missing from
+  /// [ProfilesRunningState], so each one's own state is watched for Stop all.
+  final List<StreamSubscription<ProfileState>> _watched =
+      <StreamSubscription<ProfileState>>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _watch();
+  }
+
+  @override
+  void didUpdateWidget(_StartStopButtons oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (listEquals(oldWidget.uuids, widget.uuids)) return;
+    _unwatch();
+    _watch();
+  }
+
+  @override
+  void dispose() {
+    _unwatch();
+    super.dispose();
+  }
+
+  void _watch() {
+    final ProfileCacheCubit cache = context.read<ProfileCacheCubit>();
+    for (final String uuid in widget.uuids) {
+      _watched.add(
+        cache.getProfileBloc(uuid).stream.listen((ProfileState _) {
+          if (mounted) setState(() {});
+        }),
+      );
+    }
+  }
+
+  void _unwatch() {
+    for (final StreamSubscription<ProfileState> watched in _watched) {
+      watched.cancel();
+    }
+    _watched.clear();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final List<String> uuids = widget.uuids;
+    final int? total = widget.total;
+    final ProfileFolder? folder = widget.folder;
     final AppLocalizations strings = AppLocalizations.of(context)!;
     final List<String> startable = uuids
         .where((String uuid) => folder?.startsWithAll(uuid) ?? true)
@@ -163,7 +217,6 @@ class _StartStopButtons extends StatelessWidget {
     return BlocBuilder<ProfileStartQueueCubit, ProfileStartQueueState>(
       builder: (BuildContext context, ProfileStartQueueState queue) {
         final List<String> waiting = queue.waiting;
-        final bool anyWaiting = uuids.any(waiting.contains);
         return BlocBuilder<ProfilesRunningCubit, ProfilesRunningState>(
           buildWhen: (ProfilesRunningState a, ProfilesRunningState b) =>
               uuids.any(
@@ -177,7 +230,10 @@ class _StartStopButtons extends StatelessWidget {
             final bool canStart = startable.any(
               (String uuid) => !isRunning(uuid) && !waiting.contains(uuid),
             );
-            final bool canStop = uuids.any(isRunning) || anyWaiting;
+            final bool canStop = ProfileFolderActions.canStopAll(
+              context,
+              uuids,
+            );
             return Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
