@@ -103,8 +103,12 @@ class NppCache {
     Set<ClientGroupMember> matchedClientGroupMembers = _clientGroupMembers.where((clientGroupMember) => clientGroupMember.clientId == clientId).toSet();
     Set<ClientGroup> matchedClientGroups = {};
     for(final ClientGroupMember clientGroupMember in matchedClientGroupMembers) {
-      final ClientGroup clientGroup = getClientGroupById(clientGroupMember.clientGroupId);
-      matchedClientGroups.add(clientGroup);
+      final ClientGroup? clientGroup = _clientGroups
+          .where((cg) => cg.id == clientGroupMember.clientGroupId)
+          .firstOrNull;
+      if (clientGroup != null) {
+        matchedClientGroups.add(clientGroup);
+      }
     }
     return matchedClientGroups;
   }
