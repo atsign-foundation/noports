@@ -72,6 +72,15 @@ class PolicyServiceWithAtClient extends PolicyServiceInMem
       sharedBy: atClient.getCurrentAtSign(),
     );
     for (final AtKey groupKey in groupKeys) {
+      if (!sameAtsign(groupKey.sharedBy, atClient.getCurrentAtSign()) ||
+          groupKey.sharedWith != null ||
+          groupKey.metadata.isPublic) {
+        logger.warning(
+          'Not loading $groupKey: only keys the policy atSign owns, unshared,'
+          ' are loaded',
+        );
+        continue;
+      }
       logger.info('Loading group from atKey: $groupKey');
       final v = await atClient.get(
         groupKey,

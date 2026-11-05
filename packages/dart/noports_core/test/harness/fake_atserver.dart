@@ -159,6 +159,11 @@ class FakeAtSign {
   /// The record stored under [key], or null.
   FakeRecord? recordAt(String key) => _keyStore[key.toLowerCase()];
 
+  /// Stores [value] under [key] exactly as given, as a record that no client
+  /// of this atSign could have written itself.
+  void storeAsIs(String key, String value) =>
+      _store(key, FakeRecord(value, _newMetadata()));
+
   void _store(String key, FakeRecord record) {
     writes.add(key.toLowerCase());
     _keyStore[key.toLowerCase()] = record;

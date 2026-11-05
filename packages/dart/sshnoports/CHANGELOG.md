@@ -44,6 +44,10 @@
   logging Atsign
 * fix: npp saves manager RPC deletes and checks puts before saving them, so
   the rules it loads on a restart match the changes it accepted
+* fix: npp assigns every new rule a random id
+* fix: improved handling of npp rule ids, references and deletes
+* fix: tightened how npp loads its stored rules
+* fix: tightened how npp_atserver loads its policy groups
 * feat: at_activate is at_client_cli's at_activate: its --help reports
   at_client_cli's version, and --arx and --drx match app and device names
   whatever their case
