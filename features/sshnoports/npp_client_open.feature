@@ -1,4 +1,4 @@
-Feature: npp_client says why the policy atSign could not be opened
+Feature: npp_client says why the atSign it signs in as could not be opened
 
   npp_client opens the atSign -a names from its atKeys file as the other
   NoPorts CLIs do, and when it cannot, says which it was: the atServer
