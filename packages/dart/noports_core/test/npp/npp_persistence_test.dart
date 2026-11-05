@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/npa.dart';
 import 'package:noports_core/npp.dart';
 import 'package:noports_core/src/npp/npp_persistence.dart'
     show nppPersistenceLogger;
@@ -584,6 +585,145 @@ void main() {
           );
         }
       }
+    });
+  });
+
+  group("Given the policy atSign's atServer holds a `cached:`, `public:` or"
+      " shared key in npp's namespace", () {
+    test('when npp loads its rules from the atServer, then it loads only keys'
+        ' the policy atSign owns, unshared, and skips the rest with a'
+        ' warning', () async {
+      const policy = '@policy';
+      const other = '@other';
+      final harness = NoPortsHarness.create(atSigns: {policy, other});
+      final policyClient = await harness.openClient(policy, namespace: 'sshnp');
+      final otherClient = await harness.openClient(other, namespace: 'sshnp');
+      final hooks = nppOperationHooksForAtServer(
+        atClient: policyClient,
+        domainNamespace: 'npp',
+        baseNamespace: 'sshnp',
+      );
+      await hooks.prePutDaemon!(Daemon(id: 'd1', atSign: '@device'));
+      await hooks.prePutService!(
+        Service(
+          id: 's1',
+          daemonId: 'd1',
+          deviceName: 'dev',
+          deviceGroupName: 'grp',
+        ),
+      );
+
+      for (final (kind, json) in [
+        ('client', {'id': 'c1', 'name': 'Other', 'atSign': other}),
+        ('client_group', {'id': 'g1', 'name': 'g'}),
+        (
+          'client_group_member',
+          {'id': 'm1', 'clientId': 'c1', 'clientGroupId': 'g1'},
+        ),
+        (
+          'service_acl',
+          {
+            'id': 'a1',
+            'serviceId': 's1',
+            'clientGroupId': 'g1',
+            'permitOpen': 'localhost:22',
+          },
+        ),
+      ]) {
+        final result = await otherClient.notificationService.notify(
+          NotificationParams.forUpdate(
+            AtKey()
+              ..key = json['id'] as String
+              ..namespace = '$kind.npp.sshnp'
+              ..sharedWith = policy
+              ..sharedBy = other
+              ..metadata = (Metadata()..ttr = 3600),
+            value: jsonEncode(json),
+          ),
+          encryptValue: false,
+        );
+        expect(
+          result.notificationStatusEnum,
+          NotificationStatusEnum.delivered,
+          reason: 'notifying $kind',
+        );
+      }
+      expect(
+        await policyClient.put(
+          AtKey.public('c2', namespace: 'client.npp.sshnp', sharedBy: policy)
+              .build(),
+          jsonEncode({'id': 'c2', 'name': 'Public', 'atSign': '@public'}),
+          putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
+        ),
+        isTrue,
+        reason: 'saving a public key',
+      );
+      expect(
+        await policyClient.put(
+          AtKey()
+            ..key = 'c3'
+            ..namespace = 'client.npp.sshnp'
+            ..sharedBy = policy
+            ..sharedWith = other,
+          jsonEncode({'id': 'c3', 'name': 'Shared', 'atSign': '@shared'}),
+          putRequestOptions: PutRequestOptions()
+            ..shouldEncrypt = false
+            ..useRemoteAtServer = true,
+        ),
+        isTrue,
+        reason: 'saving a shared key',
+      );
+      harness.server[policy].storeAsIs(
+        'c4.client.npp.sshnp@other',
+        jsonEncode({'id': 'c4', 'name': 'Owned', 'atSign': '@owned'}),
+      );
+
+      final logger = nppPersistenceLogger.logger;
+      final level = logger.level;
+      logger.level = Level.ALL;
+      final warnings = <String>[];
+      final subscription = logger.onRecord
+          .where((r) => r.level == Level.WARNING)
+          .listen((r) => warnings.add(r.message));
+      late NppCache loaded;
+      try {
+        loaded = await nppCacheFromAtServer(
+          atClient: policyClient,
+          baseNamespace: 'sshnp',
+          domainNamespace: 'npp',
+        );
+      } finally {
+        await subscription.cancel();
+        logger.level = level;
+      }
+
+      expect(ruleIds(loaded), unorderedEquals(['d1', 's1']));
+      for (final skipped in [
+        'cached:@policy:c1.client.npp.sshnp@other',
+        'cached:@policy:g1.client_group.npp.sshnp@other',
+        'cached:@policy:m1.client_group_member.npp.sshnp@other',
+        'cached:@policy:a1.service_acl.npp.sshnp@other',
+        'public:c2.client.npp.sshnp@policy',
+        '@other:c3.client.npp.sshnp@policy',
+        'c4.client.npp.sshnp@other',
+      ]) {
+        expect(
+          warnings.where(
+            (w) => w.contains(skipped) && w.contains('owns, unshared'),
+          ),
+          isNotEmpty,
+          reason: 'a warning naming $skipped',
+        );
+      }
+      final check = await NppRequestHandler(nppCache: loaded).doAuthCheck(
+        NPAAuthCheckRequest(
+          daemonAtsign: '@device',
+          daemonDeviceName: 'dev',
+          daemonDeviceGroupName: 'grp',
+          clientAtsign: other,
+        ),
+      );
+      expect(check.permitOpen, isEmpty);
     });
   });
 }

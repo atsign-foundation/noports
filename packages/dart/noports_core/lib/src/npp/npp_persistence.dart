@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:at_client/at_client.dart';
 import 'package:meta/meta.dart';
 
+import 'package:noports_core/src/common/validation_utils.dart';
+
 import './models.dart';
 import './npp_cache.dart';
 import './npp_operation_hooks.dart';
@@ -91,6 +93,15 @@ Future<NppCache> nppCacheFromAtServer({
 
   for (final AtKey atKey in allPolicyAtKeys) {
     try {
+      if (!sameAtsign(atKey.sharedBy, atClient.getCurrentAtSign()) ||
+          atKey.sharedWith != null ||
+          atKey.metadata.isPublic) {
+        _logger.warning(
+          'Not loading ${atKey.toString()}: npp loads only keys the policy '
+          'atSign owns, unshared',
+        );
+        continue;
+      }
       final String keyValue = atKey.key;
       if (keyValue.isEmpty) {
         _logger.warning('AtKey has null or empty key: ${atKey.toString()}');
