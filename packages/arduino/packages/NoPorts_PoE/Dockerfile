@@ -95,7 +95,7 @@ RUN BOOT=$(find /root/.platformio/packages -name "boot_app0.bin" | head -1) && \
 # ---------------------------------------------------------------------------
 # Stage 2: minimal nginx web server
 # ---------------------------------------------------------------------------
-FROM nginx:stable-alpine@sha256:47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951
+FROM nginx:stable-alpine@sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949
 
 RUN rm /etc/nginx/conf.d/default.conf
 COPY packages/NoPorts_PoE/web/nginx.conf /etc/nginx/conf.d/noports.conf
