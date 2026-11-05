@@ -82,21 +82,21 @@ class ProfilePopupMenuButton extends StatelessWidget {
               }
             },
           ),
-          if (folderState.editable)
-            PopupMenuItem(
-              child: Row(
-                children: [
-                  PhosphorIcon(PhosphorIcons.folderOpen()),
-                  gapW10,
-                  Text(strings.folderMoveToFolder),
-                ],
-              ),
-              onTap: () {
-                var state = context.read<ProfileBloc>().state;
-                if (state is! ProfileLoadedState) return;
-                ProfileFolderActions.moveToFolder(context, [state.uuid]);
-              },
+          PopupMenuItem(
+            enabled: folderState.editable,
+            child: Row(
+              children: [
+                PhosphorIcon(PhosphorIcons.folderOpen()),
+                gapW10,
+                Text(strings.folderMoveToFolder),
+              ],
             ),
+            onTap: () {
+              var state = context.read<ProfileBloc>().state;
+              if (state is! ProfileLoadedState) return;
+              ProfileFolderActions.moveToFolder(context, [state.uuid]);
+            },
+          ),
           PopupMenuItem(
             child: Row(
               children: [

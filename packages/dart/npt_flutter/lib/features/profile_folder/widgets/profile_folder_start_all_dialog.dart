@@ -53,12 +53,13 @@ class _ProfileFolderStartAllDialogState
                       title: BlocBuilder<ProfileBloc, ProfileState>(
                         bloc: cache.getProfileBloc(uuid),
                         builder: (BuildContext context, ProfileState state) =>
-                            Text(
-                              state is ProfileLoadedState
-                                  ? state.profile.displayName
-                                  : strings.profileStatusLoading,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            Text(switch (state) {
+                              ProfileLoadedState(:final profile) =>
+                                profile.displayName,
+                              ProfileFailedLoad() =>
+                                strings.errorProfileLoadFailed,
+                              _ => strings.profileStatusLoading,
+                            }, overflow: TextOverflow.ellipsis),
                       ),
                       onChanged: (bool? checked) => setState(() {
                         if (checked ?? false) {

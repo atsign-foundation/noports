@@ -375,7 +375,7 @@ void main() {
       }
     });
 
-    testWidgets('leave Move to folder out of the connection menu', (
+    testWidgets('grey out Move to folder in the connection menu', (
       WidgetTester tester,
     ) async {
       await pumpListView(tester, unsynced);
@@ -384,7 +384,19 @@ void main() {
 
       expect(find.text(strings.edit), findsOneWidget);
       expect(find.text(strings.duplicate), findsOneWidget);
-      expect(find.text(strings.folderMoveToFolder), findsNothing);
+      expect(
+        tester
+            .widget<PopupMenuItem<dynamic>>(
+              find.ancestor(
+                of: find.text(strings.folderMoveToFolder),
+                matching: find.byWidgetPredicate(
+                  (Widget w) => w is PopupMenuItem,
+                ),
+              ),
+            )
+            .enabled,
+        isFalse,
+      );
     });
 
     testWidgets('keep Start all and Stop all working', (
@@ -1745,6 +1757,27 @@ void main() {
         );
         expect(
           find.descendant(of: tile(rdpUuid), matching: find.text('Beta')),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('are listed as failed when they cannot load', (
+        WidgetTester tester,
+      ) async {
+        const ProfileState failed = ProfileFailedLoad(sshUuid);
+        when(profileBlocs[sshUuid]!.state).thenReturn(failed);
+        when(
+          profileBlocs[sshUuid]!.stream,
+        ).thenAnswer((_) => Stream<ProfileState>.value(failed));
+        await pumpListView(tester, loadedWith(collapsedServers));
+
+        await openChooser(tester, collapsedServers);
+
+        expect(
+          find.descendant(
+            of: tile(sshUuid),
+            matching: find.text(strings.errorProfileLoadFailed),
+          ),
           findsOneWidget,
         );
       });
