@@ -317,6 +317,34 @@ void main() {
     policy,
   );
 
+  group('Given each persistence method and a client with memberships', () {
+    test('when the client is deleted and npp loads its rules again, then'
+        ' neither the client nor its memberships are loaded', () async {
+      for (final store in await newStores()) {
+        final c = await start(store);
+        final alice = await putRule(c, 'Client', {
+          'name': 'Alice',
+          'atSign': '@alice',
+        });
+        for (final name in ['admins', 'ops']) {
+          final group = await putRule(c, 'ClientGroup', {'name': name});
+          await putRule(c, 'ClientGroupMember', {
+            'clientId': alice,
+            'clientGroupId': group,
+          });
+        }
+
+        final response = await deleteRule(c, 'Client', alice);
+
+        expect(response.respType, AtRpcRespType.success, reason: store.name);
+        final loaded = await store.load();
+        expect(loaded.clients, isEmpty, reason: store.name);
+        expect(loaded.clientGroupMembers, isEmpty, reason: store.name);
+        expect(loaded.clientGroups, hasLength(2), reason: store.name);
+      }
+    });
+  });
+
   group('Given each persistence method and the client with the highest id'
       ' deleted', () {
     test('when npp loads its rules again and a new client is put, then its id'

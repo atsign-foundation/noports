@@ -603,6 +603,9 @@ void main() {
     return ids;
   }
 
+  Iterable<String?> idsOf(Iterable<PolicyEntry> rules) =>
+      rules.map((r) => r.id);
+
   Future<List<String>> permitOpenFor(String clientAtsign) async =>
       (await NppRequestHandler(nppCache: cache).doAuthCheck(
         NPAAuthCheckRequest(
@@ -612,6 +615,166 @@ void main() {
           clientAtsign: clientAtsign,
         ),
       )).permitOpen;
+
+  group('Given a client who is a member of two groups', () {
+    test('when the client is deleted, then its memberships are deleted with it'
+        ' and both groups remain', () async {
+      final c = callbacks();
+      final ids = await putPolicy(c);
+
+      final response = await deleteRule(c, 'Client', ids['alice']!, reqId: 4);
+
+      expect(response.respType, AtRpcRespType.success);
+      expect(cache.clients, isEmpty);
+      expect(cache.clientGroupMembers, isEmpty);
+      expect(
+        idsOf(cache.clientGroups),
+        unorderedEquals([ids['admins'], ids['ops']]),
+      );
+      expect(response.payload['removed'], [
+        {'target': 'ClientGroupMember', 'id': ids['aliceAdmins']},
+        {'target': 'ClientGroupMember', 'id': ids['aliceOps']},
+      ]);
+      expect(
+        events.map((e) => (e['event'], e['target'], e['rule']['id'])),
+        [
+          ('ruleChanged', 'ClientGroupMember', ids['aliceAdmins']),
+          ('ruleChanged', 'ClientGroupMember', ids['aliceOps']),
+          ('ruleChanged', 'Client', ids['alice']),
+        ],
+      );
+      expect(events.map((e) => e['reqId']), everyElement(4));
+      expect(events.map((e) => e['operation']), everyElement('delete'));
+    });
+  });
+
+  group('Given a group with members and service ACLs', () {
+    test('when the group is deleted, then its memberships and service ACLs are'
+        ' deleted with it and the clients and services remain', () async {
+      final c = callbacks();
+      final ids = await putPolicy(c);
+
+      final response = await deleteRule(c, 'ClientGroup', ids['admins']!);
+
+      expect(response.respType, AtRpcRespType.success);
+      expect(idsOf(cache.clientGroups), [ids['ops']]);
+      expect(idsOf(cache.clientGroupMembers), [ids['aliceOps']]);
+      expect(idsOf(cache.serviceACLs), [ids['ops2222']]);
+      expect(idsOf(cache.clients), [ids['alice']]);
+      expect(idsOf(cache.services), [ids['dev']]);
+    });
+  });
+
+  group('Given a service with service ACLs', () {
+    test('when the service is deleted, then its service ACLs are deleted with'
+        ' it and the daemon remains', () async {
+      final c = callbacks();
+      final ids = await putPolicy(c);
+
+      final response = await deleteRule(c, 'Service', ids['dev']!);
+
+      expect(response.respType, AtRpcRespType.success);
+      expect(cache.services, isEmpty);
+      expect(cache.serviceACLs, isEmpty);
+      expect(idsOf(cache.daemons), [ids['daemon']]);
+      expect(cache.clientGroupMembers, hasLength(2));
+    });
+  });
+
+  group('Given a daemon that a service names', () {
+    test('when the daemon is deleted, then the delete is refused, the answer'
+        ' says how many services name it, and nothing is changed or stored',
+        () async {
+      final stored = <String>{};
+      final c = callbacks(hooks: storing(stored));
+      final ids = await putPolicy(c);
+      final storedBefore = Set.of(stored);
+
+      final response = await deleteRule(c, 'Daemon', ids['daemon']!);
+
+      expect(response.respType, AtRpcRespType.error);
+      expect(response.message, contains('1 service'));
+      expect(idsOf(cache.daemons), [ids['daemon']]);
+      expect(idsOf(cache.services), [ids['dev']]);
+      expect(cache.serviceACLs, hasLength(2));
+      expect(stored, storedBefore);
+      expect(events.single['event'], 'ruleChangeFailed');
+    });
+  });
+
+  group('Given a daemon no service names', () {
+    test('when the daemon is deleted, then it is deleted', () async {
+      final c = callbacks();
+      final daemon = await putRule(c, 'Daemon', {'atSign': '@daemon'});
+
+      final response = await deleteRule(c, 'Daemon', daemon);
+
+      expect(response.respType, AtRpcRespType.success);
+      expect(cache.daemons, isEmpty);
+    });
+  });
+
+  group('Given a membership', () {
+    test('when it is deleted, then the client and the group remain', () async {
+      final c = callbacks();
+      final ids = await putPolicy(c);
+
+      final response = await deleteRule(
+        c,
+        'ClientGroupMember',
+        ids['aliceAdmins']!,
+      );
+
+      expect(response.respType, AtRpcRespType.success);
+      expect(idsOf(cache.clientGroupMembers), [ids['aliceOps']]);
+      expect(idsOf(cache.clients), [ids['alice']]);
+      expect(
+        idsOf(cache.clientGroups),
+        unorderedEquals([ids['admins'], ids['ops']]),
+      );
+    });
+  });
+
+  group("Given a pre-delete hook that fails for a client's second membership",
+      () {
+    test('when the client is deleted, then the answer is an error, the client'
+        ' and that membership stay in the cache and in storage, the first'
+        ' membership stays deleted, and deleting the client again removes the'
+        ' rest', () async {
+      final stored = <String>{};
+      final hooks = storing(stored);
+      var membershipDeletes = 0;
+      var failSecond = true;
+      hooks.preDeleteClientGroupMember = (r) async {
+        membershipDeletes++;
+        if (failSecond && membershipDeletes == 2) {
+          throw Exception('disk full');
+        }
+        stored.remove('ClientGroupMember:${r.id}');
+      };
+      final c = callbacks(hooks: hooks);
+      final ids = await putPolicy(c);
+
+      final first = await deleteRule(c, 'Client', ids['alice']!);
+
+      expect(first.respType, AtRpcRespType.error);
+      expect(first.message, contains('disk full'));
+      expect(idsOf(cache.clients), [ids['alice']]);
+      expect(idsOf(cache.clientGroupMembers), [ids['aliceOps']]);
+      expect(stored, contains('Client:${ids['alice']}'));
+      expect(stored, contains('ClientGroupMember:${ids['aliceOps']}'));
+      expect(stored, isNot(contains('ClientGroupMember:${ids['aliceAdmins']}')));
+
+      failSecond = false;
+      final second = await deleteRule(c, 'Client', ids['alice']!);
+
+      expect(second.respType, AtRpcRespType.success);
+      expect(cache.clients, isEmpty);
+      expect(cache.clientGroupMembers, isEmpty);
+      expect(stored, isNot(contains('Client:${ids['alice']}')));
+      expect(stored, isNot(contains('ClientGroupMember:${ids['aliceOps']}')));
+    });
+  });
 
   group('Given the client with the highest id was deleted', () {
     test('when a new client is put, then its id is one no rule has had and it'
@@ -794,6 +957,84 @@ void main() {
       expect(cache.clientGroupMembers, isEmpty);
       expect(cache.services, hasLength(1));
       expect(cache.serviceACLs, isEmpty);
+    });
+  });
+
+  group('Given a put of a membership naming a client is waiting in its pre-put'
+      ' hook', () {
+    test('when the client is deleted, then the delete runs after the put and'
+        ' removes that membership too', () async {
+      final gate = Completer<void>();
+      final hooks = NppOperationHooks();
+      final c = callbacks(hooks: hooks);
+      final alice = await putRule(c, 'Client', {
+        'name': 'Alice',
+        'atSign': '@alice',
+      });
+      final admins = await putRule(c, 'ClientGroup', {'name': 'admins'});
+      hooks.prePutClientGroupMember = (_) => gate.future;
+      final order = <String>[];
+
+      final put = putValue(c, 'ClientGroupMember', {
+        'clientId': alice,
+        'clientGroupId': admins,
+      }, reqId: 2).then((r) {
+        order.add('put');
+        return r;
+      });
+      await Future<void>.delayed(Duration.zero);
+      final delete = deleteRule(c, 'Client', alice, reqId: 3).then((r) {
+        order.add('delete');
+        return r;
+      });
+      await Future<void>.delayed(Duration.zero);
+      gate.complete();
+
+      expect((await put).respType, AtRpcRespType.success);
+      expect((await delete).respType, AtRpcRespType.success);
+      expect(order, ['put', 'delete']);
+      expect(cache.clients, isEmpty);
+      expect(cache.clientGroupMembers, isEmpty);
+    });
+  });
+
+  group("Given a pre-delete hook that waits while a client's memberships are"
+      ' being deleted', () {
+    test('when an auth check for that client runs during the wait, then it'
+        ' grants no more than it did before the delete began', () async {
+      final reached = Completer<void>();
+      final gate = Completer<void>();
+      final c = callbacks(
+        hooks: NppOperationHooks(
+          preDeleteClientGroupMember: (_) async {
+            if (!reached.isCompleted) reached.complete();
+            await gate.future;
+          },
+        ),
+      );
+      final ids = await putPolicy(c);
+      final before = await permitOpenFor('@alice');
+      expect(before, unorderedEquals(['localhost:22', 'localhost:2222']));
+
+      final delete = deleteRule(c, 'Client', ids['alice']!);
+      await Future.any([reached.future, delete]);
+      expect(
+        reached.isCompleted,
+        isTrue,
+        reason: 'the delete reaches the memberships before it finishes',
+      );
+      final during = await permitOpenFor('@alice');
+      final clientIds = idsOf(cache.clients).toSet();
+
+      expect(during, everyElement(isIn(before)));
+      expect(
+        cache.clientGroupMembers.map((m) => m.clientId),
+        everyElement(isIn(clientIds)),
+        reason: 'every membership names a client that exists',
+      );
+      gate.complete();
+      expect((await delete).respType, AtRpcRespType.success);
+      expect(await permitOpenFor('@alice'), isEmpty);
     });
   });
 }
