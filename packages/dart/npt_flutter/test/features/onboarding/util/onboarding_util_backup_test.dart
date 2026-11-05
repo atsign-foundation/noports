@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -40,8 +42,8 @@ void main() {
       );
       expect(dropped, ['e1'], reason: 'e1 is named as dropped');
       expect(
-        keychain.callsOutsideWriteSection,
-        0,
+        keychain.callSections.toSet(),
+        equals({1}),
         reason: 'the entry is read and replaced in one write section',
       );
       expect(
@@ -262,8 +264,11 @@ class _Client extends Fake implements AtClient {
 
 /// A keychain holding [alice] for @alice, or nothing at all. [writes] counts
 /// the entries added, replaced and removed, [absentAfterAWrite] the writes
-/// that left nothing for @alice, and [callsOutsideWriteSection] the reads and
-/// writes made outside [writing]. While [refusesWrites], every write throws.
+/// that left nothing for @alice, and [callSections] holds the [writing]
+/// section each read and write ran in, numbered from 1 in the order the
+/// sections began, or null for one made outside any. A [writing] call inside
+/// a section joins it, as `KeychainStorage.writing` does. While
+/// [refusesWrites], every write throws.
 class _Keychain extends Fake implements KeychainStorage {
   _Keychain([AtKeys? alice]) {
     if (alice != null) entries['@alice'] = alice;
@@ -272,13 +277,13 @@ class _Keychain extends Fake implements KeychainStorage {
   final entries = <String, AtKeys>{};
   var writes = 0;
   var absentAfterAWrite = 0;
-  var callsOutsideWriteSection = 0;
+  final callSections = <int?>[];
   var refusesWrites = false;
-  var _writeSections = 0;
+  var _sectionsBegun = 0;
 
-  void _call() {
-    if (_writeSections == 0) callsOutsideWriteSection++;
-  }
+  int? get _section => Zone.current[this] as int?;
+
+  void _call() => callSections.add(_section);
 
   void _write(void Function() change) {
     _call();
@@ -299,12 +304,8 @@ class _Keychain extends Fake implements KeychainStorage {
 
   @override
   Future<T> writing<T>(Future<T> Function() action) async {
-    _writeSections++;
-    try {
-      return await action();
-    } finally {
-      _writeSections--;
-    }
+    if (_section != null) return action();
+    return runZoned(action, zoneValues: {this: ++_sectionsBegun});
   }
 
   @override
