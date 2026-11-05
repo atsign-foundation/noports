@@ -25,6 +25,16 @@
   at_client types in noports_core's API are at_client 4's
 - **BREAKING CHANGE** refactor: `ActivateFlows.activate` requires a
   `storage`
+- feat: npp logs manager RPC rule changes and refused senders to the event
+  logging Atsign
+- fix: npp saves a manager RPC delete, so the rule isn't loaded again on the
+  next start
+- fix: npp checks a manager RPC put before saving it, so a rejected put saves
+  nothing
+- fix: npp makes one manager RPC change at a time, so two puts can't share an
+  id
+- feat: `NppOperationHooks` has pre-delete hooks, `NppCache` has `checkPut*`,
+  and `npp.dart` exports npp's rule loaders and hooks
 
 # 6.16.0
 
