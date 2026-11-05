@@ -406,48 +406,93 @@ void main() {
         'deviceName': 'dev',
         'deviceGroupName': 'grp',
       };
-      final cases = <String, List<(String, Map<String, dynamic>)>>{
-        'membership naming a missing client': [
-          ('client_group', group),
-          ('client_group_member', {
-            'id': rule,
-            'clientId': missing,
-            'clientGroupId': 'g1',
-          }),
-        ],
-        'membership naming a missing group': [
-          ('client', client),
-          ('client_group_member', {
-            'id': rule,
-            'clientId': 'c1',
-            'clientGroupId': missing,
-          }),
-        ],
-        'service naming a missing daemon': [
-          ('service', {...service, 'id': rule, 'daemonId': missing}),
-        ],
-        'service ACL naming a missing service': [
-          ('client_group', group),
-          ('service_acl', {
-            'id': rule,
-            'serviceId': missing,
-            'clientGroupId': 'g1',
-            'permitOpen': 'localhost:22',
-          }),
-        ],
-        'service ACL naming a missing group': [
-          ('daemon', daemon),
-          ('service', service),
-          ('service_acl', {
-            'id': rule,
-            'serviceId': 's1',
-            'clientGroupId': missing,
-            'permitOpen': 'localhost:22',
-          }),
-        ],
+      final cases = <
+        String,
+        ({
+          List<(String, Map<String, dynamic>)> stored,
+          List<String> loads,
+          String named,
+        })
+      >{
+        'membership naming a missing client': (
+          stored: [
+            ('client_group', group),
+            ('client_group_member', {
+              'id': rule,
+              'clientId': missing,
+              'clientGroupId': 'g1',
+            }),
+          ],
+          loads: ['g1'],
+          named: 'Client with id $missing',
+        ),
+        'membership naming a missing group': (
+          stored: [
+            ('client', client),
+            ('client_group_member', {
+              'id': rule,
+              'clientId': 'c1',
+              'clientGroupId': missing,
+            }),
+          ],
+          loads: ['c1'],
+          named: 'ClientGroup with id $missing',
+        ),
+        'service naming a missing daemon': (
+          stored: [
+            ('service', {...service, 'id': rule, 'daemonId': missing}),
+          ],
+          loads: [],
+          named: 'Daemon with id $missing',
+        ),
+        'service ACL naming a missing service': (
+          stored: [
+            ('client_group', group),
+            ('service_acl', {
+              'id': rule,
+              'serviceId': missing,
+              'clientGroupId': 'g1',
+              'permitOpen': 'localhost:22',
+            }),
+          ],
+          loads: ['g1'],
+          named: 'Service with id $missing',
+        ),
+        'service ACL naming a missing group': (
+          stored: [
+            ('daemon', daemon),
+            ('service', service),
+            ('service_acl', {
+              'id': rule,
+              'serviceId': 's1',
+              'clientGroupId': missing,
+              'permitOpen': 'localhost:22',
+            }),
+          ],
+          loads: ['d1', 's1'],
+          named: 'ClientGroup with id $missing',
+        ),
+        'service ACL naming a service that names a missing daemon': (
+          stored: [
+            ('client_group', group),
+            ('service', {...service, 'daemonId': missing}),
+            ('service_acl', {
+              'id': rule,
+              'serviceId': 's1',
+              'clientGroupId': 'g1',
+              'permitOpen': 'localhost:22',
+            }),
+          ],
+          loads: ['g1'],
+          named: 'Service with id s1',
+        ),
       };
 
-      for (final MapEntry(key: what, value: rules) in cases.entries) {
+      for (final MapEntry(
+            key: what,
+            value: (stored: rules, :loads, :named),
+          )
+          in cases.entries) {
         for (final store in await newStores()) {
           final reason = '${store.name}: $what';
           for (final (kind, json) in rules) {
@@ -459,10 +504,9 @@ void main() {
             () async => loaded = await store.load(),
           );
 
-          expect(ruleIds(loaded), isNot(contains(rule)), reason: reason);
-          expect(ruleIds(loaded), hasLength(rules.length - 1), reason: reason);
+          expect(ruleIds(loaded), unorderedEquals(loads), reason: reason);
           expect(
-            warnings.where((w) => w.contains(rule) && w.contains(missing)),
+            warnings.where((w) => w.contains(rule) && w.contains(named)),
             isNotEmpty,
             reason: reason,
           );
@@ -481,8 +525,8 @@ void main() {
           'name': 'Alice',
           'atSign': '@alice',
         });
-        await store.save('client', 'bob-id', {
-          'id': 'bob-id',
+        await store.save('client', 'Bob-ID', {
+          'id': 'Bob-ID',
           'name': 'Bob',
           'atSign': '@bob',
         });
@@ -492,7 +536,7 @@ void main() {
           () async => loaded = await store.load(),
         );
 
-        expect(ruleIds(loaded), ['bob-id'], reason: store.name);
+        expect(ruleIds(loaded), ['Bob-ID'], reason: store.name);
         expect(
           warnings.where((w) => w.contains('alice-id')),
           isNotEmpty,

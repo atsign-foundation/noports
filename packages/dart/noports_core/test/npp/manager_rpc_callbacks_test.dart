@@ -776,6 +776,47 @@ void main() {
     });
   });
 
+  group("Given a pre-delete hook that fails for a service's second service ACL",
+      () {
+    test('when the service is deleted, then the answer is an error, the service'
+        ' and that service ACL stay in the cache and in storage, the first'
+        ' service ACL stays deleted, and deleting the service again removes the'
+        ' rest', () async {
+      final stored = <String>{};
+      final hooks = storing(stored);
+      var serviceACLDeletes = 0;
+      var failSecond = true;
+      hooks.preDeleteServiceACL = (r) async {
+        serviceACLDeletes++;
+        if (failSecond && serviceACLDeletes == 2) {
+          throw Exception('disk full');
+        }
+        stored.remove('ServiceACL:${r.id}');
+      };
+      final c = callbacks(hooks: hooks);
+      final ids = await putPolicy(c);
+
+      final first = await deleteRule(c, 'Service', ids['dev']!);
+
+      expect(first.respType, AtRpcRespType.error);
+      expect(first.message, contains('disk full'));
+      expect(idsOf(cache.services), [ids['dev']]);
+      expect(idsOf(cache.serviceACLs), [ids['ops2222']]);
+      expect(stored, contains('Service:${ids['dev']}'));
+      expect(stored, contains('ServiceACL:${ids['ops2222']}'));
+      expect(stored, isNot(contains('ServiceACL:${ids['admins22']}')));
+
+      failSecond = false;
+      final second = await deleteRule(c, 'Service', ids['dev']!);
+
+      expect(second.respType, AtRpcRespType.success);
+      expect(cache.services, isEmpty);
+      expect(cache.serviceACLs, isEmpty);
+      expect(stored, isNot(contains('Service:${ids['dev']}')));
+      expect(stored, isNot(contains('ServiceACL:${ids['ops2222']}')));
+    });
+  });
+
   group('Given the client with the highest id was deleted', () {
     test('when a new client is put, then its id is one no rule has had and it'
         ' is a member of no group', () async {
