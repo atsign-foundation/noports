@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/name_sort.dart';
 import 'package:npt_flutter/util/uuid.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -130,10 +131,11 @@ class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
         .toString()
         .trimRight();
     final String typed = name.toLowerCase();
+    final String needle = nameSortKey(name);
     final List<DropdownMenuEntry<String>> matches = entries
         .where(
           (DropdownMenuEntry<String> e) =>
-              e.label.toLowerCase().contains(typed),
+              nameSortKey(e.label).contains(needle),
         )
         .toList();
     if (typed.isEmpty ||

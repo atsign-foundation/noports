@@ -32,13 +32,12 @@ class ProfileFormView extends StatelessWidget {
         profileIds: [uuid],
       );
     }
-    if (folders.data.folderForProfile(uuid)?.uuid == chosen.folderId) {
-      return null;
-    }
+    final String? target = folders.data.folderById(chosen.folderId ?? '')?.uuid;
+    if (folders.data.folderForProfile(uuid)?.uuid == target) return null;
     return ProfileFolderMoveProfilesEvent(
       profileIds: [uuid],
-      folderId: chosen.folderId,
-      visibleUnfiled: chosen.folderId == null
+      folderId: target,
+      visibleUnfiled: target == null
           ? ProfileFolderActions.visibleUnfiled(context)
           : null,
     );

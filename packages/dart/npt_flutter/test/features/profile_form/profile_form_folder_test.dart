@@ -554,6 +554,23 @@ void main() {
       expect(menuLabels(), <String>['Desktops', '${strings.folderNew}: desk']);
     });
 
+    testWidgets('lists a folder whose name has accents the typed name lacks', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(
+        tester,
+        folders: const ProfileFolderData(
+          folders: <ProfileFolder>[
+            ProfileFolder(uuid: 'g-ecran', name: 'Écran'),
+          ],
+        ),
+      );
+      await openMenu(tester);
+      await typeInField(tester, 'ecran');
+
+      expect(menuLabels(), <String>['Écran', '${strings.folderNew}: ecran']);
+    });
+
     for (final String typed in <String>['Servers', 'servers', 'SERVERS']) {
       testWidgets('does not offer to create "$typed" when Servers exists', (
         WidgetTester tester,
@@ -1700,6 +1717,27 @@ void main() {
       await pickEntry(tester, strings.folderNone);
 
       folderRepo.stored = withConnectionIn('g-desktops');
+      folderBloc.add(const ProfileFolderRefreshEvent(caughtUp: true));
+      await tester.pumpAndSettle();
+      expect(fieldText(tester), strings.folderNone);
+
+      await submit(tester);
+      await settle(tester);
+
+      expect(currentData().folderForProfile(uuid), isNull);
+    });
+
+    testWidgets('after the picked folder was deleted by another device: '
+        'Submit leaves it in no folder, as the field shows', (
+      WidgetTester tester,
+    ) async {
+      await pumpForm(tester, folders: withConnectionIn('g-servers'));
+      await openMenu(tester);
+      await pickEntry(tester, 'Desktops');
+
+      folderRepo.stored = ProfileFolderData(
+        folders: <ProfileFolder>[withConnectionIn('g-servers').folders.first],
+      );
       folderBloc.add(const ProfileFolderRefreshEvent(caughtUp: true));
       await tester.pumpAndSettle();
       expect(fieldText(tester), strings.folderNone);
