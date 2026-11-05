@@ -708,4 +708,92 @@ void main() {
       expect(cache.serviceACLs, isEmpty);
     });
   });
+
+  group('Given a manager holds the id of a client that has since been deleted',
+      () {
+    test('when it puts a membership naming that id, then the put is refused and'
+        ' nothing is stored', () async {
+      final stored = <String>{};
+      final c = callbacks(hooks: storing(stored));
+      final alice = await putRule(c, 'Client', {
+        'name': 'Alice',
+        'atSign': '@alice',
+      });
+      final admins = await putRule(c, 'ClientGroup', {'name': 'admins'});
+      await deleteRule(c, 'Client', alice);
+      await putRule(c, 'Client', {'name': 'Bob', 'atSign': '@bob'});
+      final storedBefore = Set.of(stored);
+
+      final response = await putValue(c, 'ClientGroupMember', {
+        'clientId': alice,
+        'clientGroupId': admins,
+      });
+
+      expect(response.respType, AtRpcRespType.error);
+      expect(stored, storedBefore);
+      expect(cache.clientGroupMembers, isEmpty);
+    });
+  });
+
+  group('Given no rule has a given id', () {
+    test('when a membership, service or service ACL naming that id is put, then'
+        ' the put is refused and nothing is stored', () async {
+      final stored = <String>{};
+      final c = callbacks(hooks: storing(stored));
+      final alice = await putRule(c, 'Client', {
+        'name': 'Alice',
+        'atSign': '@alice',
+      });
+      final group = await putRule(c, 'ClientGroup', {'name': 'g1'});
+      final daemon = await putRule(c, 'Daemon', {'atSign': '@daemon'});
+      final service = await putRule(c, 'Service', {
+        'daemonId': daemon,
+        'deviceName': 'dev',
+        'deviceGroupName': 'grp',
+      });
+      final storedBefore = Set.of(stored);
+      const missing = 'no-such-id';
+      final puts = <String, (String, Map<String, dynamic>)>{
+        'membership naming a missing client': (
+          'ClientGroupMember',
+          {'clientId': missing, 'clientGroupId': group},
+        ),
+        'membership naming a missing group': (
+          'ClientGroupMember',
+          {'clientId': alice, 'clientGroupId': missing},
+        ),
+        'service naming a missing daemon': (
+          'Service',
+          {'daemonId': missing, 'deviceName': 'other', 'deviceGroupName': 'grp'},
+        ),
+        'service ACL naming a missing service': (
+          'ServiceACL',
+          {
+            'serviceId': missing,
+            'clientGroupId': group,
+            'permitOpen': 'localhost:22',
+          },
+        ),
+        'service ACL naming a missing group': (
+          'ServiceACL',
+          {
+            'serviceId': service,
+            'clientGroupId': missing,
+            'permitOpen': 'localhost:22',
+          },
+        ),
+      };
+
+      for (final MapEntry(key: what, value: (target, value)) in puts.entries) {
+        final response = await putValue(c, target, value);
+        expect(response.respType, AtRpcRespType.error, reason: what);
+        expect(response.message, contains(missing), reason: what);
+      }
+
+      expect(stored, storedBefore);
+      expect(cache.clientGroupMembers, isEmpty);
+      expect(cache.services, hasLength(1));
+      expect(cache.serviceACLs, isEmpty);
+    });
+  });
 }

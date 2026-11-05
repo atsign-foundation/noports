@@ -339,6 +339,30 @@ class NppCache {
     return _serviceACLs.add(serviceACL);
   }
 
+  /// The rules [entry] names that this cache doesn't hold, each as
+  /// `<kind> with id <id>`. Empty when it names none, or all are here.
+  List<String> missingReferences(final PolicyEntry entry) {
+    final List<String> missing = [];
+    void need(
+        final Set<PolicyEntry> rules, final String kind, final String id) {
+      if (!rules.any((rule) => rule.id == id)) {
+        missing.add('$kind with id $id');
+      }
+    }
+
+    switch (entry) {
+      case ClientGroupMember member:
+        need(_clients, 'Client', member.clientId);
+        need(_clientGroups, 'ClientGroup', member.clientGroupId);
+      case Service service:
+        need(_daemons, 'Daemon', service.daemonId);
+      case ServiceACL serviceACL:
+        need(_services, 'Service', serviceACL.serviceId);
+        need(_clientGroups, 'ClientGroup', serviceACL.clientGroupId);
+    }
+    return missing;
+  }
+
   bool deleteClient(final String clientId) {
     final Client client = getClientById(clientId);
     return _clients.remove(client);

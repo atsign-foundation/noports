@@ -37,6 +37,16 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     this.nppOperationHooks,
   });
 
+  /// Why a put of [entry] is refused for naming a rule the cache doesn't
+  /// hold, or null when every rule it names is there.
+  String? _namesMissingRule(PolicyEntry entry) {
+    final List<String> missing = nppCache.missingReferences(entry);
+    if (missing.isEmpty) {
+      return null;
+    }
+    return 'No ${missing.join(' or ')}, so nothing is put.';
+  }
+
   /// Builds an event with [build] and hands it to [onEvent]. A failure in
   /// either is logged and swallowed: the event log must never change the
   /// answer a manager gets.
@@ -354,6 +364,13 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'ClientGroupMember': {
             final ClientGroupMember clientGroupMember =
                 ClientGroupMember.fromJson(valueAsMap);
+            final String? namesMissing = _namesMissingRule(clientGroupMember);
+            if (namesMissing != null) {
+              rule.addAll(clientGroupMember.toJson());
+              success = false;
+              message = namesMissing;
+              break;
+            }
             clientGroupMember.id = newPolicyEntryId();
             rule.addAll(clientGroupMember.toJson());
             nppCache.checkPutClientGroupMember(clientGroupMember);
@@ -432,6 +449,13 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Service': {
             final Service service = Service.fromJson(valueAsMap);
+            final String? namesMissing = _namesMissingRule(service);
+            if (namesMissing != null) {
+              rule.addAll(service.toJson());
+              success = false;
+              message = namesMissing;
+              break;
+            }
             service.id = newPolicyEntryId();
             rule.addAll(service.toJson());
             nppCache.checkPutService(service);
@@ -470,6 +494,13 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ServiceACL': {
             final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
+            final String? namesMissing = _namesMissingRule(serviceACL);
+            if (namesMissing != null) {
+              rule.addAll(serviceACL.toJson());
+              success = false;
+              message = namesMissing;
+              break;
+            }
             serviceACL.id = newPolicyEntryId();
             rule.addAll(serviceACL.toJson());
             nppCache.checkPutServiceACL(serviceACL);
