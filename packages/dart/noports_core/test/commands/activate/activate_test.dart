@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:at_client_cli/at_client_cli.dart';
-import 'package:at_utils/at_utils.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/commands/activate/activate.dart';
 import 'package:noports_core/src/commands/activate/activate_params.dart';

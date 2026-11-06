@@ -620,6 +620,40 @@ void main() {
         );
 
         loopTest(
+          'when its session ends, then it is no longer listed as running',
+          (tester) async {
+            final bloc = await pumpLoadedBloc(
+              tester,
+              profile: testProfile,
+              createNpt: FakeNpt.new,
+            );
+
+            bloc.add(const ProfileStartEvent());
+            await pumpUntil(
+              tester,
+              () => bloc.state is ProfileStarted,
+              reason: 'the session must start',
+            );
+
+            // What a real Npt does when its SocketConnector ends
+            await attempts.single.close();
+            await pumpUntil(
+              tester,
+              () => bloc.state is ProfileLoaded,
+              reason:
+                  'a session that ends without keep-alive must bring the '
+                  'profile back to ProfileLoaded',
+            );
+            expect(
+              runningCubit.state.socketConnectors.keys,
+              isNot(contains(testUuid)),
+              reason: 'a profile whose session has ended is not running',
+            );
+            await tester.pump(connectorGracePeriod * 2);
+          },
+        );
+
+        loopTest(
           'when it is started, stopped and started again, then the second '
           'session starts too',
           (tester) async {
@@ -757,6 +791,97 @@ void main() {
         );
 
         loopTest(
+          'when it is waiting to retry, then it is still listed as running',
+          (tester) async {
+            final bloc = await pumpLoadedBloc(
+              tester,
+              profile: testProfile.copyWith(keepAlive: true),
+              createNpt: failingNpt,
+              retryDelay: const Duration(minutes: 10),
+              maxRetryDelay: const Duration(minutes: 10),
+            );
+
+            bloc.add(const ProfileStartEvent());
+            await pumpUntil(
+              tester,
+              () => attempts.isNotEmpty && attempts.single.closeCalled,
+              reason: 'the first attempt must have failed',
+            );
+            await tester.pump(const Duration(milliseconds: 50));
+            expect(attempts, hasLength(1));
+            expect(
+              bloc.state,
+              isA<ProfileStarting>(),
+              reason: 'the loop must be parked in its backoff, a retry pending',
+            );
+
+            expect(
+              runningCubit.state.socketConnectors.keys,
+              contains(testUuid),
+              reason:
+                  'a profile whose keep-alive will retry is still running: '
+                  'the delete button and the switch-atSign check read this '
+                  'cubit to tell what is running',
+            );
+
+            bloc.add(const ProfileStopEvent());
+            await pumpUntil(
+              tester,
+              () => bloc.state is ProfileLoaded,
+              reason: 'a stop must end the keep-alive loop',
+            );
+          },
+        );
+
+        loopTest(
+          'when it is stopped while a startup is in flight, then it is not '
+          'listed as running again once the startup settles',
+          (tester) async {
+            final bloc = await pumpLoadedBloc(
+              tester,
+              profile: testProfile.copyWith(keepAlive: true),
+              createNpt: () => FakeNpt(
+                startupDelay: const Duration(milliseconds: 200),
+                startupError: TimeoutException('feature check timed out'),
+              ),
+            );
+
+            bloc.add(const ProfileStartEvent());
+            await pumpUntil(
+              tester,
+              () => attempts.isNotEmpty,
+              reason: 'the first attempt must begin',
+            );
+            bloc.add(const ProfileStopEvent());
+            await pumpUntil(
+              tester,
+              () =>
+                  bloc.state is ProfileStopping &&
+                  !runningCubit.state.socketConnectors.containsKey(testUuid),
+              reason:
+                  'the stop must unlist the profile while its startup is '
+                  'still in flight',
+            );
+            final listedAgain = <bool>[];
+            final runningSub = runningCubit.stream.listen(
+              (s) => listedAgain.add(s.socketConnectors.containsKey(testUuid)),
+            );
+            addTearDown(runningSub.cancel);
+
+            await pumpUntil(
+              tester,
+              () => bloc.state is ProfileLoaded,
+              reason: 'the stop must end once the startup settles',
+            );
+            expect(
+              listedAgain,
+              isNot(contains(true)),
+              reason: 'a stopped profile must not be listed as running again',
+            );
+          },
+        );
+
+        loopTest(
           'when the bloc is closed during the backoff, then it stops waiting '
           'to retry',
           (tester) async {
@@ -815,8 +940,8 @@ void main() {
             cache.clear();
             await pumpUntil(
               tester,
-              () => bloc.state is ProfileLoaded,
-              reason: 'clearing the cache must stop its profiles',
+              () => bloc.isClosed,
+              reason: 'clearing the cache must close its profiles',
             );
 
             final attemptsAtClear = attempts.length;

@@ -1,16 +1,13 @@
 import 'package:at_client_flutter/at_client_flutter.dart';
 import 'package:npt_flutter/util/constants.dart';
-import 'package:path_provider/path_provider.dart';
 
 class AtClientMethods {
   static Future<AtClientPreference> loadAtClientPreference(
     String rootDomain,
   ) async {
-    var dir = await getApplicationSupportDirectory();
     return AtClientPreference()
       ..rootDomain = rootDomain
-      ..namespace = Constants.namespace
-      ..hiveStoragePath = dir.path;
+      ..namespace = Constants.namespace;
   }
 
   /// The client the app is using, or null before one has been adopted.

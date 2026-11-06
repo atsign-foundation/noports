@@ -38,6 +38,19 @@
   Authenticator. Until now every later sign-in went back to the old request.
 - CHORE: at_client_flutter is now 2.0.0, bringing at_client 4.0.0. Signing in,
   activating and enrolling keep using the app's existing local store.
+- FIX: Deleting the selected profiles leaves running ones alone, including a
+  keep-alive profile waiting to retry and one started while the delete was
+  being confirmed.
+- FIX: Confirming the connected profiles prompt when switching, adding or
+  signing out of an atSign stops keep-alive profiles, instead of them
+  reconnecting a few seconds later.
+- FIX: Deleting a profile that is still connected stops its connection,
+  instead of leaving it running in the background.
+- FIX: The tray menu updates when a favourite profile's name or status
+  changes, instead of waiting for another change to refresh it.
+- FIX: Stopping a connection ends the sessions open through it within 30
+  seconds, even one whose program has stopped reading. A session closes once
+  data has waited two minutes for either end to read it.
 
 ## 1.9.6+33
 

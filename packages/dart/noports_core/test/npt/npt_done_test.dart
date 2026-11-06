@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/srvd.dart';
+import 'package:socket_connector/socket_connector.dart';
 import 'package:test/test.dart';
 
 /// Minimal stand-in - these tests only exercise the startup failure path, so
@@ -52,6 +56,111 @@ class _FakeNotificationService implements NotificationService {
       throw UnimplementedError('${invocation.memberName} is not available');
 }
 
+final _apkamKeyPair = RsaKeyPair.generate();
+
+/// Lets a startup get as far as the relay: it holds an APKAM keypair, as every
+/// client does, and finds its signing key not yet published.
+class _StartableAtClient extends _FailingAtClient {
+  @override
+  String? get enrollmentId => null;
+
+  @override
+  late final AtKeysIo atKeysIo = InMemoryAtKeysIo.holding(
+    '@alice',
+    AtKeys.legacy(
+      apkamPublicKey: _apkamKeyPair.atPublicKey.publicKey,
+      apkamPrivateKey: _apkamKeyPair.atPrivateKey.privateKey,
+    ),
+  );
+
+  @override
+  bool get isStopped => false;
+
+  @override
+  Future<AtValue> get(
+    AtKey key, {
+    bool isDedicated = false,
+    GetRequestOptions? getRequestOptions,
+  }) async => throw AtKeyNotFoundException('$key does not exist');
+
+  @override
+  Future<bool> put(
+    AtKey key,
+    dynamic value, {
+    bool isDedicated = false,
+    PutRequestOptions? putRequestOptions,
+  }) async => true;
+}
+
+/// Delivers notifications synchronously, so a test acts at a known point
+/// after a listener has run, and accepts every notification sent.
+class _DeliveringNotificationService extends _FakeNotificationService {
+  final Completer<void> relayRequested = Completer();
+
+  @override
+  Stream<AtNotification> subscribe({
+    String? regex,
+    bool shouldDecrypt = false,
+  }) => controllers
+      .putIfAbsent(regex!, () => StreamController.broadcast(sync: true))
+      .stream;
+
+  @override
+  Future<NotificationResult> notify(
+    NotificationParams notificationParams, {
+    bool waitForFinalDeliveryStatus = true,
+    bool checkForFinalDeliveryStatus = true,
+    bool encryptValue = true,
+    Function(NotificationResult)? onSuccess,
+    Function(NotificationResult)? onError,
+    Function(NotificationResult)? onSentToSecondary,
+  }) async {
+    if (notificationParams.atKey.key.contains('request_ports') &&
+        !relayRequested.isCompleted) {
+      relayRequested.complete();
+    }
+    return NotificationResult()
+      ..notificationID = 'n'
+      ..notificationStatusEnum = NotificationStatusEnum.delivered;
+  }
+}
+
+/// Subscriptions to the daemon session regex fail to cancel.
+class _UncancellableDaemonNotificationService extends _FakeNotificationService {
+  @override
+  Stream<AtNotification> subscribe({
+    String? regex,
+    bool shouldDecrypt = false,
+  }) => regex!.endsWith('@device\$')
+      ? _uncancellable(controllers, regex)
+      : super.subscribe(regex: regex, shouldDecrypt: shouldDecrypt);
+}
+
+/// A [_DeliveringNotificationService] whose subscriptions to the daemon
+/// session regex fail to cancel.
+class _UncancellableDaemonDeliveringService
+    extends _DeliveringNotificationService {
+  @override
+  Stream<AtNotification> subscribe({
+    String? regex,
+    bool shouldDecrypt = false,
+  }) => regex!.endsWith('@device\$')
+      ? _uncancellable(controllers, regex)
+      : super.subscribe(regex: regex, shouldDecrypt: shouldDecrypt);
+}
+
+/// A stream for [regex], recorded in [controllers], whose cancel fails.
+Stream<AtNotification> _uncancellable(
+  Map<String, StreamController<AtNotification>> controllers,
+  String regex,
+) {
+  final controller = StreamController<AtNotification>(
+    onCancel: () => Future<void>.error(StateError('cancel failed')),
+  );
+  controllers[regex] = controller;
+  return controller.stream;
+}
+
 NptParams _params() => NptParams(
   clientAtSign: '@alice',
   sshnpdAtSign: '@device',
@@ -61,6 +170,21 @@ NptParams _params() => NptParams(
   device: 'test_device',
   inline: true,
   timeout: Duration(seconds: 1),
+);
+
+/// Plain relay traffic, so the client connects to a bare local socket.
+NptParams _relayParams() => NptParams(
+  clientAtSign: '@alice',
+  sshnpdAtSign: '@device',
+  srvdAtSign: '@rv_test',
+  remoteHost: 'localhost',
+  remotePort: 3389,
+  device: 'test_device',
+  inline: true,
+  authenticateClientToRvd: false,
+  localHost: '127.0.0.1',
+  // NOTE: longer than the test, or the connector's own grace period closes it
+  timeout: Duration(minutes: 5),
 );
 
 void main() {
@@ -149,6 +273,170 @@ void main() {
       },
     );
   });
+
+  group('Given a runInline whose relay has answered and whose relay '
+      'connection is still being made', () {
+    test('when close completes and done resolves, then runInline leaves no '
+        'SocketConnector open', () async {
+      final relay = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      final relaySockets = <Socket>[];
+      final controlSocketClosed = Completer<void>();
+      relay.listen((socket) {
+        relaySockets.add(socket);
+        socket.listen(
+          (_) {},
+          onDone: () {
+            if (!controlSocketClosed.isCompleted) {
+              controlSocketClosed.complete();
+            }
+          },
+          onError: (_) {},
+        );
+      });
+      addTearDown(() async {
+        for (final s in relaySockets) {
+          s.destroy();
+        }
+        await relay.close();
+      });
+
+      final notifications = _DeliveringNotificationService();
+      final npt = Npt.create(
+        atClient: _StartableAtClient()..fakeNotificationService = notifications,
+        params: _relayParams(),
+      );
+
+      var runInlineSettled = false;
+      SocketConnector? connector;
+      Object? startupError;
+      Future<void> runStartup() async {
+        try {
+          connector = await npt.runInline(localRvPort: 0);
+        } catch (e) {
+          startupError = e;
+        } finally {
+          runInlineSettled = true;
+        }
+      }
+
+      final started = runStartup();
+      addTearDown(() => connector?.close());
+
+      await notifications.relayRequested.future.timeout(Duration(seconds: 5));
+      notifications.controllers['${npt.sessionId}.${Srvd.namespace}@']!.add(
+        AtNotification(
+          'relay-ack',
+          '@alice:${npt.sessionId}.${Srvd.namespace}@rv_test',
+          '@rv_test',
+          '@alice',
+          DateTime.now().millisecondsSinceEpoch,
+          'key',
+          false,
+          value: jsonEncode({
+            'address': '127.0.0.1',
+            'portA': relay.port,
+            'portB': relay.port,
+            'rvdNonce': 'nonce',
+            'supportsEventLogging': false,
+          }),
+        ),
+      );
+
+      await npt.close();
+      await npt.done.timeout(Duration(seconds: 5));
+      expect(
+        runInlineSettled,
+        isFalse,
+        reason: 'the test must close while the startup is still in flight',
+      );
+
+      await started.timeout(Duration(seconds: 10));
+      expect(
+        connector?.closed ?? true,
+        isTrue,
+        reason:
+            'a startup still in flight when close completes must not hand '
+            'back an open connector (startup error: $startupError)',
+      );
+      expect(
+        await controlSocketClosed.future
+            .then((_) => true)
+            .timeout(Duration(seconds: 2), onTimeout: () => false),
+        isTrue,
+        reason:
+            'the startup\'s connection to the relay must not outlive close, '
+            'whether runInline returned or threw (startup error: '
+            '$startupError)',
+      );
+    });
+  });
+
+  group(
+    'Given a session whose daemon channel subscription fails to cancel',
+    () {
+      test('when close runs, then the relay channel subscription is still '
+          'cancelled', () async {
+        final notifications = _UncancellableDaemonNotificationService();
+        final npt = Npt.create(
+          atClient: _FailingAtClient()..fakeNotificationService = notifications,
+          params: _params(),
+        );
+
+        // Fails asking the relay for a session, once all three listeners are up
+        await expectLater(npt.runInline(), throwsA(isA<Object>()));
+
+        final relayRegex = '${npt.sessionId}.${Srvd.namespace}@';
+        expect(
+          notifications.controllers.keys,
+          containsAll([
+            relayRegex,
+            '${npt.sessionId}.${npt.namespace}@device\$',
+          ]),
+          reason: 'the test must reach both channels\' subscriptions',
+        );
+        expect(
+          notifications.controllers[relayRegex]!.hasListener,
+          isFalse,
+          reason:
+              'a failure cancelling the daemon channel must not stop the relay '
+              'channel being cancelled',
+        );
+      });
+
+      test(
+        'when close is called, then close completes and done resolves',
+        () async {
+          final notifications = _UncancellableDaemonDeliveringService();
+          final npt = Npt.create(
+            atClient: _StartableAtClient()
+              ..fakeNotificationService = notifications,
+            params: _params(),
+          );
+          unawaited(() async {
+            try {
+              await npt.runInline();
+            } catch (_) {}
+          }());
+
+          await notifications.relayRequested.future.timeout(
+            Duration(seconds: 5),
+          );
+          expect(
+            notifications.controllers.keys,
+            contains('${npt.sessionId}.${npt.namespace}@device\$'),
+            reason: 'the test must reach the daemon channel\'s subscription',
+          );
+
+          await expectLater(
+            npt.close(),
+            completes,
+            reason: 'a teardown step that fails must not make close fail',
+          );
+          await expectLater(npt.done.timeout(Duration(seconds: 5)), completes);
+        },
+      );
+    },
+  );
 
   group('Npt startup leaves no error unhandled', () {
     test(

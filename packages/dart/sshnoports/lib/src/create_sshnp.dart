@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:at_client/at_client.dart';
 import 'package:sshnoports/src/extended_arg_parser.dart';
-import 'package:at_utils/at_utils.dart';
 
 typedef AtClientGenerator = Future<AtClient> Function(SshnpParams params);
 
