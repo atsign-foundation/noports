@@ -2,6 +2,12 @@
 
 <!-- pyml disable md034-->
 
+## v5.18.3
+
+* build: take socket_connector 2.7.0, so a tunnel connection closes once data
+  has waited two minutes for one of its ends to read it, and a closing
+  connection ends within 30 seconds even when an end has stopped reading
+
 ## v5.18.2
 
 * feat: sshnpd and srvd take their session locks with at_client's server

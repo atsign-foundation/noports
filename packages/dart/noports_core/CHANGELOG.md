@@ -23,6 +23,9 @@
   4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli and
   at_cli_commons, at_auth 4.0.0, at_lookup 4.0.0 and at_utils 4.0.0, so the
   at_client types in noports_core's API are at_client 4's
+- build: requires socket_connector 2.7.0, so a tunnel connection closes once
+  data has waited two minutes for one of its ends to read it, and a closing
+  connection ends within 30 seconds even when an end has stopped reading
 - **BREAKING CHANGE** refactor: `ActivateFlows.activate` requires a
   `storage`
 - feat: npp logs manager RPC rule changes and refused senders to the event
