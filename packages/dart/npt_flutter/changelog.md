@@ -46,6 +46,9 @@
   instead of leaving it running in the background.
 - FIX: The tray menu updates when a favourite profile's name or status
   changes, instead of waiting for another change to refresh it.
+- FIX: Stopping a connection ends the sessions open through it within 30
+  seconds, even one whose program has stopped reading. A session closes once
+  data has waited two minutes for either end to read it.
 
 ## 1.9.6+33
 
