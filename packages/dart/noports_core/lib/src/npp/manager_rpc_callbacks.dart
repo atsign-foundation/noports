@@ -2,9 +2,14 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npp.dart';
 import 'package:noports_core/npa.dart';
+import 'package:noports_core/src/npp/npp_cache.dart' show newPolicyEntryId;
 import 'package:mutex/mutex.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/version.dart' as core_version;
+
+/// Receives each rule a delete removes with the one it names.
+typedef _LogRemoved = Future<void> Function(
+    String target, Map<String, dynamic> rule);
 
 /// Callbacks for handling policy manager RPC requests
 class ManagerRpcCallbacks implements AtRpcCallbacks {
@@ -19,9 +24,9 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
   final Future<void> Function(Map<String, dynamic> event) onEvent;
   final AtSignLogger logger = AtSignLogger('ManagerRpcCallbacks');
 
-  /// Lets one put or delete run at a time, from choosing its id to sending its
-  /// event, so two can't get the same id and events follow the changes in
-  /// order. Reads aren't held by it.
+  /// Lets one put or delete run at a time, from checking it to sending its
+  /// events, so a put can't name a rule a delete is removing and events
+  /// follow the changes in order. Reads aren't held by it.
   final Mutex _changes = Mutex();
 
   /// Set by [stopChanges]: once true, puts and deletes are refused.
@@ -37,18 +42,78 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     this.nppOperationHooks,
   });
 
-  String _generateId(Set<PolicyEntry> entities) {
-    int maxId = 0;
-    for (final PolicyEntry entry in entities) {
-      if (entry.id == null) {
-        continue;
-      }
-      final int entryId = int.tryParse(entry.id!) ?? 0;
-      if (entryId > maxId) {
-        maxId = entryId;
-      }
+  /// Why a put of [entry] is refused for naming a rule the cache doesn't
+  /// hold, or null when every rule it names is there.
+  String? _namesMissingRule(PolicyEntry entry) {
+    final List<String> missing = nppCache.missingReferences(entry);
+    if (missing.isEmpty) {
+      return null;
     }
-    return (maxId + 1).toString();
+    return 'No ${missing.join(' or ')}, so nothing is put.';
+  }
+
+  /// Runs [preDelete] on [entry], a [target] rule, and returns why it failed,
+  /// or null when it succeeds or there is no hook.
+  Future<String?> _preDelete<T extends PolicyEntry>(
+    Future<void> Function(T)? preDelete,
+    T entry,
+    String target,
+  ) async {
+    if (preDelete == null) {
+      return null;
+    }
+    try {
+      await preDelete(entry);
+      return null;
+    } catch (e, s) {
+      logger.severe('preDelete hook failed for $target ${entry.id}', e, s);
+      return 'Pre-operation hook failed: $e';
+    }
+  }
+
+  /// Deletes [entry], a [target] rule, after the [members] and [serviceACLs]
+  /// that name it. Each is deleted by its pre-delete hook, then from the
+  /// cache, then added to [removed] and passed to [logRemoved]; [entry] goes
+  /// last, through [removeEntry]. Returns why a hook failed, leaving that rule
+  /// and those after it in place, so no rule left names one that is gone.
+  Future<String?> _deleteWithLinks<T extends PolicyEntry>({
+    required String target,
+    required T entry,
+    required Future<void> Function(T)? preDelete,
+    required void Function() removeEntry,
+    Iterable<ClientGroupMember> members = const [],
+    Iterable<ServiceACL> serviceACLs = const [],
+    required List<Map<String, dynamic>> removed,
+    required _LogRemoved logRemoved,
+  }) async {
+    for (final ClientGroupMember member in members.toList()) {
+      final String? error = await _preDelete(
+          nppOperationHooks?.preDeleteClientGroupMember,
+          member,
+          'ClientGroupMember');
+      if (error != null) {
+        return error;
+      }
+      nppCache.deleteClientGroupMember(member.id!);
+      removed.add({'target': 'ClientGroupMember', 'id': member.id});
+      await logRemoved('ClientGroupMember', member.toJson());
+    }
+    for (final ServiceACL serviceACL in serviceACLs.toList()) {
+      final String? error = await _preDelete(
+          nppOperationHooks?.preDeleteServiceACL, serviceACL, 'ServiceACL');
+      if (error != null) {
+        return error;
+      }
+      nppCache.deleteServiceACL(serviceACL.id!);
+      removed.add({'target': 'ServiceACL', 'id': serviceACL.id});
+      await logRemoved('ServiceACL', serviceACL.toJson());
+    }
+    final String? error = await _preDelete(preDelete, entry, target);
+    if (error != null) {
+      return error;
+    }
+    removeEntry();
+    return null;
   }
 
   /// Builds an event with [build] and hands it to [onEvent]. A failure in
@@ -84,8 +149,18 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     final Object? operation = request.payload['operation'];
     final Map<String, dynamic> rule = {};
     if (operation != 'put' && operation != 'delete') {
-      return _handleRequest(request, fromAtSign, rule);
+      return _handleRequest(request, fromAtSign, rule, (_, __) async {});
     }
+
+    Future<void> logRemoved(String target, Map<String, dynamic> removed) =>
+        _sendEvent(() => PolicyEvent.ruleChanged(
+          policyAtsign: policyAtsign,
+          fromAtsign: fromAtSign.toAtsign(),
+          reqId: reqId,
+          operation: 'delete',
+          target: target,
+          rule: removed,
+        ));
 
     Future<void> logChange(String? error) => _sendEvent(() {
       final String? target = request.payload['target']?.toString();
@@ -121,7 +196,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
       }
       final AtRpcResp response;
       try {
-        response = await _handleRequest(request, fromAtSign, rule);
+        response = await _handleRequest(request, fromAtSign, rule, logRemoved);
       } catch (e) {
         await logChange('$e');
         rethrow;
@@ -142,11 +217,13 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
   });
 
   /// Carries out [request]. [rule] receives the rule a put or delete acts on;
-  /// it is per request, since reads aren't held by [_changes].
+  /// it is per request, since reads aren't held by [_changes]. A delete passes
+  /// each rule it removes with the one requested to [logRemoved].
   Future<AtRpcResp> _handleRequest(
     AtRpcReq request,
     String fromAtSign,
     Map<String, dynamic> rule,
+    _LogRemoved logRemoved,
   ) async {
     final int reqId = request.reqId;
     final Map<String, dynamic> requestPayload = request.payload;
@@ -282,10 +359,15 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           break;
         }
         final Map<String, dynamic> valueAsMap = requestPayload['value'];
+        if (valueAsMap['id'] != null) {
+          success = false;
+          message = 'A put must not name an id: npp gives each new rule one.';
+          break;
+        }
         switch (target) {
           case 'Client': {
             final Client client = Client.fromJson(valueAsMap);
-            client.id ??= _generateId(nppCache.clients);
+            client.id = newPolicyEntryId();
             rule.addAll(client.toJson());
             nppCache.checkPutClient(client);
             if (nppOperationHooks?.prePutClient != null) {
@@ -322,7 +404,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ClientGroup': {
             final ClientGroup clientGroup = ClientGroup.fromJson(valueAsMap);
-            clientGroup.id ??= _generateId(nppCache.clientGroups);
+            clientGroup.id = newPolicyEntryId();
             rule.addAll(clientGroup.toJson());
             nppCache.checkPutClientGroup(clientGroup);
             if (nppOperationHooks?.prePutClientGroup != null) {
@@ -363,8 +445,14 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           case 'ClientGroupMember': {
             final ClientGroupMember clientGroupMember =
                 ClientGroupMember.fromJson(valueAsMap);
-            clientGroupMember.id ??=
-                _generateId(nppCache.clientGroupMembers);
+            final String? namesMissing = _namesMissingRule(clientGroupMember);
+            if (namesMissing != null) {
+              rule.addAll(clientGroupMember.toJson());
+              success = false;
+              message = namesMissing;
+              break;
+            }
+            clientGroupMember.id = newPolicyEntryId();
             rule.addAll(clientGroupMember.toJson());
             nppCache.checkPutClientGroupMember(clientGroupMember);
             if (nppOperationHooks?.prePutClientGroupMember != null) {
@@ -405,7 +493,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Daemon': {
             final Daemon daemon = Daemon.fromJson(valueAsMap);
-            daemon.id ??= _generateId(nppCache.daemons);
+            daemon.id = newPolicyEntryId();
             rule.addAll(daemon.toJson());
             nppCache.checkPutDaemon(daemon);
             if (nppOperationHooks?.prePutDaemon != null) {
@@ -442,7 +530,14 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Service': {
             final Service service = Service.fromJson(valueAsMap);
-            service.id ??= _generateId(nppCache.services);
+            final String? namesMissing = _namesMissingRule(service);
+            if (namesMissing != null) {
+              rule.addAll(service.toJson());
+              success = false;
+              message = namesMissing;
+              break;
+            }
+            service.id = newPolicyEntryId();
             rule.addAll(service.toJson());
             nppCache.checkPutService(service);
             if (nppOperationHooks?.prePutService != null) {
@@ -480,7 +575,14 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ServiceACL': {
             final ServiceACL serviceACL = ServiceACL.fromJson(valueAsMap);
-            serviceACL.id ??= _generateId(nppCache.serviceACLs);
+            final String? namesMissing = _namesMissingRule(serviceACL);
+            if (namesMissing != null) {
+              rule.addAll(serviceACL.toJson());
+              success = false;
+              message = namesMissing;
+              break;
+            }
+            serviceACL.id = newPolicyEntryId();
             rule.addAll(serviceACL.toJson());
             nppCache.checkPutServiceACL(serviceACL);
             if (nppOperationHooks?.prePutServiceACL != null) {
@@ -533,53 +635,43 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           break;
         }
         final Map<String, dynamic> valueAsMap = requestPayload['value'];
+        final List<Map<String, dynamic>> removed = [];
+        responsePayload['removed'] = removed;
+        String? error;
         switch(target) {
           case 'Client': {
             final String clientId = valueAsMap['clientId'];
             final Client client = nppCache.getClientById(clientId);
             rule.addAll(client.toJson());
-            if (nppOperationHooks?.preDeleteClient != null) {
-              try {
-                await nppOperationHooks!.preDeleteClient!(client);
-              } catch (e, s) {
-                logger.severe(
-                    'preDeleteClient hook failed for client $clientId', e, s);
-                success = false;
-                message = 'Pre-operation hook failed: $e';
-                break;
-              }
-            }
-            success = nppCache.deleteClient(clientId);
-            responsePayload['success'] = success;
-            if (success) {
-              message = 'Client with id $clientId deleted successfully.';
-            } else {
-              message = 'Failed to delete client with id $clientId.';
-            }
+            error = await _deleteWithLinks(
+              target: 'Client',
+              entry: client,
+              preDelete: nppOperationHooks?.preDeleteClient,
+              removeEntry: () => nppCache.deleteClient(clientId),
+              members: nppCache.getClientGroupMembersByClientId(clientId),
+              removed: removed,
+              logRemoved: logRemoved,
+            );
+            message = error ?? 'Client with id $clientId deleted successfully.';
             break;
           }
           case 'ClientGroup': {
             final String clientGroupId = valueAsMap['clientGroupId'];
             final ClientGroup clientGroup = nppCache.getClientGroupById(clientGroupId);
             rule.addAll(clientGroup.toJson());
-            if (nppOperationHooks?.preDeleteClientGroup != null) {
-              try {
-                await nppOperationHooks!.preDeleteClientGroup!(clientGroup);
-              } catch (e, s) {
-                logger.severe(
-                    'preDeleteClientGroup hook failed for client group $clientGroupId', e, s);
-                success = false;
-                message = 'Pre-operation hook failed: $e';
-                break;
-              }
-            }
-            success = nppCache.deleteClientGroup(clientGroupId);
-            responsePayload['success'] = success;
-            if (success) {
-              message = 'ClientGroup with id $clientGroupId deleted successfully.';
-            } else {
-              message = 'Failed to delete ClientGroup with id $clientGroupId.';
-            }
+            error = await _deleteWithLinks(
+              target: 'ClientGroup',
+              entry: clientGroup,
+              preDelete: nppOperationHooks?.preDeleteClientGroup,
+              removeEntry: () => nppCache.deleteClientGroup(clientGroupId),
+              members:
+                  nppCache.getClientGroupMembersByClientGroupId(clientGroupId),
+              serviceACLs: nppCache.getServiceACLsByClientGroupId(clientGroupId),
+              removed: removed,
+              logRemoved: logRemoved,
+            );
+            message = error ??
+                'ClientGroup with id $clientGroupId deleted successfully.';
             break;
           }
           case 'ClientGroupMember': {
@@ -587,105 +679,81 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
             final ClientGroupMember clientGroupMember =
                 nppCache.getClientGroupMemberById(clientGroupMemberId);
             rule.addAll(clientGroupMember.toJson());
-            if (nppOperationHooks?.preDeleteClientGroupMember != null) {
-              try {
-                await nppOperationHooks!
-                    .preDeleteClientGroupMember!(clientGroupMember);
-              } catch (e, s) {
-                logger.severe(
-                    'preDeleteClientGroupMember hook failed for client group member $clientGroupMemberId', e, s);
-                success = false;
-                message = 'Pre-operation hook failed: $e';
-                break;
-              }
-            }
-            success = nppCache.deleteClientGroupMember(clientGroupMemberId);
-            responsePayload['success'] = success;
-            if (success) {
-              message = 'ClientGroupMember with id $clientGroupMemberId deleted successfully.';
-            } else {
-              message = 'Failed to delete ClientGroupMember with id $clientGroupMemberId.';
-            }
+            error = await _deleteWithLinks(
+              target: 'ClientGroupMember',
+              entry: clientGroupMember,
+              preDelete: nppOperationHooks?.preDeleteClientGroupMember,
+              removeEntry: () =>
+                  nppCache.deleteClientGroupMember(clientGroupMemberId),
+              removed: removed,
+              logRemoved: logRemoved,
+            );
+            message = error ??
+                'ClientGroupMember with id $clientGroupMemberId deleted successfully.';
             break;
           }
           case 'Daemon': {
             final String daemonId = valueAsMap['daemonId'];
             final Daemon daemon = nppCache.getDaemonById(daemonId);
             rule.addAll(daemon.toJson());
-            if (nppOperationHooks?.preDeleteDaemon != null) {
-              try {
-                await nppOperationHooks!.preDeleteDaemon!(daemon);
-              } catch (e, s) {
-                logger.severe(
-                    'preDeleteDaemon hook failed for daemon $daemonId', e, s);
-                success = false;
-                message = 'Pre-operation hook failed: $e';
-                break;
-              }
-            }
-            success = nppCache.deleteDaemon(daemonId);
-            responsePayload['success'] = success;
-            if (success) {
-              message = 'Daemon with id $daemonId deleted successfully.';
+            final int services = nppCache.getServicesByDaemonId(daemonId).length;
+            if (services > 0) {
+              error = 'Daemon with id $daemonId is named by $services '
+                  '${services == 1 ? 'service' : 'services'}, so it is not '
+                  'deleted. Delete ${services == 1 ? 'it' : 'them'} first.';
             } else {
-              message = 'Failed to delete Daemon with id $daemonId.';
+              error = await _deleteWithLinks(
+                target: 'Daemon',
+                entry: daemon,
+                preDelete: nppOperationHooks?.preDeleteDaemon,
+                removeEntry: () => nppCache.deleteDaemon(daemonId),
+                removed: removed,
+                logRemoved: logRemoved,
+              );
             }
+            message = error ?? 'Daemon with id $daemonId deleted successfully.';
             break;
           }
           case 'Service': {
             final String serviceId = valueAsMap['serviceId'];
             final Service service = nppCache.getServiceById(serviceId);
             rule.addAll(service.toJson());
-            if (nppOperationHooks?.preDeleteService != null) {
-              try {
-                await nppOperationHooks!.preDeleteService!(service);
-              } catch (e, s) {
-                logger.severe(
-                    'preDeleteService hook failed for service $serviceId', e, s);
-                success = false;
-                message = 'Pre-operation hook failed: $e';
-                break;
-              }
-            }
-            success = nppCache.deleteService(serviceId);
-            responsePayload['success'] = success;
-            if (success) {
-              message = 'Service with id $serviceId deleted successfully.';
-            } else {
-              message = 'Failed to delete Service with id $serviceId.';
-            }
+            error = await _deleteWithLinks(
+              target: 'Service',
+              entry: service,
+              preDelete: nppOperationHooks?.preDeleteService,
+              removeEntry: () => nppCache.deleteService(serviceId),
+              serviceACLs: nppCache.getServiceACLsByServiceID(serviceId),
+              removed: removed,
+              logRemoved: logRemoved,
+            );
+            message = error ?? 'Service with id $serviceId deleted successfully.';
             break;
           }
           case 'ServiceACL': {
             final String serviceACLId = valueAsMap['serviceACLId'];
             final ServiceACL serviceACL = nppCache.getServiceACLById(serviceACLId);
             rule.addAll(serviceACL.toJson());
-            if (nppOperationHooks?.preDeleteServiceACL != null) {
-              try {
-                await nppOperationHooks!.preDeleteServiceACL!(serviceACL);
-              } catch (e, s) {
-                logger.severe(
-                    'preDeleteServiceACL hook failed for service ACL $serviceACLId', e, s);
-                success = false;
-                message = 'Pre-operation hook failed: $e';
-                break;
-              }
-            }
-            success = nppCache.deleteServiceACL(serviceACLId);
-            responsePayload['success'] = success;
-            if (success) {
-              message = 'ServiceACL with id $serviceACLId deleted successfully.';
-            } else {
-              message = 'Failed to delete ServiceACL with id $serviceACLId.';
-            }
+            error = await _deleteWithLinks(
+              target: 'ServiceACL',
+              entry: serviceACL,
+              preDelete: nppOperationHooks?.preDeleteServiceACL,
+              removeEntry: () => nppCache.deleteServiceACL(serviceACLId),
+              removed: removed,
+              logRemoved: logRemoved,
+            );
+            message = error ??
+                'ServiceACL with id $serviceACLId deleted successfully.';
             break;
           }
           default: {
-            success = false;
-            message = 'Unknown target for delete operation: $target';
+            error = 'Unknown target for delete operation: $target';
+            message = error;
             break;
           }
         }
+        success = error == null;
+        responsePayload['success'] = success;
       }
       default: {
         success = false;

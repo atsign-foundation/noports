@@ -1,3 +1,4 @@
+import 'package:noports_core/npa.dart';
 import 'package:noports_core/npp.dart';
 import 'package:test/test.dart';
 
@@ -146,6 +147,36 @@ void main() {
           expect(matchedClientGroups.contains(cg1), true);
         });
     });
-    
+
+  group("Given a client whose membership names a group that doesn't exist", () {
+    test("when an auth check runs for the client, then it answers from the"
+        " client's other groups", () async {
+      final rules = NppCache()
+        ..putClient(Client(id: 'c1', name: 'Alice', atSign: '@alice'))
+        ..putClientGroup(ClientGroup(id: 'g1', name: 'ops'))
+        ..putClientGroupMember(
+            ClientGroupMember(id: 'm1', clientId: 'c1', clientGroupId: 'g1'))
+        ..putClientGroupMember(ClientGroupMember(
+            id: 'm2', clientId: 'c1', clientGroupId: 'no-such-group'))
+        ..putDaemon(Daemon(id: 'd1', atSign: '@daemon'))
+        ..putService(Service(
+            id: 's1', daemonId: 'd1', deviceName: 'dev', deviceGroupName: 'grp'))
+        ..putServiceACL(ServiceACL(
+            id: 'a1',
+            serviceId: 's1',
+            clientGroupId: 'g1',
+            permitOpen: 'localhost:22'));
+
+      final response = await NppRequestHandler(nppCache: rules).doAuthCheck(
+          NPAAuthCheckRequest(
+              daemonAtsign: '@daemon',
+              daemonDeviceName: 'dev',
+              daemonDeviceGroupName: 'grp',
+              clientAtsign: '@alice'));
+
+      expect(response.authorized, isTrue);
+      expect(response.permitOpen, ['localhost:22']);
+    });
+  });
 }
 

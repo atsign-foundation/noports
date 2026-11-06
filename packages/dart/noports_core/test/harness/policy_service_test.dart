@@ -587,7 +587,11 @@ void main() {
       expect(event['reqId'], 7);
       expect(event['operation'], 'put');
       expect(event['target'], 'Client');
-      expect(event['rule'], {'id': '3', 'name': 'Carol', 'atSign': '@carol'});
+      expect(event['rule'], {
+        'id': response.payload['clientId'],
+        'name': 'Carol',
+        'atSign': '@carol'
+      });
     });
 
     test(
