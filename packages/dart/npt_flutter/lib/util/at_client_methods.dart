@@ -9,8 +9,7 @@ class AtClientMethods {
     var dir = await getApplicationSupportDirectory();
     return AtClientPreference()
       ..rootDomain = rootDomain
-      ..namespace = Constants.namespace
-      ..hiveStoragePath = dir.path;
+      ..namespace = Constants.namespace;
   }
 
   /// The client the app is using, or null before one has been adopted.
