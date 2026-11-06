@@ -64,6 +64,7 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
         ),
       ),
     );
+    final cache = App.navState.currentContext?.read<ProfileCacheCubit>();
     var bloc = App.navState.currentContext?.read<FavoriteBloc>();
     var favoritesToRemove = <Favorite>[];
     var loadedFavorites = <Favorite>[];
@@ -75,6 +76,7 @@ class ProfileListBloc extends LoggingBloc<ProfileListEvent, ProfileListState> {
         if (fav.containsProfile(uuid)) favoritesToRemove.add(fav);
       }
       unawaited(_repo.deleteProfile(uuid));
+      cache?.remove(uuid);
     }
     bloc?.add(FavoriteRemoveEvent(favoritesToRemove));
   }

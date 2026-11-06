@@ -45,9 +45,14 @@ class _FakeProfileBloc_1 extends _i1.SmartFake implements _i2.ProfileBloc {
     : super(parent, parentInvocation);
 }
 
-class _FakeOnboardingState_2 extends _i1.SmartFake
+class _FakeDuration_2 extends _i1.SmartFake implements Duration {
+  _FakeDuration_2(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeOnboardingState_3 extends _i1.SmartFake
     implements _i3.OnboardingState {
-  _FakeOnboardingState_2(Object parent, Invocation parentInvocation)
+  _FakeOnboardingState_3(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -211,6 +216,12 @@ class MockProfileCacheCubit extends _i1.Mock implements _i2.ProfileCacheCubit {
           as _i2.ProfileBloc);
 
   @override
+  void remove(String? uuid) => super.noSuchMethod(
+    Invocation.method(#remove, [uuid]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   void clear() => super.noSuchMethod(
     Invocation.method(#clear, []),
     returnValueForMissingStub: null,
@@ -330,6 +341,33 @@ class MockSyncCubit extends _i1.Mock implements _i8.SyncCubit {
 /// See the documentation for Mockito's code generation for more information.
 class MockProfileBloc extends _i1.Mock implements _i2.ProfileBloc {
   @override
+  Duration get retryDelay =>
+      (super.noSuchMethod(
+            Invocation.getter(#retryDelay),
+            returnValue: _FakeDuration_2(this, Invocation.getter(#retryDelay)),
+            returnValueForMissingStub: _FakeDuration_2(
+              this,
+              Invocation.getter(#retryDelay),
+            ),
+          )
+          as Duration);
+
+  @override
+  Duration get maxRetryDelay =>
+      (super.noSuchMethod(
+            Invocation.getter(#maxRetryDelay),
+            returnValue: _FakeDuration_2(
+              this,
+              Invocation.getter(#maxRetryDelay),
+            ),
+            returnValueForMissingStub: _FakeDuration_2(
+              this,
+              Invocation.getter(#maxRetryDelay),
+            ),
+          )
+          as Duration);
+
+  @override
   String get uuid =>
       (super.noSuchMethod(
             Invocation.getter(#uuid),
@@ -375,6 +413,30 @@ class MockProfileBloc extends _i1.Mock implements _i2.ProfileBloc {
           as bool);
 
   @override
+  Duration retryDelayAfter(int? consecutiveFailures) =>
+      (super.noSuchMethod(
+            Invocation.method(#retryDelayAfter, [consecutiveFailures]),
+            returnValue: _FakeDuration_2(
+              this,
+              Invocation.method(#retryDelayAfter, [consecutiveFailures]),
+            ),
+            returnValueForMissingStub: _FakeDuration_2(
+              this,
+              Invocation.method(#retryDelayAfter, [consecutiveFailures]),
+            ),
+          )
+          as Duration);
+
+  @override
+  _i6.Future<void> close() =>
+      (super.noSuchMethod(
+            Invocation.method(#close, []),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
   void onEvent(_i2.ProfileEvent? event) => super.noSuchMethod(
     Invocation.method(#onEvent, [event]),
     returnValueForMissingStub: null,
@@ -408,15 +470,6 @@ class MockProfileBloc extends _i1.Mock implements _i2.ProfileBloc {
     Invocation.method(#onTransition, [transition]),
     returnValueForMissingStub: null,
   );
-
-  @override
-  _i6.Future<void> close() =>
-      (super.noSuchMethod(
-            Invocation.method(#close, []),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
-          )
-          as _i6.Future<void>);
 
   @override
   void onChange(_i7.Change<_i2.ProfileState>? change) => super.noSuchMethod(
@@ -543,11 +596,11 @@ class MockOnboardingCubit extends _i1.Mock implements _i3.OnboardingCubit {
   _i3.OnboardingState get state =>
       (super.noSuchMethod(
             Invocation.getter(#state),
-            returnValue: _FakeOnboardingState_2(
+            returnValue: _FakeOnboardingState_3(
               this,
               Invocation.getter(#state),
             ),
-            returnValueForMissingStub: _FakeOnboardingState_2(
+            returnValueForMissingStub: _FakeOnboardingState_3(
               this,
               Invocation.getter(#state),
             ),
