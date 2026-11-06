@@ -509,6 +509,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fastest => 'Fastest';
 
   @override
+  String get favoriteAdd => 'Add to favorites';
+
+  @override
+  String get favoriteRemove => 'Remove from favorites';
+
+  @override
   String get feedback => 'Feedback';
 
   @override
@@ -531,6 +537,87 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get findOtp =>
       'The request will be displayed in the Authenticator under Requests in any app connected to your Atsign with manager keys.';
+
+  @override
+  String get folderAddConnection => 'Add connection';
+
+  @override
+  String get folderChooseStartAll => 'Choose connections to start';
+
+  @override
+  String get folderChooseStartAllDescription =>
+      'Start all starts the checked connections, one after another.';
+
+  @override
+  String get folderCollapse => 'Collapse';
+
+  @override
+  String get folderDelete => 'Delete folder';
+
+  @override
+  String get folderDeleteMessage =>
+      'This folder will be deleted. The connections inside it will be kept.';
+
+  @override
+  String get folderExpand => 'Expand';
+
+  @override
+  String get folderLoadFailedRetry => 'Folders failed to load. Retry';
+
+  @override
+  String get folderMoveDown => 'Move down';
+
+  @override
+  String get folderMoveTo => 'Move to';
+
+  @override
+  String get folderMoveToFolder => 'Move to folder';
+
+  @override
+  String get folderMoveUp => 'Move up';
+
+  @override
+  String get folderName => 'Folder name';
+
+  @override
+  String get folderNameRequired => 'Please enter a folder name';
+
+  @override
+  String get folderNameTaken => 'A folder with this name already exists';
+
+  @override
+  String get folderNew => 'New folder';
+
+  @override
+  String get folderNone => 'No folder';
+
+  @override
+  String get folderRename => 'Rename';
+
+  @override
+  String get folderRenameTitle => 'Rename folder';
+
+  @override
+  String get folderSaveFailed => 'Folders failed to save';
+
+  @override
+  String get folderStartAll => 'Start all';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return 'Start $count of $total';
+  }
+
+  @override
+  String get folderStopAll => 'Stop all';
+
+  @override
+  String folderStopSome(Object count, Object total) {
+    return 'Stop $count of $total';
+  }
+
+  @override
+  String get folderSyncing => 'Folders can be changed once they have synced';
 
   @override
   String get getStarted => 'Get Started';
@@ -761,6 +848,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileFailedUnknownMessage => 'No reason provided';
 
   @override
+  String get profileFolder => 'Folder';
+
+  @override
+  String get profileFolderDescription =>
+      'The folder this connection is listed in.';
+
+  @override
   String get profileImportDialogTitle => 'Choose Import Method';
 
   @override
@@ -800,6 +894,41 @@ class AppLocalizationsEn extends AppLocalizations {
       'The following profile(s) are connected:';
 
   @override
+  String get profileSearchClear => 'Clear search';
+
+  @override
+  String get profileSearchHint => 'Search connections';
+
+  @override
+  String get profileSearchNoResults => 'No connections match your search';
+
+  @override
+  String get profileSortByNameMessage =>
+      'The list is sorted by name, so items are placed by name';
+
+  @override
+  String get profileSortFavoritesFirst => 'Favorites first';
+
+  @override
+  String get profileSortFavoritesMessage =>
+      'Favorites stay on top while Favorites first is on';
+
+  @override
+  String get profileSortManual => 'Manual order';
+
+  @override
+  String get profileSortNameAscending => 'Name, A to Z';
+
+  @override
+  String get profileSortNameDescending => 'Name, Z to A';
+
+  @override
+  String get profileSortReset => 'Back to manual order';
+
+  @override
+  String get profileSortTooltip => 'Sort';
+
+  @override
   String get profileStatusFailedLoad => 'Failed to load';
 
   @override
@@ -816,6 +945,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileStatusLoading => 'Loading';
+
+  @override
+  String get profileStatusQueued => 'Waiting to start';
+
+  @override
+  String get profileStatusQueuedMessage =>
+      'Waits for the connections before it to start. Click to start it now.';
 
   @override
   String get profileStatusStarted => 'Connected';

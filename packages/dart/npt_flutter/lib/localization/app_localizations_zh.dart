@@ -484,6 +484,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fastest => '最快';
 
   @override
+  String get favoriteAdd => '添加到收藏';
+
+  @override
+  String get favoriteRemove => '从收藏中移除';
+
+  @override
   String get feedback => '反馈';
 
   @override
@@ -504,6 +510,85 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get findOtp =>
       '请求将在 Authenticator 的“请求”中显示在任何通过管理员密钥连接到您的 Atsign 的应用中。';
+
+  @override
+  String get folderAddConnection => '添加连接';
+
+  @override
+  String get folderChooseStartAll => '选择要启动的连接';
+
+  @override
+  String get folderChooseStartAllDescription => '“全部启动”会依次启动已勾选的连接。';
+
+  @override
+  String get folderCollapse => '折叠';
+
+  @override
+  String get folderDelete => '删除文件夹';
+
+  @override
+  String get folderDeleteMessage => '此文件夹将被删除。其中的连接将被保留。';
+
+  @override
+  String get folderExpand => '展开';
+
+  @override
+  String get folderLoadFailedRetry => '文件夹加载失败。重试';
+
+  @override
+  String get folderMoveDown => '下移';
+
+  @override
+  String get folderMoveTo => '移动到';
+
+  @override
+  String get folderMoveToFolder => '移动到文件夹';
+
+  @override
+  String get folderMoveUp => '上移';
+
+  @override
+  String get folderName => '文件夹名称';
+
+  @override
+  String get folderNameRequired => '请输入文件夹名称';
+
+  @override
+  String get folderNameTaken => '已存在同名文件夹';
+
+  @override
+  String get folderNew => '新建文件夹';
+
+  @override
+  String get folderNone => '无文件夹';
+
+  @override
+  String get folderRename => '重命名';
+
+  @override
+  String get folderRenameTitle => '重命名文件夹';
+
+  @override
+  String get folderSaveFailed => '文件夹保存失败';
+
+  @override
+  String get folderStartAll => '全部启动';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return '启动 $count/$total 个';
+  }
+
+  @override
+  String get folderStopAll => '全部停止';
+
+  @override
+  String folderStopSome(Object count, Object total) {
+    return '停止 $count/$total 个';
+  }
+
+  @override
+  String get folderSyncing => '文件夹同步完成后即可修改';
 
   @override
   String get getStarted => '开始使用';
@@ -725,6 +810,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileFailedUnknownMessage => '未提供原因';
 
   @override
+  String get profileFolder => '文件夹';
+
+  @override
+  String get profileFolderDescription => '此连接所在的文件夹。';
+
+  @override
   String get profileImportDialogTitle => '选择导入方式';
 
   @override
@@ -760,6 +851,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileRunningCloseMsgStart => '以下配置文件已连接：';
 
   @override
+  String get profileSearchClear => '清除搜索';
+
+  @override
+  String get profileSearchHint => '搜索连接';
+
+  @override
+  String get profileSearchNoResults => '没有与搜索匹配的连接';
+
+  @override
+  String get profileSortByNameMessage => '列表按名称排序，项目按名称排列';
+
+  @override
+  String get profileSortFavoritesFirst => '收藏优先';
+
+  @override
+  String get profileSortFavoritesMessage => '开启收藏优先时，收藏项始终置顶';
+
+  @override
+  String get profileSortManual => '手动排序';
+
+  @override
+  String get profileSortNameAscending => '名称（A 到 Z）';
+
+  @override
+  String get profileSortNameDescending => '名称（Z 到 A）';
+
+  @override
+  String get profileSortReset => '恢复手动排序';
+
+  @override
+  String get profileSortTooltip => '排序';
+
+  @override
   String get profileStatusFailedLoad => '加载失败';
 
   @override
@@ -776,6 +900,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profileStatusLoading => '正在加载';
+
+  @override
+  String get profileStatusQueued => '等待启动';
+
+  @override
+  String get profileStatusQueuedMessage => '等待前面的连接启动。点击可立即启动。';
 
   @override
   String get profileStatusStarted => '已连接';
@@ -1553,6 +1683,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get fastest => '最快';
 
   @override
+  String get favoriteAdd => '添加到收藏';
+
+  @override
+  String get favoriteRemove => '从收藏中移除';
+
+  @override
   String get feedback => '反馈';
 
   @override
@@ -1573,6 +1709,85 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   @override
   String get findOtp =>
       '请求将在 Authenticator 的“请求”中显示在任何通过管理员密钥连接到您的 Atsign 的应用中。';
+
+  @override
+  String get folderAddConnection => '添加连接';
+
+  @override
+  String get folderChooseStartAll => '选择要启动的连接';
+
+  @override
+  String get folderChooseStartAllDescription => '“全部启动”会依次启动已勾选的连接。';
+
+  @override
+  String get folderCollapse => '折叠';
+
+  @override
+  String get folderDelete => '删除文件夹';
+
+  @override
+  String get folderDeleteMessage => '此文件夹将被删除。其中的连接将被保留。';
+
+  @override
+  String get folderExpand => '展开';
+
+  @override
+  String get folderLoadFailedRetry => '文件夹加载失败。重试';
+
+  @override
+  String get folderMoveDown => '下移';
+
+  @override
+  String get folderMoveTo => '移动到';
+
+  @override
+  String get folderMoveToFolder => '移动到文件夹';
+
+  @override
+  String get folderMoveUp => '上移';
+
+  @override
+  String get folderName => '文件夹名称';
+
+  @override
+  String get folderNameRequired => '请输入文件夹名称';
+
+  @override
+  String get folderNameTaken => '已存在同名文件夹';
+
+  @override
+  String get folderNew => '新建文件夹';
+
+  @override
+  String get folderNone => '无文件夹';
+
+  @override
+  String get folderRename => '重命名';
+
+  @override
+  String get folderRenameTitle => '重命名文件夹';
+
+  @override
+  String get folderSaveFailed => '文件夹保存失败';
+
+  @override
+  String get folderStartAll => '全部启动';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return '启动 $count/$total 个';
+  }
+
+  @override
+  String get folderStopAll => '全部停止';
+
+  @override
+  String folderStopSome(Object count, Object total) {
+    return '停止 $count/$total 个';
+  }
+
+  @override
+  String get folderSyncing => '文件夹同步完成后即可修改';
 
   @override
   String get getStarted => '开始使用';
@@ -1794,6 +2009,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileFailedUnknownMessage => '未提供原因';
 
   @override
+  String get profileFolder => '文件夹';
+
+  @override
+  String get profileFolderDescription => '此连接所在的文件夹。';
+
+  @override
   String get profileImportDialogTitle => '选择导入方式';
 
   @override
@@ -1829,6 +2050,39 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileRunningCloseMsgStart => '以下配置文件已连接：';
 
   @override
+  String get profileSearchClear => '清除搜索';
+
+  @override
+  String get profileSearchHint => '搜索连接';
+
+  @override
+  String get profileSearchNoResults => '没有与搜索匹配的连接';
+
+  @override
+  String get profileSortByNameMessage => '列表按名称排序，项目按名称排列';
+
+  @override
+  String get profileSortFavoritesFirst => '收藏优先';
+
+  @override
+  String get profileSortFavoritesMessage => '开启收藏优先时，收藏项始终置顶';
+
+  @override
+  String get profileSortManual => '手动排序';
+
+  @override
+  String get profileSortNameAscending => '名称（A 到 Z）';
+
+  @override
+  String get profileSortNameDescending => '名称（Z 到 A）';
+
+  @override
+  String get profileSortReset => '恢复手动排序';
+
+  @override
+  String get profileSortTooltip => '排序';
+
+  @override
   String get profileStatusFailedLoad => '加载失败';
 
   @override
@@ -1845,6 +2099,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get profileStatusLoading => '正在加载';
+
+  @override
+  String get profileStatusQueued => '等待启动';
+
+  @override
+  String get profileStatusQueuedMessage => '等待前面的连接启动。点击可立即启动。';
 
   @override
   String get profileStatusStarted => '已连接';
@@ -2622,6 +2882,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get fastest => '最快';
 
   @override
+  String get favoriteAdd => '加入最愛';
+
+  @override
+  String get favoriteRemove => '從最愛中移除';
+
+  @override
   String get feedback => '意見反應';
 
   @override
@@ -2642,6 +2908,85 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   @override
   String get findOtp =>
       '該請求將顯示在 Authenticator 的「請求」中，位於任何透過管理員金鑰連接至您 Atsign 的應用程式。';
+
+  @override
+  String get folderAddConnection => '新增連線';
+
+  @override
+  String get folderChooseStartAll => '選擇要啟動的連線';
+
+  @override
+  String get folderChooseStartAllDescription => '「全部啟動」會依次啟動已勾選的連線。';
+
+  @override
+  String get folderCollapse => '收合';
+
+  @override
+  String get folderDelete => '刪除資料夾';
+
+  @override
+  String get folderDeleteMessage => '此資料夾將被刪除。其中的連線將被保留。';
+
+  @override
+  String get folderExpand => '展開';
+
+  @override
+  String get folderLoadFailedRetry => '資料夾載入失敗。重試';
+
+  @override
+  String get folderMoveDown => '下移';
+
+  @override
+  String get folderMoveTo => '移至';
+
+  @override
+  String get folderMoveToFolder => '移至資料夾';
+
+  @override
+  String get folderMoveUp => '上移';
+
+  @override
+  String get folderName => '資料夾名稱';
+
+  @override
+  String get folderNameRequired => '請輸入資料夾名稱';
+
+  @override
+  String get folderNameTaken => '已有同名資料夾';
+
+  @override
+  String get folderNew => '新增資料夾';
+
+  @override
+  String get folderNone => '無資料夾';
+
+  @override
+  String get folderRename => '重新命名';
+
+  @override
+  String get folderRenameTitle => '重新命名資料夾';
+
+  @override
+  String get folderSaveFailed => '資料夾儲存失敗';
+
+  @override
+  String get folderStartAll => '全部啟動';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return '啟動 $count/$total 個';
+  }
+
+  @override
+  String get folderStopAll => '全部停止';
+
+  @override
+  String folderStopSome(Object count, Object total) {
+    return '停止 $count/$total 個';
+  }
+
+  @override
+  String get folderSyncing => '資料夾同步完成後即可修改';
 
   @override
   String get getStarted => '開始使用';
@@ -2862,6 +3207,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get profileFailedUnknownMessage => '未提供原因';
 
   @override
+  String get profileFolder => '資料夾';
+
+  @override
+  String get profileFolderDescription => '此連線所在的資料夾。';
+
+  @override
   String get profileImportDialogTitle => '選擇匯入方法';
 
   @override
@@ -2897,6 +3248,39 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get profileRunningCloseMsgStart => '以下設定檔已連線：';
 
   @override
+  String get profileSearchClear => '清除搜尋';
+
+  @override
+  String get profileSearchHint => '搜尋連線';
+
+  @override
+  String get profileSearchNoResults => '沒有符合搜尋的連線';
+
+  @override
+  String get profileSortByNameMessage => '清單按名稱排序，項目會按名稱排列';
+
+  @override
+  String get profileSortFavoritesFirst => '最愛優先';
+
+  @override
+  String get profileSortFavoritesMessage => '開啟最愛優先時，最愛項目會保持在頂部';
+
+  @override
+  String get profileSortManual => '手動排序';
+
+  @override
+  String get profileSortNameAscending => '名稱（A 至 Z）';
+
+  @override
+  String get profileSortNameDescending => '名稱（Z 至 A）';
+
+  @override
+  String get profileSortReset => '恢復手動排序';
+
+  @override
+  String get profileSortTooltip => '排序';
+
+  @override
   String get profileStatusFailedLoad => '載入失敗';
 
   @override
@@ -2913,6 +3297,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get profileStatusLoading => '載入中';
+
+  @override
+  String get profileStatusQueued => '等待啟動';
+
+  @override
+  String get profileStatusQueuedMessage => '等待前面的連線啟動。按一下即可立即啟動。';
 
   @override
   String get profileStatusStarted => '已連線';
