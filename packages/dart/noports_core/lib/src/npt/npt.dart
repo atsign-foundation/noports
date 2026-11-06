@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
-import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart'
     show signAndWrapRequest;

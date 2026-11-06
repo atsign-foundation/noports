@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
-import 'package:at_utils/at_logger.dart';
 
 AtSignLogger logger = AtSignLogger(' handle_server_events ');
 

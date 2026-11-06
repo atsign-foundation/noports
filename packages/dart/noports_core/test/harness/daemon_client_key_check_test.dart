@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_client/at_client_mixins.dart';
-import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart';
 import 'package:noports_core/src/sshnp/impl/notification_request_message.dart';
