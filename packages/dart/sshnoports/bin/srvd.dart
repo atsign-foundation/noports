@@ -14,7 +14,7 @@ const String _description =
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
-  late final Srvd srvd;
+  Srvd? srvd;
 
   Directory storageDir;
 
@@ -97,13 +97,27 @@ void main(List<String> args) async {
     exit(exitCode);
   }
 
-  ProcessSignal.sigint.watch().listen((signal) {
-    exitProgram(exitCode: 1);
-  });
-  if (!Platform.isWindows) {
-    ProcessSignal.sigterm.watch().listen((signal) {
+  // The first signal stops the relay gracefully, within Srvd.stopBound; a
+  // second, or one before the relay exists, exits at once.
+  bool stopping = false;
+  Future<void> stopAndExit(ProcessSignal signal) async {
+    final relay = srvd;
+    if (stopping || relay == null) {
       exitProgram(exitCode: 1);
-    });
+    }
+    stopping = true;
+    stderr.writeln('${DateTime.now()} : $signal received, stopping');
+    try {
+      await relay!.stop();
+    } catch (e) {
+      stderr.writeln('${DateTime.now()} : error while stopping: $e');
+    }
+    exitProgram(exitCode: 0);
+  }
+
+  ProcessSignal.sigint.watch().listen(stopAndExit);
+  if (!Platform.isWindows) {
+    ProcessSignal.sigterm.watch().listen(stopAndExit);
   }
 
   try {
@@ -134,9 +148,10 @@ void main(List<String> args) async {
     exit(1);
   }
 
+  final relay = srvd;
   await runZonedGuarded(() async {
-    await srvd.init();
-    await srvd.run();
+    await relay.init();
+    await relay.run();
   }, (Object error, StackTrace stackTrace) async {
     stderr.writeln('Error: ${error.toString()}');
     stderr.writeln('Stack Trace: ${stackTrace.toString()}');

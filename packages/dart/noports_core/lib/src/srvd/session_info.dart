@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:isolate';
 
 import 'package:noports_core/events.dart';
@@ -15,6 +16,13 @@ class SessionInfo {
 
   /// Set once the relay has asked for this session to be ended.
   bool ending = false;
+
+  /// The device name the session request's key named, when it matched the
+  /// device-name pattern; null otherwise.
+  String? deviceName;
+
+  /// Completes when the session's worker reports `sessionComplete`.
+  final Completer<void> completed = Completer<void>();
 
   Stats? stats;
 

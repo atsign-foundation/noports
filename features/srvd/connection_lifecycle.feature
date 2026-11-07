@@ -21,9 +21,10 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
   completes (killed at the bound).
   Replay: a request_ports naming a session id that is live or starting is
   refused, as today; nothing here adds a message that can be resent.
-  DoS: a peer that stops reading holds a side for at most the flush bound; a
-  worker that never reports completion is killed at the bound; a stop takes
-  at most 12 seconds whatever the sessions do.
+  DoS: a peer that stops reading holds a side for at most the flush bound
+  once the relay closes the connector, and for at most socket_connector's
+  stall bound before that; a worker that never reports completion is killed
+  at the bound; a stop takes at most 12 seconds whatever the sessions do.
   Forgery: the device name is text the client chose; it is kept only when
   it matches the device-name pattern in full and is lower-cased as the key
   is, and a session whose name does not match starts without one.
@@ -72,9 +73,9 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
 
   # Completion follows every close
 
-  Scenario: sessionComplete follows the last connectionClosed
+  Scenario: sessionComplete follows the last connectionClosed once the connector's grace period has passed
     Given S's 3 connections have all ended
-    When the connector finishes
+    When the connector's grace period has passed, so it finishes
     Then main receives connectionClosed three times and then sessionComplete for S with 3 connections, the byte totals, and 0 connections unclosed
 
   Scenario: sessionComplete is sent at the bound when a close is never reported
@@ -82,9 +83,9 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
     When the connector finishes
     Then main receives sessionComplete within 4 seconds, with 2 connections and 1 connection unclosed, and the worker logs a warning
 
-  Scenario: A side whose peer has stopped reading is destroyed within the flush bound
+  Scenario: A side whose peer has stopped reading is destroyed within the flush bound when the relay closes the connector
     Given connection 1 of S has unsent data for a device peer that has stopped reading
-    When the client side closes
+    When the relay closes the session's connector
     Then both sides are destroyed within 3 seconds and main receives connectionClosed for S
 
   # The device name

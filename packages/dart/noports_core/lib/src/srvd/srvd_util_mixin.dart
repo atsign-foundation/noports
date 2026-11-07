@@ -86,6 +86,22 @@ mixin SrvdUtilMixin {
     }
   }
 
+  /// The device name a session request's key names, its first segment
+  /// lower-cased as [wellFormedRequest] lower-cases the key, when it matches
+  /// [sshnpDeviceNameRegex] in full; null otherwise.
+  String? deviceNameFromRequestKey(AtNotification n) {
+    final topicParts = n.key
+        .replaceAll('${n.to}:', '')
+        .replaceAll('.${Srvd.namespace}${n.from}', '')
+        .toLowerCase()
+        .split('.');
+    if (topicParts.length != 2 || topicParts.last != 'request_ports') {
+      return null;
+    }
+    final name = topicParts.first;
+    return RegExp('^$sshnpDeviceNameRegex\$').hasMatch(name) ? name : null;
+  }
+
   /// Reads a session request's fields, from clients v4 onwards, without
   /// looking anything up; [withPayloadKeys] adds the public keys a
   /// payload-mode session needs.

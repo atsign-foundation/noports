@@ -11,6 +11,10 @@ import 'package:noports_core/src/srvd/srvd_session_params.dart';
 abstract interface class Srvd {
   static const String namespace = 'sshrvd';
 
+  /// The most [stop] takes, whatever the sessions do. A deployment's
+  /// termination grace period must allow it.
+  static const Duration stopBound = Duration(seconds: 12);
+
   abstract final AtSignLogger logger;
   abstract AtClient atClient;
   abstract final String atSign;
@@ -48,8 +52,9 @@ abstract interface class Srvd {
   Future<void> run();
 
   /// Stops what [init] and [run] started: cancels the notification
-  /// subscriptions and ends every relay isolate, closing their ports and the
-  /// sessions they carry. The [atClient] stays open for whoever owns it.
+  /// subscriptions, closes every session's connections, waits for each
+  /// worker to report its session complete, and ends every relay isolate,
+  /// within [stopBound]. The [atClient] stays open for whoever owns it.
   Future<void> stop();
 
   Future<void> lookup(IIRequest msg, SendPort toSpawned);

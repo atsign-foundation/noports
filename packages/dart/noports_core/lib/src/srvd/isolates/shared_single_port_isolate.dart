@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:at_commons/at_commons.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
+import 'package:noports_core/src/srvd/isolates/connection_tracker.dart';
 import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
@@ -37,6 +38,17 @@ class SinglePortWorker extends RelayWorker {
 
   Map<String, SessionInfo> sessions = {};
 
+  /// How long a side's close waits for its pending data before the side is
+  /// destroyed.
+  final Duration closeFlushTimeout;
+
+  /// How often each session's progress is reported to main.
+  final Duration progressInterval;
+
+  /// Each connector's grace period: how long from its creation it waits for
+  /// connections before closing itself once none is established.
+  final Duration connectorTimeout;
+
   SinglePortWorker({
     required super.toMain,
     required super.logTraffic,
@@ -45,6 +57,9 @@ class SinglePortWorker extends RelayWorker {
     required this.address,
     required this.useTLS,
     required this.bindPort,
+    this.closeFlushTimeout = relayCloseFlushTimeout,
+    this.progressInterval = defaultProgressInterval,
+    this.connectorTimeout = SocketConnector.defaultTimeout,
   }) {
     reqHandlers['start'] = startSession;
     reqHandlers['stop'] = stop;
@@ -261,14 +276,17 @@ class SinglePortWorker extends RelayWorker {
       verbose: verbose,
       logTraffic: logTraffic,
       logger: ioSinkForLogger(sessionLogger),
+      timeout: connectorTimeout,
+      closeFlushTimeout: closeFlushTimeout,
     );
-    connector.connectionStream.listen(
-      (Connection c) => toMain.send(
-        IIRequest.create('newConnection', {
-          'sessionId': params.sessionId,
-          'stats': connector.stats,
-        }),
-      ),
+    final tracker = ConnectionTracker(
+      sessionId: params.sessionId,
+      toMain: toMain,
+      opened: connector.connectionStream,
+      closed: connector.connectionClosedStream,
+      stats: () => connector.stats,
+      closeFlushTimeout: closeFlushTimeout,
+      progressInterval: progressInterval,
     );
 
     sessions[params.sessionId] = SessionInfo(
@@ -278,15 +296,10 @@ class SinglePortWorker extends RelayWorker {
 
     // When the session ends, we want to clean it up
     unawaited(
-      connector.done.whenComplete(() {
+      connector.done.whenComplete(() async {
         logger.shout('sc.done for ${params.sessionId}');
         sessions.remove(params.sessionId);
-        toMain.send(
-          IIRequest.create('sessionComplete', {
-            'sessionId': params.sessionId,
-            'stats': connector.stats,
-          }),
-        );
+        await tracker.complete();
       }),
     );
   }

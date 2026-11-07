@@ -89,6 +89,9 @@ class SrvdImpl
 
   bool _stopped = false;
 
+  /// How long a worker has to exit after being told to stop before it is
+  /// killed: its flush bound, a second to report its session complete, and a
+  /// second to exit.
   static const _workerStopTimeout = Duration(seconds: 5);
 
   @visibleForTesting
@@ -216,7 +219,24 @@ class SrvdImpl
   }
 
   @override
-  Future<void> stop() async {
+  Future<void> stop() => _stop().timeout(
+        Srvd.stopBound,
+        onTimeout: () {
+          logger.warning(
+            'Stop did not finish within ${Srvd.stopBound.inSeconds}s;'
+            ' killing every relay isolate',
+          );
+          for (final worker in _workers.keys.toList()) {
+            worker.kill(priority: Isolate.immediate);
+          }
+          sessions.clear();
+        },
+      );
+
+  /// Stops every worker at once, so each closes its connections and reports
+  /// its sessions complete, and forgets the sessions once every worker has
+  /// exited or been killed.
+  Future<void> _stop() async {
     _stopped = true;
     _signingKeyCheckTimer?.cancel();
     publicLookup.close();
@@ -231,6 +251,16 @@ class SrvdImpl
     ]);
     sessions.clear();
   }
+
+  /// [_register], for a test that supplies a worker of its own.
+  @visibleForTesting
+  void trackWorker(
+    Isolate worker,
+    ReceivePort fromWorker,
+    ReceivePort exitPort,
+    Future<SendPort> toWorker,
+  ) =>
+      _register(worker, fromWorker, exitPort, toWorker);
 
   /// Tracks [worker] until [exitPort] reports it has exited, then closes
   /// [fromWorker]. A worker registered after [stop] is stopped at once.
@@ -560,7 +590,7 @@ class SrvdImpl
       params: sessionParams,
       connector: null,
       toWorker: ppiSendToSpawned,
-    );
+    )..deviceName = deviceNameFromRequestKey(n);
     if (sessionParams.only443) {
       toIsolate443!.send(IIRequest.create('start', sessionParams));
     }
@@ -797,6 +827,7 @@ class SrvdImpl
     final sessionId = msg.payload['sessionId'];
     logger.info('_handleSessionComplete $sessionId');
     SessionInfo? si = sessions[sessionId];
+    if (si != null && !si.completed.isCompleted) si.completed.complete();
     logger.info(
       'sessionInfo:'
       ' $si eventLoggingConfig: ${si?.eventLoggingConfig}',

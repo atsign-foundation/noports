@@ -1,0 +1,202 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:isolate';
+
+import 'package:at_client/at_client.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/src/common/types.dart';
+import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
+    show defaultRelayAuthDetectWindowMs;
+import 'package:noports_core/src/srvd/session_info.dart';
+import 'package:noports_core/src/srvd/srvd.dart';
+import 'package:noports_core/src/srvd/srvd_impl.dart';
+import 'package:noports_core/src/srvd/srvd_params.dart'
+    show defaultSigningKeyCheckInterval;
+import 'package:noports_core/src/srvd/srvd_session_params.dart';
+import 'package:test/test.dart';
+
+import '../sshnp/sshnp_mocks.dart';
+
+/// Sends its port to main, then ignores every message, so it never reports
+/// its session complete and never exits on its own.
+void _deafWorker(SendPort toMain) {
+  final fromMain = ReceivePort();
+  toMain.send(fromMain.sendPort);
+  fromMain.listen((_) {});
+}
+
+void main() {
+  late List<StreamController<AtNotification>> subscriptions;
+  late MockAtClient atClient;
+  final sockets = <Socket>[];
+
+  setUp(() {
+    subscriptions = [];
+    atClient = MockAtClient();
+    final notificationService = MockNotificationService();
+    when(() => atClient.notificationService).thenReturn(notificationService);
+    when(
+      () => notificationService.subscribe(
+        regex: any(named: 'regex'),
+        shouldDecrypt: any(named: 'shouldDecrypt'),
+      ),
+    ).thenAnswer((_) {
+      final controller = StreamController<AtNotification>.broadcast();
+      subscriptions.add(controller);
+      return controller.stream;
+    });
+  });
+
+  tearDown(() {
+    for (final s in sockets) {
+      s.destroy();
+    }
+    sockets.clear();
+  });
+
+  SrvdImpl srvd() => SrvdImpl(
+        atClient: atClient,
+        atSign: '@relay'.toAtsign(),
+        homeDirectory: Directory.current.path,
+        atKeysFilePath: Directory.current.path,
+        managerAtsign: 'open',
+        ipAddress: '127.0.0.1',
+        logTraffic: false,
+        verbose: false,
+        bind443: false,
+        localBindPort443: 0,
+        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+        signingKeyCheckInterval: defaultSigningKeyCheckInterval,
+      );
+
+  SrvdSessionParams session(String id) => SrvdSessionParams(
+        sessionId: id,
+        atSignA: '@alice',
+        atSignB: '@bob',
+        rvdNonce: 'rvd nonce',
+        only443: false,
+        multipleAcksOk: true,
+        preFetch: const [],
+        sendJsonResponse: true,
+      );
+
+  /// Spawns a session's worker, records the session as a request would, and
+  /// pairs one connection on it; returns the session and its client socket.
+  Future<(SessionInfo, Socket)> liveSession(SrvdImpl relay, String id) async {
+    final ((portA, portB), _, toWorker) =
+        await relay.spawnNewPortPairIsolate(session(id));
+    final si = SessionInfo(
+      params: session(id),
+      connector: null,
+      toWorker: toWorker,
+    );
+    relay.sessions[id] = si;
+    final client = await Socket.connect(InternetAddress.loopbackIPv4, portA);
+    final device = await Socket.connect(InternetAddress.loopbackIPv4, portB);
+    sockets.addAll([client, device]);
+    device.listen((_) {});
+    return (si, client);
+  }
+
+  /// Completes when [socket]'s peer has closed it.
+  Future<void> closedByPeer(Socket socket) {
+    final done = Completer<void>();
+    socket.listen(
+      (_) {},
+      onDone: () => done.isCompleted ? null : done.complete(),
+      onError: (_) => done.isCompleted ? null : done.complete(),
+    );
+    return done.future;
+  }
+
+  test(
+      'A stop closes every connection, waits for each completion, and returns'
+      ' within 12 seconds', () async {
+    final relay = srvd();
+    await relay.init();
+    await relay.run();
+    final (one, clientOne) = await liveSession(relay, 'one');
+    final (two, clientTwo) = await liveSession(relay, 'two');
+    final clientsClosed = [closedByPeer(clientOne), closedByPeer(clientTwo)];
+    expect(subscriptions.where((c) => c.hasListener), hasLength(2));
+    final stopwatch = Stopwatch()..start();
+
+    await relay.stop();
+
+    stopwatch.stop();
+    expect(stopwatch.elapsed, lessThan(Srvd.stopBound));
+    expect(subscriptions.where((c) => c.hasListener), isEmpty);
+    expect(one.completed.isCompleted, isTrue,
+        reason: 'main received sessionComplete for one before forgetting it');
+    expect(two.completed.isCompleted, isTrue,
+        reason: 'main received sessionComplete for two before forgetting it');
+    expect(relay.sessions, isEmpty);
+    expect(relay.runningWorkers, 0);
+    await Future.wait(clientsClosed).timeout(const Duration(seconds: 3));
+  });
+
+  test(
+      'A worker that never completes is killed and the stop still returns'
+      ' within 12 seconds', () async {
+    final relay = srvd();
+    await relay.init();
+    final fromWorker = ReceivePort();
+    final exitPort = ReceivePort();
+    final toWorker = Completer<SendPort>();
+    fromWorker.listen((m) {
+      if (m is SendPort) toWorker.complete(m);
+    });
+    final deaf = await Isolate.spawn(
+      _deafWorker,
+      fromWorker.sendPort,
+      onExit: exitPort.sendPort,
+    );
+    final exitWatch = ReceivePort();
+    deaf.addOnExitListener(exitWatch.sendPort);
+    final exited = exitWatch.first;
+    relay.trackWorker(deaf, fromWorker, exitPort, toWorker.future);
+    await toWorker.future.timeout(const Duration(seconds: 2));
+    expect(relay.runningWorkers, 1);
+    final stopwatch = Stopwatch()..start();
+
+    await relay.stop();
+
+    stopwatch.stop();
+    expect(stopwatch.elapsed, lessThan(Srvd.stopBound));
+    await exited.timeout(const Duration(seconds: 2));
+    exitWatch.close();
+  });
+
+  test('A session request arriving during a stop is refused', () async {
+    final relay = srvd();
+    await relay.init();
+    await relay.run();
+    final stopping = relay.stop();
+
+    await relay.handleRequestPorts(AtNotification(
+      'notif-id',
+      '@relay:gateway-1.request_ports.sshrvd@alice',
+      '@alice',
+      '@relay',
+      DateTime.now().millisecondsSinceEpoch,
+      'key',
+      true,
+      value: jsonEncode({
+        'sessionId': 'late',
+        'atSignA': '@alice',
+        'atSignB': '@bob',
+        'clientNonce': 'client nonce',
+        'authenticateSocketA': false,
+        'authenticateSocketB': false,
+        'relayAuthMode': RelayAuthMode.escr.name,
+        'only443': false,
+        'multipleAcksOk': true,
+      }),
+    ));
+    await stopping;
+
+    expect(relay.sessions, isEmpty);
+    expect(relay.runningWorkers, 0);
+  });
+}
