@@ -114,7 +114,6 @@ class RelayTelemetry {
     Map<String, dynamic> payload,
   ) {
     _guard('newConnection', () {
-      if (_stopping) return;
       final int at = payload['at'] as int;
       final _Session s = _sessions.putIfAbsent(sessionId, () {
         final session = _Session(si, at, _decide(si));
@@ -234,7 +233,6 @@ class RelayTelemetry {
   }
 
   bool _decide(SessionInfo si) {
-    if (!list.usable) return false;
     if (list.listed(_canonical(si.params.atSignA))) return true;
     return si.params.authenticateSocketB &&
         list.listed(_canonical(si.params.atSignB));

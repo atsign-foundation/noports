@@ -214,6 +214,19 @@ void main() {
     expect(sessionRecords(), isEmpty);
   });
 
+  test('A connection reported after telemetry stops gets no records',
+      () async {
+    final t = await telemetry();
+    await t.stop();
+    final int sent = exporter.records.length;
+
+    t.connectionOpened('the-session', sessionInfo(sessionParams()), opened(1));
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+
+    expect(exporter.records, hasLength(sent),
+        reason: 'nothing is sent once the stopped record has gone');
+  });
+
   // The records
 
   test('session.started carries the session set', () async {
