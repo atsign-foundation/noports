@@ -23,6 +23,7 @@ class PendingRequestsCountCubit extends LoggingCubit<Count>
     with WindowListener {
   PendingRequestsCountCubit() : super(const Count(0));
 
+  static final AtSignLogger _logger = AtSignLogger('PendingRequestsCountCubit');
   StreamSubscription<Enrollment>? _subscription;
 
   /// Starts tracking pending enrollment requests. Must only be called once an
@@ -63,8 +64,10 @@ class PendingRequestsCountCubit extends LoggingCubit<Count>
     try {
       final requests = await _client.enrollments.pending();
       setCount(requests.length);
-    } catch (_) {
-      // NOTE: a failed read says nothing new, so the last count stands.
+    } catch (e, st) {
+      // NOTE: a failed read says nothing new, so the last count stands; the
+      // warning lets a badge that stops updating be traced.
+      _logger.warning('Could not read the pending enrollment requests', e, st);
     }
   }
 
