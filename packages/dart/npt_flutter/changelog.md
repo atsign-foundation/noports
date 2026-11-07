@@ -49,6 +49,10 @@
 - FIX: Stopping a connection ends the sessions open through it within 30
   seconds, even one whose program has stopped reading. A session closes once
   data has waited two minutes for either end to read it.
+ - FIX: The Authenticator no longer lists a request that was approved or denied
+  elsewhere: the Requests list and its badge are read again from the Atsign
+  Server when the window regains focus, and keep what they showed if a read
+  fails.
 
 ## 1.9.6+33
 
