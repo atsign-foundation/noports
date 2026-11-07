@@ -27,8 +27,9 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
   Races: the decision reads the list once, synchronously, at first pair; a
   pending window flushes before the session's end record, with nothing
   awaited between them; an end during a stop is reported once.
-  Replay: every session record carries a sequence number, so a notification
-  delivered twice is removed exactly by the Control Center; a client reusing
+  Replay: every session record carries a sequence number, so each record is
+  identified exactly, and a notification delivered twice repeats records that
+  name the same session and connections; a client reusing
   its session id gets a new relay session id.
   DoS: nothing is sent for a session that never pairs; a session churning
   connections costs at most one record per window or per 100 entries; while
