@@ -38,6 +38,10 @@ class SinglePortWorker extends RelayWorker {
 
   Map<String, SessionInfo> sessions = {};
 
+  /// One per live session, completing once its connector is done and main
+  /// has been sent its sessionComplete.
+  final Set<Future<void>> _completions = {};
+
   /// How long a side's close waits for its pending data before the side is
   /// destroyed.
   final Duration closeFlushTimeout;
@@ -213,7 +217,13 @@ class SinglePortWorker extends RelayWorker {
     }
   }
 
-  Future<void> _stop() async {
+  Future<void>? _stopping;
+
+  /// Closes the listeners and every session, then waits for each session's
+  /// sessionComplete to be sent before completing [stopped]; runs once.
+  Future<void> _stop() => _stopping ??= _closeAll();
+
+  Future<void> _closeAll() async {
     try {
       await _serverSocket?.close();
       await _secureServerSocket?.close();
@@ -224,6 +234,7 @@ class SinglePortWorker extends RelayWorker {
     for (final si in sessions.values) {
       si.connector?.close();
     }
+    await Future.wait(_completions.toList());
     stopped.complete();
   }
 
@@ -295,12 +306,12 @@ class SinglePortWorker extends RelayWorker {
     );
 
     // When the session ends, we want to clean it up
-    unawaited(
-      connector.done.whenComplete(() async {
-        logger.shout('sc.done for ${params.sessionId}');
-        sessions.remove(params.sessionId);
-        await tracker.complete();
-      }),
-    );
+    final Future<void> completion = connector.done.whenComplete(() async {
+      logger.shout('sc.done for ${params.sessionId}');
+      sessions.remove(params.sessionId);
+      await tracker.complete();
+    });
+    _completions.add(completion);
+    unawaited(completion.whenComplete(() => _completions.remove(completion)));
   }
 }

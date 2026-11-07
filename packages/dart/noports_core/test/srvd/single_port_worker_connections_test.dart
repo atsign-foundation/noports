@@ -14,6 +14,7 @@ void main() {
   late RsaKeyPair signingKP;
   late ReceivePort toMain;
   late List<IIRequest> reports;
+  late List<String> arrivals;
   late SinglePortWorker worker;
   late ServerSocket server;
   final clients = <Socket>[];
@@ -25,7 +26,9 @@ void main() {
   setUp(() async {
     toMain = ReceivePort();
     reports = [];
+    arrivals = [];
     toMain.listen((m) {
+      arrivals.add(m is IIRequest ? m.type : '$m');
       if (m is IIRequest) reports.add(m);
     });
     worker = SinglePortWorker(
@@ -154,5 +157,29 @@ void main() {
     }
     expect(reports.where((r) => r.type == 'newConnection'), hasLength(2));
     expect(reports.where((r) => r.type == 'connectionClosed'), hasLength(2));
+  });
+
+  test(
+      'A stop of the port-443 worker reports each session complete before'
+      ' the worker exits', () async {
+    final key = await startSession('S1');
+    final a = await connectAs('S1', key, '@alice', isSideA: true);
+    await connectAs('S1', key, '@bob', isSideA: false);
+    await reportsFor('newConnection', 'S1');
+    unawaited(a.done.then((_) {}, onError: (_) {}));
+    a.add(List<int>.filled(1 << 22, 7));
+    unawaited(worker.stopped.future.then((_) => toMain.sendPort.send('exit')));
+
+    await worker.stop();
+
+    await reportsFor('sessionComplete', 'S1');
+    final exitAt = await () async {
+      while (!arrivals.contains('exit')) {
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+      return arrivals.indexOf('exit');
+    }();
+    expect(arrivals.indexOf('sessionComplete'), lessThan(exitAt),
+        reason: 'run() kills the isolate once stopped completes');
   });
 }
