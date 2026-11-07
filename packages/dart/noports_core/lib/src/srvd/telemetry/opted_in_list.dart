@@ -159,9 +159,11 @@ class OptedInListPoller {
     this.firstRetryTo = const Duration(minutes: 5),
     this.laterRetryFrom = const Duration(seconds: 30),
     required void Function(String message) onWarning,
+    void Function(String message)? onRead,
     DateTime Function()? now,
     Random? random,
   })  : _onWarning = onWarning,
+        _onRead = onRead ?? _ignore,
         _now = now ?? DateTime.timestamp,
         _random = random ?? Random();
 
@@ -172,6 +174,7 @@ class OptedInListPoller {
   final Duration firstRetryTo;
   final Duration laterRetryFrom;
   final void Function(String message) _onWarning;
+  final void Function(String message) _onRead;
   final DateTime Function() _now;
   final Random _random;
 
@@ -213,6 +216,8 @@ class OptedInListPoller {
   /// Whether [atsign] is on a usable list.
   bool listed(String atsign) => usable && _list!.atsigns.contains(atsign);
 
+  static void _ignore(String message) {}
+
   /// Reads now, then keeps reading on schedule until [stop].
   void start() => unawaited(_read());
 
@@ -229,6 +234,8 @@ class OptedInListPoller {
       if (_stopped) return;
       _list = read;
       _retry = null;
+      _onRead('Read the opted-in list built at'
+          ' ${read.builtAt.toIso8601String()}: ${read.atsigns.length} Atsigns');
       if (!_firstGood.isCompleted) _firstGood.complete();
       usable;
       _schedule(_jittered(interval));

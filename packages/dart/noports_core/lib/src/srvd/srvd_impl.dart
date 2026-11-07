@@ -273,6 +273,7 @@ class SrvdImpl
           collector: collector,
         ),
         onWarning: telemetryLogger.warning,
+        onRead: telemetryLogger.info,
       ),
     );
   }
