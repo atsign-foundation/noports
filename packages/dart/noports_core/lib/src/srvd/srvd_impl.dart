@@ -16,6 +16,7 @@ import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
+import 'package:noports_core/src/srvd/loop_lag.dart';
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
@@ -72,6 +73,10 @@ class SrvdImpl
   /// given no collector Atsign.
   final RelayTelemetry? telemetry;
 
+  /// How often to log the event-loop lag; [Duration.zero] logs none.
+  final Duration reportLoopLag;
+  LoopLagProbe? _loopLag;
+
   Timer? _signingKeyCheckTimer;
   final Set<String> _keysBeingChecked = {};
 
@@ -122,6 +127,7 @@ class SrvdImpl
     required this.signingKeyCheckInterval,
     PublicLookup? publicLookup,
     this.telemetry,
+    this.reportLoopLag = Duration.zero,
   }) : publicLookup = publicLookup ?? DirectPublicLookup(atClient) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -181,6 +187,7 @@ class SrvdImpl
         localBindPort443: p.localBindPort443,
         relayAuthDetectWindowMs: p.relayAuthDetectWindowMs,
         signingKeyCheckInterval: Duration(seconds: p.signingKeyCheckSecs),
+        reportLoopLag: Duration(seconds: p.reportLoopLagSecs),
       );
 
       if (p.verbose) {
@@ -238,6 +245,12 @@ class SrvdImpl
     }
 
     telemetry?.start();
+    if (reportLoopLag > Duration.zero) {
+      _loopLag = LoopLagProbe(
+        reportEvery: reportLoopLag,
+        onReport: (String report) => logger.shout(report),
+      )..start();
+    }
   }
 
   /// Telemetry sent as notifications to [collector] through [atClient],
@@ -314,6 +327,7 @@ class SrvdImpl
   /// exited or been killed.
   Future<void> _stop() async {
     _stopped = true;
+    _loopLag?.stop();
     _signingKeyCheckTimer?.cancel();
     publicLookup.close();
     for (final subscription in _subscriptions) {

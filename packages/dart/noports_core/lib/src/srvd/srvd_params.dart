@@ -42,6 +42,10 @@ class SrvdParams {
   /// The collector Atsign this relay sends telemetry to; null sends none.
   final String? telemetryCollectorAtsign;
 
+  /// How often (seconds) to log the main isolate's event-loop lag, for
+  /// benchmarking; 0 logs none.
+  final int reportLoopLagSecs;
+
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
@@ -62,6 +66,7 @@ class SrvdParams {
     required this.signingKeyCheckSecs,
     required this.debug,
     this.telemetryCollectorAtsign,
+    this.reportLoopLagSecs = 0,
   });
 
   static Future<SrvdParams> fromArgs(List<String> args) async {
@@ -101,6 +106,10 @@ class SrvdParams {
       telemetryCollectorAtsign: _atsignOption(
         'telemetry-collector-atsign',
         r['telemetry-collector-atsign'],
+      ),
+      reportLoopLagSecs: _nonNegative(
+        'report-loop-lag-secs',
+        int.parse(r['report-loop-lag-secs']),
       ),
     );
   }
@@ -244,6 +253,14 @@ class SrvdParams {
           'The Control Center collector Atsign to send session telemetry to,'
           ' for the sessions of Atsigns on the opted-in list it shares with'
           ' this relay. Off when absent.',
+    );
+    parser.addOption(
+      'report-loop-lag-secs',
+      mandatory: false,
+      defaultsTo: '0',
+      hide: true,
+      help: 'How often (seconds) to log the event-loop lag, for benchmarks;'
+          ' 0 logs none.',
     );
     parser.addFlag(
       'help',
