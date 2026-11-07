@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../logging/models/loggable.dart';
 import '../../logging/models/logging_bloc.dart';
@@ -18,7 +19,8 @@ class Count extends Loggable {
   }
 }
 
-class PendingRequestsCountCubit extends LoggingCubit<Count> {
+class PendingRequestsCountCubit extends LoggingCubit<Count>
+    with WindowListener {
   PendingRequestsCountCubit() : super(const Count(0));
 
   StreamSubscription<Enrollment>? _subscription;
@@ -27,13 +29,17 @@ class PendingRequestsCountCubit extends LoggingCubit<Count> {
   /// AtClient exists (i.e. after onboarding) - the count is read off the
   /// current AtClient, which throws pre-onboarding.
   void start() {
-    _subscription ??= _client.enrollments.requests.listen(
-      (_) => getPendingRequests(),
-    );
+    if (_subscription == null) {
+      _subscription = _client.enrollments.requests.listen(
+        (_) => getPendingRequests(),
+      );
+      windowManager.addListener(this);
+    }
     getPendingRequests();
   }
 
   void stop() {
+    windowManager.removeListener(this);
     _subscription?.cancel();
     _subscription = null;
     emit(const Count(0));
@@ -41,14 +47,31 @@ class PendingRequestsCountCubit extends LoggingCubit<Count> {
 
   AtClient get _client => AtClientManager.getInstance().atClient;
 
+  /// Sets the count from a read of the pending requests made elsewhere, so
+  /// the badge shows what the Requests list shows.
+  void setCount(int count) {
+    if (isClosed) return;
+    emit(Count(count));
+  }
+
+  /// Requests decided elsewhere send no notification, so the count is read
+  /// again whenever the window comes back into focus.
+  @override
+  void onWindowFocus() => unawaited(getPendingRequests());
+
   Future<void> getPendingRequests() async {
-    final requests = await _client.enrollments.pending();
-    emit(Count(requests.length));
+    try {
+      final requests = await _client.enrollments.pending();
+      setCount(requests.length);
+    } catch (_) {
+      // NOTE: a failed read says nothing new, so the last count stands.
+    }
   }
 
   @override
   Future<void> close() {
     _subscription?.cancel();
+    windowManager.removeListener(this);
     return super.close();
   }
 }
