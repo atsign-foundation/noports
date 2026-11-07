@@ -12,6 +12,9 @@ Enrollment _request(String id) => Enrollment()
   ..enrollmentId = id
   ..status = EnrollmentStatus.pending.name;
 
+List<String?> _ids(List<Enrollment> enrollments) =>
+    enrollments.map((Enrollment e) => e.enrollmentId).toList();
+
 @GenerateNiceMocks(<MockSpec<Object>>[
   MockSpec<AtClient>(),
   MockSpec<Enrollments>(),
@@ -45,8 +48,23 @@ void main() {
     await requests.close();
   });
 
-  test('a new-request event shows only what the Atsign Server holds as '
-      'pending', () async {
+  test('Given the Atsign Server lists a new request as pending, when its '
+      'notification arrives, then the list shows it', () async {
+    final List<List<Enrollment>> answers = <List<Enrollment>>[
+      <Enrollment>[],
+      <Enrollment>[_request('new')],
+    ];
+    when(enrollments.pending()).thenAnswer((_) async => answers.removeAt(0));
+    await controller.init();
+
+    requests.add(_request('new'));
+    await pumpEventQueue();
+
+    expect(_ids(controller.pending), <String?>['new']);
+  });
+
+  test('Given the Atsign Server no longer lists a request, when its '
+      'notification arrives, then the list does not show it', () async {
     await controller.init();
 
     requests.add(_request('decided-elsewhere'));
@@ -55,8 +73,8 @@ void main() {
     expect(controller.pending, isEmpty);
   });
 
-  test('a refused approval reads the list again, dropping a request decided '
-      'elsewhere', () async {
+  test('Given a request decided elsewhere, when approving it is refused, then '
+      'the list is read again and drops it', () async {
     final Enrollment stale = _request('decided-elsewhere');
     final List<List<Enrollment>> answers = <List<Enrollment>>[
       <Enrollment>[stale],
@@ -66,9 +84,7 @@ void main() {
     when(
       enrollments.approve(any),
     ).thenThrow(Exception('Cannot approve a approved enrollment'));
-
     await controller.loadPendingRequests();
-    expect(controller.pending, hasLength(1));
 
     final String? error = await controller.approveRequest(stale);
     await pumpEventQueue();
@@ -77,8 +93,28 @@ void main() {
     expect(controller.pending, isEmpty);
   });
 
-  test('loads asked for during a load fold into one later read, so the '
-      'newest answer stands', () async {
+  test('Given a request decided elsewhere, when denying it is refused, then '
+      'the list is read again and drops it', () async {
+    final Enrollment stale = _request('decided-elsewhere');
+    final List<List<Enrollment>> answers = <List<Enrollment>>[
+      <Enrollment>[stale],
+      <Enrollment>[],
+    ];
+    when(enrollments.pending()).thenAnswer((_) async => answers.removeAt(0));
+    when(
+      enrollments.deny(any),
+    ).thenThrow(Exception('Cannot deny a approved enrollment'));
+    await controller.loadPendingRequests();
+
+    final String? error = await controller.denyRequest(stale);
+    await pumpEventQueue();
+
+    expect(error, isNotNull);
+    expect(controller.pending, isEmpty);
+  });
+
+  test('Given a read is running, when two more are asked for, then they fold '
+      'into one later read and the newest answer stands', () async {
     final Completer<List<Enrollment>> first = Completer<List<Enrollment>>();
     final Completer<List<Enrollment>> second = Completer<List<Enrollment>>();
     final List<Future<List<Enrollment>>> answers = <Future<List<Enrollment>>>[
@@ -99,21 +135,19 @@ void main() {
     verify(enrollments.pending()).called(2);
   });
 
-  test(
-    'each read tells onPendingCount how many requests await a decision',
-    () async {
-      final List<List<Enrollment>> answers = <List<Enrollment>>[
-        <Enrollment>[_request('a'), _request('b')],
-        <Enrollment>[],
-      ];
-      when(enrollments.pending()).thenAnswer((_) async => answers.removeAt(0));
+  test('Given two reads of the pending requests, when each finishes, then '
+      'onPendingCount is told each count', () async {
+    final List<List<Enrollment>> answers = <List<Enrollment>>[
+      <Enrollment>[_request('a'), _request('b')],
+      <Enrollment>[],
+    ];
+    when(enrollments.pending()).thenAnswer((_) async => answers.removeAt(0));
 
-      await controller.loadPendingRequests();
-      await controller.loadPendingRequests();
+    await controller.loadPendingRequests();
+    await controller.loadPendingRequests();
 
-      expect(counts, <int>[2, 0]);
-    },
-  );
+    expect(counts, <int>[2, 0]);
+  });
 
   test('Given a request on the list, when a read of the pending requests '
       'fails, then the list and its count keep the request and the error is '
@@ -128,9 +162,7 @@ void main() {
     await controller.loadPendingRequests();
     await controller.loadPendingRequests();
 
-    expect(controller.pending.map((Enrollment e) => e.enrollmentId), <String?>[
-      'kept',
-    ]);
+    expect(_ids(controller.pending), <String?>['kept']);
     expect(controller.pendingError, contains('connection dropped'));
     expect(counts, <int>[1]);
   });

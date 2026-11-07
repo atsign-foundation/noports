@@ -21,7 +21,16 @@ class Count extends Loggable {
 
 class PendingRequestsCountCubit extends LoggingCubit<Count>
     with WindowListener {
-  PendingRequestsCountCubit() : super(const Count(0));
+  PendingRequestsCountCubit({Enrollments Function()? enrollments})
+    : _enrollments = enrollments ?? _currentEnrollments,
+      super(const Count(0));
+
+  /// The enrollments of the AtClient in use, looked up on each call because
+  /// signing in as another Atsign replaces the client; tests pass their own.
+  final Enrollments Function() _enrollments;
+
+  static Enrollments _currentEnrollments() =>
+      AtClientManager.getInstance().atClient.enrollments;
 
   static final AtSignLogger _logger = AtSignLogger('PendingRequestsCountCubit');
   StreamSubscription<Enrollment>? _subscription;
@@ -31,7 +40,7 @@ class PendingRequestsCountCubit extends LoggingCubit<Count>
   /// current AtClient, which throws pre-onboarding.
   void start() {
     if (_subscription == null) {
-      _subscription = _client.enrollments.requests.listen(
+      _subscription = _enrollments().requests.listen(
         (_) => getPendingRequests(),
       );
       windowManager.addListener(this);
@@ -45,8 +54,6 @@ class PendingRequestsCountCubit extends LoggingCubit<Count>
     _subscription = null;
     emit(const Count(0));
   }
-
-  AtClient get _client => AtClientManager.getInstance().atClient;
 
   /// Sets the count from a read of the pending requests made elsewhere, so
   /// the badge shows what the Requests list shows.
@@ -62,7 +69,7 @@ class PendingRequestsCountCubit extends LoggingCubit<Count>
 
   Future<void> getPendingRequests() async {
     try {
-      final requests = await _client.enrollments.pending();
+      final requests = await _enrollments().pending();
       setCount(requests.length);
     } catch (e, st) {
       // NOTE: a failed read says nothing new, so the last count stands; the

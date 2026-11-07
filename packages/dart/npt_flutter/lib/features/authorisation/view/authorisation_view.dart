@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:at_client_flutter/at_client_flutter.dart' show Atsign;
+import 'package:at_client_flutter/at_client_flutter.dart'
+    show AtClient, Atsign, Enrollments, KeychainStorage;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/authorisation/controller/authorisation_hub_controller.dart';
@@ -30,7 +31,17 @@ class AuthorisationView extends StatelessWidget {
 }
 
 class AuthorisationHub extends StatefulWidget {
-  const AuthorisationHub({super.key});
+  const AuthorisationHub({
+    super.key,
+    this.client,
+    this.enrollments,
+    this.keychain,
+  });
+
+  /// For tests: what the hub uses in place of the current AtClient's own.
+  final AtClient? client;
+  final Enrollments? enrollments;
+  final KeychainStorage? keychain;
 
   @override
   State<AuthorisationHub> createState() => _AuthorisationHubState();
@@ -44,6 +55,9 @@ class _AuthorisationHubState extends State<AuthorisationHub>
   void initState() {
     super.initState();
     _controller = AuthorisationHubController(
+      client: widget.client,
+      enrollments: widget.enrollments,
+      keychain: widget.keychain,
       onPendingCount: context.read<PendingRequestsCountCubit>().setCount,
     );
     windowManager.addListener(this);
