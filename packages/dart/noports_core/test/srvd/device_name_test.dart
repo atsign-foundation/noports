@@ -104,6 +104,15 @@ void main() {
     expect(srvd.sessions['the session']!.deviceName, isNull);
   });
 
+  test('A device name the pattern matches only in part is not recorded',
+      () async {
+    await srvd.handleRequestPorts(requestPorts('a' * 37));
+
+    expect(srvd.sessions['the session'], isNotNull, reason: 'the session starts');
+    expect(srvd.sessions['the session']!.deviceName, isNull,
+        reason: '37 characters is one over the bound');
+  });
+
   test('The device name is lower-cased as the key is', () async {
     await srvd.handleRequestPorts(requestPorts('Gateway-1'));
 

@@ -160,6 +160,27 @@ void main() {
         'signingKeyWithdrawn');
   });
 
+  test('Every connection of a session reaches telemetry, not only the first',
+      () async {
+    final exporter = RecordingExporter();
+    final telemetry =
+        await startedTelemetry(exporter, ScriptedListSource(listOf(['@alice'])));
+    final relay = srvd(telemetry);
+    addTearDown(telemetry.stop);
+    relay.sessions['the-session'] = sessionInfo(sessionParams());
+
+    await relay.handleWorkerReport(IIRequest.create(
+        'newConnection', {...opened(1), 'stats': Stats()}));
+    await relay.handleWorkerReport(IIRequest.create(
+        'newConnection', {...opened(2), 'stats': Stats()}));
+    await until(() => exporter.named(N.sessionConnections).isNotEmpty,
+        what: 'a connections record');
+
+    final record = exporter.named(N.sessionConnections).single;
+    expect(record.attributes[N.opens], 2,
+        reason: 'the second connection is reported as well as the first');
+  });
+
   test('Live sessions are reported as ended when srvd stops', () async {
     expect(RelayTelemetry.defaultShutdownTimeout, const Duration(seconds: 5));
     final exporter = RecordingExporter();

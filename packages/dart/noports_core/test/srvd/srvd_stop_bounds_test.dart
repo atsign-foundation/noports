@@ -26,15 +26,33 @@ void _deafWorker(SendPort toMain) {
   fromMain.listen((_) {});
 }
 
+class _FakeNotificationParams extends Fake implements NotificationParams {}
+
 void main() {
   late List<StreamController<AtNotification>> subscriptions;
   late MockAtClient atClient;
+  late List<NotificationParams> answers;
   final sockets = <Socket>[];
+
+  setUpAll(() => registerFallbackValue(_FakeNotificationParams()));
 
   setUp(() {
     subscriptions = [];
+    answers = [];
     atClient = MockAtClient();
     final notificationService = MockNotificationService();
+    when(
+      () => notificationService.notify(
+        any(),
+        checkForFinalDeliveryStatus: any(named: 'checkForFinalDeliveryStatus'),
+        waitForFinalDeliveryStatus: any(named: 'waitForFinalDeliveryStatus'),
+        onSentToSecondary: any(named: 'onSentToSecondary'),
+      ),
+    ).thenAnswer((i) async {
+      answers.add(i.positionalArguments.first as NotificationParams);
+      return NotificationResult()
+        ..notificationStatusEnum = NotificationStatusEnum.delivered;
+    });
     when(() => atClient.notificationService).thenReturn(notificationService);
     when(
       () => notificationService.subscribe(
@@ -196,6 +214,7 @@ void main() {
     ));
     await stopping;
 
+    expect(answers, isEmpty, reason: 'the client is sent no ports');
     expect(relay.sessions, isEmpty);
     expect(relay.runningWorkers, 0);
   });
