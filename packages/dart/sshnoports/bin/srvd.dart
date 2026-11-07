@@ -137,6 +137,7 @@ void main(List<String> args) async {
             description: _description, optionsUsage: SrvdParams.parser.usage));
         stderr.writeln('\n$e');
       },
+      version: versionString,
     );
   } on ArgumentError catch (_) {
     exit(1);

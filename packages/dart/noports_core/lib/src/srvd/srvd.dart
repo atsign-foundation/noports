@@ -7,6 +7,7 @@ import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
+import 'package:noports_core/src/version.dart';
 
 abstract interface class Srvd {
   static const String namespace = 'sshrvd';
@@ -38,12 +39,14 @@ abstract interface class Srvd {
     AtClient? atClient,
     FutureOr<AtClient> Function(SrvdParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
+    String? version,
   }) async {
     return SrvdImpl.fromCommandLineArgs(
       args,
       atClient: atClient,
       atClientGenerator: atClientGenerator,
       usageCallback: usageCallback,
+      version: version ?? packageVersion,
     );
   }
 

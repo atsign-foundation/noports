@@ -20,6 +20,12 @@ import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
 import 'package:noports_core/src/srvd/srvd_util_mixin.dart';
+import 'package:noports_core/src/srvd/telemetry/opted_in_list.dart';
+import 'package:noports_core/src/srvd/telemetry/relay_telemetry.dart';
+import 'package:noports_core/src/srvd/telemetry/relay_telemetry_names.dart';
+import 'package:noports_core/src/version.dart';
+import 'package:at_telemetry/at_telemetry.dart'
+    show AtTelemetryNotificationExporter;
 import 'package:socket_connector/socket_connector.dart';
 
 import 'isolates/types.dart';
@@ -61,6 +67,10 @@ class SrvdImpl
 
   /// How this relay looks up the `_apsk` records sockets sign with.
   final PublicLookup publicLookup;
+
+  /// The telemetry this relay sends about its sessions; null when it was
+  /// given no collector Atsign.
+  final RelayTelemetry? telemetry;
 
   Timer? _signingKeyCheckTimer;
   final Set<String> _keysBeingChecked = {};
@@ -111,6 +121,7 @@ class SrvdImpl
     required this.relayAuthDetectWindowMs,
     required this.signingKeyCheckInterval,
     PublicLookup? publicLookup,
+    this.telemetry,
   }) : publicLookup = publicLookup ?? DirectPublicLookup(atClient) {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
@@ -121,6 +132,7 @@ class SrvdImpl
     AtClient? atClient,
     FutureOr<AtClient> Function(SrvdParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
+    String version = packageVersion,
   }) async {
     try {
       SrvdParams p;
@@ -148,7 +160,15 @@ class SrvdImpl
 
       atClient ??= await atClientGenerator!(p);
 
+      final String? collector = p.telemetryCollectorAtsign;
       var srvd = SrvdImpl(
+        telemetry: collector == null
+            ? null
+            : relayTelemetryFor(
+                atClient: atClient,
+                collector: collector,
+                version: version,
+              ),
         atClient: atClient,
         atSign: p.atSign.toAtsign(),
         homeDirectory: p.homeDirectory,
@@ -216,6 +236,61 @@ class SrvdImpl
         (_) => unawaited(checkSigningKeys()),
       );
     }
+
+    telemetry?.start();
+  }
+
+  /// Telemetry sent as notifications to [collector] through [atClient],
+  /// reporting the sessions of the Atsigns on the opted-in list [collector]
+  /// shares with this relay.
+  static RelayTelemetry relayTelemetryFor({
+    required AtClient atClient,
+    required String collector,
+    required String version,
+  }) {
+    final AtSignLogger telemetryLogger = AtSignLogger(' srvd telemetry ');
+    final exporter = AtTelemetryNotificationExporter(
+      notify: (String idAndNamespace, String value) async {
+        await atClient.notificationService.send(
+          to: collector.toAtsign(),
+          idAndNamespace: idAndNamespace,
+          body: value,
+          shouldEncrypt: true,
+        );
+      },
+      enrollmentId: () => atClient.enrollmentId,
+      flushInterval: const Duration(seconds: 1),
+      shutdownTimeout: RelayTelemetry.defaultShutdownTimeout,
+    );
+    return RelayTelemetry(
+      exporter: exporter,
+      backlog: () => exporter.unsentBatches,
+      serviceVersion: version,
+      logger: telemetryLogger,
+      list: OptedInListPoller(
+        source: CollectionOptedInListSource.forCollector(
+          atClient: atClient,
+          collector: collector,
+        ),
+        onWarning: telemetryLogger.warning,
+      ),
+    );
+  }
+
+  /// Handles one of the reports both kinds of worker send about a session:
+  /// newConnection, connectionClosed, progress and sessionComplete.
+  @visibleForTesting
+  Future<void> handleWorkerReport(IIRequest msg) async {
+    switch (msg.type) {
+      case 'newConnection':
+        await _handleNewConnection(msg);
+      case 'connectionClosed':
+        telemetry?.connectionClosed(msg.payload['sessionId'], msg.payload);
+      case 'progress':
+        telemetry?.progress(msg.payload['sessionId'], msg.payload);
+      case 'sessionComplete':
+        await _handleSessionComplete(msg);
+    }
   }
 
   @override
@@ -249,6 +324,7 @@ class SrvdImpl
           in _workers.entries.toList())
         _stopWorker(worker, toWorker, exited),
     ]);
+    await telemetry?.stop();
     sessions.clear();
   }
 
@@ -828,6 +904,15 @@ class SrvdImpl
     logger.info('_handleSessionComplete $sessionId');
     SessionInfo? si = sessions[sessionId];
     if (si != null && !si.completed.isCompleted) si.completed.complete();
+    telemetry?.sessionCompleted(
+      sessionId,
+      msg.payload,
+      _stopped
+          ? RelaySessionEndReason.relayStopping
+          : (si?.ending ?? false)
+              ? RelaySessionEndReason.signingKeyWithdrawn
+              : RelaySessionEndReason.connectionsClosed,
+    );
     logger.info(
       'sessionInfo:'
       ' $si eventLoggingConfig: ${si?.eventLoggingConfig}',
@@ -966,6 +1051,7 @@ class SrvdImpl
     if (si == null) {
       return;
     }
+    telemetry?.connectionOpened(sessionId, si, msg.payload);
     // If we've already got stats then this isn't the first connection, and we
     // only really care about the first connection in order to send the
     // "connected" event.
@@ -1064,11 +1150,11 @@ class SrvdImpl
           case 'signingKey':
             recordSigningKey(msg.payload['sessionId'], msg.payload['key']);
             break;
-          case 'newConnection':
-            await _handleNewConnection(msg);
-            break;
-          case 'sessionComplete':
-            await _handleSessionComplete(msg);
+          case 'newConnection' ||
+              'connectionClosed' ||
+              'progress' ||
+              'sessionComplete':
+            await handleWorkerReport(msg);
             break;
           default:
             toSpawned.send(
@@ -1210,11 +1296,11 @@ class SrvdImpl
           case 'signingKey':
             recordSigningKey(msg.payload['sessionId'], msg.payload['key']);
             break;
-          case 'newConnection':
-            await _handleNewConnection(msg);
-            break;
-          case 'sessionComplete':
-            await _handleSessionComplete(msg);
+          case 'newConnection' ||
+              'connectionClosed' ||
+              'progress' ||
+              'sessionComplete':
+            await handleWorkerReport(msg);
             break;
           case 'startRefused':
             _handleStartRefused(msg);

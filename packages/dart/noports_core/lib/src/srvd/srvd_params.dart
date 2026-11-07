@@ -39,6 +39,9 @@ class SrvdParams {
   /// withdrawn from; 0 turns the check off.
   final int signingKeyCheckSecs;
 
+  /// The collector Atsign this relay sends telemetry to; null sends none.
+  final String? telemetryCollectorAtsign;
+
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
@@ -58,6 +61,7 @@ class SrvdParams {
     required this.relayAuthDetectWindowMs,
     required this.signingKeyCheckSecs,
     required this.debug,
+    this.telemetryCollectorAtsign,
   });
 
   static Future<SrvdParams> fromArgs(List<String> args) async {
@@ -94,7 +98,20 @@ class SrvdParams {
         int.parse(r['signing-key-check-secs']),
       ),
       debug: r['debug'],
+      telemetryCollectorAtsign: _atsignOption(
+        'telemetry-collector-atsign',
+        r['telemetry-collector-atsign'],
+      ),
     );
+  }
+
+  static String? _atsignOption(String option, String? value) {
+    if (value == null) return null;
+    try {
+      return value.toAtsign().toString();
+    } catch (_) {
+      throw ArgumentError('--$option must be an Atsign, but was $value');
+    }
   }
 
   static int _nonNegative(String option, int value) => value >= 0
@@ -219,6 +236,14 @@ class SrvdParams {
           ' session was authenticated with (ESCR) are still valid. A session'
           ' is ended once the enrollment that published one of them is'
           ' revoked, superseded, deleted or expires. 0 turns the check off.',
+    );
+    parser.addOption(
+      'telemetry-collector-atsign',
+      mandatory: false,
+      help:
+          'The Control Center collector Atsign to send session telemetry to,'
+          ' for the sessions of Atsigns on the opted-in list it shares with'
+          ' this relay. Off when absent.',
     );
     parser.addFlag(
       'help',
