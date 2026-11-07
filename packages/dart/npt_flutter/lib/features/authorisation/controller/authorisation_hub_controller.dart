@@ -5,10 +5,20 @@ import 'package:flutter/foundation.dart';
 import 'package:npt_flutter/features/authorisation/models/authorisation_page_section.dart';
 
 class AuthorisationHubController extends ChangeNotifier {
-  AuthorisationHubController({AtClient? client, KeychainStorage? keychain})
-    : _client = client,
-      _keychain = keychain ?? KeychainStorage();
+  AuthorisationHubController({
+    AtClient? client,
+    Enrollments? enrollments,
+    KeychainStorage? keychain,
+    this.onPendingCount,
+  }) : _client = client,
+       _enrollmentsOverride = enrollments,
+       _keychain = keychain ?? KeychainStorage();
 
+  /// Told how many requests await a decision after each read of them, so a
+  /// count shown elsewhere matches the list.
+  final void Function(int count)? onPendingCount;
+
+  final Enrollments? _enrollmentsOverride;
   final AtClient? _client;
   final KeychainStorage _keychain;
 
@@ -30,6 +40,8 @@ class AuthorisationHubController extends ChangeNotifier {
   List<Enrollment> _pending = const <Enrollment>[];
   bool _pendingLoading = false;
   String? _pendingError;
+  Future<void>? _pendingRead;
+  bool _pendingReadAgain = false;
   StreamSubscription<Enrollment>? _pendingSubscription;
 
   List<Enrollment> _approved = const <Enrollment>[];
@@ -63,7 +75,7 @@ class AuthorisationHubController extends ChangeNotifier {
 
   AtClient get client => _client ?? AtClientManager.getInstance().atClient;
 
-  Enrollments get _enrollments => client.enrollments;
+  Enrollments get _enrollments => _enrollmentsOverride ?? client.enrollments;
 
   String get _atSign => client.getCurrentAtSign()!;
 
@@ -98,18 +110,15 @@ class AuthorisationHubController extends ChangeNotifier {
     ]);
   }
 
+  /// A new request is only a cue to read the list again: the list shows what
+  /// the Atsign Server holds as pending, never a notification's own copy,
+  /// which can be replayed and goes stale once the request is decided
+  /// elsewhere.
   void _subscribeToNewRequests() {
-    _pendingSubscription ??= _enrollments.requests.listen((
-      Enrollment request,
-    ) {
-      if (_pending.any(
-        (Enrollment r) => r.enrollmentId == request.enrollmentId,
-      )) {
-        return;
-      }
-      _pending = <Enrollment>[..._pending, request];
-      _notify();
-    }, onError: (Object e) => unawaited(loadPendingRequests()));
+    _pendingSubscription ??= _enrollments.requests.listen(
+      (Enrollment _) => unawaited(loadPendingRequests()),
+      onError: (Object e) => unawaited(loadPendingRequests()),
+    );
   }
 
   /// Whether the keys this client authenticates with may decide enrollments:
@@ -187,13 +196,39 @@ class AuthorisationHubController extends ChangeNotifier {
     }
   }
 
-  Future<void> loadPendingRequests() async {
+  /// Reads the requests awaiting a decision from the Atsign Server, the only
+  /// record of them, so a request decided elsewhere drops out. A load asked
+  /// for while one runs is folded into one more read after it: overlapping
+  /// triggers never let an older answer replace a newer one, and a burst of
+  /// them costs at most two reads.
+  Future<void> loadPendingRequests() {
+    final Future<void>? running = _pendingRead;
+    if (running != null) {
+      _pendingReadAgain = true;
+      return running;
+    }
+    return _pendingRead = _readPendingUntilSettled();
+  }
+
+  Future<void> _readPendingUntilSettled() async {
+    try {
+      do {
+        _pendingReadAgain = false;
+        await _readPending();
+      } while (_pendingReadAgain && !_disposed);
+    } finally {
+      _pendingRead = null;
+    }
+  }
+
+  Future<void> _readPending() async {
     _pendingLoading = true;
     _notify();
 
     try {
       _pending = await _enrollments.pending();
       _pendingError = null;
+      if (!_disposed) onPendingCount?.call(_pending.length);
     } catch (e) {
       _pending = const <Enrollment>[];
       _pendingError = e.toString();
@@ -227,6 +262,9 @@ class AuthorisationHubController extends ChangeNotifier {
       _removePending(request);
       return null;
     } catch (e) {
+      // NOTE: a refusal often means the request was decided elsewhere, so the
+      // list is read again rather than left showing it.
+      unawaited(loadPendingRequests());
       return _decisionError(e, 'approve');
     }
   }
@@ -237,6 +275,7 @@ class AuthorisationHubController extends ChangeNotifier {
       _removePending(request);
       return null;
     } catch (e) {
+      unawaited(loadPendingRequests());
       return _decisionError(e, 'deny');
     }
   }
