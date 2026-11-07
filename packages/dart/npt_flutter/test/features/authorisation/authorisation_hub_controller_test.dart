@@ -114,4 +114,24 @@ void main() {
       expect(counts, <int>[2, 0]);
     },
   );
+
+  test('Given a request on the list, when a read of the pending requests '
+      'fails, then the list and its count keep the request and the error is '
+      'reported', () async {
+    final List<Future<List<Enrollment>> Function()> answers =
+        <Future<List<Enrollment>> Function()>[
+          () async => <Enrollment>[_request('kept')],
+          () async => throw Exception('connection dropped'),
+        ];
+    when(enrollments.pending()).thenAnswer((_) => answers.removeAt(0)());
+
+    await controller.loadPendingRequests();
+    await controller.loadPendingRequests();
+
+    expect(controller.pending.map((Enrollment e) => e.enrollmentId), <String?>[
+      'kept',
+    ]);
+    expect(controller.pendingError, contains('connection dropped'));
+    expect(counts, <int>[1]);
+  });
 }

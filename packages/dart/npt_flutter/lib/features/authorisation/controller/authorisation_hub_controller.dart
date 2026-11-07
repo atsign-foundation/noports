@@ -230,7 +230,9 @@ class AuthorisationHubController extends ChangeNotifier {
       _pendingError = null;
       if (!_disposed) onPendingCount?.call(_pending.length);
     } catch (e) {
-      _pending = const <Enrollment>[];
+      // NOTE: a failed read says nothing new about what is pending, and
+      // reads now happen on every focus, so the last list stands beside the
+      // error rather than the list going blank.
       _pendingError = e.toString();
     } finally {
       _pendingLoading = false;
