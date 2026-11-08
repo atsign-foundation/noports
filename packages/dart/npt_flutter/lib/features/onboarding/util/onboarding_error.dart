@@ -14,8 +14,7 @@ String describeOnboardingError(Object? error, AppLocalizations strings) {
 
   final String detail = onboardingErrorDetail(error);
 
-  // The atServer rejected the CRAM secret. Nearly always a spent activation
-  // file, since each secret is single use.
+  // The atServer rejected the activation key, which is single use.
   if (detail.contains('Cram authentication failed') ||
       detail.contains('cram authentication failed')) {
     return strings.errorCramAuthFailed;
