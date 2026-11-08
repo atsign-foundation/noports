@@ -1,9 +1,11 @@
 import 'dart:async';
 
-import 'package:at_client_flutter/at_client_flutter.dart' show Atsign;
+import 'package:at_client_flutter/at_client_flutter.dart'
+    show AtClient, Atsign, Enrollments, KeychainStorage;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/authorisation/controller/authorisation_hub_controller.dart';
+import 'package:npt_flutter/features/authorisation/cubit/pending_requests_count_cubit.dart';
 import 'package:npt_flutter/features/authorisation/models/authorisation_page_section.dart';
 import 'package:npt_flutter/features/authorisation/widgets/approved_enrollments_section.dart';
 import 'package:npt_flutter/features/authorisation/widgets/authorisation_section_list.dart';
@@ -11,6 +13,7 @@ import 'package:npt_flutter/features/authorisation/widgets/enrollment_requests_s
 import 'package:npt_flutter/features/authorisation/widgets/otp_section.dart';
 import 'package:npt_flutter/features/authorisation/widgets/set_pin_section.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
+import 'package:window_manager/window_manager.dart';
 
 class AuthorisationView extends StatelessWidget {
   const AuthorisationView({super.key});
@@ -20,33 +23,58 @@ class AuthorisationView extends StatelessWidget {
     final Atsign atsign = context.watch<OnboardingCubit>().getAtsign();
     return Padding(
       padding: const EdgeInsets.all(32.0),
-      child: AuthorisationHub(key: ValueKey<String>('authorization_hub_$atsign')),
+      child: AuthorisationHub(
+        key: ValueKey<String>('authorization_hub_$atsign'),
+      ),
     );
   }
 }
 
 class AuthorisationHub extends StatefulWidget {
-  const AuthorisationHub({super.key});
+  const AuthorisationHub({
+    super.key,
+    this.client,
+    this.enrollments,
+    this.keychain,
+  });
+
+  /// For tests: what the hub uses in place of the current AtClient's own.
+  final AtClient? client;
+  final Enrollments? enrollments;
+  final KeychainStorage? keychain;
 
   @override
   State<AuthorisationHub> createState() => _AuthorisationHubState();
 }
 
-class _AuthorisationHubState extends State<AuthorisationHub> {
+class _AuthorisationHubState extends State<AuthorisationHub>
+    with WindowListener {
   late final AuthorisationHubController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AuthorisationHubController();
+    _controller = AuthorisationHubController(
+      client: widget.client,
+      enrollments: widget.enrollments,
+      keychain: widget.keychain,
+      onPendingCount: context.read<PendingRequestsCountCubit>().setCount,
+    );
+    windowManager.addListener(this);
     unawaited(_controller.init());
   }
 
   @override
   void dispose() {
+    windowManager.removeListener(this);
     _controller.dispose();
     super.dispose();
   }
+
+  /// Requests decided elsewhere send no notification, so the list is read
+  /// again whenever the window comes back into focus.
+  @override
+  void onWindowFocus() => unawaited(_controller.loadPendingRequests());
 
   @override
   Widget build(BuildContext context) {
