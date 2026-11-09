@@ -199,6 +199,10 @@ Future<RsaKeyPair> _encryptionKeyPair(AtClient atClient) async {
   return keyPair;
 }
 
+/// Checks that [envelope] was signed with [requestingAtsign]'s public key,
+/// fetched from its atServer. Throws [AtSigningVerificationException] if not;
+/// its message names [requestingAtsign] and quotes nothing the envelope or
+/// the atServer supplied.
 Future<void> verifyEnvelopeSignature(
   AtClient atClient,
   String requestingAtsign,
@@ -206,15 +210,31 @@ Future<void> verifyEnvelopeSignature(
   Map envelope) async {
   final String signature = envelope['signature'];
   Map payload = envelope['payload'];
-  final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
-  final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
-  if (signingAlgo != SigningAlgoType.rsa2048) {
+  final hashingAlgo =
+      HashingAlgoType.values.asNameMap()[envelope['hashingAlgo']];
+  if (hashingAlgo == null) {
     throw AtSigningVerificationException(
-      'Unsupported signingAlgo ${signingAlgo.name} from $requestingAtsign',
+      'Unsupported hashingAlgo from $requestingAtsign',
     );
   }
-  // final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
-  final pk = await getRemotePK(atClient: atClient, atSign: requestingAtsign);
+  final signingAlgo =
+      SigningAlgoType.values.asNameMap()[envelope['signingAlgo']];
+  if (signingAlgo != SigningAlgoType.rsa2048) {
+    throw AtSigningVerificationException(
+      'Unsupported signingAlgo from $requestingAtsign',
+    );
+  }
+  final String pk;
+  try {
+    pk = await getRemotePK(atClient: atClient, atSign: requestingAtsign);
+  } on Exception catch (e) {
+    logger.warning(
+      "Could not fetch $requestingAtsign's public key: ${e.runtimeType}",
+    );
+    throw AtSigningVerificationException(
+      "could not fetch $requestingAtsign's public key",
+    );
+  }
   final verified = await rsaVerifyString(
     jsonEncode(payload),
     signature: signature,

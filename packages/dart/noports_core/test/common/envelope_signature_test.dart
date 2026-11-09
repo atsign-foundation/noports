@@ -25,6 +25,7 @@ void main() {
       String atSign, {
       RsaKeyPair? keyPair,
       Map<String, String> published = const {},
+      Map<String, String> fetchFails = const {},
     }) {
       final keys = keyPair ?? keyPairs[atSign]!;
       final client = MockAtClient();
@@ -51,6 +52,9 @@ void main() {
         final options = invocation.namedArguments[#getRequestOptions]
             as GetRequestOptions?;
         final owner = key.sharedBy!;
+        if (fetchFails[owner] case final message?) {
+          throw AtClientException.message(message);
+        }
         if (owner == atSign && !(options?.useRemoteAtServer ?? false)) {
           throw KeyNotFoundException(
             'public:publickey$owner does not exist in keystore',
@@ -61,6 +65,17 @@ void main() {
       });
       return client;
     }
+
+    /// A refusal that names [atSign] and does not contain [quoted].
+    Matcher refusalNaming(String atSign, {required String without}) => throwsA(
+          isA<AtSigningVerificationException>()
+              .having((e) => e.toString(), 'message', contains(atSign))
+              .having(
+                (e) => e.toString(),
+                'message',
+                isNot(contains(without)),
+              ),
+        );
 
     /// [signer]'s envelope as it arrives over the wire.
     Future<Map> envelopeFrom(MockAtClient signer) async => jsonDecode(
@@ -131,15 +146,60 @@ void main() {
           AtSignLogger('test'),
           await envelopeFrom(clientFor('@a')),
         ),
-        throwsA(
-          isA<AtSigningVerificationException>()
-              .having((e) => e.toString(), 'message', contains('@a'))
-              .having(
-                (e) => e.toString(),
-                'message',
-                isNot(contains('not-a-key')),
-              ),
+        refusalNaming('@a', without: 'not-a-key'),
+      );
+    });
+
+    test(
+        "when @a's published public key is base64 but not a key, then the"
+        ' check fails, and the refusal names @a without quoting it', () async {
+      final published = base64Encode(utf8.encode('not-a-key'));
+      final a = clientFor('@a', published: {'@a': published});
+
+      await expectLater(
+        verifyEnvelopeSignature(
+          a,
+          '@a',
+          AtSignLogger('test'),
+          await envelopeFrom(clientFor('@a')),
         ),
+        refusalNaming('@a', without: published),
+      );
+    });
+
+    test(
+        'when an envelope names a hashingAlgo that is not one, then the check'
+        ' fails, and the refusal names @a without quoting the name', () async {
+      final envelope = await envelopeFrom(clientFor('@a'));
+      envelope['hashingAlgo'] = 'not-an-algo\nnext-line\u2028';
+
+      await expectLater(
+        verifyEnvelopeSignature(
+          clientFor('@b'),
+          '@a',
+          AtSignLogger('test'),
+          envelope,
+        ),
+        refusalNaming('@a', without: 'not-an-algo'),
+      );
+    });
+
+    test(
+        "when @a's public key cannot be fetched, then the check fails, and the"
+        " refusal names @a without quoting the atServer's error", () async {
+      final b = clientFor(
+        '@b',
+        fetchFails: {'@a': 'from-the-atserver\nnext-line\u2028'},
+      );
+
+      await expectLater(
+        verifyEnvelopeSignature(
+          b,
+          '@a',
+          AtSignLogger('test'),
+          await envelopeFrom(clientFor('@a')),
+        ),
+        refusalNaming('@a', without: 'from-the-atserver'),
       );
     });
   });
