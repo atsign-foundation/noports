@@ -7,8 +7,8 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
   collector shares with the relay; the decision is taken once, at the
   session's first pair, and never revisited. A reported session gets a record
   at first pair, a record of its connection events whenever some happen,
-  coalesced over a short window, a still-running record every 15 minutes
-  when nothing else was sent, and a record at its end. The relay itself sends
+  coalesced over a short window, a still-running record every 15 minutes,
+  and a record at its end. The relay itself sends
   a lifecycle record at start, every 60 seconds, and at stop, whatever the
   list says. Without a collector Atsign srvd sends nothing and reads nothing.
 
