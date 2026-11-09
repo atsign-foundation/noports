@@ -494,6 +494,58 @@ void main() {
         expect(await remoteUsername, 'mySharedUsername');
       }); // test resolveRemoteUsername
 
+      group("Given the device's shared username record", () {
+        void whenShared(String username) {
+          when(() => mockParams.remoteUsername).thenReturn(null);
+          when(() => mockParams.clientAtSign).thenReturn('@client');
+          when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
+          when(
+            () => mockAtClient.get(
+              any<AtKey>(
+                that: predicate(
+                  (AtKey key) => key.key.startsWith('username.'),
+                ),
+              ),
+            ),
+          ).thenAnswer((i) async => AtValue()..value = username);
+        }
+
+        for (final username in [
+          '-x',
+          'a b',
+          'a@b',
+          'a;b',
+          'a\nb',
+          'a' * 65,
+        ]) {
+          test(
+              'when it is ${jsonEncode(username)}, which is not a plain login'
+              ' name, then resolveRemoteUsername refuses it and points at -u',
+              () async {
+            whenShared(username);
+            await expectLater(
+              stubbedSshnpdChannel.resolveRemoteUsername(),
+              throwsA(
+                isA<SshnpError>().having(
+                  (e) => e.toString(),
+                  'message',
+                  contains('-u'),
+                ),
+              ),
+            );
+          });
+        }
+
+        for (final username in ['alice', 'a.b_c-d', '_svc', 'a' * 64]) {
+          test(
+              'when it is the plain login name ${jsonEncode(username)}, then'
+              ' resolveRemoteUsername returns it', () async {
+            whenShared(username);
+            expect(await stubbedSshnpdChannel.resolveRemoteUsername(), username);
+          });
+        }
+      });
+
       test('resolveTunnelUsername - params.tunnelUsername override', () async {
         when(() => mockParams.tunnelUsername).thenReturn('myTunnelUsername');
         Future<String?> tunnelUsername = stubbedSshnpdChannel

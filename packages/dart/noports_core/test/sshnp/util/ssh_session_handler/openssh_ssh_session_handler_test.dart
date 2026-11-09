@@ -45,6 +45,33 @@ void main() {
     test('implements SshnpSshSessionHandler<Process?>', () {
       expect(stubbedSshnp, isA<SshSessionHandler<Process?>>());
     }); // test public API
-    test('startInitialTunnel', () {}); // test startInitialTunnel
+    test(
+        'when the tunnel username has a space, then it reaches ssh as one'
+        ' argument', () async {
+      final startProcess = StartProcessStub();
+      final process = MockProcess();
+      when(() => process.stdout).thenAnswer((_) => Stream.empty());
+      when(() => process.stderr).thenAnswer((_) => Stream.empty());
+      when(() => process.exitCode).thenAnswer((_) async => 0);
+      when(() => startProcess(any(), any())).thenAnswer((_) async => process);
+      when(() => mockParams.remoteSshdPort).thenReturn(22);
+      when(() => mockParams.addForwardsToTunnel).thenReturn(false);
+      stubbedSshnp
+        ..tunnelUsername = 'a b'
+        ..stubSshnpOpensshSshSessionHandler(
+          stubbedStartInitialTunnel: StartInitialTunnelStub(),
+          stubbedStartProcess: startProcess,
+        );
+
+      await stubbedSshnp.startInitialTunnelSession(
+        ephemeralKeyPairIdentifier: 'the-key',
+        localRvPort: 1234,
+      );
+
+      final args = verify(() => startProcess(any(), captureAny()))
+          .captured
+          .single as List<String>;
+      expect(args.first, 'a b@localhost');
+    }, testOn: '!windows');
   }); // group SshnpOpensshSshSessionHandler
 }

@@ -254,6 +254,7 @@ abstract class SshnpdChannel
   /// If [params.remoteUsername] is set, it will be used.
   /// Otherwise, the username will be fetched from the remote atSign.
   /// Returns null if the username could not be resolved.
+  /// Throws [SshnpError] if the device's username is not a plain login name.
   Future<String?> resolveRemoteUsername() async {
     if (params.remoteUsername != null) {
       return params.remoteUsername!;
@@ -262,13 +263,24 @@ abstract class SshnpdChannel
       '${params.clientAtSign}:username.$namespace${params.sshnpdAtSign}',
     );
 
-    return (await atClient.get(userNameRecordID).catchError((_) {
+    final String? username = (await atClient.get(userNameRecordID).catchError((
+      _,
+    ) {
       throw SshnpError(
         "Device is hidden or doesn't exist.\n"
         "Hint: If the device is set to hidden, use -u to specify the login username.",
       );
     })).value;
+    if (username != null && !_plainLoginName.hasMatch(username)) {
+      throw SshnpError(
+        "The device's username is not a plain login name.\n"
+        "Hint: use -u to specify the login username.",
+      );
+    }
+    return username;
   }
+
+  static final _plainLoginName = RegExp(r'^[A-Za-z0-9_.][A-Za-z0-9_.-]{0,63}$');
 
   /// Resolve the username to use in the initial ssh tunnel
   /// If [params.tunnelUsername] is set, it will be used.
