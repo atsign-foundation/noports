@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 
@@ -8,26 +9,28 @@ class ProfileSelectAllBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ProfileListFilterState filter = context
+        .watch<ProfileListFilterCubit>()
+        .state;
+    final ProfileFolderState folders = context.watch<ProfileFolderBloc>().state;
+    bool shownRow(String uuid) =>
+        filter.matches(uuid) &&
+        (filter.searching ||
+            folders is! ProfileFoldersLoaded ||
+            !folders.data.isCollapsed(uuid));
     return BlocBuilder<ProfileListBloc, ProfileListState>(
       builder: (BuildContext context, ProfileListState list) {
-        return BlocSelector<
-          ProfilesSelectedCubit,
-          ProfilesSelectedState,
-          (bool, bool)?
-        >(
-          selector: (ProfilesSelectedState state) {
-            if (list is! ProfileListLoaded) return null;
+        final List<String>? shown = list is ProfileListLoaded
+            ? list.profiles.where(shownRow).toList()
+            : null;
+        return BlocBuilder<ProfilesSelectedCubit, ProfilesSelectedState>(
+          builder: (BuildContext context, ProfilesSelectedState state) {
+            if (shown == null) return gap0;
             // one - whether all elements are selected or not
             var allChecked =
-                list.profiles.isNotEmpty &&
-                state.selected.containsAll(list.profiles);
+                shown.isNotEmpty && state.selected.containsAll(shown);
             // two - whether some elements are selected or not
-            var anyChecked = state.selected.isNotEmpty;
-            return (allChecked, anyChecked);
-          },
-          builder: (BuildContext context, (bool, bool)? tuple) {
-            if (tuple == null) return gap0;
-            var (allChecked, someChecked) = tuple;
+            var someChecked = state.selected.isNotEmpty;
             return Checkbox(
               tristate: true,
               value: allChecked
@@ -45,7 +48,7 @@ class ProfileSelectAllBox extends StatelessWidget {
                     context.read<ProfilesSelectedCubit>().deselectAll();
                   case true: // None checked transitions to true with tristate: true
                   case false: // Some checked transitions to false with tristate: true
-                    context.read<ProfilesSelectedCubit>().selectAll();
+                    context.read<ProfilesSelectedCubit>().selectOnly(shown);
                 }
               },
             );
