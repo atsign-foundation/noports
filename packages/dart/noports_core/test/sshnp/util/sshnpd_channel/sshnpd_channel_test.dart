@@ -513,9 +513,11 @@ void main() {
         for (final username in [
           '-x',
           'a b',
-          'a@b',
           'a;b',
+          'a\$b',
+          'a\\b',
           'a\nb',
+          'a\u200bb',
           'a' * 65,
         ]) {
           test(
@@ -552,7 +554,14 @@ void main() {
           );
         });
 
-        for (final username in ['alice', 'a.b_c-d', '_svc', 'a' * 64]) {
+        for (final username in [
+          'alice',
+          'a.b_c-d',
+          '_svc',
+          'alice@corp.example',
+          'jos\u00e9',
+          'a' * 64,
+        ]) {
           test(
               'when it is the plain login name ${jsonEncode(username)}, then'
               ' resolveRemoteUsername returns it', () async {

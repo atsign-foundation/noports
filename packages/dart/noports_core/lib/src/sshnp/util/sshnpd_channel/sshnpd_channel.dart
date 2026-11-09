@@ -281,7 +281,10 @@ abstract class SshnpdChannel
     return username;
   }
 
-  static final _plainLoginName = RegExp(r'^[A-Za-z0-9_.][A-Za-z0-9_.-]{0,63}$');
+  static final _plainLoginName = RegExp(
+    r'^[\p{L}\p{M}\p{N}_.@][\p{L}\p{M}\p{N}_.@-]{0,63}$',
+    unicode: true,
+  );
 
   /// Resolve the username to use in the initial ssh tunnel
   /// If [params.tunnelUsername] is set, it will be used.
