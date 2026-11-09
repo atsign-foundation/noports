@@ -170,9 +170,9 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
     When the session completes on its own
     Then any pending entries go out first, then noports.relay.session.ended with the end time, duration, bytes each way, 3 TCP connections, 1 connection unclosed, the reason connectionsClosed, and the next sequence number
 
-  Scenario: A session ended for a withdrawn signing key says so
+  Scenario: A session ended for a withdrawn client data signing key says so
     Given a reported session
-    When the relay ends it because a signing key was withdrawn
+    When the relay ends it because a client data signing key was withdrawn
     Then its session.ended carries the reason signingKeyWithdrawn
 
   Scenario: Live sessions are reported as ended when srvd stops

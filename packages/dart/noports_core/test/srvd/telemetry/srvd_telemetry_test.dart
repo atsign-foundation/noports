@@ -197,7 +197,8 @@ void main() {
         isNotEmpty);
   });
 
-  test('A session ended for a withdrawn signing key says so', () async {
+  test('A session ended for a withdrawn client data signing key says so',
+      () async {
     final exporter = RecordingExporter();
     final telemetry =
         await startedTelemetry(exporter, ScriptedListSource(listOf(['@alice'])));

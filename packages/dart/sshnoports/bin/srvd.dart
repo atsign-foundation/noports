@@ -97,8 +97,6 @@ void main(List<String> args) async {
     exit(exitCode);
   }
 
-  // The first signal stops the relay gracefully, within Srvd.stopBound; a
-  // second, or one before the relay exists, exits at once.
   bool stopping = false;
   Future<void> stopAndExit(ProcessSignal signal) async {
     final relay = srvd;

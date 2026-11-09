@@ -186,8 +186,6 @@ void main() {
     }
     await report('connectionClosed', nth: 3);
 
-    // The connector closes itself once no connection remains and its grace
-    // period, a second here, has passed.
     await worker.connector!.done.timeout(const Duration(seconds: 5));
     await worker.tracker!.complete();
 
@@ -231,7 +229,6 @@ void main() {
     await start();
     final (client, _) = await pair();
     await report('newConnection');
-    // The device peer never reads, so the relay's writes toward it stall.
     for (var i = 0; i < 4; i++) {
       client.add(Uint8List(1 << 20));
     }

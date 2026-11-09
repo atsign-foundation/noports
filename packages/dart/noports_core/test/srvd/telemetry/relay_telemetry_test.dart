@@ -83,8 +83,6 @@ void main() {
     await pumpEventQueue();
   }
 
-  // Configuration and lifecycle
-
   test('srvd sends lifecycle records whatever the list says', () async {
     expect(RelayTelemetry.defaultHeartbeatInterval, const Duration(seconds: 60));
     source.list = null;
@@ -110,8 +108,6 @@ void main() {
         'srvd 9.9.9 (core 9.9.9)');
     expect(resource[AtTelemetryAttributes.serviceInstanceId], isA<String>());
   });
-
-  // The decision
 
   test('A session whose client is listed is reported from first pair to end',
       () async {
@@ -226,8 +222,6 @@ void main() {
     expect(exporter.records, hasLength(sent),
         reason: 'nothing is sent once the stopped record has gone');
   });
-
-  // The records
 
   test('session.started carries the session set', () async {
     final t = await telemetry();

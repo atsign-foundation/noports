@@ -60,8 +60,8 @@ void main() {
   });
 
   /// Starts ESCR session [sessionId] between @alice and @bob, in which every
-  /// `_apsk.e.a.__e` signing key resolves to [signingKP]'s public key, and
-  /// returns its relay auth key.
+  /// `_apsk.e.a.__e` client data signing key resolves to [signingKP]'s public
+  /// key, and returns its relay auth key.
   Future<String> startSession(String sessionId) async {
     final relayAuthAesKey = AESKey.generate(32).key;
     await worker.startSession(IIRequest.create(

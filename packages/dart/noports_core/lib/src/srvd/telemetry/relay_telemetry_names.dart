@@ -4,7 +4,6 @@ abstract final class RelayTelemetryNames {
   /// The service every relay record names.
   static const String serviceName = 'srvd';
 
-  // Events
   static const String sessionStarted = 'noports.relay.session.started';
   static const String sessionConnections = 'noports.relay.session.connections';
   static const String sessionStillRunning =
@@ -14,7 +13,6 @@ abstract final class RelayTelemetryNames {
   static const String lifecycleHeartbeat = 'noports.relay.lifecycle.heartbeat';
   static const String lifecycleStopped = 'noports.relay.lifecycle.stopped';
 
-  // The session set, on every session record
   static const String relaySessionId = 'noports.relay.session.id';
   static const String sequence = 'noports.relay.session.seq';
   static const String clientSessionId = 'noports.session.id';
@@ -28,7 +26,6 @@ abstract final class RelayTelemetryNames {
       'noports.relay.session.established_at_ms';
   static const String deviceName = 'noports.device.name';
 
-  // Counts and totals on session records
   static const String opens = 'noports.relay.session.opens';
   static const String closes = 'noports.relay.session.closes';
   static const String openConnections = 'noports.relay.session.open_connections';
@@ -41,11 +38,9 @@ abstract final class RelayTelemetryNames {
       'noports.relay.session.connections_unclosed';
   static const String endReason = 'noports.relay.session.end_reason';
 
-  // The relay set, on lifecycle records
   static const String openSessions = 'noports.relay.open_sessions';
   static const String optInListAgeSeconds = 'noports.relay.optin_list.age_s';
 
-  // Port modes
   static const String portModePair = 'pair';
   static const String portMode443 = '443';
 }
@@ -55,8 +50,8 @@ enum RelaySessionEndReason {
   /// The session's connector finished on its own.
   connectionsClosed,
 
-  /// The relay ended it because a signing key one of its sockets was
-  /// accepted with has been withdrawn.
+  /// The relay ended it because a client data signing key one of its
+  /// sockets was accepted with has been withdrawn.
   signingKeyWithdrawn,
 
   /// The relay was stopping.
