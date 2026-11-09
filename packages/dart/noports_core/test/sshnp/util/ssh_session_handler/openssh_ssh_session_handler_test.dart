@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart';
@@ -86,6 +87,41 @@ void main() {
         '-f',
         'sleep', '15',
       ]);
+    }, testOn: '!windows');
+
+    test(
+        'when the tunnel ssh exits non-zero, then startInitialTunnelSession'
+        ' throws SshnpError with the exit code and ssh stderr', () async {
+      final startProcess = StartProcessStub();
+      final process = MockProcess();
+      when(() => process.stdout).thenAnswer((_) => Stream.empty());
+      when(() => process.stderr).thenAnswer(
+        (_) => Stream.value(utf8.encode('Permission denied (publickey).\n')),
+      );
+      when(() => process.exitCode).thenAnswer((_) async => 255);
+      when(() => startProcess(any(), any())).thenAnswer((_) async => process);
+      when(() => mockParams.remoteSshdPort).thenReturn(22);
+      when(() => mockParams.addForwardsToTunnel).thenReturn(false);
+      stubbedSshnp
+        ..tunnelUsername = 'nosuchuser'
+        ..stubSshnpOpensshSshSessionHandler(
+          stubbedStartInitialTunnel: StartInitialTunnelStub(),
+          stubbedStartProcess: startProcess,
+        );
+
+      await expectLater(
+        stubbedSshnp.startInitialTunnelSession(
+          ephemeralKeyPairIdentifier: 'the-key',
+          localRvPort: 1234,
+        ),
+        throwsA(
+          isA<SshnpError>().having(
+            (e) => e.toString(),
+            'message',
+            allOf(contains('255'), contains('Permission denied (publickey)')),
+          ),
+        ),
+      );
     }, testOn: '!windows');
   }); // group SshnpOpensshSshSessionHandler
 }
