@@ -185,6 +185,41 @@ void main() {
     });
 
     test(
+        'when an envelope names a signingAlgo that is not one, then the check'
+        ' fails, and the refusal names @a without quoting the name', () async {
+      final envelope = await envelopeFrom(clientFor('@a'));
+      envelope['signingAlgo'] = 'not-an-algo\nnext-line ';
+
+      await expectLater(
+        verifyEnvelopeSignature(
+          clientFor('@b'),
+          '@a',
+          AtSignLogger('test'),
+          envelope,
+        ),
+        refusalNaming('@a', without: 'not-an-algo'),
+      );
+    });
+
+    test(
+        'when an envelope names a signingAlgo other than rsa2048, then the'
+        ' check fails, and the refusal names @a without quoting the name',
+        () async {
+      final envelope = await envelopeFrom(clientFor('@a'));
+      envelope['signingAlgo'] = SigningAlgoType.rsa4096.name;
+
+      await expectLater(
+        verifyEnvelopeSignature(
+          clientFor('@b'),
+          '@a',
+          AtSignLogger('test'),
+          envelope,
+        ),
+        refusalNaming('@a', without: SigningAlgoType.rsa4096.name),
+      );
+    });
+
+    test(
         "when @a's public key cannot be fetched, then the check fails, and the"
         " refusal names @a without quoting the atServer's error", () async {
       final b = clientFor(
