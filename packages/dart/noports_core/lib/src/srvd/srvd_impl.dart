@@ -1091,7 +1091,7 @@ class SrvdImpl
     String withdrawnTo,
   ) {
     si.ending = true;
-    logger.warning(
+    logger.shout(
       'Ending session $sessionId (${si.atSignA} to ${si.atSignB}):'
       ' signing key $signingKey has been withdrawn to $withdrawnTo',
     );
