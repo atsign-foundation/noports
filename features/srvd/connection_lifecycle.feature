@@ -21,10 +21,10 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
   completes (killed at the bound).
   Replay: a request_ports naming a session id that is live or starting is
   refused, as today; nothing here adds a message that can be resent.
-  DoS: a peer that stops reading holds a side for at most the flush bound
-  once the relay closes the connector, and for at most socket_connector's
-  stall bound before that; a worker that never reports completion is killed
-  at the bound; a stop takes at most 12 seconds whatever the sessions do.
+  DoS: a peer that stops reading holds a side for at most socket_connector's
+  close flush bound once a side closes, and for at most its stall bound
+  before that; a worker that has not exited 5 seconds after a stop asks it
+  to is killed; a stop takes at most 12 seconds whatever the sessions do.
   Forgery: the device name is text the client chose; it is kept only when
   it matches the device-name pattern in full and is lower-cased as the key
   is, and a session whose name does not match starts without one.
@@ -86,7 +86,7 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
   Scenario: A side whose peer has stopped reading is destroyed within the flush bound when the relay closes the connector
     Given connection 1 of S has unsent data for a device peer that has stopped reading
     When the relay closes the session's connector
-    Then both sides are destroyed within 3 seconds and main receives connectionClosed for S
+    Then both sides are destroyed within socket_connector's close flush bound and main receives connectionClosed for S
 
   # The device name
 
@@ -108,7 +108,7 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
     Given two live sessions, each with an open connection
     When srvd is stopped
     Then no new session request is taken from that moment
-    And every connector is closed, so each listener is gone and each open side is destroyed within 3 seconds
+    And every connector is closed, so each listener is gone, and each worker exits or is killed within 5 seconds
     And main receives sessionComplete for each session before it forgets the sessions
     And every worker isolate has exited and the stop returns within 12 seconds
 

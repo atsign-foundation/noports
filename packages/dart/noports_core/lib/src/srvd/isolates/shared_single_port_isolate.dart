@@ -61,7 +61,7 @@ class SinglePortWorker extends RelayWorker {
     required this.address,
     required this.useTLS,
     required this.bindPort,
-    this.closeFlushTimeout = relayCloseFlushTimeout,
+    this.closeFlushTimeout = SocketConnector.defaultCloseFlushTimeout,
     this.progressInterval = defaultProgressInterval,
     this.connectorTimeout = SocketConnector.defaultTimeout,
   }) {

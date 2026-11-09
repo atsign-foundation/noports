@@ -3,10 +3,11 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:noports_core/src/srvd/isolates/connection_tracker.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
+import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
+import 'package:socket_connector/socket_connector.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -203,7 +204,6 @@ void main() {
   test(
       'A side whose peer has stopped reading is destroyed within the flush'
       ' bound when the relay closes the connector', () async {
-    expect(relayCloseFlushTimeout, const Duration(seconds: 3));
     expect(
       PortPairWorker(
         toMain: ReceivePort().sendPort,
@@ -212,8 +212,21 @@ void main() {
         loggingTag: 'default bound',
         relayAuthDetectWindowMs: 500,
       ).closeFlushTimeout,
-      relayCloseFlushTimeout,
-      reason: 'a worker built without the parameter uses the relay bound',
+      SocketConnector.defaultCloseFlushTimeout,
+      reason: "a port-pair worker keeps socket_connector's close flush bound",
+    );
+    expect(
+      SinglePortWorker(
+        toMain: ReceivePort().sendPort,
+        logTraffic: false,
+        verbose: false,
+        loggingTag: 'default bound',
+        address: '127.0.0.1',
+        useTLS: false,
+        bindPort: 0,
+      ).closeFlushTimeout,
+      SocketConnector.defaultCloseFlushTimeout,
+      reason: "the port-443 worker keeps socket_connector's close flush bound",
     );
     await start();
     final (client, _) = await pair();

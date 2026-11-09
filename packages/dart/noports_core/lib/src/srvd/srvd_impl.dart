@@ -105,8 +105,7 @@ class SrvdImpl
   bool _stopped = false;
 
   /// How long a worker has to exit after being told to stop before it is
-  /// killed: its flush bound, a second to report its session complete, and a
-  /// second to exit.
+  /// killed, which bounds the closes a stop waits for.
   static const _workerStopTimeout = Duration(seconds: 5);
 
   @visibleForTesting

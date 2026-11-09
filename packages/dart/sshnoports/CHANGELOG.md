@@ -12,7 +12,6 @@
   relay; off when absent
 * feat: srvd stops gracefully on SIGINT or SIGTERM within 12 seconds; give its
   container a 15-second stop grace period (Docker's default is 10)
-* feat: srvd ends a closing relay connection within 3 seconds
 
 ## v5.18.2
 

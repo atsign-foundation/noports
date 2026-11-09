@@ -5,10 +5,6 @@ import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:socket_connector/socket_connector.dart';
 
-/// How long a side's close waits for its pending data before the side is
-/// destroyed, on every connector a relay worker builds.
-const Duration relayCloseFlushTimeout = Duration(seconds: 3);
-
 /// How often a worker reports a running session's progress to main.
 const Duration defaultProgressInterval = Duration(minutes: 15);
 
@@ -24,7 +20,7 @@ class ConnectionTracker {
     required Stream<Connection> opened,
     required Stream<Connection> closed,
     required this.stats,
-    this.closeFlushTimeout = relayCloseFlushTimeout,
+    this.closeFlushTimeout = SocketConnector.defaultCloseFlushTimeout,
     this.progressInterval = defaultProgressInterval,
     AtSignLogger? logger,
   }) : logger = logger ?? AtSignLogger(' srvd / ConnectionTracker $sessionId ') {
@@ -35,8 +31,8 @@ class ConnectionTracker {
   final String sessionId;
   final SendPort toMain;
 
-  /// The connector's stats, carried on `newConnection` and `sessionComplete`
-  /// as before.
+  /// The connector's stats, carried on the first `newConnection` and on
+  /// `sessionComplete`.
   final Stats Function() stats;
 
   final Duration closeFlushTimeout;
