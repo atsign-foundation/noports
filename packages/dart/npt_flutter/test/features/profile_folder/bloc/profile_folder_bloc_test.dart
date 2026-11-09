@@ -812,6 +812,30 @@ void main() {
     ],
   );
 
+  blocTest<ProfileFolderBloc, ProfileFolderState>(
+    'a sign-out while a failed save re-reads the folders shows nothing after '
+    'it',
+    build: () {
+      repo.loadResult = loadedData;
+      repo.throwOnPut = true;
+      repo.heldReads = <Completer<void>>[];
+      return bloc;
+    },
+    seed: () => const ProfileFoldersLoaded(loadedData),
+    act: (ProfileFolderBloc bloc) async {
+      bloc.add(const ProfileFolderRenameEvent(folderId: 'ga', name: 'Renamed'));
+      await Future<void>.delayed(Duration.zero);
+      expect(repo.heldReads, hasLength(1));
+      bloc.clearAll();
+      repo.heldReads!.single.complete();
+      await Future<void>.delayed(Duration.zero);
+    },
+    expect: () => <Object>[
+      isA<ProfileFoldersLoaded>(),
+      const ProfileFoldersInitial(),
+    ],
+  );
+
   group('edits made before sync has caught up', () {
     final ProfileFolder renamedA = folderA.copyWith(name: 'Z');
     final ProfileFolderData afterRename = ProfileFolderData(
