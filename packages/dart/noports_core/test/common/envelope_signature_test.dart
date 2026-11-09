@@ -21,7 +21,11 @@ void main() {
     /// encryption key pair, whose public-key lookups behave as at_client's
     /// do: its own atSign's key is found only on its atServer, not in local
     /// storage.
-    MockAtClient clientFor(String atSign, {RsaKeyPair? keyPair}) {
+    MockAtClient clientFor(
+      String atSign, {
+      RsaKeyPair? keyPair,
+      Map<String, String> published = const {},
+    }) {
       final keys = keyPair ?? keyPairs[atSign]!;
       final client = MockAtClient();
       when(() => client.getCurrentAtSign()).thenReturn(atSign);
@@ -52,7 +56,8 @@ void main() {
             'public:publickey$owner does not exist in keystore',
           );
         }
-        return AtValue()..value = keyPairs[owner]!.atPublicKey.publicKey;
+        return AtValue()
+          ..value = published[owner] ?? keyPairs[owner]!.atPublicKey.publicKey;
       });
       return client;
     }
@@ -100,7 +105,41 @@ void main() {
           AtSignLogger('test'),
           await envelopeFrom(other),
         ),
-        throwsA(isA<AtSigningVerificationException>()),
+        throwsA(
+          isA<AtSigningVerificationException>()
+              .having((e) => e.toString(), 'message', contains('@a'))
+              .having(
+                (e) => e.toString(),
+                'message',
+                isNot(contains(keyPairs['@a']!.atPublicKey.publicKey)),
+              ),
+        ),
+      );
+    });
+
+    test(
+        "when @a's published public key is not a key, then the check fails,"
+        ' and the refusal names @a without quoting what @a published',
+        () async {
+      const published = 'not-a-key\nnext-line\u2028';
+      final a = clientFor('@a', published: {'@a': published});
+
+      await expectLater(
+        verifyEnvelopeSignature(
+          a,
+          '@a',
+          AtSignLogger('test'),
+          await envelopeFrom(clientFor('@a')),
+        ),
+        throwsA(
+          isA<AtSigningVerificationException>()
+              .having((e) => e.toString(), 'message', contains('@a'))
+              .having(
+                (e) => e.toString(),
+                'message',
+                isNot(contains('not-a-key')),
+              ),
+        ),
       );
     });
   });

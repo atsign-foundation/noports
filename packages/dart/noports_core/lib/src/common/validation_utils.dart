@@ -224,7 +224,7 @@ Future<void> verifyEnvelopeSignature(
   logger.info('Signature verification result: $verified');
   if (!verified) {
     throw AtSigningVerificationException(
-      'signature verification returned false using cached public key for $requestingAtsign $pk',
+      "signature verification returned false using $requestingAtsign's public key",
     );
   }
 }
