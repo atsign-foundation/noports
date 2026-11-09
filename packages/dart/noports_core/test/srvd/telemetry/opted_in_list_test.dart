@@ -162,6 +162,16 @@ void main() {
     await expectLater(source.read(), throwsFormatException);
   });
 
+  test('a manifest whose builtAt names no time zone is refused', () async {
+    final String local =
+        DateTime.timestamp().toIso8601String().replaceAll('Z', '');
+    stored['manifest'] =
+        item({'builtAt': local, 'chunks': 0, 'window': '30d'});
+
+    await expectLater(source.read(), throwsFormatException,
+        reason: 'builtAt is UTC, so a time without a zone is not read as local');
+  });
+
   test('an empty list is a good read', () async {
     stored['manifest'] = manifest(0);
 

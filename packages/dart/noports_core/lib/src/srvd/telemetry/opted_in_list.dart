@@ -81,7 +81,10 @@ class CollectionOptedInListSource implements OptedInListSource {
     if (builtAtText is! String || chunks is! int || manifest['window'] is! String) {
       throw const FormatException('the manifest has the wrong shape');
     }
-    final DateTime builtAt = DateTime.parse(builtAtText).toUtc();
+    final DateTime builtAt = DateTime.parse(builtAtText);
+    if (!builtAt.isUtc) {
+      throw FormatException('the manifest builtAt names no time zone');
+    }
     if (builtAt.isAfter(_now().add(maxClockSkew))) {
       throw FormatException('the manifest was built in the future: $builtAtText');
     }
