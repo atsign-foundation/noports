@@ -26,6 +26,17 @@ typedef N = RelayTelemetryNames;
 
 void _exitAtOnce(Object? _) {}
 
+/// An exporter whose shutdown waits until [gate] completes.
+class _GatedExporter extends RecordingExporter {
+  final Completer<void> gate = Completer<void>();
+
+  @override
+  Future<void> shutdown() async {
+    await gate.future;
+    await super.shutdown();
+  }
+}
+
 /// Keeps the message of every log record it is given.
 class _Capture implements LoggingHandler {
   _Capture(this.messages);
@@ -317,6 +328,26 @@ void main() {
       expect(relay.sessions['one']?.toWorker, otherPort,
           reason: "the session is the other worker's, so it is kept");
     });
+  });
+
+  test('A second stop returns only once the first has finished', () async {
+    final exporter = _GatedExporter();
+    final telemetry =
+        await startedTelemetry(exporter, ScriptedListSource(listOf(['@alice'])));
+    final relay = srvd(telemetry);
+    await relay.init();
+    await relay.run();
+    final first = relay.stop();
+
+    bool secondReturned = false;
+    final second = relay.stop().then((_) => secondReturned = true);
+    await pumpEventQueue();
+
+    expect(secondReturned, isFalse,
+        reason: "the first stop's telemetry flush is still running");
+    exporter.gate.complete();
+    await Future.wait([first, second]);
+    expect(exporter.shutDown, isTrue);
   });
 
   test('Live sessions are reported as ended when srvd stops', () async {

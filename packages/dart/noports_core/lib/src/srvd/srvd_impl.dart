@@ -307,8 +307,11 @@ class SrvdImpl
     }
   }
 
+  Future<void>? _stopping;
+
+  /// Runs once; every call shares the first call's future.
   @override
-  Future<void> stop() => _stop().timeout(
+  Future<void> stop() => _stopping ??= _stop().timeout(
         Srvd.stopBound,
         onTimeout: () {
           logger.shout(
