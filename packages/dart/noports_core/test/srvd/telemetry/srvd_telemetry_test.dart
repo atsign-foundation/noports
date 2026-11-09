@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_telemetry/at_telemetry.dart';
@@ -20,6 +21,8 @@ import '../../sshnp/sshnp_mocks.dart';
 import 'telemetry_fakes.dart';
 
 typedef N = RelayTelemetryNames;
+
+void _exitAtOnce(Object? _) {}
 
 void main() {
   late MockAtClient atClient;
@@ -179,6 +182,93 @@ void main() {
     final record = exporter.named(N.sessionConnections).single;
     expect(record.attributes[N.opens], 2,
         reason: 'the second connection is reported as well as the first');
+  });
+
+  test('A session whose worker exits without reporting it complete is ended',
+      () async {
+    final exporter = RecordingExporter();
+    final telemetry =
+        await startedTelemetry(exporter, ScriptedListSource(listOf(['@alice'])));
+    final relay = srvd(telemetry);
+    addTearDown(telemetry.stop);
+    relay.sessions['the-session'] = sessionInfo(sessionParams());
+    await relay.handleWorkerReport(IIRequest.create(
+        'newConnection', {...opened(1), 'stats': Stats()}));
+    final fromWorker = ReceivePort();
+    final exitPort = ReceivePort();
+
+    final worker =
+        await Isolate.spawn(_exitAtOnce, null, onExit: exitPort.sendPort);
+    relay.trackWorker(worker, fromWorker, exitPort, Completer<SendPort>().future,
+        sessionId: 'the-session');
+    await until(() => exporter.named(N.sessionEnded).isNotEmpty,
+        what: 'session.ended');
+
+    final ended = exporter.named(N.sessionEnded).single;
+    expect(ended.attributes[N.endReason], 'workerExited');
+    expect(ended.attributes[N.connectionsUnclosed], 1);
+    expect(relay.sessions, isEmpty, reason: 'main forgets the session');
+  });
+
+  group('A port-pair worker that dies', () {
+    late RecordingExporter exporter;
+    late SrvdImpl relay;
+
+    setUp(() async {
+      exporter = RecordingExporter();
+      final telemetry = await startedTelemetry(
+          exporter, ScriptedListSource(listOf(['@alice'])));
+      addTearDown(telemetry.stop);
+      relay = srvd(telemetry);
+      await relay.init();
+      await relay.run();
+      addTearDown(relay.stop);
+    });
+
+    /// Spawns a real port-pair worker for session [id] and records the
+    /// session against it, paired once.
+    Future<Isolate> liveSession(String id) async {
+      final params =
+          sessionParams(sessionId: id, clientVerified: false, deviceVerified: false);
+      final (_, worker, toWorker) = await relay.spawnNewPortPairIsolate(params);
+      relay.sessions[id] =
+          SessionInfo(params: params, connector: null, toWorker: toWorker);
+      await relay.handleWorkerReport(IIRequest.create('newConnection',
+          {...opened(1), 'sessionId': id, 'stats': Stats()}));
+      return worker;
+    }
+
+    test('ends the session it carried as workerExited', () async {
+      final worker = await liveSession('one');
+
+      worker.kill(priority: Isolate.immediate);
+      await until(() => exporter.named(N.sessionEnded).isNotEmpty,
+          what: 'session.ended');
+
+      expect(exporter.named(N.sessionEnded).single.attributes[N.endReason],
+          'workerExited');
+      expect(relay.sessions, isEmpty);
+    });
+
+    test('leaves a later session that reuses its session id', () async {
+      final worker = await liveSession('one');
+      final (_, other, otherPort) = await relay.spawnNewPortPairIsolate(
+          sessionParams(sessionId: 'one', clientVerified: false, deviceVerified: false));
+      addTearDown(() => other.kill(priority: Isolate.immediate));
+      relay.sessions['one'] = SessionInfo(
+          params: sessionParams(sessionId: 'one'),
+          connector: null,
+          toWorker: otherPort);
+      final exitedFirst = ReceivePort();
+      worker.addOnExitListener(exitedFirst.sendPort);
+
+      worker.kill(priority: Isolate.immediate);
+      await exitedFirst.first;
+      await pumpEventQueue();
+
+      expect(relay.sessions['one']?.toWorker, otherPort,
+          reason: "the session is the other worker's, so it is kept");
+    });
   });
 
   test('Live sessions are reported as ended when srvd stops', () async {

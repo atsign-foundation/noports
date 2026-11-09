@@ -56,9 +56,6 @@ class ConnectionTracker {
   Timer? _progress;
   bool _completed = false;
 
-  /// Connections paired so far.
-  int get connections => _opened;
-
   /// Connections paired but not yet reported closed.
   int get openConnections => _open.length;
 

@@ -61,4 +61,7 @@ enum RelaySessionEndReason {
 
   /// The relay was stopping.
   relayStopping,
+
+  /// The worker carrying the session exited without reporting it complete.
+  workerExited,
 }

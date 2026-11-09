@@ -11,6 +11,7 @@ import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/public_lookup.dart';
+import 'package:noports_core/src/common/types.dart' show RelayAuthMode;
 import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
@@ -348,9 +349,11 @@ class SrvdImpl
     Isolate worker,
     ReceivePort fromWorker,
     ReceivePort exitPort,
-    Future<SendPort> toWorker,
-  ) =>
-      _register(worker, fromWorker, exitPort, toWorker);
+    Future<SendPort> toWorker, {
+    String? sessionId,
+  }) =>
+      _register(worker, fromWorker, exitPort, toWorker,
+          carries: () => [if (sessionId != null) sessionId]);
 
   /// Tracks [worker] until [exitPort] reports it has exited, then closes
   /// [fromWorker]. A worker registered after [stop] is stopped at once.
@@ -358,15 +361,35 @@ class SrvdImpl
     Isolate worker,
     ReceivePort fromWorker,
     ReceivePort exitPort,
-    Future<SendPort> toWorker,
-  ) {
+    Future<SendPort> toWorker, {
+    required Iterable<String> Function() carries,
+  }) {
     final exited = exitPort.first.then((_) {
       exitPort.close();
       fromWorker.close();
+      _endOrphans(carries());
     });
     _workers[worker] = (toWorker: toWorker, exited: exited);
     if (_stopped) {
       unawaited(_stopWorker(worker, toWorker, exited));
+    }
+  }
+
+  /// Ends each of [sessionIds] its worker never reported complete, in main
+  /// and in telemetry.
+  void _endOrphans(Iterable<String> sessionIds) {
+    for (final String id in sessionIds.toList()) {
+      final SessionInfo? si = sessions[id];
+      if (si == null) continue;
+      logger.shout('The worker carrying session $id exited without'
+          ' reporting it complete');
+      telemetry?.sessionLost(
+        id,
+        _stopped
+            ? RelaySessionEndReason.relayStopping
+            : RelaySessionEndReason.workerExited,
+      );
+      sessions.remove(id);
     }
   }
 
@@ -802,6 +825,17 @@ class SrvdImpl
       return;
     }
 
+    for (final String side in ['sideA', 'sideB']) {
+      final Object? mode = decoded[side];
+      if (mode != null && !RelayAuthMode.values.any((m) => m.name == mode)) {
+        logger.warning(
+          'auth_modes from ${n.from} for $sessionId names no relay auth mode'
+          ' for $side; ignoring',
+        );
+        return;
+      }
+    }
+
     final SendPort? toWorker = si.toWorker;
     if (toWorker == null) {
       logger.info(
@@ -917,7 +951,6 @@ class SrvdImpl
     final sessionId = msg.payload['sessionId'];
     logger.info('_handleSessionComplete $sessionId');
     SessionInfo? si = sessions[sessionId];
-    if (si != null && !si.completed.isCompleted) si.completed.complete();
     telemetry?.sessionCompleted(
       sessionId,
       msg.payload,
@@ -1133,7 +1166,12 @@ class SrvdImpl
       onExit: exitPort.sendPort,
     );
     final toWorker = Completer<SendPort>();
-    _register(spawned, fromSpawned, exitPort, toWorker.future);
+    SendPort? workerPort;
+    _register(spawned, fromSpawned, exitPort, toWorker.future,
+        carries: () => [
+              for (final MapEntry(key: id, value: si) in sessions.entries)
+                if (workerPort != null && si.toWorker == workerPort) id,
+            ]);
 
     Completer receivedSendToSpawned = Completer();
     late SendPort toSpawned;
@@ -1147,6 +1185,7 @@ class SrvdImpl
     fromSpawned.listen((msg) async {
       if (msg is SendPort) {
         toSpawned = msg;
+        workerPort = msg;
         toWorker.complete(msg);
         receivedSendToSpawned.complete();
         return;
@@ -1289,7 +1328,11 @@ class SrvdImpl
       onExit: exitPort.sendPort,
     );
     final toWorker = Completer<SendPort>();
-    _register(spawned, fromSpawned, exitPort, toWorker.future);
+    _register(spawned, fromSpawned, exitPort, toWorker.future,
+        carries: () => [
+              for (final MapEntry(key: id, value: si) in sessions.entries)
+                if (si.params.only443) id,
+            ]);
 
     Completer receivedSendToSpawned = Completer();
     late SendPort toSpawned;

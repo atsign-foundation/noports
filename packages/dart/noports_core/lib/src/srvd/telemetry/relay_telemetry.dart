@@ -76,9 +76,6 @@ class RelayTelemetry {
   int _dropped = 0;
   bool _stopping = false;
 
-  /// Sessions that have paired and not ended, reported or not.
-  int get openSessions => _sessions.length;
-
   /// Whether the session [sessionId] is being reported; null when it has
   /// not paired or has ended.
   bool? reporting(String sessionId) => _sessions[sessionId]?.reported;
@@ -206,17 +203,8 @@ class RelayTelemetry {
       list.stop();
       _heartbeat?.cancel();
       _dropReport?.cancel();
-      final int now = DateTime.timestamp().millisecondsSinceEpoch;
       for (final s in _sessions.values.toList()) {
-        _ended(
-          s,
-          at: now,
-          connections: s.opened,
-          bytesClientToDevice: s.bytesClientToDevice,
-          bytesDeviceToClient: s.bytesDeviceToClient,
-          unclosed: s.opened - s.closed,
-          reason: RelaySessionEndReason.relayStopping,
-        );
+        _endedAsHeld(s, RelaySessionEndReason.relayStopping);
       }
       _sessions.clear();
       _lifecycle(RelayTelemetryNames.lifecycleStopped);
@@ -228,6 +216,25 @@ class RelayTelemetry {
     }
     _reportDrops();
   }
+
+  /// The worker carrying [sessionId] is gone without reporting it complete,
+  /// so the session ends with the totals telemetry holds, and is forgotten.
+  void sessionLost(String sessionId, RelaySessionEndReason reason) {
+    _guard('sessionLost', () {
+      final _Session? s = _sessions.remove(sessionId);
+      if (s != null) _endedAsHeld(s, reason);
+    });
+  }
+
+  void _endedAsHeld(_Session s, RelaySessionEndReason reason) => _ended(
+        s,
+        at: DateTime.timestamp().millisecondsSinceEpoch,
+        connections: s.opened,
+        bytesClientToDevice: s.bytesClientToDevice,
+        bytesDeviceToClient: s.bytesDeviceToClient,
+        unclosed: s.opened - s.closed,
+        reason: reason,
+      );
 
   bool _decide(SessionInfo si) {
     if (list.listed(_canonical(si.params.atSignA))) return true;

@@ -6,6 +6,7 @@ import 'dart:isolate';
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/types.dart';
+import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/session_info.dart';
@@ -27,6 +28,32 @@ void _deafWorker(SendPort toMain) {
 }
 
 class _FakeNotificationParams extends Fake implements NotificationParams {}
+
+/// An srvd that notes each session main receives sessionComplete for.
+class _RecordingSrvd extends SrvdImpl {
+  _RecordingSrvd({
+    required super.atClient,
+    required super.atSign,
+    required super.homeDirectory,
+    required super.atKeysFilePath,
+    required super.managerAtsign,
+    required super.ipAddress,
+    required super.logTraffic,
+    required super.verbose,
+    required super.bind443,
+    required super.localBindPort443,
+    required super.relayAuthDetectWindowMs,
+    required super.signingKeyCheckInterval,
+  });
+
+  final Set<String> completed = {};
+
+  @override
+  Future<void> handleWorkerReport(IIRequest msg) {
+    if (msg.type == 'sessionComplete') completed.add(msg.payload['sessionId']);
+    return super.handleWorkerReport(msg);
+  }
+}
 
 void main() {
   late List<StreamController<AtNotification>> subscriptions;
@@ -73,7 +100,7 @@ void main() {
     sockets.clear();
   });
 
-  SrvdImpl srvd() => SrvdImpl(
+  _RecordingSrvd srvd() => _RecordingSrvd(
         atClient: atClient,
         atSign: '@relay'.toAtsign(),
         homeDirectory: Directory.current.path,
@@ -134,8 +161,8 @@ void main() {
     final relay = srvd();
     await relay.init();
     await relay.run();
-    final (one, clientOne) = await liveSession(relay, 'one');
-    final (two, clientTwo) = await liveSession(relay, 'two');
+    final (_, clientOne) = await liveSession(relay, 'one');
+    final (_, clientTwo) = await liveSession(relay, 'two');
     final clientsClosed = [closedByPeer(clientOne), closedByPeer(clientTwo)];
     expect(subscriptions.where((c) => c.hasListener), hasLength(2));
     final stopwatch = Stopwatch()..start();
@@ -145,10 +172,8 @@ void main() {
     stopwatch.stop();
     expect(stopwatch.elapsed, lessThan(Srvd.stopBound));
     expect(subscriptions.where((c) => c.hasListener), isEmpty);
-    expect(one.completed.isCompleted, isTrue,
-        reason: 'main received sessionComplete for one before forgetting it');
-    expect(two.completed.isCompleted, isTrue,
-        reason: 'main received sessionComplete for two before forgetting it');
+    expect(relay.completed, containsAll(<String>['one', 'two']),
+        reason: 'main received sessionComplete for each before forgetting it');
     expect(relay.sessions, isEmpty);
     expect(relay.runningWorkers, 0);
     await Future.wait(clientsClosed).timeout(const Duration(seconds: 3));
