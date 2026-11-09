@@ -2,6 +2,12 @@
 
 <!-- pyml disable md034-->
 
+## v5.18.3
+
+* build: take socket_connector 2.7.0, so a tunnel connection closes once data
+  has waited two minutes for one of its ends to read it, and a closing
+  connection ends within 30 seconds even when an end has stopped reading
+
 ## v5.18.2
 
 * feat: sshnpd and srvd take their session locks with at_client's server
@@ -44,6 +50,10 @@
   logging Atsign
 * fix: npp saves manager RPC deletes and checks puts before saving them, so
   the rules it loads on a restart match the changes it accepted
+* fix: npp assigns every new rule a random id
+* fix: improved handling of npp rule ids, references and deletes
+* fix: tightened how npp loads its stored rules
+* fix: tightened how npp_atserver loads its policy groups
 * feat: at_activate is at_client_cli's at_activate: its --help reports
   at_client_cli's version, and --arx and --drx match app and device names
   whatever their case

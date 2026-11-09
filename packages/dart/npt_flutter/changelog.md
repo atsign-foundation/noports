@@ -10,6 +10,8 @@
   activation file, the app log names the type of error.
 - FIX: When an activation file can't be read, the app log gives the number of
   the entry at fault, or the line where the file isn't valid YAML.
+- FIX: When the atServer refuses an activation key, the error says the key may
+  have already been used, whether it came from a file or the activation dialog.
 - FIX: Signing in with an atKeys file that isn't valid JSON says so, and gives
   the position where it stops being valid.
 - FIX: The activation dialog no longer stays on its spinner when the registrar
@@ -42,6 +44,23 @@
   Authenticator. Until now every later sign-in went back to the old request.
 - CHORE: at_client_flutter is now 2.0.0, bringing at_client 4.0.0. Signing in,
   activating and enrolling keep using the app's existing local store.
+- FIX: Deleting the selected profiles leaves running ones alone, including a
+  keep-alive profile waiting to retry and one started while the delete was
+  being confirmed.
+- FIX: Confirming the connected profiles prompt when switching, adding or
+  signing out of an atSign stops keep-alive profiles, instead of them
+  reconnecting a few seconds later.
+- FIX: Deleting a profile that is still connected stops its connection,
+  instead of leaving it running in the background.
+- FIX: The tray menu updates when a favourite profile's name or status
+  changes, instead of waiting for another change to refresh it.
+- FIX: Stopping a connection ends the sessions open through it within 30
+  seconds, even one whose program has stopped reading. A session closes once
+  data has waited two minutes for either end to read it.
+ - FIX: The Authenticator no longer lists a request that was approved or denied
+  elsewhere: the Requests list and its badge are read again from the Atsign
+  Server when the window regains focus, and keep what they showed if a read
+  fails.
 
 ## 1.9.6+33
 

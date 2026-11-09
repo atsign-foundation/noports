@@ -14,6 +14,13 @@ class ProfilesRunningCubit extends LoggingCubit<ProfilesRunningState> {
     emit(state.withConnector(uuid, connector));
   }
 
+  /// Closes [uuid]'s connector but keeps [uuid] listed, for a profile between
+  /// sessions that may start another.
+  void release(String uuid) {
+    state.socketConnectors[uuid]?.close();
+    emit(state.withConnector(uuid, null));
+  }
+
   void invalidate(String uuid) {
     state.socketConnectors[uuid]?.close();
     emit(state.withoutConnector(uuid));

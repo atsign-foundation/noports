@@ -449,7 +449,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorCramAuthFailed =>
-      'The activation key was rejected by the atServer. This activation file may have already been used.';
+      'The activation key was rejected by the atServer. It may have already been used.';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {

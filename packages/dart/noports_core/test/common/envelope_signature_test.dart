@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
-import 'package:at_utils/at_logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/utils.dart';
 import 'package:test/test.dart';

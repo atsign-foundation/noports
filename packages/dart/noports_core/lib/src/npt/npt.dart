@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
-import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart'
     show signAndWrapRequest;
@@ -55,7 +54,9 @@ abstract interface class Npt {
   Future<SocketConnector> runInline({int? localRvPort});
 
   /// Ends this session, closing the tunnel [runInline] started, if any, and
-  /// completing [done].
+  /// completing [done]. A [runInline] still starting then closes the tunnel it
+  /// opens and throws. A teardown step that fails is
+  /// logged and the rest still run, so this never throws.
   Future<void> close();
 
   /// Completes when the session has ended, or when it failed to start.
@@ -145,6 +146,10 @@ class _NptImpl extends NptBase
 
   SocketConnector? _inlineConnector;
 
+  /// Set when [close] starts, so a startup still in flight can't hand back a
+  /// tunnel afterwards.
+  bool _closed = false;
+
   @override
   Future get done => _completer.future;
 
@@ -177,14 +182,26 @@ class _NptImpl extends NptBase
 
   @override
   Future<void> close() async {
-    try {
-      _inlineConnector?.close();
-      await _sshnpdChannel.cancelSubscriptions();
-      await _srvdChannel.cancelSubscriptions();
-    } finally {
-      if (!_completer.isCompleted) {
-        _completer.complete();
+    _closed = true;
+    Future<void> step(String name, FutureOr<void> Function() teardown) async {
+      try {
+        await teardown();
+      } catch (e) {
+        logger.warning('Session $sessionId: $name failed while closing: $e');
       }
+    }
+
+    await step('closing the tunnel', () => _inlineConnector?.close());
+    await step(
+      'cancelling the daemon channel',
+      _sshnpdChannel.cancelSubscriptions,
+    );
+    await step(
+      'cancelling the relay channel',
+      _srvdChannel.cancelSubscriptions,
+    );
+    if (!_completer.isCompleted) {
+      _completer.complete();
     }
   }
 
@@ -453,6 +470,10 @@ class _NptImpl extends NptBase
             : null,
       );
 
+      if (_closed) {
+        sc.close();
+        throw SshnpError('Session $sessionId was closed while it was starting');
+      }
       _inlineConnector = sc;
       unawaited(
         sc.done.then((_) async {

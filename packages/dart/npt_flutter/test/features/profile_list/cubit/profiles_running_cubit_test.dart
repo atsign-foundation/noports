@@ -171,6 +171,26 @@ void main() {
       );
     });
 
+    group('Given a profile with a cached connector', () {
+      test('when it is released, then its connector is closed and it is still '
+          'listed', () {
+        final connector = SocketConnector(timeout: const Duration(minutes: 10));
+        addTearDown(connector.close);
+        cubit.cache('uuid1', connector);
+
+        cubit.release('uuid1');
+
+        expect(
+          connector.closed,
+          isTrue,
+          reason: 'release must close the connector the profile held',
+        );
+        expect(cubit.state.socketConnectors, {
+          'uuid1': null,
+        }, reason: 'a released profile stays listed, with no connector');
+      });
+    });
+
     group('invalidate', () {
       blocTest<ProfilesRunningCubit, ProfilesRunningState>(
         'removes UUID and closes connector',

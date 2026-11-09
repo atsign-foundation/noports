@@ -35,6 +35,9 @@ enum TrayAction {
 class TrayCubit extends LoggingCubit<TrayState> {
   TrayCubit() : super(const TrayInitial());
 
+  /// Counts [reload] calls, so a reload that a later one overtook can tell.
+  int _reloads = 0;
+
   Future<void> initialize({AppLocalizations? localizations}) async {
     if (state is! TrayInitial || localizations == null) return;
     var context = App.navState.currentContext;
@@ -105,6 +108,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
     ProfileState? profileState,
     ProfileFolderState? profileFolderState,
   }) async {
+    final thisReload = ++_reloads;
     var context = App.navState.currentContext;
     if (context == null) return;
 
@@ -217,6 +221,10 @@ class TrayCubit extends LoggingCubit<TrayState> {
     /// PERF: We should conditionally call setContextMenu if there was a state
     /// change which resulted in an actual change to the favorites list.
     /// Currently we just force call updates which is really inefficient
+
+    // NOTE: only the latest reload may set the menu; reloads overlap and can
+    // finish out of order.
+    if (thisReload != _reloads) return;
 
     /// Set the new menu
     await trayManager.setContextMenu(

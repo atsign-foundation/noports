@@ -8,6 +8,11 @@ class ProfileCacheState extends Loggable {
     return ProfileCacheState({...profileBlocs, uuid: bloc});
   }
 
+  /// This state without [uuid]'s bloc.
+  ProfileCacheState withRemoved(String uuid) {
+    return ProfileCacheState({...profileBlocs}..remove(uuid));
+  }
+
   @override
   List<Object> get props => [profileBlocs];
 

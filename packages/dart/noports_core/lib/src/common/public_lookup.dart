@@ -9,7 +9,6 @@ import 'package:at_lookup/at_lookup_io.dart'
         CacheableSecondaryAddressFinder,
         SecondaryAddress,
         SecondaryAddressFinder;
-import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 
 /// Looks up atSigns' public records, such as the `_apsk` records that

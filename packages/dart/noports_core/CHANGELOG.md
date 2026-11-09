@@ -12,10 +12,20 @@
 - fix: an npt session whose daemon feature check, or relay signing key
   publish, failed before the relay answered no longer raises an unhandled
   error, which killed the npt binary.
+- fix: a `runInline` still starting when `Npt.close` is called closes its
+  tunnel and throws.
+- fix: `Npt.close` cancels both its daemon and relay channels' subscriptions
+  even when cancelling one of them fails, and logs such a failure rather than
+  throwing it.
+- fix: an sshnp session whose daemon feature check fails no longer raises an
+  unhandled error.
 - **BREAKING CHANGE** build: depends on the at_client 4.0.0 set: at_client
   4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli and
   at_cli_commons, at_auth 4.0.0, at_lookup 4.0.0 and at_utils 4.0.0, so the
   at_client types in noports_core's API are at_client 4's
+- build: requires socket_connector 2.7.0, so a tunnel connection closes once
+  data has waited two minutes for one of its ends to read it, and a closing
+  connection ends within 30 seconds even when an end has stopped reading
 - **BREAKING CHANGE** refactor: `ActivateFlows.activate` requires a
   `storage`
 - feat: npp logs manager RPC rule changes and refused senders to the event
@@ -28,6 +38,10 @@
   id
 - feat: `NppOperationHooks` has pre-delete hooks, `NppCache` has `checkPut*`,
   and `npp.dart` exports npp's rule loaders and hooks
+- fix: npp assigns every new rule a random id
+- fix: improved handling of npp rule ids, references and deletes
+- fix: tightened how npp loads its stored rules
+- fix: tightened how npp_atserver loads its policy groups
 
 # 6.16.0
 

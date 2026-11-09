@@ -1,5 +1,4 @@
 import 'package:at_client/at_client.dart';
-import 'package:at_utils/at_logger.dart' show AtSignLogger;
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/srvd/srvd_util_mixin.dart';
 import 'package:noports_core/srvd.dart';
