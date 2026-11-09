@@ -7,6 +7,12 @@
 * build: take socket_connector 2.7.0, so a tunnel connection closes once data
   has waited two minutes for one of its ends to read it, and a closing
   connection ends within 30 seconds even when an end has stopped reading
+* feat: srvd's `--telemetry-collector-atsign` sends session telemetry to a
+  collector Atsign, for the Atsigns on the opted-in list it shares with the
+  relay; off when absent
+* feat: srvd stops gracefully on SIGINT or SIGTERM within 12 seconds; give its
+  container a 15-second stop grace period (Docker's default is 10)
+* feat: srvd ends a closing relay connection within 3 seconds
 
 ## v5.18.2
 

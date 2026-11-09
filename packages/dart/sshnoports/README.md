@@ -164,6 +164,27 @@ by cron using:
 @reboot ~/tmux-sshnpd.sh > ~/sshnpd.log 2>&1
 ```
 
+## Stopping srvd
+
+On its first SIGINT or SIGTERM, srvd closes every session's connections and
+exits within 12 seconds; a second signal exits at once. Give it a stop grace
+period of at least 15 seconds: `stop_grace_period: 15s` in a compose file, or
+`docker stop -t 15` by hand, since Docker's default of 10 seconds can end it
+mid-stop. systemd's default stop timeout of 90 seconds is long enough; a unit
+that sets its own needs `TimeoutStopSec=15` or more.
+
+## srvd session telemetry
+
+With `--telemetry-collector-atsign <@collector>`, srvd sends telemetry about
+the sessions it relays to that collector Atsign. It reports a session only
+when the session's client, or its verified device, is on the opted-in list the
+collector shares with the relay, and it relays every session as usual whether
+or not the collector can be reached. Before anything is reported:
+
+- the collector lists the relay's Atsign as a producer with the
+  `noportsRelay` role, and
+- the collector shares its opted-in list with the relay's Atsign.
+
 ## systemd units
 
 The systemd directory contains an example unit file with its own

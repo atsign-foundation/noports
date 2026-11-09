@@ -1,5 +1,9 @@
 # 7.0.0
 
+- feat: `SrvdParams.telemetryCollectorAtsign` (`--telemetry-collector-atsign`)
+  sends srvd's session telemetry to a collector Atsign
+- feat: `Srvd.stop` closes every session's connections and returns within
+  `Srvd.stopBound`, 12 seconds
 - fix: `Npt.done` now completes when startup fails, instead of never
   completing. `run` and `runInline` close the session on their way out when
   they throw, so callers may always await `done` without having to call
