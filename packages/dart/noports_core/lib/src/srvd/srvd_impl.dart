@@ -680,6 +680,14 @@ class SrvdImpl
       }
     }
 
+    if (_stopped) {
+      logger.shout(
+        'Not starting session ${sessionParams.sessionId}: srvd is stopping',
+      );
+      ppiSendToSpawned?.send(IIRequest.create('stop', null));
+      return;
+    }
+
     if (sessionParams.only443 && !bind443) {
       var message =
           'Client requested port 443'

@@ -48,6 +48,16 @@ class _RecordingSrvd extends SrvdImpl {
 
   final Set<String> completed = {};
 
+  /// While set, a session request waits on it before it is started.
+  Future<void>? holdRequests;
+
+  @override
+  Future<SrvdSessionParams> withPayloadKeys(SrvdSessionParams params) async {
+    final hold = holdRequests;
+    if (hold != null) await hold;
+    return super.withPayloadKeys(params);
+  }
+
   @override
   Future<void> handleWorkerReport(IIRequest msg) {
     if (msg.type == 'sessionComplete') completed.add(msg.payload['sessionId']);
@@ -100,7 +110,7 @@ void main() {
     sockets.clear();
   });
 
-  _RecordingSrvd srvd() => _RecordingSrvd(
+  _RecordingSrvd srvd({bool bind443 = false}) => _RecordingSrvd(
         atClient: atClient,
         atSign: '@relay'.toAtsign(),
         homeDirectory: Directory.current.path,
@@ -109,7 +119,7 @@ void main() {
         ipAddress: '127.0.0.1',
         logTraffic: false,
         verbose: false,
-        bind443: false,
+        bind443: bind443,
         localBindPort443: 0,
         relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         signingKeyCheckInterval: defaultSigningKeyCheckInterval,
@@ -242,5 +252,44 @@ void main() {
     expect(answers, isEmpty, reason: 'the client is sent no ports');
     expect(relay.sessions, isEmpty);
     expect(relay.runningWorkers, 0);
+  });
+
+  test(
+      'A port-443 session request still being prepared when a stop begins is'
+      ' refused', () async {
+    final relay = srvd(bind443: true);
+    await relay.init();
+    await relay.run();
+    final hold = Completer<void>();
+    relay.holdRequests = hold.future;
+    final requesting = relay.handleRequestPorts(AtNotification(
+      'notif-id',
+      '@relay:gateway-1.request_ports.sshrvd@alice',
+      '@alice',
+      '@relay',
+      DateTime.now().millisecondsSinceEpoch,
+      'key',
+      true,
+      value: jsonEncode({
+        'sessionId': 'late',
+        'atSignA': '@alice',
+        'atSignB': '@bob',
+        'clientNonce': 'client nonce',
+        'authenticateSocketA': true,
+        'authenticateSocketB': true,
+        'relayAuthMode': RelayAuthMode.escr.name,
+        'only443': true,
+        'multipleAcksOk': true,
+      }),
+    ));
+    await pumpEventQueue();
+
+    final stopping = relay.stop();
+    hold.complete();
+    await requesting;
+    await stopping;
+
+    expect(answers, isEmpty, reason: 'the client is sent no ports');
+    expect(relay.sessions, isEmpty);
   });
 }
