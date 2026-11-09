@@ -513,7 +513,7 @@ void main() {
       }); // test resolveRemoteUsername
 
       group("Given the device's shared username record", () {
-        void whenShared(Object username) {
+        void whenShared(Object? username) {
           when(() => mockParams.remoteUsername).thenReturn(null);
           when(() => mockParams.clientAtSign).thenReturn('@client');
           when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
@@ -570,6 +570,16 @@ void main() {
               ),
             ),
           );
+        });
+
+        // at_client answers a bare AtValue() (value null) when the server
+        // returns data:null or empty; sshnp then falls back to the default
+        // login name, so this must not be refused as "not a plain login name".
+        test(
+            'when it has no value, then resolveRemoteUsername returns null',
+            () async {
+          whenShared(null);
+          expect(await stubbedSshnpdChannel.resolveRemoteUsername(), isNull);
         });
 
         for (final username in [
