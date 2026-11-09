@@ -71,7 +71,21 @@ void main() {
       final args = verify(() => startProcess(any(), captureAny()))
           .captured
           .single as List<String>;
-      expect(args.first, 'a b@localhost');
+      expect(args, [
+        'a b@localhost',
+        '-p', '1234',
+        '-i', 'the-key',
+        '-L', '${stubbedSshnp.localPort}:localhost:22',
+        '-o', 'LogLevel=VERBOSE',
+        '-t', '-t',
+        '-o', 'StrictHostKeyChecking=accept-new',
+        '-o', 'IdentitiesOnly=yes',
+        '-o', 'BatchMode=yes',
+        '-o', 'ExitOnForwardFailure=yes',
+        '-n',
+        '-f',
+        'sleep', '15',
+      ]);
     }, testOn: '!windows');
   }); // group SshnpOpensshSshSessionHandler
 }

@@ -495,7 +495,7 @@ void main() {
       }); // test resolveRemoteUsername
 
       group("Given the device's shared username record", () {
-        void whenShared(String username) {
+        void whenShared(Object username) {
           when(() => mockParams.remoteUsername).thenReturn(null);
           when(() => mockParams.clientAtSign).thenReturn('@client');
           when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
@@ -535,6 +535,22 @@ void main() {
             );
           });
         }
+
+        test(
+            'when it is not a string, then resolveRemoteUsername refuses it and'
+            ' points at -u', () async {
+          whenShared(42);
+          await expectLater(
+            stubbedSshnpdChannel.resolveRemoteUsername(),
+            throwsA(
+              isA<SshnpError>().having(
+                (e) => e.toString(),
+                'message',
+                contains('-u'),
+              ),
+            ),
+          );
+        });
 
         for (final username in ['alice', 'a.b_c-d', '_svc', 'a' * 64]) {
           test(

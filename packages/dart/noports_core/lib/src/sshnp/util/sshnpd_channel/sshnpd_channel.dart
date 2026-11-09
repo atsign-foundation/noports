@@ -263,15 +263,16 @@ abstract class SshnpdChannel
       '${params.clientAtSign}:username.$namespace${params.sshnpdAtSign}',
     );
 
-    final String? username = (await atClient.get(userNameRecordID).catchError((
-      _,
-    ) {
+    final username = (await atClient.get(userNameRecordID).catchError((_) {
       throw SshnpError(
         "Device is hidden or doesn't exist.\n"
         "Hint: If the device is set to hidden, use -u to specify the login username.",
       );
     })).value;
-    if (username != null && !_plainLoginName.hasMatch(username)) {
+    if (username == null) {
+      return null;
+    }
+    if (username is! String || !_plainLoginName.hasMatch(username)) {
       throw SshnpError(
         "The device's username is not a plain login name.\n"
         "Hint: use -u to specify the login username.",
