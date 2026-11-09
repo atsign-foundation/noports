@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -119,6 +120,66 @@ void main() {
             (e) => e.toString(),
             'message',
             allOf(contains('255'), contains('Permission denied (publickey)')),
+          ),
+        ),
+      );
+    }, testOn: '!windows');
+
+    Future<void> startFailingTunnel({
+      required Stream<List<int>> stderr,
+      required int exitCode,
+    }) {
+      final startProcess = StartProcessStub();
+      final process = MockProcess();
+      when(() => process.stdout).thenAnswer((_) => Stream.empty());
+      when(() => process.stderr).thenAnswer((_) => stderr);
+      when(() => process.exitCode).thenAnswer((_) async => exitCode);
+      when(() => startProcess(any(), any())).thenAnswer((_) async => process);
+      when(() => mockParams.remoteSshdPort).thenReturn(22);
+      when(() => mockParams.addForwardsToTunnel).thenReturn(false);
+      stubbedSshnp
+        ..tunnelUsername = 'nosuchuser'
+        ..stubSshnpOpensshSshSessionHandler(
+          stubbedStartInitialTunnel: StartInitialTunnelStub(),
+          stubbedStartProcess: startProcess,
+        );
+      return stubbedSshnp.startInitialTunnelSession(
+        ephemeralKeyPairIdentifier: 'the-key',
+        localRvPort: 1234,
+      );
+    }
+
+    test(
+        'when the tunnel ssh writes its stderr after it has exited non-zero,'
+        ' then the SshnpError still carries that stderr', () async {
+      final stderr = StreamController<List<int>>();
+      unawaited(Future.delayed(Duration(milliseconds: 100), () async {
+        stderr.add(utf8.encode('Permission denied (publickey).\n'));
+        await stderr.close();
+      }));
+
+      await expectLater(
+        startFailingTunnel(stderr: stderr.stream, exitCode: 255),
+        throwsA(
+          isA<SshnpError>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Permission denied (publickey)'),
+          ),
+        ),
+      );
+    }, testOn: '!windows');
+
+    test(
+        'when the tunnel ssh is ended by a signal (negative exit code),'
+        ' then startInitialTunnelSession throws SshnpError', () async {
+      await expectLater(
+        startFailingTunnel(stderr: Stream.empty(), exitCode: -15),
+        throwsA(
+          isA<SshnpError>().having(
+            (e) => e.toString(),
+            'message',
+            contains('-15'),
           ),
         ),
       );
