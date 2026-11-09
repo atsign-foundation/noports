@@ -163,8 +163,8 @@ class _StartStopButtons extends StatefulWidget {
 }
 
 class _StartStopButtonsState extends State<_StartStopButtons> {
-  /// A connection still connecting or waiting to retry is missing from
-  /// [ProfilesRunningState], so each one's own state is watched for Stop all.
+  /// Start all and Stop all read each connection's own state, which can change
+  /// while [ProfilesRunningState] does not, as when a stop ends.
   final List<StreamSubscription<ProfileState>> _watched =
       <StreamSubscription<ProfileState>>[];
 
