@@ -42,7 +42,9 @@ class ConnectionTracker {
   late final StreamSubscription<Connection> _openedSub;
   late final StreamSubscription<Connection> _closedSub;
   final Completer<void> _closedDone = Completer<void>();
-  final Completer<void> _allClosed = Completer<void>();
+
+  /// Completes once no connection is open, while [complete] waits.
+  Completer<void>? _allClosed;
 
   /// Open connections, keyed by identity, with the index and pair time each
   /// was given.
@@ -89,7 +91,7 @@ class ConnectionTracker {
         'index': index,
         if (client != null) 'client': client,
         if (device != null) 'device': device,
-        'stats': stats(),
+        if (index == 1) 'stats': stats(),
       }),
     );
   }
@@ -117,7 +119,10 @@ class ConnectionTracker {
         'bytesDeviceToClient': c.sideB.rcvd,
       }),
     );
-    if (_open.isEmpty && !_allClosed.isCompleted) _allClosed.complete();
+    final allClosed = _allClosed;
+    if (_open.isEmpty && allClosed != null && !allClosed.isCompleted) {
+      allClosed.complete();
+    }
   }
 
   /// The later of the two sides' close times, or now when a side carries
@@ -150,7 +155,8 @@ class ConnectionTracker {
     _completed = true;
     _progress?.cancel();
     if (_open.isNotEmpty) {
-      await Future.any([_closedDone.future, _allClosed.future]).timeout(
+      final allClosed = _allClosed = Completer<void>();
+      await Future.any([_closedDone.future, allClosed.future]).timeout(
         closeFlushTimeout + const Duration(seconds: 1),
         onTimeout: () {},
       );

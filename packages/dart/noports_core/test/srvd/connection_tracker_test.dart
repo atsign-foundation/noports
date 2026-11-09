@@ -102,6 +102,44 @@ void main() {
     expect(r.payload['device'], {'ip': '127.0.0.1', 'port': c.sideB.remotePort});
   });
 
+  test(
+      'A connection opened after an earlier one closed is waited for at'
+      ' completion', () async {
+    final t = tracker();
+    final c1 = await connection();
+    final c2 = await connection();
+    opened.add(c1);
+    await report('newConnection');
+    closed.add(c1);
+    await report('connectionClosed');
+    opened.add(c2);
+    await report('newConnection', nth: 2);
+
+    final completing = t.complete();
+    await Future.delayed(const Duration(milliseconds: 150));
+    closed.add(c2);
+    await completing;
+
+    final r = await report('sessionComplete');
+    expect(r.payload['connectionsUnclosed'], 0,
+        reason: 'the second connection is waited for, not counted unclosed');
+    expect((await report('connectionClosed', nth: 2)).payload['index'], 2);
+  });
+
+  test("Only the first newConnection carries the connector's stats",
+      () async {
+    tracker();
+    opened.add(await connection());
+    opened.add(await connection());
+
+    final first = await report('newConnection');
+    final second = await report('newConnection', nth: 2);
+
+    expect(first.payload.containsKey('stats'), isTrue);
+    expect(second.payload.containsKey('stats'), isFalse,
+        reason: 'main reads the stats of the first connection only');
+  });
+
   test('A worker reports progress every 15 minutes', () async {
     expect(defaultProgressInterval, const Duration(minutes: 15));
     final t = tracker(progressInterval: const Duration(milliseconds: 50));
