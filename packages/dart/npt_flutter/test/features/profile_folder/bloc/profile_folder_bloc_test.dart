@@ -222,6 +222,32 @@ void main() {
     );
 
     blocTest<ProfileFolderBloc, ProfileFolderState>(
+      "a sign-out while a refresh is still reading keeps the old atSign's "
+      'folders away',
+      build: () {
+        repo.loadResult = loadedData;
+        return bloc;
+      },
+      act: (ProfileFolderBloc bloc) async {
+        bloc.add(const ProfileFolderLoadEvent());
+        await settle();
+        repo.heldReads = <Completer<void>>[];
+        repo.onRound!(true);
+        await settle();
+        expect(repo.heldReads, hasLength(1));
+        bloc.clearAll();
+        repo.heldReads!.single.complete();
+        await settle();
+      },
+      expect: () => <ProfileFolderState>[
+        const ProfileFoldersLoading(),
+        const ProfileFoldersLoaded(loadedData, synced: false),
+        const ProfileFoldersInitial(),
+      ],
+      verify: (_) => expect(repo.puts, isEmpty),
+    );
+
+    blocTest<ProfileFolderBloc, ProfileFolderState>(
       'emits failed load when repository returns null',
       build: () => bloc,
       act: (ProfileFolderBloc bloc) => bloc.add(const ProfileFolderLoadEvent()),

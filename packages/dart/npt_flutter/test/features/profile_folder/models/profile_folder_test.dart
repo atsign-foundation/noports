@@ -1013,6 +1013,26 @@ void main() {
         _expectNoDuplicateIds(result);
       });
 
+      test('reordering inside a folder keeps its Start all choices', () {
+        const ProfileFolderData base = ProfileFolderData(
+          folders: <ProfileFolder>[
+            ProfileFolder(
+              uuid: 'g1',
+              name: 'One',
+              profileIds: <String>['a', 'b', 'c'],
+              skippedByStartAll: <String>['b', 'c'],
+            ),
+          ],
+        );
+        final ProfileFolderData result = base.placeProfiles(
+          profileIds: <String>['c'],
+          folderId: 'g1',
+          sectionOrder: <String>['c', 'a', 'b'],
+        );
+        expect(result.folderById('g1')?.profileIds, <String>['c', 'a', 'b']);
+        expect(result.folderById('g1')?.skippedByStartAll, <String>['b', 'c']);
+      });
+
       test('an unknown folderId returns the data unchanged', () {
         const ProfileFolderData base = ProfileFolderData(
           folders: <ProfileFolder>[
