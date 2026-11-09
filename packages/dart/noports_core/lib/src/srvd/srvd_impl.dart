@@ -285,7 +285,7 @@ class SrvdImpl
           atClient: atClient,
           collector: collector,
         ),
-        onWarning: telemetryLogger.warning,
+        onWarning: telemetryLogger.shout,
         onRead: telemetryLogger.info,
       ),
     );
@@ -311,7 +311,7 @@ class SrvdImpl
   Future<void> stop() => _stop().timeout(
         Srvd.stopBound,
         onTimeout: () {
-          logger.warning(
+          logger.shout(
             'Stop did not finish within ${Srvd.stopBound.inSeconds}s;'
             ' killing every relay isolate',
           );
@@ -409,7 +409,7 @@ class SrvdImpl
         }),
       ]).timeout(_workerStopTimeout);
     } on TimeoutException {
-      logger.warning(
+      logger.shout(
         'A relay isolate did not stop within ${_workerStopTimeout.inSeconds}s,'
         ' so it was killed; its sockets may stay open',
       );

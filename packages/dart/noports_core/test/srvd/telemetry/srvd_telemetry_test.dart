@@ -5,6 +5,8 @@ import 'dart:isolate';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_telemetry/at_telemetry.dart';
+import 'package:at_utils/at_logger.dart';
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
@@ -23,6 +25,16 @@ import 'telemetry_fakes.dart';
 typedef N = RelayTelemetryNames;
 
 void _exitAtOnce(Object? _) {}
+
+/// Keeps the message of every log record it is given.
+class _Capture implements LoggingHandler {
+  _Capture(this.messages);
+
+  final List<String> messages;
+
+  @override
+  void call(LogRecord record) => messages.add(record.message);
+}
 
 void main() {
   late MockAtClient atClient;
@@ -136,6 +148,42 @@ void main() {
     expect(idAndNamespace, 'logs.at_telemetry');
     final records = const AtTelemetryLogsCodec().decode(body).single.records;
     expect(records.first.eventName, N.lifecycleStarted);
+  });
+
+  test("A list srvd cannot read is logged at srvd's default level", () async {
+    final String rootLevel = AtSignLogger.root_level;
+    final LoggingHandler previousHandler = AtSignLogger.defaultLoggingHandler;
+    final logged = <String>[];
+    AtSignLogger.defaultLoggingHandler = _Capture(logged);
+    AtSignLogger.root_level = 'SHOUT';
+    addTearDown(() {
+      AtSignLogger.root_level = rootLevel;
+      AtSignLogger.defaultLoggingHandler = previousHandler;
+    });
+    when(() => atClient.get(any(),
+            getRequestOptions: any(named: 'getRequestOptions')))
+        .thenThrow(AtKeyNotFoundException('no list yet'));
+    when(
+      () => notificationService.send(
+        to: any(named: 'to'),
+        idAndNamespace: any(named: 'idAndNamespace'),
+        body: any(named: 'body'),
+        shouldEncrypt: any(named: 'shouldEncrypt'),
+      ),
+    ).thenAnswer((_) async => 'notification id');
+    final telemetry = SrvdImpl.relayTelemetryFor(
+      atClient: atClient,
+      collector: '@telemetry',
+      version: 'srvd 9.9.9',
+    );
+
+    telemetry.start();
+    addTearDown(telemetry.stop);
+    await until(() => logged.any((m) => m.contains('opted-in list')),
+        what: 'the list warning');
+
+    expect(logged.where((m) => m.contains('Could not read the opted-in list')),
+        isNotEmpty);
   });
 
   test('A session ended for a withdrawn signing key says so', () async {

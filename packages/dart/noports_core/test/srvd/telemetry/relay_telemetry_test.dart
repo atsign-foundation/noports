@@ -528,7 +528,7 @@ void main() {
 
     await until(
       () => log.records.any((r) =>
-          r.level == Level.WARNING &&
+          r.level == Level.SHOUT &&
           r.message.contains('telemetry record(s) in the last minute')),
       what: 'the drop report',
     );

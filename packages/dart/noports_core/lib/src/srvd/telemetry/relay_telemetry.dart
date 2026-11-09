@@ -212,7 +212,7 @@ class RelayTelemetry {
     try {
       await _telemetry.shutdown(timeout: shutdownTimeout);
     } catch (e) {
-      _logger.warning('Telemetry shutdown failed: $e');
+      _logger.shout('Telemetry shutdown failed: $e');
     }
     _reportDrops();
   }
@@ -376,7 +376,7 @@ class RelayTelemetry {
 
   void _reportDrops() {
     if (_dropped == 0) return;
-    _logger.warning(
+    _logger.shout(
       'Lost $_dropped telemetry record(s) in the last minute: they could not'
       ' be sent to the collector and nothing retries them',
     );
