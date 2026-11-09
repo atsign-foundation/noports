@@ -158,15 +158,12 @@ class RelayTelemetry {
     });
   }
 
-  /// A worker reported [sessionId]'s progress; a reported session with no
-  /// connections record since the last report gets a still-running record.
+  /// A worker reported [sessionId]'s progress; a reported session gets a
+  /// still-running record.
   void progress(String sessionId, Map<String, dynamic> payload) {
     _guard('progress', () {
       final _Session? s = _sessions[sessionId];
       if (s == null || !s.reported) return;
-      final bool quiet = !s.connectionsSinceTick && s.pending.isEmpty;
-      s.connectionsSinceTick = false;
-      if (!quiet) return;
       _event(s, RelayTelemetryNames.sessionStillRunning, payload['at'] as int, {
         RelayTelemetryNames.openConnections: payload['openConnections'],
         RelayTelemetryNames.tcpConnections: payload['connections'],
@@ -271,7 +268,6 @@ class RelayTelemetry {
     final List<Map<String, Object?>> entries = s.pending;
     s.pending = [];
     final int opens = entries.where((e) => e['e'] == 'open').length;
-    s.connectionsSinceTick = true;
     _event(
       s,
       RelayTelemetryNames.sessionConnections,
@@ -417,6 +413,5 @@ class _Session {
   int bytesDeviceToClient = 0;
   List<Map<String, Object?>> pending = [];
   Timer? window;
-  bool connectionsSinceTick = false;
   bool endedSent = false;
 }

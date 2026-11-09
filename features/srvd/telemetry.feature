@@ -155,15 +155,15 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
     When connections pair steadily
     Then each window is twice the last, up to 60 seconds, and the next window after the backlog clears is 2 seconds again
 
-  Scenario: still_running follows 15 minutes with no connections record
+  Scenario: still_running goes out every 15 minutes while the session is open
     Given a reported session with 2 open connections
-    When 15 minutes pass with no connection event
-    Then noports.relay.session.still_running goes out with 2 open connections, 2 connections and the bytes so far
+    When two 15-minute ticks pass
+    Then noports.relay.session.still_running goes out at each, with 2 open connections, 2 connections and the bytes so far
 
-  Scenario: still_running is not sent when a connections record went out in the window
+  Scenario: still_running goes out at the tick even when a connections record went out in the window
     Given a reported session
     When a connection pairs 5 minutes before the 15-minute tick
-    Then no still_running goes out at that tick
+    Then still_running goes out at that tick
 
   Scenario: session.ended carries the totals and the reason
     Given a reported session with 3 connections, one still open

@@ -396,34 +396,36 @@ void main() {
         reason: 'back to the base window once the backlog clears');
   });
 
-  test('still_running follows 15 minutes with no connections record', () async {
+  test('still_running goes out every 15 minutes while the session is open',
+      () async {
     final t = await telemetry(window: const Duration(milliseconds: 50));
     final si = sessionInfo(sessionParams());
     t.connectionOpened('the-session', si, opened(1));
     t.connectionOpened('the-session', si, opened(2));
     await until(() => exporter.named(N.sessionConnections).isNotEmpty);
-    t.progress('the-session', {'at': nowMs(), 'openConnections': 2,
-        'connections': 2, 'bytesClientToDevice': 0, 'bytesDeviceToClient': 0});
 
-    t.progress('the-session', {
-      'at': nowMs(),
-      'openConnections': 2,
-      'connections': 2,
-      'bytesClientToDevice': 30,
-      'bytesDeviceToClient': 40,
-    });
+    for (final int bytes in [10, 30]) {
+      t.progress('the-session', {
+        'at': nowMs(),
+        'openConnections': 2,
+        'connections': 2,
+        'bytesClientToDevice': bytes,
+        'bytesDeviceToClient': bytes + 10,
+      });
+    }
     await pumpEventQueue();
 
-    final running = exporter.named(N.sessionStillRunning).single;
-    expect(running.attributes[N.openConnections], 2);
-    expect(running.attributes[N.tcpConnections], 2);
-    expect(running.attributes[N.bytesClientToDevice], 30);
-    expect(running.attributes[N.bytesDeviceToClient], 40);
+    final running = exporter.named(N.sessionStillRunning);
+    expect(running, hasLength(2), reason: 'one at each tick');
+    expect(running.last.attributes[N.openConnections], 2);
+    expect(running.last.attributes[N.tcpConnections], 2);
+    expect(running.last.attributes[N.bytesClientToDevice], 30);
+    expect(running.last.attributes[N.bytesDeviceToClient], 40);
   });
 
   test(
-      'still_running is not sent when a connections record went out in the'
-      ' window', () async {
+      'still_running goes out at the tick even when a connections record went'
+      ' out in the window', () async {
     final t = await telemetry(window: const Duration(milliseconds: 50));
     final si = sessionInfo(sessionParams());
     t.connectionOpened('the-session', si, opened(1));
@@ -433,7 +435,8 @@ void main() {
         'connections': 1, 'bytesClientToDevice': 0, 'bytesDeviceToClient': 0});
     await pumpEventQueue();
 
-    expect(exporter.named(N.sessionStillRunning), isEmpty);
+    expect(exporter.named(N.sessionStillRunning), hasLength(1),
+        reason: 'a busy session is still shown as running');
   });
 
   test('session.ended carries the totals and the reason', () async {
@@ -489,10 +492,11 @@ void main() {
       N.sessionConnections,
       N.sessionConnections,
       N.sessionStillRunning,
+      N.sessionStillRunning,
       N.sessionEnded,
     ]);
     expect(sessionRecords().map((r) => r.attributes[N.sequence]),
-        [1, 2, 3, 4, 5]);
+        [1, 2, 3, 4, 5, 6]);
   });
 
   test('Dropped records are counted and reported once a minute', () async {
