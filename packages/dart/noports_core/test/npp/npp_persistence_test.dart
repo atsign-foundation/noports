@@ -578,6 +578,9 @@ void main() {
           ],
           reason: store.name,
         );
+        final again = await deleteRule(c, 'Service', 's1');
+        expect(again.message, 'No Service with id s1, so nothing is deleted.',
+            reason: '${store.name}: a second delete');
       }
     });
   });
@@ -1069,8 +1072,10 @@ class _AtServerStore implements _Store {
 
   @override
   Matcher storedAt(String kind, String name) => allOf(
-    contains('It is still stored, as the key '),
-    contains('$name.$kind.npp.sshnp'),
+    contains(
+      'It is still stored, as the key'
+      ' $name.$kind.npp.sshnp${atClient.getCurrentAtSign()};',
+    ),
     endsWith(
       "; delete it through npp's manager RPC, or delete that key, to stop"
       ' this warning.',

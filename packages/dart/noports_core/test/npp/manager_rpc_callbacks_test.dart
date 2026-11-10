@@ -536,6 +536,15 @@ void main() {
             );
           }
         }
+        final unknown = await c.handleRequest(
+          req({
+            'operation': 'delete',
+            'target': 'Foo',
+            'value': {'fooId': 'x'},
+          }),
+          policy,
+        );
+        expect(unknown.message, 'Unknown target for delete operation: Foo');
         expect(cache.clients, before);
       },
     );
