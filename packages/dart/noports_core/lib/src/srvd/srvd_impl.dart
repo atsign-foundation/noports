@@ -228,12 +228,12 @@ class SrvdImpl
 
   @override
   Future<void> run() async {
-    if (!initialized) {
-      throw StateError('Cannot run() - not initialized');
-    }
     if (_stopped) {
       logger.shout('Not running: srvd has been stopped');
       return;
+    }
+    if (!initialized) {
+      throw StateError('Cannot run() - not initialized');
     }
     NotificationService notificationService = atClient.notificationService;
 

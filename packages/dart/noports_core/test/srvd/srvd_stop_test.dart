@@ -152,6 +152,10 @@ void main() {
         reason: 'only the running relay is subscribed');
     expect(stopped.checks, 0,
         reason: 'a relay run after its stop starts no signing-key timer');
+    final neverInitialized = _CountingSrvd(atClient: atClient);
+    await neverInitialized.stop();
+    await expectLater(neverInitialized.run(), completes,
+        reason: 'a run after a stop does nothing, initialized or not');
   });
 
   test('a worker whose session ends is forgotten', () async {
