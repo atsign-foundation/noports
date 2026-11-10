@@ -51,6 +51,8 @@
   it names a rule that isn't stored
 - fix: a manager RPC delete naming an id npp doesn't hold is answered with an
   error naming it
+- fix: npp answers a manager RPC put or delete whose value is malformed with
+  an error saying what it must hold
 - fix: tightened how npp loads its stored rules
 - fix: tightened how npp_atserver loads its policy groups
 
