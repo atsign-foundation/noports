@@ -308,6 +308,57 @@ void main() {
     expect(a[N.clientAtsign], '@alice');
   });
 
+  test('A device Atsign that is not an Atsign is left out', () async {
+    final t = await telemetry();
+    final String long = '@${'d' * 60}';
+
+    t.connectionOpened(
+        'the-session',
+        sessionInfo(sessionParams(device: long, deviceVerified: false)),
+        opened(1));
+    await pumpEventQueue();
+
+    final a = exporter.named(N.sessionStarted).single.attributes;
+    expect(a.containsKey(N.deviceAtsign), isFalse,
+        reason: 'a device named by something that is not an Atsign is not'
+            ' reported as one');
+    expect(a[N.deviceVerified], isFalse);
+    expect(a[N.clientAtsign], '@alice');
+    expect(a[N.clientSessionId], 'the-session');
+  });
+
+  test(
+      'A session whose client is not an Atsign is not reported, with a'
+      ' warning', () async {
+    final log = _CapturingHandler();
+    final previous = AtSignLogger.defaultLoggingHandler;
+    AtSignLogger.defaultLoggingHandler = log;
+    addTearDown(() => AtSignLogger.defaultLoggingHandler = previous);
+    final t = await telemetry();
+
+    t.connectionOpened(
+        'the-session',
+        sessionInfo(sessionParams(client: '@${'a' * 60}', device: '@bob')),
+        opened(1));
+    t.connectionOpened(
+        'witness', sessionInfo(sessionParams(sessionId: 'witness')), opened(1));
+    await pumpEventQueue();
+
+    expect(
+        exporter
+            .named(N.sessionStarted)
+            .map((r) => r.attributes[N.clientSessionId]),
+        ['witness'],
+        reason: 'only the witness, whose client is an Atsign, is reported');
+    expect(
+      log.records.where((r) =>
+          r.level == Level.WARNING &&
+          r.message.contains('the client of the-session is not an Atsign')),
+      hasLength(1),
+    );
+    expect(t.reporting('the-session'), isNull);
+  });
+
   test(
       'Connections that open together are reported in one record a window'
       ' later', () async {

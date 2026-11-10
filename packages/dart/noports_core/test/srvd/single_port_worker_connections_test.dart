@@ -5,6 +5,8 @@ import 'dart:isolate';
 import 'package:at_chops/at_chops.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
+import 'package:noports_core/src/srvd/isolates/connection_tracker.dart'
+    show stopReportBound;
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
@@ -89,12 +91,13 @@ void main() {
   }
 
   /// Connects a socket to [sessionId] authenticating as [signer] on side A
-  /// or B.
+  /// or B, which reads nothing once authenticated unless [reads].
   Future<Socket> connectAs(
     String sessionId,
     String relayAuthAesKey,
     String signer, {
     required bool isSideA,
+    bool reads = true,
   }) async {
     final socket = await Socket.connect(
       InternetAddress.loopbackIPv4,
@@ -110,7 +113,8 @@ void main() {
       signingAlgo: SigningAlgoType.rsa2048,
       isSideA: isSideA,
     ).authenticate(socket);
-    stream!.listen((_) {}, onError: (_) {});
+    final subscription = stream!.listen((_) {}, onError: (_) {});
+    if (!reads) subscription.pause();
     return socket;
   }
 
@@ -181,5 +185,48 @@ void main() {
     }();
     expect(arrivals.indexOf('sessionComplete'), lessThan(exitAt),
         reason: 'run() kills the isolate once stopped completes');
+  });
+
+  test(
+      'A session whose device stops reading is reported complete before its'
+      ' worker is killed', () async {
+    worker.fromMain.close();
+    await server.close();
+    worker = SinglePortWorker(
+      toMain: toMain.sendPort,
+      logTraffic: false,
+      verbose: false,
+      loggingTag: 'single port connections test',
+      address: '127.0.0.1',
+      useTLS: false,
+      bindPort: 0,
+      connectorTimeout: const Duration(seconds: 1),
+    );
+    server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    server.listen(worker.socketHandler);
+    final key = await startSession('S1');
+    final a = await connectAs('S1', key, '@alice', isSideA: true);
+    await connectAs('S1', key, '@bob', isSideA: false, reads: false);
+    await reportsFor('newConnection', 'S1');
+    unawaited(a.done.then((_) {}, onError: (_) {}));
+    a.add(List<int>.filled(64 * 1024 * 1024, 7));
+    await Future<void>.delayed(const Duration(seconds: 1));
+    final stopwatch = Stopwatch()..start();
+
+    unawaited(worker.stop());
+    bool reported() => reports.any((r) => r.type == 'sessionComplete');
+    final DateTime giveUp = DateTime.now().add(const Duration(seconds: 10));
+    while (!reported() && DateTime.now().isBefore(giveUp)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+
+    stopwatch.stop();
+    expect(stopwatch.elapsed,
+        lessThan(stopReportBound + const Duration(milliseconds: 500)),
+        reason: 'the session is reported complete within the report bound');
+    final complete =
+        reports.where((r) => r.type == 'sessionComplete').single.payload;
+    expect(complete['connectionsUnclosed'], 1);
+    expect(complete['bytesClientToDevice'], greaterThan(0));
   });
 }

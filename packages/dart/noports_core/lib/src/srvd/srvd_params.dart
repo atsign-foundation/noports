@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_client_cli/at_client_cli.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
+import 'package:noports_core/src/srvd/loop_lag.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
 
@@ -43,8 +44,12 @@ class SrvdParams {
   final String? telemetryCollectorAtsign;
 
   /// How often (seconds) to log the main isolate's event-loop lag, for
-  /// benchmarking; 0 logs none.
+  /// benchmarking; 0 logs none. At most [maxReportLoopLagSecs].
   final int reportLoopLagSecs;
+
+  /// The longest [reportLoopLagSecs], [LoopLagProbe.maxReportEvery].
+  static final int maxReportLoopLagSecs =
+      LoopLagProbe.maxReportEvery.inSeconds;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();
@@ -107,9 +112,13 @@ class SrvdParams {
         'telemetry-collector-atsign',
         r['telemetry-collector-atsign'],
       ),
-      reportLoopLagSecs: _nonNegative(
+      reportLoopLagSecs: _atMost(
         'report-loop-lag-secs',
-        int.parse(r['report-loop-lag-secs']),
+        _nonNegative(
+          'report-loop-lag-secs',
+          int.parse(r['report-loop-lag-secs']),
+        ),
+        maxReportLoopLagSecs,
       ),
     );
   }
@@ -126,6 +135,10 @@ class SrvdParams {
   static int _nonNegative(String option, int value) => value >= 0
       ? value
       : throw ArgumentError('--$option must not be negative, but was $value');
+
+  static int _atMost(String option, int value, int max) => value <= max
+      ? value
+      : throw ArgumentError('--$option must be at most $max, but was $value');
 
   static ArgParser _createArgParser() {
     var parser = ArgParser(
@@ -260,7 +273,7 @@ class SrvdParams {
       defaultsTo: '0',
       hide: true,
       help: 'How often (seconds) to log the event-loop lag, for benchmarks;'
-          ' 0 logs none.',
+          ' 0 logs none, and at most $maxReportLoopLagSecs.',
     );
     parser.addFlag(
       'help',

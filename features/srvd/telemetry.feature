@@ -18,8 +18,9 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
 
   Vocabulary. The session set is the attributes every session record
   carries: the relay session id and a per-session sequence number, both
-  Atsigns, whether each was verified, the port mode, the request and
-  establishment times, and the device name when the request named one. A
+  Atsigns (the device's only when the request named an Atsign), whether
+  each was verified, the port mode, the request and establishment times,
+  and the device name when the request named one. A
   connections record's body is a list of open and close entries in time
   order. The window is the time from a session's first pending entry to the
   record that carries it.
@@ -129,6 +130,10 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
   Scenario: A client session id outside the allowed shape is left out
     When a session pairs whose client session id is 70 characters long
     Then the records carry no client session id and everything else
+
+  Scenario: A device Atsign that is not an Atsign is left out
+    When a session between client @alice and an unverified device pairs, whose request names the device by 60 characters, over the 55 an Atsign allows
+    Then the records carry no device Atsign and everything else
 
   Scenario: Connections that open together are reported in one record a window later
     Given a reported session

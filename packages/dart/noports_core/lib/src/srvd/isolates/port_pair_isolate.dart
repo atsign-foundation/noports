@@ -100,6 +100,7 @@ class PortPairWorker extends RelayWorker {
   @override
   Future<void> stop([IIRequest? req]) async {
     if (connector != null) {
+      tracker?.stopping();
       connector!.close();
     } else {
       logger.shout('Connector not yet started - killing this isolate');

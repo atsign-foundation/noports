@@ -16,7 +16,8 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
   port to main.
 
   Races: a close reported after its session's completion (the worker waits
-  for every close, bounded); a stop racing a session that is starting (the
+  for every close, bounded, and for at most 4 seconds once a stop begins,
+  inside main's 5-second kill); a stop racing a session that is starting (the
   start is refused once stopping); a stop racing a worker that never
   completes (killed at the bound).
   Replay: a request_ports naming a session id that is live or starting is
@@ -116,6 +117,12 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
     Given a worker that ignores its stop message
     When srvd is stopped
     Then that worker is killed, the stop returns within 12 seconds, and a warning names the worker
+
+  Scenario: A session whose device stops reading is reported complete before its worker is killed
+    Given a session whose device has stopped reading while data for it is still queued
+    When the relay is stopped
+    Then its worker reports the session complete within 4 seconds, with the bytes each way so far and the open connection counted as unclosed
+    And the stop returns within 12 seconds
 
   Scenario: A session request arriving during a stop is refused
     Given srvd is stopping

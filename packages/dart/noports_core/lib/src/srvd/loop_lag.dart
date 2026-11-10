@@ -4,11 +4,20 @@ import 'dart:math';
 /// Measures how late a periodic timer fires on this isolate's event loop and
 /// reports the p50, p99 and largest lateness every [reportEvery].
 class LoopLagProbe {
+  /// The longest [reportEvery]: every sample is held until the report.
+  static const Duration maxReportEvery = Duration(hours: 1);
+
+  /// Throws [ArgumentError] when [reportEvery] is over [maxReportEvery].
   LoopLagProbe({
     required this.reportEvery,
     required this.onReport,
     this.tick = const Duration(milliseconds: 10),
-  });
+  }) {
+    if (reportEvery > maxReportEvery) {
+      throw ArgumentError.value(
+          reportEvery, 'reportEvery', 'must be at most $maxReportEvery');
+    }
+  }
 
   final Duration reportEvery;
   final Duration tick;

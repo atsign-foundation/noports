@@ -112,7 +112,8 @@ class SrvdImpl
 
   /// How long a worker has to exit after being told to stop before it is
   /// killed, which bounds the closes a stop waits for.
-  static const _workerStopTimeout = Duration(seconds: 5);
+  @visibleForTesting
+  static const workerStopTimeout = Duration(seconds: 5);
 
   @visibleForTesting
   int get runningWorkers => _workers.length;
@@ -227,6 +228,10 @@ class SrvdImpl
 
   @override
   Future<void> run() async {
+    if (_stopped) {
+      logger.shout('Not running: srvd has been stopped');
+      return;
+    }
     if (!initialized) {
       throw StateError('Cannot run() - not initialized');
     }
@@ -402,7 +407,7 @@ class SrvdImpl
   }
 
   /// Asks [worker] to stop, so that it closes its own sockets, and kills it
-  /// only if it hasn't exited within [_workerStopTimeout], naming the
+  /// only if it hasn't exited within [workerStopTimeout], naming the
   /// sessions it [carries].
   Future<void> _stopWorker(
     Isolate worker,
@@ -417,13 +422,13 @@ class SrvdImpl
           port.send(IIRequest.create('stop', null));
           return exited;
         }),
-      ]).timeout(_workerStopTimeout);
+      ]).timeout(workerStopTimeout);
     } on TimeoutException {
       final List<String> ids = carries().toList();
       logger.shout(
         'The relay isolate carrying'
         ' ${ids.isEmpty ? 'no session' : 'session ${ids.join(', ')}'}'
-        ' did not stop within ${_workerStopTimeout.inSeconds}s,'
+        ' did not stop within ${workerStopTimeout.inSeconds}s,'
         ' so it was killed; its sockets may stay open',
       );
       worker.kill(priority: Isolate.immediate);

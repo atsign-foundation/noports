@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_telemetry/at_telemetry.dart';
+import 'package:noports_core/src/common/validation_utils.dart'
+    show canonicalAtsign;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/telemetry/opted_in_list.dart';
 import 'package:noports_core/src/srvd/telemetry/relay_telemetry_names.dart';
@@ -113,7 +115,16 @@ class RelayTelemetry {
     _guard('newConnection', () {
       final int at = payload['at'] as int;
       final _Session s = _sessions.putIfAbsent(sessionId, () {
-        final session = _Session(si, at, _decide(si));
+        final String client = canonicalAtsign(si.params.atSignA) ??
+            (throw StateError('the client of $sessionId is not an Atsign'));
+        final String? device = canonicalAtsign(si.params.atSignB);
+        final session = _Session(
+          si,
+          at,
+          clientAtsign: client,
+          deviceAtsign: device,
+          reported: _decide(client, device, si.params.authenticateSocketB),
+        );
         if (session.reported) {
           _event(session, RelayTelemetryNames.sessionStarted, at, {});
         }
@@ -236,11 +247,9 @@ class RelayTelemetry {
         reason: reason,
       );
 
-  bool _decide(SessionInfo si) {
-    if (list.listed(_canonical(si.params.atSignA))) return true;
-    return si.params.authenticateSocketB &&
-        list.listed(_canonical(si.params.atSignB));
-  }
+  bool _decide(String client, String? device, bool deviceVerified) =>
+      list.listed(client) ||
+      (deviceVerified && device != null && list.listed(device));
 
   void _add(_Session s, Map<String, Object?> entry) {
     s.pending.add(entry);
@@ -335,8 +344,9 @@ class RelayTelemetry {
       RelayTelemetryNames.sequence: ++s.seq,
       if (_clientSessionIdShape.hasMatch(params.sessionId))
         RelayTelemetryNames.clientSessionId: params.sessionId,
-      RelayTelemetryNames.clientAtsign: _canonical(params.atSignA),
-      RelayTelemetryNames.deviceAtsign: _canonical(params.atSignB),
+      RelayTelemetryNames.clientAtsign: s.clientAtsign,
+      if (s.deviceAtsign case final device?)
+        RelayTelemetryNames.deviceAtsign: device,
       RelayTelemetryNames.deviceVerified: params.authenticateSocketB,
       RelayTelemetryNames.clientVerified: params.authenticateSocketA,
       RelayTelemetryNames.portMode: params.only443
@@ -397,20 +407,23 @@ class RelayTelemetry {
     return <String, Object?>{'ip': value['ip'], 'port': value['port']};
   }
 
-  static String _canonical(String atsign) {
-    try {
-      return atsign.toAtsign().toString();
-    } catch (_) {
-      return atsign;
-    }
-  }
 }
 
 class _Session {
-  _Session(this.info, this.establishedAt, this.reported);
+  _Session(
+    this.info,
+    this.establishedAt, {
+    required this.clientAtsign,
+    required this.deviceAtsign,
+    required this.reported,
+  });
 
   final SessionInfo info;
   final int establishedAt;
+  final String clientAtsign;
+
+  /// Null when the request named the device by something not an Atsign.
+  final String? deviceAtsign;
   final bool reported;
   final String id = const Uuid().v4();
   int seq = 0;

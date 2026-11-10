@@ -9,6 +9,8 @@ import 'package:at_client/src/client/remote_secondary.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/types.dart';
+import 'package:noports_core/src/srvd/isolates/connection_tracker.dart'
+    show stopReportBound;
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
@@ -55,6 +57,9 @@ class _RecordingSrvd extends SrvdImpl {
 
   final Set<String> completed = {};
 
+  /// The payload of each session's sessionComplete, by session id.
+  final Map<String, Map<String, dynamic>> completions = {};
+
   /// While set, a session request waits on it before it is started.
   Future<void>? holdRequests;
 
@@ -67,7 +72,10 @@ class _RecordingSrvd extends SrvdImpl {
 
   @override
   Future<void> handleWorkerReport(IIRequest msg) {
-    if (msg.type == 'sessionComplete') completed.add(msg.payload['sessionId']);
+    if (msg.type == 'sessionComplete') {
+      completed.add(msg.payload['sessionId']);
+      completions[msg.payload['sessionId']] = msg.payload;
+    }
     return super.handleWorkerReport(msg);
   }
 }
@@ -284,6 +292,51 @@ void main() {
         reason: 'the fallback cleared the sessions it could not stop normally');
     hang.complete();
     await pumpEventQueue();
+  });
+
+  test(
+      'A session whose device stops reading is reported complete before its'
+      ' worker is killed', () async {
+    final relay = srvd();
+    await relay.init();
+    await relay.run();
+    final logged = <String>[];
+    relay.logger.logger.onRecord.listen((r) => logged.add(r.message));
+    final ((portA, portB), _, toWorker) =
+        await relay.spawnNewPortPairIsolate(session('stalled'));
+    relay.sessions['stalled'] = SessionInfo(
+      params: session('stalled'),
+      connector: null,
+      toWorker: toWorker,
+    );
+    final client = await Socket.connect(InternetAddress.loopbackIPv4, portA);
+    final device = await Socket.connect(InternetAddress.loopbackIPv4, portB);
+    sockets.addAll([client, device]);
+    client.listen((_) {}, onError: (_) {});
+    unawaited(client.done.then((_) {}, onError: (_) {}));
+    device.listen((_) {}, onError: (_) {}).pause();
+    unawaited(device.done.then((_) {}, onError: (_) {}));
+    client.add(List<int>.filled(64 * 1024 * 1024, 7));
+    await Future<void>.delayed(const Duration(seconds: 1));
+    final stopwatch = Stopwatch()..start();
+
+    await relay.stop();
+
+    stopwatch.stop();
+    expect(stopReportBound + const Duration(seconds: 1),
+        lessThanOrEqualTo(SrvdImpl.workerStopTimeout),
+        reason: 'the report bound leaves a second before a worker is killed');
+    expect(stopwatch.elapsed,
+        lessThan(stopReportBound + const Duration(milliseconds: 500)),
+        reason: 'the session is reported, and its worker exits, within the'
+            ' report bound');
+    final Map<String, dynamic>? report = relay.completions['stalled'];
+    expect(report, isNotNull,
+        reason: 'the worker reported the session before main killed it');
+    expect(report!['connectionsUnclosed'], 1);
+    expect(report['bytesClientToDevice'], greaterThan(0));
+    expect(logged.where((m) => m.contains('killed')), isEmpty);
+  });
   });
 
   test('A session request arriving during a stop is refused', () async {

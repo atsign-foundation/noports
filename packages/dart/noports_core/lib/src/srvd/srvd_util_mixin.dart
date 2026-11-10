@@ -113,7 +113,7 @@ mixin SrvdUtilMixin {
     assertValidMapValue(json, 'atSignB', String);
     assertValidMapValue(json, 'clientNonce', String);
     assertValidMapValue(json, 'authenticateSocketA', bool);
-    assertValidMapValue(json, 'authenticateSocketA', bool);
+    assertValidMapValue(json, 'authenticateSocketB', bool);
 
     final String sessionId = json['sessionId'];
     final String atSignA = json['atSignA'];

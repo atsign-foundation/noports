@@ -52,6 +52,8 @@ abstract interface class Srvd {
 
   Future<void> init();
 
+  /// Subscribes to session requests and starts the relay's timers and
+  /// telemetry; does nothing once [stop] has been called.
   Future<void> run();
 
   /// Stops what [init] and [run] started: cancels the notification

@@ -42,6 +42,10 @@ class SinglePortWorker extends RelayWorker {
   /// has been sent its sessionComplete.
   final Set<Future<void>> _completions = {};
 
+  /// The tracker of each live session, until it has reported the session
+  /// complete.
+  final Set<ConnectionTracker> _trackers = {};
+
   /// How long a side's close waits for its pending data before the side is
   /// destroyed.
   final Duration closeFlushTimeout;
@@ -224,6 +228,9 @@ class SinglePortWorker extends RelayWorker {
   Future<void> _stop() => _stopping ??= _closeAll();
 
   Future<void> _closeAll() async {
+    for (final tracker in _trackers) {
+      tracker.stopping();
+    }
     try {
       await _serverSocket?.close();
       await _secureServerSocket?.close();
@@ -299,6 +306,7 @@ class SinglePortWorker extends RelayWorker {
       closeFlushTimeout: closeFlushTimeout,
       progressInterval: progressInterval,
     );
+    _trackers.add(tracker);
 
     sessions[params.sessionId] = SessionInfo(
       params: params,
@@ -310,6 +318,7 @@ class SinglePortWorker extends RelayWorker {
       logger.shout('sc.done for ${params.sessionId}');
       sessions.remove(params.sessionId);
       await tracker.complete();
+      _trackers.remove(tracker);
     });
     _completions.add(completion);
     unawaited(completion.whenComplete(() => _completions.remove(completion)));

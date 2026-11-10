@@ -186,6 +186,12 @@ or not the collector can be reached. Before anything is reported:
   `noportsRelay` role, and
 - the collector shares its opted-in list with the relay's Atsign.
 
+Each reported session's records carry the client's Atsign, the device's
+Atsign when the request named one, whether each was verified, the device
+name, both peers' IP addresses and ports, the session's times, and its byte
+and connection counts. The relay's own lifecycle records
+carry no Atsign or address.
+
 ## systemd units
 
 The systemd directory contains an example unit file with its own
