@@ -1,9 +1,12 @@
 import 'dart:convert';
 
+import 'package:at_client/at_client.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/srvd/telemetry/opted_in_list.dart';
 import 'package:noports_core/src/srvd/telemetry/relay_telemetry_names.dart';
 import 'package:test/test.dart';
 
+import '../../sshnp/sshnp_mocks.dart';
 import 'telemetry_fakes.dart';
 
 /// The value an AtCollection stores for an item holding [obj].
@@ -19,6 +22,11 @@ void main() {
   late Map<String, String> stored;
   late CollectionOptedInListSource source;
   late List<String> warnings;
+
+  setUpAll(() {
+    registerFallbackValue(AtKey());
+    registerFallbackValue(GetRequestOptions());
+  });
 
   setUp(() {
     stored = {};
@@ -62,6 +70,45 @@ void main() {
     expect(p.list!.atsigns, {'@alice', '@bob', '@carol'});
     await until(() => asked.where((id) => id == 'manifest').length >= 3,
         what: 'two more scheduled reads');
+  });
+
+  test('The collector source reads the copies shared with this Atsign, afresh',
+      () async {
+    final atClient = MockAtClient();
+    when(() => atClient.getCurrentAtSign()).thenReturn('@relay');
+    AtKey? asked;
+    GetRequestOptions? options;
+    when(() => atClient.get(any(),
+            getRequestOptions: any(named: 'getRequestOptions')))
+        .thenAnswer((i) async {
+      asked = i.positionalArguments.first as AtKey;
+      options = i.namedArguments[#getRequestOptions] as GetRequestOptions;
+      return AtValue()
+        ..value = item({
+          'builtAt': DateTime.timestamp().toUtc().toIso8601String(),
+          'chunks': 0,
+          'window': '30d',
+        });
+    });
+    final collector = CollectionOptedInListSource.forCollector(
+      atClient: atClient,
+      collector: '@collector',
+    );
+
+    final list = await collector.read();
+
+    expect(list.atsigns, isEmpty);
+    expect(asked, isNotNull);
+    expect(asked!.key, CollectionOptedInListSource.manifestId);
+    expect(asked!.namespace, CollectionOptedInListSource.namespace);
+    expect(asked!.sharedBy, '@collector',
+        reason: 'the list is the one the collector published');
+    expect(asked!.sharedWith, '@relay',
+        reason: "the list is the copy the collector shared with the relay");
+    expect(options, isNotNull);
+    expect(options!.useRemoteAtServer, isTrue,
+        reason: 'the current copy is read from the atServer, not a cache');
+    expect(options!.bypassCache, isTrue);
   });
 
   test('Nothing is reported before the first good read', () async {

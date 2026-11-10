@@ -17,6 +17,7 @@ import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
+import 'package:noports_core/src/srvd/telemetry/opted_in_list.dart';
 import 'package:noports_core/src/srvd/telemetry/relay_telemetry.dart';
 import 'package:noports_core/src/srvd/telemetry/relay_telemetry_names.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -179,7 +180,19 @@ void main() {
     });
     when(() => atClient.get(any(),
             getRequestOptions: any(named: 'getRequestOptions')))
-        .thenThrow(AtKeyNotFoundException('no list yet'));
+        .thenAnswer((i) async {
+      final AtKey key = i.positionalArguments.first as AtKey;
+      final Object obj = key.key == CollectionOptedInListSource.manifestId
+          ? {
+              'builtAt': DateTime.timestamp().toUtc().toIso8601String(),
+              'chunks': 1,
+              'window': '30d',
+            }
+          : {
+              'atsigns': ['@alice'],
+            };
+      return AtValue()..value = jsonEncode({'type': 'n/a', 'obj': obj});
+    });
     final telemetry = SrvdImpl.relayTelemetryFor(
       atClient: atClient,
       collector: '@telemetry',
@@ -188,6 +201,14 @@ void main() {
     final Stopwatch sw = Stopwatch()..start();
 
     telemetry.start();
+    await telemetry.list.firstGoodRead.timeout(const Duration(seconds: 2));
+    for (int i = 0; i < 120; i++) {
+      telemetry.connectionOpened(
+        'session-$i',
+        sessionInfo(sessionParams(sessionId: 'session-$i')),
+        opened(1),
+      );
+    }
     await until(() => sent.isNotEmpty, what: 'a notification');
     sw.stop();
     await telemetry.stop();
@@ -199,6 +220,10 @@ void main() {
     expect(idAndNamespace, 'logs.at_telemetry');
     final records = const AtTelemetryLogsCodec().decode(body).single.records;
     expect(records.first.eventName, N.lifecycleStarted);
+    expect(
+        records,
+        hasLength(AtTelemetryNotificationExporter.defaultMaxBatchRecords),
+        reason: 'srvd caps each notification at the exporter default of 50');
   });
 
   test("A list srvd cannot read is logged at srvd's default level", () async {
@@ -510,6 +535,13 @@ void main() {
     expect(names.last, N.lifecycleStopped,
         reason: 'stopped comes after every ended record');
     expect(exporter.shutDown, isTrue);
-    expect(jsonEncode(ended.first.attributes), isNotEmpty);
+    final Map<String, Object?> attributes = ended.first.attributes;
+    expect(attributes[N.relaySessionId], isA<String>());
+    expect(attributes[N.endedAtMs], isA<int>());
+    expect(attributes[N.durationMs], greaterThanOrEqualTo(0));
+    expect(attributes[N.tcpConnections], 1,
+        reason: 'each session carried the one connection it paired');
+    expect(attributes[N.connectionsUnclosed], 0,
+        reason: 'the worker reported its connection closed before stopping');
   });
 }
