@@ -656,7 +656,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
               entry: client,
               preDelete: nppOperationHooks?.preDeleteClient,
               removeEntry: () => nppCache.deleteClient(clientId),
-              members: nppCache.getClientGroupMembersByClientId(clientId),
+              members: nppCache.membersNaming(clientId: clientId),
               removed: removed,
               logRemoved: logRemoved,
             );
@@ -677,9 +677,9 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
               entry: clientGroup,
               preDelete: nppOperationHooks?.preDeleteClientGroup,
               removeEntry: () => nppCache.deleteClientGroup(clientGroupId),
-              members:
-                  nppCache.getClientGroupMembersByClientGroupId(clientGroupId),
-              serviceACLs: nppCache.getServiceACLsByClientGroupId(clientGroupId),
+              members: nppCache.membersNaming(clientGroupId: clientGroupId),
+              serviceACLs:
+                  nppCache.serviceACLsNaming(clientGroupId: clientGroupId),
               removed: removed,
               logRemoved: logRemoved,
             );
@@ -749,10 +749,7 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
               entry: service,
               preDelete: nppOperationHooks?.preDeleteService,
               removeEntry: () => nppCache.deleteService(serviceId),
-              serviceACLs: [
-                ...nppCache.getServiceACLsByServiceID(serviceId),
-                ...nppCache.unloadedServiceACLsByServiceId(serviceId),
-              ],
+              serviceACLs: nppCache.serviceACLsNaming(serviceId: serviceId),
               removed: removed,
               logRemoved: logRemoved,
             );

@@ -582,6 +582,79 @@ void main() {
     });
   });
 
+  group('Given each persistence method and a stored client group member or'
+      ' service ACL that npp did not load, naming a client or client group'
+      ' that it did load', () {
+    test('when that client or client group is deleted, then the member or'
+        ' service ACL is deleted from storage with it, and the answer lists'
+        ' it', () async {
+      final cases = <(String, String, String, List<(String, Map<String, dynamic>)>)>[
+        (
+          'Client',
+          'c1',
+          'client_group_member',
+          [
+            ('client', {'id': 'c1', 'name': 'Alice', 'atSign': '@alice'}),
+            ('client_group_member', {
+              'id': _rule,
+              'clientId': 'c1',
+              'clientGroupId': _missing,
+            }),
+          ],
+        ),
+        (
+          'ClientGroup',
+          'g1',
+          'client_group_member',
+          [
+            ('client_group', {'id': 'g1', 'name': 'g1'}),
+            ('client_group_member', {
+              'id': _rule,
+              'clientId': _missing,
+              'clientGroupId': 'g1',
+            }),
+          ],
+        ),
+        (
+          'ClientGroup',
+          'g1',
+          'service_acl',
+          [
+            ('client_group', {'id': 'g1', 'name': 'g1'}),
+            ('service_acl', {
+              'id': _rule,
+              'serviceId': _missing,
+              'clientGroupId': 'g1',
+              'permitOpen': 'localhost:22',
+            }),
+          ],
+        ),
+      ];
+      for (final (target, id, kind, stored) in cases) {
+        for (final store in await newStores()) {
+          final reason = '${store.name}: $target $id, $kind';
+          for (final (k, json) in stored) {
+            await store.save(k, json['id'] as String, json);
+          }
+          final c = await start(store);
+
+          final response = await deleteRule(c, target, id);
+
+          expect(response.respType, AtRpcRespType.success,
+              reason: '$reason: ${response.message}');
+          expect(await store.savedNames(kind), isEmpty, reason: reason);
+          expect(
+            response.payload['removed'],
+            [
+              {'target': droppableTargets[kind], 'id': _rule},
+            ],
+            reason: reason,
+          );
+        }
+      }
+    });
+  });
+
   group('Given no rule of a kind has a given id, loaded or not', () {
     test('when a manager deletes that id, then the delete is answered "No'
         ' <Kind> with id <id>, so nothing is deleted." and nothing changes',

@@ -245,10 +245,27 @@ class NppCache {
   ServiceACL? findServiceACL(final String id) =>
       _withId(_serviceACLs, id) ?? _withId(_unloadedServiceACLs, id);
 
-  /// The service ACLs [removeRulesNamingMissing] removed that name the
-  /// service [serviceId].
-  Set<ServiceACL> unloadedServiceACLsByServiceId(final String serviceId) =>
-      _unloadedServiceACLs.where((sa) => sa.serviceId == serviceId).toSet();
+  /// The client group members naming the client [clientId] or the client
+  /// group [clientGroupId], loaded or removed by [removeRulesNamingMissing],
+  /// for a delete to remove with what they name.
+  Set<ClientGroupMember> membersNaming(
+          {final String? clientId, final String? clientGroupId}) =>
+      {..._clientGroupMembers, ..._unloadedClientGroupMembers}
+          .where((m) =>
+              (clientId != null && m.clientId == clientId) ||
+              (clientGroupId != null && m.clientGroupId == clientGroupId))
+          .toSet();
+
+  /// The service ACLs naming the service [serviceId] or the client group
+  /// [clientGroupId], loaded or removed by [removeRulesNamingMissing], for a
+  /// delete to remove with what they name.
+  Set<ServiceACL> serviceACLsNaming(
+          {final String? serviceId, final String? clientGroupId}) =>
+      {..._serviceACLs, ..._unloadedServiceACLs}
+          .where((sa) =>
+              (serviceId != null && sa.serviceId == serviceId) ||
+              (clientGroupId != null && sa.clientGroupId == clientGroupId))
+          .toSet();
 
   static T? _withId<T extends PolicyEntry>(Set<T> rules, String id) =>
       rules.where((rule) => rule.id == id).firstOrNull;
@@ -428,24 +445,16 @@ class NppCache {
     return removed;
   }
 
-  bool deleteClient(final String clientId) {
-    final Client client = getClientById(clientId);
-    return _clients.remove(client);
-  }
+  bool deleteClient(final String clientId) => _removeWithId(_clients, clientId);
 
-  bool deleteClientGroup(final String clientGroupId) {
-    final ClientGroup clientGroup = getClientGroupById(clientGroupId);
-    return _clientGroups.remove(clientGroup);
-  }
+  bool deleteClientGroup(final String clientGroupId) =>
+      _removeWithId(_clientGroups, clientGroupId);
 
   bool deleteClientGroupMember(final String clientGroupMemberId) =>
       _removeWithId(_clientGroupMembers, clientGroupMemberId) |
       _removeWithId(_unloadedClientGroupMembers, clientGroupMemberId);
 
-  bool deleteDaemon(final String daemonId) {
-    final Daemon daemon = getDaemonById(daemonId);
-    return _daemons.remove(daemon);
-  }
+  bool deleteDaemon(final String daemonId) => _removeWithId(_daemons, daemonId);
 
   bool deleteService(final String serviceId) =>
       _removeWithId(_services, serviceId) |
