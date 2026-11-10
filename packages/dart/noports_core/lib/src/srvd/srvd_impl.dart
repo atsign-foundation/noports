@@ -98,10 +98,15 @@ class SrvdImpl
 
   final List<StreamSubscription> _subscriptions = [];
 
-  /// The relay isolates still running: where to send them requests, and when
-  /// they exit.
-  final Map<Isolate, ({Future<SendPort> toWorker, Future<void> exited})>
-  _workers = {};
+  /// The relay isolates still running: where to send them requests, when
+  /// they exit, and which sessions each carries.
+  final Map<
+      Isolate,
+      ({
+        Future<SendPort> toWorker,
+        Future<void> exited,
+        Iterable<String> Function() carries,
+      })> _workers = {};
 
   bool _stopped = false;
 
@@ -338,9 +343,9 @@ class SrvdImpl
     }
     _subscriptions.clear();
     await Future.wait([
-      for (final MapEntry(key: worker, value: (:toWorker, :exited))
+      for (final MapEntry(key: worker, value: (:toWorker, :exited, :carries))
           in _workers.entries.toList())
-        _stopWorker(worker, toWorker, exited),
+        _stopWorker(worker, toWorker, exited, carries),
     ]);
     await telemetry?.stop();
     sessions.clear();
@@ -372,9 +377,9 @@ class SrvdImpl
       fromWorker.close();
       _endOrphans(carries());
     });
-    _workers[worker] = (toWorker: toWorker, exited: exited);
+    _workers[worker] = (toWorker: toWorker, exited: exited, carries: carries);
     if (_stopped) {
-      unawaited(_stopWorker(worker, toWorker, exited));
+      unawaited(_stopWorker(worker, toWorker, exited, carries));
     }
   }
 
@@ -397,11 +402,13 @@ class SrvdImpl
   }
 
   /// Asks [worker] to stop, so that it closes its own sockets, and kills it
-  /// only if it hasn't exited within [_workerStopTimeout].
+  /// only if it hasn't exited within [_workerStopTimeout], naming the
+  /// sessions it [carries].
   Future<void> _stopWorker(
     Isolate worker,
     Future<SendPort> toWorker,
     Future<void> exited,
+    Iterable<String> Function() carries,
   ) async {
     try {
       await Future.any([
@@ -412,8 +419,11 @@ class SrvdImpl
         }),
       ]).timeout(_workerStopTimeout);
     } on TimeoutException {
+      final List<String> ids = carries().toList();
       logger.shout(
-        'A relay isolate did not stop within ${_workerStopTimeout.inSeconds}s,'
+        'The relay isolate carrying'
+        ' ${ids.isEmpty ? 'no session' : 'session ${ids.join(', ')}'}'
+        ' did not stop within ${_workerStopTimeout.inSeconds}s,'
         ' so it was killed; its sockets may stay open',
       );
       worker.kill(priority: Isolate.immediate);
@@ -975,6 +985,7 @@ class SrvdImpl
       'sessionInfo:'
       ' $si eventLoggingConfig: ${si?.eventLoggingConfig}',
     );
+    sessions.remove(sessionId);
     if (si != null && si.eventLoggingConfig != null) {
       await logEvent(
         si.eventLoggingConfig!,
@@ -984,7 +995,6 @@ class SrvdImpl
         ),
       );
     }
-    sessions.remove(sessionId);
   }
 
   /// Forgets a session the single-port isolate refused to start, which would

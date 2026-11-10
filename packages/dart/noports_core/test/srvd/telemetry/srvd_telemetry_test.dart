@@ -8,6 +8,9 @@ import 'package:at_telemetry/at_telemetry.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:noports_core/src/events/event_mixins.dart'
+    show CompressionScheme, EncodingScheme;
+import 'package:noports_core/src/events/event_models.dart' show AtEventConfig;
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
@@ -25,6 +28,43 @@ import 'telemetry_fakes.dart';
 typedef N = RelayTelemetryNames;
 
 void _exitAtOnce(Object? _) {}
+
+/// Sends its port to main, then ignores every message, so it never reports
+/// its session complete and never exits on its own.
+void _deafWorker(SendPort toMain) {
+  final fromMain = ReceivePort();
+  toMain.send(fromMain.sendPort);
+  fromMain.listen((_) {});
+}
+
+/// An srvd whose event logging waits until [gate] completes.
+class _SlowLoggingSrvd extends SrvdImpl {
+  _SlowLoggingSrvd({
+    required super.atClient,
+    required super.atSign,
+    required super.homeDirectory,
+    required super.atKeysFilePath,
+    required super.managerAtsign,
+    required super.ipAddress,
+    required super.logTraffic,
+    required super.verbose,
+    required super.bind443,
+    required super.localBindPort443,
+    required super.relayAuthDetectWindowMs,
+    required super.signingKeyCheckInterval,
+  });
+
+  final Completer<void> gate = Completer<void>();
+
+  @override
+  Future<void> logEvent(
+    AtEventConfig config,
+    Map<String, dynamic> json, {
+    CompressionScheme compressionScheme = CompressionScheme.zlib,
+    EncodingScheme encodingScheme = EncodingScheme.base2e15,
+  }) =>
+      gate.future;
+}
 
 /// An exporter whose shutdown waits until [gate] completes.
 class _GatedExporter extends RecordingExporter {
@@ -268,6 +308,88 @@ void main() {
     expect(ended.attributes[N.endReason], 'workerExited');
     expect(ended.attributes[N.connectionsUnclosed], 1);
     expect(relay.sessions, isEmpty, reason: 'main forgets the session');
+  });
+
+  test(
+      'A reported session on a worker killed at the stop bound is reported as'
+      ' ended', () async {
+    final exporter = RecordingExporter();
+    final telemetry =
+        await startedTelemetry(exporter, ScriptedListSource(listOf(['@alice'])));
+    final relay = srvd(telemetry);
+    await relay.init();
+    relay.sessions['the-session'] = sessionInfo(sessionParams());
+    await relay.handleWorkerReport(IIRequest.create(
+        'newConnection', {...opened(1), 'stats': Stats()}));
+    expect(exporter.named(N.sessionStarted), hasLength(1));
+    final fromWorker = ReceivePort();
+    final exitPort = ReceivePort();
+    final toWorker = Completer<SendPort>();
+    fromWorker.listen((m) {
+      if (m is SendPort) toWorker.complete(m);
+    });
+    final deaf = await Isolate.spawn(_deafWorker, fromWorker.sendPort,
+        onExit: exitPort.sendPort);
+    relay.trackWorker(deaf, fromWorker, exitPort, toWorker.future,
+        sessionId: 'the-session');
+    await toWorker.future.timeout(const Duration(seconds: 2));
+
+    await relay.stop();
+
+    final ended = exporter.named(N.sessionEnded);
+    expect(ended, hasLength(1),
+        reason: 'the worker was killed without reporting the session complete');
+    expect(ended.single.attributes[N.endReason], 'relayStopping');
+    expect(exporter.records.last.eventName, N.lifecycleStopped);
+  });
+
+  test(
+      'A completed session whose end is still being logged is not reported'
+      ' lost when its worker exits', () async {
+    final relay = _SlowLoggingSrvd(
+      atClient: atClient,
+      atSign: '@relay'.toAtsign(),
+      homeDirectory: Directory.current.path,
+      atKeysFilePath: Directory.current.path,
+      managerAtsign: 'open',
+      ipAddress: '127.0.0.1',
+      logTraffic: false,
+      verbose: false,
+      bind443: false,
+      localBindPort443: 0,
+      relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+      signingKeyCheckInterval: Duration.zero,
+    );
+    relay.sessions['the-session'] = sessionInfo(sessionParams())
+      ..eventLoggingConfig = AtEventConfig(
+          atSign: '@events'.toAtsign(), topic: 'x.events.sshnp', ttln: 1000);
+    final logged = <String>[];
+    relay.logger.logger.onRecord.listen((r) => logged.add(r.message));
+    final completing = relay.handleWorkerReport(IIRequest.create(
+        'sessionComplete', {
+      'sessionId': 'the-session',
+      'at': nowMs(),
+      'stats': Stats(),
+      'connections': 1,
+      'connectionsUnclosed': 0,
+    }));
+    final exitPort = ReceivePort();
+    final fromWorker = ReceivePort();
+    final exitHandled = Completer<void>();
+    fromWorker.listen((_) {}, onDone: exitHandled.complete);
+    final worker =
+        await Isolate.spawn(_exitAtOnce, null, onExit: exitPort.sendPort);
+    relay.trackWorker(worker, fromWorker, exitPort,
+        Completer<SendPort>().future,
+        sessionId: 'the-session');
+    await exitHandled.future.timeout(const Duration(seconds: 5),
+        onTimeout: () => fail('srvd never handled the worker exit'));
+
+    expect(logged.where((m) => m.contains('exited without reporting')),
+        isEmpty,
+        reason: 'the session was reported complete before its worker exited');
+    relay.gate.complete();
+    await completing;
   });
 
   group('A port-pair worker that dies', () {

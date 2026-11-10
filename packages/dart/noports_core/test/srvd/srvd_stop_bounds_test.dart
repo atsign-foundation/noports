@@ -4,6 +4,9 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:at_client/at_client.dart';
+// ignore: implementation_imports
+import 'package:at_client/src/client/remote_secondary.dart';
+import 'package:at_commons/at_builders.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
@@ -28,6 +31,10 @@ void _deafWorker(SendPort toMain) {
 }
 
 class _FakeNotificationParams extends Fake implements NotificationParams {}
+
+class _FakeVerbBuilder extends Fake implements VerbBuilder {}
+
+class _MockRemoteSecondary extends Mock implements RemoteSecondary {}
 
 /// An srvd that notes each session main receives sessionComplete for.
 class _RecordingSrvd extends SrvdImpl {
@@ -71,7 +78,10 @@ void main() {
   late List<NotificationParams> answers;
   final sockets = <Socket>[];
 
-  setUpAll(() => registerFallbackValue(_FakeNotificationParams()));
+  setUpAll(() {
+    registerFallbackValue(_FakeNotificationParams());
+    registerFallbackValue(_FakeVerbBuilder());
+  });
 
   setUp(() {
     subscriptions = [];
@@ -208,7 +218,10 @@ void main() {
     final exitWatch = ReceivePort();
     deaf.addOnExitListener(exitWatch.sendPort);
     final exited = exitWatch.first;
-    relay.trackWorker(deaf, fromWorker, exitPort, toWorker.future);
+    final logged = <String>[];
+    relay.logger.logger.onRecord.listen((r) => logged.add(r.message));
+    relay.trackWorker(deaf, fromWorker, exitPort, toWorker.future,
+        sessionId: 'deaf-session');
     await toWorker.future.timeout(const Duration(seconds: 2));
     expect(relay.runningWorkers, 1);
     final stopwatch = Stopwatch()..start();
@@ -219,6 +232,11 @@ void main() {
     expect(stopwatch.elapsed, lessThan(Srvd.stopBound));
     await exited.timeout(const Duration(seconds: 2));
     exitWatch.close();
+    expect(
+      logged.where((m) => m.contains('killed') && m.contains('deaf-session')),
+      hasLength(1),
+      reason: 'the warning names the worker by the session it carries',
+    );
   });
 
   test('A session request arriving during a stop is refused', () async {
@@ -289,6 +307,53 @@ void main() {
     await requesting;
     await stopping;
 
+    expect(answers, isEmpty, reason: 'the client is sent no ports');
+    expect(relay.sessions, isEmpty);
+  });
+
+  test(
+      'A session request whose ports arrive as a stop begins takes no session'
+      ' mutex', () async {
+    when(() => atClient.getCurrentAtSign()).thenReturn('@relay');
+    final remote = _MockRemoteSecondary();
+    when(() => atClient.getRemoteSecondary()).thenReturn(remote);
+    when(() => remote.executeVerb(any())).thenAnswer((_) async => 'data:1');
+    final relay = srvd();
+    await relay.init();
+    await relay.run();
+    bool stopBegun = false;
+    relay.logger.logger.onRecord.listen((r) {
+      if (r.message.startsWith('Received ports')) {
+        stopBegun = true;
+        unawaited(relay.stop());
+      }
+    });
+
+    await relay.handleRequestPorts(AtNotification(
+      'notif-id',
+      '@relay:gateway-1.request_ports.sshrvd@alice',
+      '@alice',
+      '@relay',
+      DateTime.now().millisecondsSinceEpoch,
+      'key',
+      true,
+      value: jsonEncode({
+        'sessionId': 'spawning',
+        'atSignA': '@alice',
+        'atSignB': '@bob',
+        'clientNonce': 'client nonce',
+        'authenticateSocketA': false,
+        'authenticateSocketB': false,
+        'relayAuthMode': RelayAuthMode.escr.name,
+        'only443': false,
+        'multipleAcksOk': false,
+      }),
+    ));
+    await relay.stop();
+
+    expect(stopBegun, isTrue,
+        reason: 'the stop began once the worker had reported its ports');
+    verifyNever(() => remote.executeVerb(any()));
     expect(answers, isEmpty, reason: 'the client is sent no ports');
     expect(relay.sessions, isEmpty);
   });
