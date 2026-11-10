@@ -154,21 +154,21 @@ void main() {
     );
 
     test(
-      'when a delete names an unknown id, then it still throws and logs ruleChangeFailed with no rule',
+      'when a delete names an unknown id, then it is answered with an error and logs ruleChangeFailed with no rule',
       () async {
-        await expectLater(
-          callbacks().handleRequest(
-            req({
-              'operation': 'delete',
-              'target': 'Client',
-              'value': {'clientId': '9'},
-            }),
-            policy,
-          ),
-          throwsA(isA<StateError>()),
+        final response = await callbacks().handleRequest(
+          req({
+            'operation': 'delete',
+            'target': 'Client',
+            'value': {'clientId': '9'},
+          }),
+          policy,
         );
 
+        expect(response.respType, AtRpcRespType.error);
+        expect(response.message, 'No Client with id 9, so nothing is deleted.');
         expect(events.single['event'], 'ruleChangeFailed');
+        expect(events.single['error'], response.message);
         expect(events.single['operation'], 'delete');
         expect(events.single['rule'], isEmpty);
         expect(events.single['target'], 'Client');

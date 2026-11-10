@@ -42,13 +42,29 @@ bool _carriesId(
   return folded ? id.toLowerCase() == name.toLowerCase() : id == name;
 }
 
+/// The kind each rule kind [NppCache.removeRulesNamingMissing] can remove is
+/// stored as, in its key or file name.
+const Map<String, String> _storedKinds = {
+  'ClientGroupMember': 'client_group_member',
+  'Service': 'service',
+  'ServiceACL': 'service_acl',
+};
+
+/// Where the loaders read each rule, by its stored kind and id: `key` or
+/// `file`, and the key or the file's path.
+typedef _StoredAt = Map<(String, Object?), (String, String)>;
+
 /// Removes from [nppCache] each rule naming a rule it doesn't hold, with a
-/// warning for each.
-void _removeRulesNamingMissing(NppCache nppCache) {
+/// warning for each naming where [storedAt] says it is stored.
+void _removeRulesNamingMissing(NppCache nppCache, _StoredAt storedAt) {
   for (final (kind, rule, missing) in nppCache.removeRulesNamingMissing()) {
+    final (String noun, String place) =
+        storedAt[(_storedKinds[kind]!, rule.id)]!;
     _logger.warning(
       'Not loading $kind with id ${rule.id}: it names '
-      '${missing.join(' and ')}, which is not loaded',
+      '${missing.join(' and ')}, which is not loaded. It is still stored, as '
+      "the $noun $place; delete it through npp's manager RPC, or delete that "
+      '$noun, to stop this warning.',
     );
   }
 }
@@ -75,6 +91,7 @@ Future<NppCache> nppCacheFromAtServer({
   }
 
   final NppCache nppCache = NppCache();
+  final _StoredAt storedAt = {};
 
   // Fetch all policy-related AtKeys in a single call
   final String allPolicyRegex =
@@ -139,6 +156,7 @@ Future<NppCache> nppCacheFromAtServer({
         );
         continue;
       }
+      storedAt[(entityType, jsonData['id'])] = ('key', atKey.toString());
 
       if (entityType == 'client_group_member') {
         final ClientGroupMember clientGroupMember = ClientGroupMember.fromJson(
@@ -192,7 +210,7 @@ Future<NppCache> nppCacheFromAtServer({
     }
   }
 
-  _removeRulesNamingMissing(nppCache);
+  _removeRulesNamingMissing(nppCache, storedAt);
   _logger.info('Loaded ${nppCache.clients.length} Clients into cache');
   _logger.info(
     'Loaded ${nppCache.clientGroups.length} ClientGroups into cache',
@@ -220,6 +238,7 @@ Future<NppCache> nppCacheFromFiles({
   policyDirectory, // directory path where JSON files are stored e.g. "~/.atsign/npp/@jeremy"
 }) async {
   final NppCache nppCache = NppCache();
+  final _StoredAt storedAt = {};
   if (!(await policyDirectory.exists())) {
     _logger.info(
       'Directory $policyDirectory does not exist. Returning an empty NppCache()',
@@ -274,6 +293,8 @@ Future<NppCache> nppCacheFromFiles({
           );
           continue;
         }
+        storedAt[(suffix.substring(1, suffix.length - '.json'.length),
+            jsonData['id'])] = ('file', file.path);
 
         // Check most specific suffixes first to avoid mismatches
         if (fileName.endsWith('_client_group_member.json')) {
@@ -322,7 +343,7 @@ Future<NppCache> nppCacheFromFiles({
       _logger.finer('Skipping non-file entity: ${file.path}');
     }
   }
-  _removeRulesNamingMissing(nppCache);
+  _removeRulesNamingMissing(nppCache, storedAt);
   _logger.info(
     'Finished populating NppCache from files in ${policyDirectory.path}',
   );
