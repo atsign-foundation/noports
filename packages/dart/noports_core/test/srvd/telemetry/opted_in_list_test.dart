@@ -138,8 +138,9 @@ void main() {
         hasLength(2), reason: 'then once an hour');
 
     final telemetryExporter = RecordingExporter();
+    // NOTE the telemetry reads the real clock, so its list is built now.
     final telemetrySource =
-        ScriptedListSource(listOf(['@alice'], builtAt: clock));
+        ScriptedListSource(listOf(['@alice'], builtAt: DateTime.timestamp()));
     final telemetry = await startedTelemetry(telemetryExporter, telemetrySource);
     addTearDown(telemetry.stop);
     telemetry.connectionOpened(
