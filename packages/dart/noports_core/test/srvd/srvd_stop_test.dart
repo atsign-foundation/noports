@@ -16,6 +16,29 @@ import 'package:test/test.dart';
 
 import '../sshnp/sshnp_mocks.dart';
 
+/// An srvd that counts its signing-key checks instead of making them.
+class _CountingSrvd extends SrvdImpl {
+  _CountingSrvd({required super.atClient})
+      : super(
+          atSign: '@relay'.toAtsign(),
+          homeDirectory: Directory.current.path,
+          atKeysFilePath: Directory.current.path,
+          managerAtsign: 'open',
+          ipAddress: '127.0.0.1',
+          logTraffic: false,
+          verbose: false,
+          bind443: false,
+          localBindPort443: 0,
+          relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
+          signingKeyCheckInterval: const Duration(milliseconds: 10),
+        );
+
+  int checks = 0;
+
+  @override
+  Future<void> checkSigningKeys() async => checks++;
+}
+
 void main() {
   late List<StreamController<AtNotification>> subscriptions;
   late MockAtClient atClient;
@@ -105,6 +128,30 @@ void main() {
       Socket.connect(InternetAddress.loopbackIPv4, portA),
       throwsA(isA<SocketException>()),
     );
+  });
+
+  test('A run after a stop subscribes to nothing and starts no timer',
+      () async {
+    final running = _CountingSrvd(atClient: atClient);
+    await running.init();
+    await running.run();
+    addTearDown(running.stop);
+    final listeningWhileRunning =
+        subscriptions.where((c) => c.hasListener).length;
+    final stopped = _CountingSrvd(atClient: atClient);
+    await stopped.init();
+    await stopped.stop();
+
+    await stopped.run();
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    expect(running.checks, greaterThan(0),
+        reason: 'the control: a running relay checks its signing keys');
+    expect(listeningWhileRunning, 2);
+    expect(subscriptions.where((c) => c.hasListener), hasLength(2),
+        reason: 'only the running relay is subscribed');
+    expect(stopped.checks, 0,
+        reason: 'a relay run after its stop starts no signing-key timer');
   });
 
   test('a worker whose session ends is forgotten', () async {

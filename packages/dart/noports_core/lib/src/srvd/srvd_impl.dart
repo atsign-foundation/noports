@@ -230,6 +230,10 @@ class SrvdImpl
     if (!initialized) {
       throw StateError('Cannot run() - not initialized');
     }
+    if (_stopped) {
+      logger.shout('Not running: srvd has been stopped');
+      return;
+    }
     NotificationService notificationService = atClient.notificationService;
 
     _subscriptions.add(handlePublicKeyChangedEvent(atClient, atSign));
