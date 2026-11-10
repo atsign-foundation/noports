@@ -159,6 +159,11 @@ void main() {
     expect(r.payload['bytesClientToDevice'], 100);
     expect(r.payload['bytesDeviceToClient'], 100);
     expect(r.payload['at'], greaterThanOrEqualTo(before));
+
+    final second = await report('progress', nth: 2);
+    expect(second.payload['openConnections'], 2);
+    expect(second.payload['at'], greaterThan(r.payload['at'] as int),
+        reason: 'progress keeps being reported, not only once per session');
     await t.complete();
   });
 

@@ -83,6 +83,7 @@ class _RecordingSrvd extends SrvdImpl {
 void main() {
   late List<StreamController<AtNotification>> subscriptions;
   late MockAtClient atClient;
+  late MockNotificationService notificationService;
   late List<NotificationParams> answers;
   final sockets = <Socket>[];
 
@@ -95,7 +96,7 @@ void main() {
     subscriptions = [];
     answers = [];
     atClient = MockAtClient();
-    final notificationService = MockNotificationService();
+    notificationService = MockNotificationService();
     when(
       () => notificationService.notify(
         any(),
@@ -186,6 +187,8 @@ void main() {
   test(
       'A stop closes every connection, waits for each completion, and returns'
       ' within 12 seconds', () async {
+    expect(Srvd.stopBound, const Duration(seconds: 12),
+        reason: 'the bound fits a 15 second container stop grace period');
     final relay = srvd();
     await relay.init();
     await relay.run();
@@ -245,6 +248,50 @@ void main() {
       hasLength(1),
       reason: 'the warning names the worker by the session it carries',
     );
+  });
+
+  test('A stop that cannot cancel a subscription returns at the bound',
+      () async {
+    final hang = Completer<void>();
+    when(
+      () => notificationService.subscribe(
+        regex: any(named: 'regex'),
+        shouldDecrypt: any(named: 'shouldDecrypt'),
+      ),
+    ).thenAnswer((_) {
+      final controller =
+          StreamController<AtNotification>(onCancel: () => hang.future);
+      subscriptions.add(controller);
+      return controller.stream;
+    });
+    final relay = srvd();
+    await relay.init();
+    await relay.run();
+    relay.sessions['still-live'] = SessionInfo(
+      params: session('still-live'),
+      connector: null,
+    );
+    final logged = <String>[];
+    relay.logger.logger.onRecord.listen((r) => logged.add(r.message));
+    final stopwatch = Stopwatch()..start();
+
+    await relay.stop();
+
+    stopwatch.stop();
+    expect(stopwatch.elapsed, greaterThanOrEqualTo(Srvd.stopBound),
+        reason: 'the stop waited for the slow cancellation until its bound');
+    expect(stopwatch.elapsed,
+        lessThan(Srvd.stopBound + const Duration(seconds: 3)),
+        reason: 'the bound, not the cancellation, ended the stop');
+    expect(
+      logged.where((m) => m.contains('Stop did not finish within 12s')),
+      hasLength(1),
+      reason: 'the bound took the fallback that clears the sessions',
+    );
+    expect(relay.sessions, isEmpty,
+        reason: 'the fallback cleared the sessions it could not stop normally');
+    hang.complete();
+    await pumpEventQueue();
   });
 
   test(
