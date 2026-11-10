@@ -39,7 +39,18 @@
 - feat: `NppOperationHooks` has pre-delete hooks, `NppCache` has `checkPut*`,
   and `npp.dart` exports npp's rule loaders and hooks
 - fix: npp assigns every new rule a random id
-- fix: improved handling of npp rule ids, references and deletes
+- fix: deleting an npp client, client group or service also deletes the client
+  group members and service ACLs naming it, and the answer lists them
+- fix: npp answers a daemon delete with an error while a service names the
+  daemon, saying how many do
+- fix: npp answers a put naming a rule it doesn't hold with an error, and
+  saves nothing
+- fix: npp's warning for a stored rule it doesn't load says where the rule is
+  stored and how to remove it
+- fix: a manager RPC delete also removes a stored rule npp didn't load because
+  it names a rule that isn't stored
+- fix: a manager RPC delete naming an id npp doesn't hold is answered with an
+  error naming it
 - fix: tightened how npp loads its stored rules
 - fix: tightened how npp_atserver loads its policy groups
 

@@ -7,6 +7,12 @@
 * build: take socket_connector 2.7.0, so a tunnel connection closes once data
   has waited two minutes for one of its ends to read it, and a closing
   connection ends within 30 seconds even when an end has stopped reading
+* fix: npp's warning for a stored rule it doesn't load says where the rule is
+  stored and how to remove it
+* fix: a manager RPC delete also removes a stored rule npp didn't load because
+  it names a rule that isn't stored
+* fix: a manager RPC delete naming an id npp doesn't hold is answered with an
+  error naming it
 
 ## v5.18.2
 
@@ -51,7 +57,12 @@
 * fix: npp saves manager RPC deletes and checks puts before saving them, so
   the rules it loads on a restart match the changes it accepted
 * fix: npp assigns every new rule a random id
-* fix: improved handling of npp rule ids, references and deletes
+* fix: deleting an npp client, client group or service also deletes the client
+  group members and service ACLs naming it, and the answer lists them
+* fix: npp answers a daemon delete with an error while a service names the
+  daemon, saying how many do
+* fix: npp answers a put naming a rule it doesn't hold with an error, and
+  saves nothing
 * fix: tightened how npp loads its stored rules
 * fix: tightened how npp_atserver loads its policy groups
 * feat: at_activate is at_client_cli's at_activate: its --help reports
