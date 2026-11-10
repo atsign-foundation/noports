@@ -178,19 +178,20 @@ that sets its own needs `TimeoutStopSec=15` or more.
 
 With `--telemetry-collector-atsign <@collector>`, srvd sends telemetry about
 the sessions it relays to that collector Atsign. It reports a session only
-when the session's client, or its verified device, is on the opted-in list the
-collector shares with the relay, and it relays every session as usual whether
-or not the collector can be reached. Before anything is reported:
+when the session's client-side Atsign, or its verified device-side Atsign, is
+on the opted-in list the collector shares with the relay, and it relays every
+session as usual whether or not the collector can be reached. Before anything
+is reported:
 
 - the collector lists the relay's Atsign as a producer with the
   `noportsRelay` role, and
 - the collector shares its opted-in list with the relay's Atsign.
 
-Each reported session's records carry the client's Atsign, the device's
-Atsign when the request named one, whether each was verified, the device
-name, both peers' IP addresses and ports, the session's times, and its byte
-and connection counts. The relay's own lifecycle records
-carry no Atsign or address.
+Each reported session's records carry the client-side Atsign, the
+device-side Atsign, whether each was verified, the device name when the
+request named one, both peers' IP addresses and ports, the session's times,
+and its byte and connection counts. The relay's own lifecycle records carry no
+Atsign or address.
 
 ## systemd units
 
