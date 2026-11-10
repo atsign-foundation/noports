@@ -8,6 +8,7 @@ import 'package:mockito/mockito.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -17,6 +18,8 @@ import '../../favorite/bloc/favorite_bloc_test.mocks.dart';
 import '../../profile/bloc/profile_bloc_test.dart'
     show FakeAtClient, FakeNpt, FakeSettingsBloc;
 import '../../profile/bloc/profile_bloc_test.mocks.dart';
+import '../../profile_folder/bloc/profile_folder_bloc_test.dart'
+    show FakeProfileFolderRepository;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -103,6 +106,12 @@ void main() {
               BlocProvider<ProfilesSelectedCubit>.value(value: selectedCubit),
               BlocProvider<FavoriteBloc>.value(value: favoriteBloc),
               BlocProvider<ProfileCacheCubit>.value(value: cache),
+              BlocProvider<ProfileFolderBloc>(
+                create: (_) => ProfileFolderBloc(FakeProfileFolderRepository()),
+              ),
+              BlocProvider<ProfileStartQueueCubit>(
+                create: (_) => ProfileStartQueueCubit(cache),
+              ),
             ],
             child: MaterialApp(
               navigatorKey: App.navState,
@@ -214,6 +223,12 @@ void main() {
               BlocProvider<ProfilesSelectedCubit>.value(value: selectedCubit),
               BlocProvider<FavoriteBloc>.value(value: favoriteBloc),
               BlocProvider<ProfileCacheCubit>.value(value: cache),
+              BlocProvider<ProfileFolderBloc>(
+                create: (_) => ProfileFolderBloc(FakeProfileFolderRepository()),
+              ),
+              BlocProvider<ProfileStartQueueCubit>(
+                create: (_) => ProfileStartQueueCubit(cache),
+              ),
             ],
             child: MaterialApp(
               navigatorKey: App.navState,

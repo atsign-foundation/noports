@@ -5,7 +5,9 @@ import 'package:npt_flutter/features/profile/models/profile.dart';
 class ProfileFormPageArguments {
   final String uuid;
   final Profile? copyFrom;
-  ProfileFormPageArguments(this.uuid, {this.copyFrom});
+
+  final String? folderId;
+  ProfileFormPageArguments(this.uuid, {this.copyFrom, this.folderId});
 }
 
 class ProfileFormPage extends StatelessWidget {
@@ -15,6 +17,12 @@ class ProfileFormPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final args =
         ModalRoute.of(context)!.settings.arguments as ProfileFormPageArguments;
-    return Scaffold(body: ProfileFormView(args.uuid, copyFrom: args.copyFrom));
+    return Scaffold(
+      body: ProfileFormView(
+        args.uuid,
+        copyFrom: args.copyFrom,
+        folderId: args.folderId,
+      ),
+    );
   }
 }
