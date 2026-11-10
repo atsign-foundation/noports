@@ -106,12 +106,14 @@ class RelayTelemetry {
   }
 
   /// A worker reported a connection of [sessionId] pairing. The first pair
-  /// decides, once, whether the session is reported.
+  /// decides, once, whether the session is reported. Once stopping, the
+  /// session is not built again: its records could not be sent.
   void connectionOpened(
     String sessionId,
     SessionInfo si,
     Map<String, dynamic> payload,
   ) {
+    if (_stopping) return;
     _guard('newConnection', () {
       final int at = payload['at'] as int;
       final _Session s = _sessions.putIfAbsent(sessionId, () {
