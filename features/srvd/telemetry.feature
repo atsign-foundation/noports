@@ -2,13 +2,13 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
 
   Given a collector Atsign, srvd sends telemetry about the sessions it
   carries as notifications to that Atsign, batched by at_telemetry's
-  notification exporter. A session is reported only when its client Atsign,
-  or its verified device Atsign, is on the opted-in list, the collection the
-  collector shares with the relay; the decision is taken once, at the
-  session's first pair, and never revisited. A reported session gets a record
-  at first pair, a record of its connection events whenever some happen,
-  coalesced over a short window, a still-running record every 15 minutes,
-  and a record at its end. The relay itself sends
+  notification exporter. A session is reported only when its client-side
+  Atsign, or its verified device-side Atsign, is on the opted-in list, the
+  collection the collector shares with the relay; the decision is taken
+  once, at the session's first pair, and never revisited. A reported session
+  gets a record at first pair, a record of its connection events whenever
+  some happen, coalesced over a short window, a still-running record every
+  15 minutes, and a record at its end. The relay itself sends
   a lifecycle record at start, every 60 seconds, and at stop, whatever the
   list says. Without a collector Atsign srvd sends nothing and reads nothing.
 
@@ -17,10 +17,10 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
   on real atServers.
 
   Vocabulary. The session set is the attributes every session record
-  carries: the relay session id and a per-session sequence number, both
-  Atsigns (the device's only when the request named an Atsign), whether
-  each was verified, the port mode, the request and establishment times,
-  and the device name when the request named one. A
+  carries: the relay session id and a per-session sequence number, the
+  client-side and device-side Atsigns, whether each was verified, the port
+  mode, the request and establishment times, and the device name when the
+  request named one. A
   connections record's body is a list of open and close entries in time
   order. The window is the time from a session's first pending entry to the
   record that carries it.
@@ -40,9 +40,12 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
   list read is bounded by its chunk count and refused whole when
   inconsistent.
   Forgery: srvd sends only what it observed; the Atsigns it reports are the
-  session's as the relay checked them, with the device marked verified only
-  when every device-side socket passed its check; the collector stamps who
-  each record is about and strips any stamp a sender supplies.
+  session's as the relay checked them, with the device-side Atsign marked
+  verified only when every device-side socket passed its check; srvd
+  refuses a session request whose client-side or device-side Atsign is not
+  a valid Atsign and holds both canonical, so every session record carries
+  both; the collector stamps who each record is about and strips any stamp
+  a sender supplies.
   Impersonation: srvd sends as its own Atsign; it reports only sessions it
   paired itself, never a request a sibling instance answered; it reads only
   the list copies the collector shared with it.
@@ -95,16 +98,16 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
 
   # The decision
 
-  Scenario: A session whose client is listed is reported from first pair to end
-    When a session S between client @alice and device @carol pairs, carries one connection, and ends
+  Scenario: A session whose client-side Atsign is listed is reported from first pair to end
+    When a session S between client-side Atsign @alice and device-side Atsign @carol pairs, carries one connection, and ends
     Then the relay sends noports.relay.session.started, noports.relay.session.connections and noports.relay.session.ended for S, each with the session set, @alice and @carol, and both peers' addresses
 
-  Scenario: A session whose verified device is listed is reported with both parties' details
-    When a session between client @dave and verified device @bob pairs
-    Then it is reported, carrying @dave's and @bob's Atsigns, addresses and ports
+  Scenario: A session whose verified device-side Atsign is listed is reported with both parties' details
+    When a session between client-side Atsign @dave and verified device-side Atsign @bob pairs
+    Then it is reported, carrying @dave and @bob, and both peers' addresses and ports
 
-  Scenario: A session whose device is listed but not verified is not reported
-    When a session between client @dave and unverified device @bob pairs
+  Scenario: A session whose device-side Atsign is listed but not verified is not reported
+    When a session between client-side Atsign @dave and unverified device-side Atsign @bob pairs
     Then no record is sent for it
 
   Scenario: A session with neither party listed is not reported
@@ -131,9 +134,9 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
     When a session pairs whose client session id is 70 characters long
     Then the records carry no client session id and everything else
 
-  Scenario: A device Atsign that is not an Atsign is left out
-    When a session between client @alice and an unverified device pairs, whose request names the device by 60 characters, over the 55 an Atsign allows
-    Then the records carry no device Atsign and everything else
+  Scenario: Every session record carries the client-side and device-side Atsigns, canonical
+    When a session pairs whose request spelled its client-side Atsign @Alice and its unverified device-side Atsign @C.arol, carries one connection, and ends
+    Then every record of it carries @alice and @carol
 
   Scenario: Connections that open together are reported in one record a window later
     Given a reported session

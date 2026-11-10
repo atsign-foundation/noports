@@ -4,6 +4,9 @@
   sends srvd's session telemetry to a collector Atsign
 - feat: `Srvd.stop` closes every session's connections and returns within
   `Srvd.stopBound`, 12 seconds
+- fix: srvd refuses a session request whose device-side Atsign is not a valid
+  Atsign, and tells a client why it refused a malformed request, so the client
+  fails at once instead of waiting out its timeout
 - fix: `Npt.done` now completes when startup fails, instead of never
   completing. `run` and `runInline` close the session on their way out when
   they throw, so callers may always await `done` without having to call

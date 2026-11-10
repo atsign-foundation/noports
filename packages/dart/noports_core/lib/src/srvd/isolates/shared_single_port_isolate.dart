@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:at_commons/at_commons.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:noports_core/src/srvd/isolates/connection_tracker.dart';
@@ -195,7 +194,7 @@ class SinglePortWorker extends RelayWorker {
         throw Exception('Session not active: $sessionId');
       }
       SessionInfo si = sessions[sessionId]!;
-      final expected = (rav.isSideA! ? si.atSignA : si.atSignB).toAtsign();
+      final expected = rav.isSideA! ? si.atSignA : si.atSignB;
       if (atSign != expected) {
         throw Exception(
           'Connection from $atSign'

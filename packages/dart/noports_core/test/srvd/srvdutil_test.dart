@@ -66,9 +66,139 @@ void main() {
     for (final Object? value in [null, 'true']) {
       expect(
         () => parse({...request, 'authenticateSocketB': value}),
-        throwsA(isA<ArgumentError>().having((e) => e.message, 'message',
-            contains('authenticateSocketB'))),
+        throwsA(isA<SrvdRequestRefused>().having(
+            (e) => e.reason, 'reason', contains('authenticateSocketB'))),
         reason: 'authenticateSocketB $value is refused by name',
+      );
+    }
+  });
+
+  test(
+      'A session request whose client-side or device-side Atsign is not a'
+      ' valid Atsign is refused by name', () {
+    final Map<String, Object?> request = {
+      'sessionId': Uuid().v4(),
+      'atSignA': '@alice',
+      'atSignB': '@bob',
+      'clientNonce': 'client nonce',
+      'authenticateSocketA': false,
+      'authenticateSocketB': false,
+    };
+    SrvdSessionParams parse(Map<String, Object?> r) =>
+        (srvd as FakeSrvd).srvdSessionParamsFromJson(jsonEncode(r));
+
+    expect(parse(request).atSignB, '@bob',
+        reason: 'the control: a well-formed request is read');
+    for (final (String value, String canonical) in [
+      ('@Bob', '@bob'),
+      ('bob', '@bob'),
+      ('@${'d' * 55}', '@${'d' * 55}'),
+    ]) {
+      expect(parse({...request, 'atSignB': value}).atSignB, canonical,
+          reason: '$value is a valid Atsign, read as $canonical');
+    }
+    for (final String side in ['atSignA', 'atSignB']) {
+      for (final (String value, String why) in [
+        ('@a@b', 'more than one @'),
+        ('@${'d' * 56}', 'at most 55 characters'),
+        ('@a b', 'whitespace'),
+      ]) {
+        expect(
+          () => parse({...request, side: value}),
+          throwsA(isA<SrvdRequestRefused>()
+              .having((e) => e.reason, 'reason',
+                  startsWith('Parameter $side is not a valid Atsign: '))
+              .having((e) => e.reason, 'reason', contains(why))),
+          reason: '$side $value is refused by name, saying why',
+        );
+      }
+    }
+  });
+
+  test(
+      'A refused session request names its session and whether its client'
+      ' takes a NACK', () {
+    SrvdRequestRefused refusal(Map<String, Object?> r) {
+      try {
+        (srvd as FakeSrvd).srvdSessionParamsFromJson(jsonEncode(r));
+      } on SrvdRequestRefused catch (e) {
+        return e;
+      }
+      fail('$r was not refused');
+    }
+
+    final String id = Uuid().v4();
+    final Map<String, Object?> request = {
+      'sessionId': id,
+      'atSignA': '@alice',
+      'atSignB': '@a@b',
+      'clientNonce': 'client nonce',
+      'authenticateSocketA': false,
+      'authenticateSocketB': false,
+    };
+
+    expect(refusal(request).sessionId, id);
+    expect(refusal(request).nackOk, isFalse);
+    expect(refusal({...request, 'multipleAcksOk': true}).nackOk, isTrue);
+    expect('${refusal(request)}', startsWith('session $id: '));
+    final notUuid = refusal(
+        {...request, 'sessionId': 'the-session', 'multipleAcksOk': true});
+    expect(notUuid.nackOk, isFalse,
+        reason: 'no NACK under a session id that is not a UUID');
+    expect('$notUuid', isNot(contains('the-session')),
+        reason: 'a session id that is not a UUID stays out of the log');
+    expect(
+      () => (srvd as FakeSrvd).srvdSessionParamsFromJson(
+          jsonEncode({...request}..remove('sessionId'))),
+      throwsA(isA<ArgumentError>()),
+      reason: 'a request with no session id names no session',
+    );
+  });
+
+  test(
+      'A session request with a malformed field is refused naming the field,'
+      ' never its value', () {
+    final Map<String, Object?> request = {
+      'sessionId': Uuid().v4(),
+      'atSignA': '@alice',
+      'atSignB': '@bob',
+      'clientNonce': 'client nonce',
+      'authenticateSocketA': false,
+      'authenticateSocketB': false,
+    };
+    SrvdSessionParams parse(Map<String, Object?> r) =>
+        (srvd as FakeSrvd).srvdSessionParamsFromJson(jsonEncode(r));
+
+    expect(
+        parse({
+          ...request,
+          'relayAuthMode': 'escr',
+          'only443': true,
+          'multipleAcksOk': true,
+          'preFetch': ['x'],
+          'sendJsonResponse': true,
+          'relayAuthAesKey': 'key',
+        }).preFetch,
+        ['x'],
+        reason: 'the control: every optional field well formed is read');
+    for (final (String field, Object value) in [
+      ('atSignA', 12345),
+      ('clientNonce', 12345),
+      ('relayAuthMode', 12345),
+      ('relayAuthMode', 'bogus12345'),
+      ('only443', 'yes12345'),
+      ('multipleAcksOk', 'yes12345'),
+      ('preFetch', 'abc12345'),
+      ('preFetch', [12345]),
+      ('sendJsonResponse', 'yes12345'),
+      ('relayAuthAesKey', 12345),
+    ]) {
+      expect(
+        () => parse({...request, field: value}),
+        throwsA(isA<SrvdRequestRefused>()
+            .having((e) => e.reason, 'reason', startsWith('Parameter $field '))
+            .having((e) => e.reason, 'reason', isNot(contains('12345')))),
+        reason: '$field $value is refused by name, without its value',
       );
     }
   });

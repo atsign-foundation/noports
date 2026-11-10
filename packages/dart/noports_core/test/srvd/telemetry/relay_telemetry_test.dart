@@ -146,8 +146,9 @@ void main() {
     expect(resource[AtTelemetryAttributes.serviceInstanceId], isA<String>());
   });
 
-  test('A session whose client is listed is reported from first pair to end',
-      () async {
+  test(
+      'A session whose client-side Atsign is listed is reported from first'
+      ' pair to end', () async {
     final t = await telemetry();
 
     await wholeSession(t, sessionInfo(sessionParams(device: '@carol')));
@@ -169,8 +170,8 @@ void main() {
   });
 
   test(
-      'A session whose verified device is listed is reported with both'
-      " parties' details", () async {
+      'A session whose verified device-side Atsign is listed is reported with'
+      " both parties' details", () async {
     final t = await telemetry();
 
     await wholeSession(
@@ -182,10 +183,15 @@ void main() {
     expect(started.attributes[N.clientAtsign], '@dave');
     expect(started.attributes[N.deviceAtsign], '@bob');
     expect(started.attributes[N.deviceVerified], isTrue);
+    final List<Object?> body =
+        exporter.named(N.sessionConnections).single.body as List<Object?>;
+    expect(body.first, containsPair('c', {'ip': '10.0.0.1', 'port': 40001}));
+    expect(body.first, containsPair('d', {'ip': '10.0.0.2', 'port': 50001}));
   });
 
-  test('A session whose device is listed but not verified is not reported',
-      () async {
+  test(
+      'A session whose device-side Atsign is listed but not verified is not'
+      ' reported', () async {
     final t = await telemetry();
 
     await wholeSessionBesideWitness(
@@ -308,55 +314,25 @@ void main() {
     expect(a[N.clientAtsign], '@alice');
   });
 
-  test('A device Atsign that is not an Atsign is left out', () async {
-    final t = await telemetry();
-    final String long = '@${'d' * 60}';
-
-    t.connectionOpened(
-        'the-session',
-        sessionInfo(sessionParams(device: long, deviceVerified: false)),
-        opened(1));
-    await pumpEventQueue();
-
-    final a = exporter.named(N.sessionStarted).single.attributes;
-    expect(a.containsKey(N.deviceAtsign), isFalse,
-        reason: 'a device named by something that is not an Atsign is not'
-            ' reported as one');
-    expect(a[N.deviceVerified], isFalse);
-    expect(a[N.clientAtsign], '@alice');
-    expect(a[N.clientSessionId], 'the-session');
-  });
-
   test(
-      'A session whose client is not an Atsign is not reported, with a'
-      ' warning', () async {
-    final log = _CapturingHandler();
-    final previous = AtSignLogger.defaultLoggingHandler;
-    AtSignLogger.defaultLoggingHandler = log;
-    addTearDown(() => AtSignLogger.defaultLoggingHandler = previous);
+      'Every session record carries the client-side and device-side Atsigns,'
+      ' canonical', () async {
     final t = await telemetry();
 
-    t.connectionOpened(
-        'the-session',
-        sessionInfo(sessionParams(client: '@${'a' * 60}', device: '@bob')),
-        opened(1));
-    t.connectionOpened(
-        'witness', sessionInfo(sessionParams(sessionId: 'witness')), opened(1));
-    await pumpEventQueue();
-
-    expect(
-        exporter
-            .named(N.sessionStarted)
-            .map((r) => r.attributes[N.clientSessionId]),
-        ['witness'],
-        reason: 'only the witness, whose client is an Atsign, is reported');
-    expect(
-      log.records.where((r) =>
-          r.level == Level.WARNING &&
-          r.message.contains('the client of the-session is not an Atsign')),
-      hasLength(1),
+    await wholeSession(
+      t,
+      sessionInfo(sessionParams(
+          client: '@Alice', device: '@C.arol', deviceVerified: false)),
     );
-    expect(t.reporting('the-session'), isNull);
+
+    expect(sessionRecords(), hasLength(3),
+        reason: 'started, connections and ended, reported for @alice');
+    for (final r in sessionRecords()) {
+      expect(r.attributes[N.clientAtsign], '@alice',
+          reason: '${r.eventName} carries the client-side Atsign');
+      expect(r.attributes[N.deviceAtsign], '@carol',
+          reason: '${r.eventName} carries the device-side Atsign');
+    }
   });
 
   test(

@@ -3,15 +3,15 @@ import 'dart:math';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_telemetry/at_telemetry.dart';
-import 'package:noports_core/src/common/validation_utils.dart'
-    show canonicalAtsign;
 import 'package:noports_core/src/srvd/session_info.dart';
+import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:noports_core/src/srvd/telemetry/opted_in_list.dart';
 import 'package:noports_core/src/srvd/telemetry/relay_telemetry_names.dart';
 import 'package:uuid/uuid.dart';
 
 /// Turns the relay's view of its sessions into telemetry records for the
-/// sessions whose client, or verified device, is on the opted-in list, and
+/// sessions whose client-side Atsign, or verified device-side Atsign, is on
+/// the opted-in list, each record carrying both Atsigns, and
 /// sends lifecycle records for the relay itself.
 ///
 /// Every method is synchronous apart from [stop], and none throws: a failure
@@ -115,16 +115,7 @@ class RelayTelemetry {
     _guard('newConnection', () {
       final int at = payload['at'] as int;
       final _Session s = _sessions.putIfAbsent(sessionId, () {
-        final String client = canonicalAtsign(si.params.atSignA) ??
-            (throw StateError('the client of $sessionId is not an Atsign'));
-        final String? device = canonicalAtsign(si.params.atSignB);
-        final session = _Session(
-          si,
-          at,
-          clientAtsign: client,
-          deviceAtsign: device,
-          reported: _decide(client, device, si.params.authenticateSocketB),
-        );
+        final session = _Session(si, at, reported: _decide(si.params));
         if (session.reported) {
           _event(session, RelayTelemetryNames.sessionStarted, at, {});
         }
@@ -247,9 +238,9 @@ class RelayTelemetry {
         reason: reason,
       );
 
-  bool _decide(String client, String? device, bool deviceVerified) =>
-      list.listed(client) ||
-      (deviceVerified && device != null && list.listed(device));
+  bool _decide(SrvdSessionParams params) =>
+      list.listed(params.atSignA) ||
+      (params.authenticateSocketB && list.listed(params.atSignB));
 
   void _add(_Session s, Map<String, Object?> entry) {
     s.pending.add(entry);
@@ -344,9 +335,8 @@ class RelayTelemetry {
       RelayTelemetryNames.sequence: ++s.seq,
       if (_clientSessionIdShape.hasMatch(params.sessionId))
         RelayTelemetryNames.clientSessionId: params.sessionId,
-      RelayTelemetryNames.clientAtsign: s.clientAtsign,
-      if (s.deviceAtsign case final device?)
-        RelayTelemetryNames.deviceAtsign: device,
+      RelayTelemetryNames.clientAtsign: params.atSignA,
+      RelayTelemetryNames.deviceAtsign: params.atSignB,
       RelayTelemetryNames.deviceVerified: params.authenticateSocketB,
       RelayTelemetryNames.clientVerified: params.authenticateSocketA,
       RelayTelemetryNames.portMode: params.only443
@@ -410,20 +400,10 @@ class RelayTelemetry {
 }
 
 class _Session {
-  _Session(
-    this.info,
-    this.establishedAt, {
-    required this.clientAtsign,
-    required this.deviceAtsign,
-    required this.reported,
-  });
+  _Session(this.info, this.establishedAt, {required this.reported});
 
   final SessionInfo info;
   final int establishedAt;
-  final String clientAtsign;
-
-  /// Null when the request named the device by something not an Atsign.
-  final String? deviceAtsign;
   final bool reported;
   final String id = const Uuid().v4();
   int seq = 0;

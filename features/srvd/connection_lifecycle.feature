@@ -25,13 +25,22 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
   DoS: a peer that stops reading holds a side for at most socket_connector's
   close flush bound once a side closes, and for at most its stall bound
   before that; a worker that has not exited 5 seconds after a stop asks it
-  to is killed; a stop takes at most 12 seconds whatever the sessions do.
+  to is killed; a stop takes at most 12 seconds whatever the sessions do. A
+  refused request costs each srvd instance at most one NACK, sent to its
+  sender, and a relay with a manager reads and answers no one else's
+  request.
   Forgery: the device name is text the client chose; it is kept only when
   it matches the device-name pattern in full and is lower-cased as the key
-  is, and a session whose name does not match starts without one.
+  is, and a session whose name does not match starts without one. A request
+  whose atSignA or atSignB is not a valid Atsign is refused, and a session
+  holds both canonical, so every session has a client-side and a
+  device-side Atsign; the device-side one is the client's claim unless the
+  device side authenticates. A refusal names the field and why in a fixed
+  text that never repeats the field's value, and a session id that is not a
+  UUID is neither logged nor used in a NACK.
   Impersonation: the name is recorded against a session whose sender was
-  checked as atSignA, as today; nothing here changes who may start a
-  session.
+  checked as atSignA, as today; a NACK goes to the request's sender, never
+  to the atSignA it named; nothing here changes who may start a session.
 
   Background:
     Given a relay @relay with a port-pair worker for session S between @alice and @bob
@@ -102,6 +111,33 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
   Scenario: The device name is lower-cased as the key is
     When @alice sends request_ports under the key Gateway-1.request_ports.sshrvd
     Then session S records the device name gateway-1
+
+  # The session's Atsigns
+
+  Scenario: A session request whose device-side Atsign is not a valid Atsign is refused
+    When @alice requests a session whose atSignB is "@a@b", with authenticateSocketB false
+    Then srvd sends @alice no ports, records no session, and logs a refusal naming @alice, atSignB and why
+
+  Scenario: A session request whose client-side Atsign is not a valid Atsign is refused
+    When @alice requests a session whose atSignA is "@a@b"
+    Then srvd sends @alice no ports, records no session, and logs a refusal naming @alice, atSignA and why
+
+  Scenario: A refused session request is sent a NACK saying why when its client takes NACKs
+    When @carol requests a session whose atSignB is "@a@b", with multipleAcksOk true
+    Then srvd sends @carol one NACK for the session, saying atSignB is not a valid Atsign and why, and no ports
+
+  Scenario: A NACK that cannot be sent is logged at srvd's default level
+    When @carol's refused request takes a NACK and the notification fails
+    Then srvd logs at shout that the NACK for the session to @carol was not sent, and why
+
+  Scenario: A refused session request whose session id is not a UUID is sent nothing, and its id is not logged
+    When @alice requests a session whose id is not a UUID and whose atSignB is "@a@b", with multipleAcksOk true
+    Then srvd sends @alice nothing, and its refusal log says the id is not a UUID without repeating it
+
+  Scenario: On a relay with a manager, a session request from another Atsign is refused before it is read, and sent nothing
+    Given a relay whose manager is @manager
+    When @carol requests a session whose atSignB is "@a@b", with multipleAcksOk true
+    Then srvd sends @carol nothing and logs that only the manager may request sessions
 
   # Stopping
 

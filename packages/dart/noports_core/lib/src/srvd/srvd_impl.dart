@@ -499,7 +499,7 @@ class SrvdImpl
 
     final SessionInfo sessionInfo = sessions[sessionId]!;
 
-    if (n.from.toAtsign() != sessionInfo.atSignB.toAtsign()) {
+    if (n.from.toAtsign() != sessionInfo.atSignB) {
       logger.warning(
         'Ignoring $topic from ${n.from},'
         ' which is not the daemon ${sessionInfo.atSignB}',
@@ -561,24 +561,24 @@ class SrvdImpl
   }
 
   Future<void> handleRequestPorts(AtNotification n) async {
+    // NOTE: a relay with a manager reads, answers and NACKs only the
+    // manager's requests.
+    if (managerAtsign != 'open' && !sameAtsign(managerAtsign, n.from)) {
+      logger.shout(
+        'A session request from ${n.from} is denied:'
+        ' only the manager may request sessions',
+      );
+      return;
+    }
     SrvdSessionParams sessionParams;
     try {
       sessionParams = srvdSessionParamsFromJson(n.value!);
 
-      if (n.from.toAtsign() != sessionParams.atSignA.toAtsign()) {
+      if (n.from.toAtsign() != sessionParams.atSignA) {
         logger.shout(
           'Session ${sessionParams.sessionId}'
           ' for ${sessionParams.atSignA}'
           ' requested by ${n.from} is denied',
-        );
-        return;
-      }
-      if (managerAtsign != 'open' &&
-          !sameAtsign(managerAtsign, sessionParams.atSignA)) {
-        logger.shout(
-          'Session ${sessionParams.sessionId}'
-          ' for ${sessionParams.atSignA}'
-          ' is denied',
         );
         return;
       }
@@ -590,8 +590,13 @@ class SrvdImpl
         );
         return;
       }
+    } on SrvdRequestRefused catch (e) {
+      logger.shout('Unable to provide the socket pair for ${n.from}: $e');
+      if (e.nackOk) await _tryNack(e.sessionId, n.from, e.reason);
+      return;
     } catch (e) {
-      logger.shout('Unable to provide the socket pair due to: $e');
+      logger.shout(
+          'Unable to provide the socket pair for ${n.from} due to: $e');
       return;
     }
 
@@ -603,15 +608,7 @@ class SrvdImpl
           ' is denied: $refusal',
         );
         if (sessionParams.multipleAcksOk) {
-          try {
-            await sendNack(
-              sessionId: sessionParams.sessionId,
-              requestingAtsign: n.from,
-              message: refusal,
-            );
-          } catch (e) {
-            logger.shout('Error while sending NACK: $e');
-          }
+          await _tryNack(sessionParams.sessionId, n.from, refusal);
         }
         return;
       }
@@ -712,15 +709,7 @@ class SrvdImpl
           ' but this relay is not bound to port 443';
       logger.shout(message);
       if (sessionParams.multipleAcksOk) {
-        try {
-          await sendNack(
-            sessionId: sessionParams.sessionId,
-            requestingAtsign: n.from,
-            message: message,
-          );
-        } catch (e) {
-          logger.shout('Error while sending NACK: $e');
-        }
+        await _tryNack(sessionParams.sessionId, n.from, message);
       }
       return;
     }
@@ -1434,7 +1423,27 @@ class SrvdImpl
     return (portPair443, spawned, toSpawned);
   }
 
-  Future<void> sendNack({
+  Future<void> _tryNack(String sessionId, String to, String message) async {
+    Object? failure;
+    try {
+      final NotificationResult result = await sendNack(
+        sessionId: sessionId,
+        requestingAtsign: to,
+        message: message,
+      );
+      failure = result.atClientException;
+    } catch (e) {
+      failure = e;
+    }
+    if (failure != null) {
+      logger.shout('The NACK for session $sessionId to $to was not sent:'
+          ' $failure');
+    }
+  }
+
+  /// Notifies [requestingAtsign] that session [sessionId] was refused, and
+  /// why; the result says whether the notification failed.
+  Future<NotificationResult> sendNack({
     required String sessionId,
     required String requestingAtsign,
     required String message,
@@ -1451,7 +1460,7 @@ class SrvdImpl
       ..namespace = Srvd.namespace
       ..metadata = metaData;
 
-    await atClient.notificationService.notify(
+    return atClient.notificationService.notify(
       NotificationParams.forUpdate(
         atKey,
         value: message,

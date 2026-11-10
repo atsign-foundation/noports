@@ -1,9 +1,42 @@
+import 'package:at_client/at_client.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 
+/// A session request srvd refused, carrying what srvd needs to tell the
+/// requester why.
+class SrvdRequestRefused implements Exception {
+  SrvdRequestRefused({
+    required this.sessionId,
+    required bool multipleAcksOk,
+    required this.reason,
+  }) : nackOk = multipleAcksOk && isValidSessionId(sessionId);
+
+  final String sessionId;
+
+  /// Whether to send the requester a NACK: its client takes one, and the
+  /// session id is a UUID, so the NACK's key is well formed.
+  final bool nackOk;
+
+  /// Why, as a fixed text naming the field, never the field's value.
+  final String reason;
+
+  // NOTE: only a UUID session id is logged; any other text stays out of the
+  // log.
+  @override
+  String toString() => isValidSessionId(sessionId)
+      ? 'session $sessionId: $reason'
+      : 'a session whose id is not a UUID: $reason';
+}
+
+/// One session as srvd relays it, between a client-side and a device-side
+/// Atsign.
 class SrvdSessionParams {
   final String sessionId;
-  final String atSignA;
-  final String atSignB;
+
+  /// The client-side Atsign, canonical.
+  final Atsign atSignA;
+
+  /// The device-side Atsign, canonical, as the client named it.
+  final Atsign atSignB;
   final bool authenticateSocketA;
   final bool authenticateSocketB;
   final String? publicKeyA;
@@ -17,10 +50,12 @@ class SrvdSessionParams {
   final List<String> preFetch;
   final bool sendJsonResponse;
 
+  /// Throws [InvalidAtSignException] when [atSignA] or [atSignB] is not a
+  /// valid Atsign.
   SrvdSessionParams({
     required this.sessionId,
-    required this.atSignA,
-    required this.atSignB,
+    required String atSignA,
+    required String atSignB,
     this.authenticateSocketA = false,
     this.authenticateSocketB = false,
     this.publicKeyA,
@@ -33,7 +68,8 @@ class SrvdSessionParams {
     required this.multipleAcksOk,
     required this.preFetch,
     required this.sendJsonResponse,
-  });
+  })  : atSignA = atSignA.toAtsign(),
+        atSignB = atSignB.toAtsign();
 
   /// These params for a log, with [relayAuthAesKey] redacted.
   @override
