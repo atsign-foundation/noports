@@ -9,6 +9,8 @@ import 'package:at_client/src/client/remote_secondary.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/types.dart';
+import 'package:noports_core/src/srvd/isolates/connection_tracker.dart'
+    show stopReportBound;
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
@@ -274,7 +276,13 @@ void main() {
     await relay.stop();
 
     stopwatch.stop();
-    expect(stopwatch.elapsed, lessThan(Srvd.stopBound));
+    expect(stopReportBound + const Duration(seconds: 1),
+        lessThanOrEqualTo(SrvdImpl.workerStopTimeout),
+        reason: 'the report bound leaves a second before a worker is killed');
+    expect(stopwatch.elapsed,
+        lessThan(stopReportBound + const Duration(milliseconds: 500)),
+        reason: 'the session is reported, and its worker exits, within the'
+            ' report bound');
     final Map<String, dynamic>? report = relay.completions['stalled'];
     expect(report, isNotNull,
         reason: 'the worker reported the session before main killed it');

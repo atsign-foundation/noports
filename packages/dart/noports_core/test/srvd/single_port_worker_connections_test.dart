@@ -5,6 +5,8 @@ import 'dart:isolate';
 import 'package:at_chops/at_chops.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
+import 'package:noports_core/src/srvd/isolates/connection_tracker.dart'
+    show stopReportBound;
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
@@ -212,13 +214,19 @@ void main() {
     final stopwatch = Stopwatch()..start();
 
     unawaited(worker.stop());
-    final complete = await reportsFor('sessionComplete', 'S1');
+    bool reported() => reports.any((r) => r.type == 'sessionComplete');
+    final DateTime giveUp = DateTime.now().add(const Duration(seconds: 10));
+    while (!reported() && DateTime.now().isBefore(giveUp)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
 
     stopwatch.stop();
-    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)),
-        reason: 'the session is reported complete within the 5 seconds main'
-            ' gives a stopped worker');
-    expect(complete.single.payload['connectionsUnclosed'], 1);
-    expect(complete.single.payload['bytesClientToDevice'], greaterThan(0));
+    expect(stopwatch.elapsed,
+        lessThan(stopReportBound + const Duration(milliseconds: 500)),
+        reason: 'the session is reported complete within the report bound');
+    final complete =
+        reports.where((r) => r.type == 'sessionComplete').single.payload;
+    expect(complete['connectionsUnclosed'], 1);
+    expect(complete['bytesClientToDevice'], greaterThan(0));
   });
 }

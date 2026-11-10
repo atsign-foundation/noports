@@ -9,9 +9,9 @@ import 'package:socket_connector/socket_connector.dart';
 const Duration defaultProgressInterval = Duration(minutes: 15);
 
 /// How long after a stop a session waits for its connections' closes before
-/// it is reported complete with what is still open counted as unclosed.
-// NOTE this must stay under the 5 seconds main gives a stopped worker to
-// exit before killing it.
+/// it is reported complete with what is still open counted as unclosed. It
+/// is at least a second shorter than the time a stopped worker is given to
+/// exit.
 const Duration stopReportBound = Duration(seconds: 4);
 
 /// Reports one session's connections to the main isolate: `newConnection`

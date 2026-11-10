@@ -228,14 +228,14 @@ class SinglePortWorker extends RelayWorker {
   Future<void> _stop() => _stopping ??= _closeAll();
 
   Future<void> _closeAll() async {
+    for (final tracker in _trackers) {
+      tracker.stopping();
+    }
     try {
       await _serverSocket?.close();
       await _secureServerSocket?.close();
     } catch (e) {
       logger.shout('Error $e while closing server socket');
-    }
-    for (final tracker in _trackers) {
-      tracker.stopping();
     }
     // NOTE killing this isolate leaves its sockets open, so close them first.
     for (final si in sessions.values) {
