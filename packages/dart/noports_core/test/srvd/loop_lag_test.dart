@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:noports_core/src/srvd/loop_lag.dart';
+import 'package:noports_core/src/srvd/srvd_params.dart';
 import 'package:test/test.dart';
 
 double _maxMs(String report) =>
@@ -26,5 +27,19 @@ void main() {
         reason: 'the control: an idle loop is not late by 100 ms');
     expect(reports.skip(1).map(_maxMs).reduce((a, b) => a > b ? a : b),
         greaterThan(100), reason: 'the 150 ms block shows as lag');
+  });
+
+  test('--report-loop-lag-secs over 3600 is refused', () async {
+    Future<SrvdParams> parse(String secs) => SrvdParams.fromArgs(
+        ['-a', '@relay', '-i', '127.0.0.1', '--report-loop-lag-secs', secs]);
+
+    expect(SrvdParams.maxReportLoopLagSecs, 3600);
+    expect((await parse('3600')).reportLoopLagSecs, 3600,
+        reason: 'the control: an hour is accepted');
+    await expectLater(
+      parse('3601'),
+      throwsA(isA<ArgumentError>().having(
+          (e) => e.message, 'message', contains('must be at most 3600'))),
+    );
   });
 }
