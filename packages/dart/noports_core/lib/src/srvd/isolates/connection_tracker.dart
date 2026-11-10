@@ -8,6 +8,12 @@ import 'package:socket_connector/socket_connector.dart';
 /// How often a worker reports a running session's progress to main.
 const Duration defaultProgressInterval = Duration(minutes: 15);
 
+/// How long after a stop a session waits for its connections' closes before
+/// it is reported complete with what is still open counted as unclosed.
+// NOTE this must stay under the 5 seconds main gives a stopped worker to
+// exit before killing it.
+const Duration stopReportBound = Duration(seconds: 4);
+
 /// Reports one session's connections to the main isolate: `newConnection`
 /// when a pair forms, `connectionClosed` once both its sides are destroyed,
 /// `progress` every [progressInterval] from the first pair, and
@@ -42,6 +48,10 @@ class ConnectionTracker {
   late final StreamSubscription<Connection> _openedSub;
   late final StreamSubscription<Connection> _closedSub;
   final Completer<void> _closedDone = Completer<void>();
+
+  /// Completes [stopReportBound] after [stopping], ending [complete]'s wait.
+  final Completer<void> _stopDeadline = Completer<void>();
+  Timer? _stopTimer;
 
   /// Completes once no connection is open, while [complete] waits.
   Completer<void>? _allClosed;
@@ -144,27 +154,45 @@ class ConnectionTracker {
     );
   }
 
+  /// The relay is stopping: [complete] waits for closes at most
+  /// [stopReportBound] from now.
+  void stopping() {
+    _stopTimer ??= Timer(stopReportBound, () {
+      if (!_stopDeadline.isCompleted) _stopDeadline.complete();
+    });
+  }
+
   /// Sends `sessionComplete` once every connection's close has been reported,
-  /// or [closeFlushTimeout] plus a second after the call, whichever is first,
-  /// and stops reporting. Call it after the connector's `done`.
+  /// or [closeFlushTimeout] plus a second after the call, or
+  /// [stopReportBound] after [stopping], whichever is first, and stops
+  /// reporting. Call it after the connector's `done`.
   Future<void> complete() async {
     if (_completed) return;
     _completed = true;
     _progress?.cancel();
     if (_open.isNotEmpty) {
       final allClosed = _allClosed = Completer<void>();
-      await Future.any([_closedDone.future, allClosed.future]).timeout(
+      await Future.any([
+        _closedDone.future,
+        allClosed.future,
+        _stopDeadline.future,
+      ]).timeout(
         closeFlushTimeout + const Duration(seconds: 1),
         onTimeout: () {},
       );
     }
+    _stopTimer?.cancel();
     await _openedSub.cancel();
     await _closedSub.cancel();
     final unclosed = _open.length;
     if (unclosed > 0) {
+      final Duration waited = _stopDeadline.isCompleted
+          ? stopReportBound
+          : closeFlushTimeout + const Duration(seconds: 1);
       logger.warning(
         '$unclosed connection(s) of session $sessionId were not reported'
-        ' closed within ${closeFlushTimeout.inSeconds + 1}s',
+        ' closed within ${waited.inSeconds}s'
+        '${_stopDeadline.isCompleted ? ' of the stop' : ''}',
       );
     }
     toMain.send(

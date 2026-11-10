@@ -89,12 +89,13 @@ void main() {
   }
 
   /// Connects a socket to [sessionId] authenticating as [signer] on side A
-  /// or B.
+  /// or B, which reads nothing once authenticated unless [reads].
   Future<Socket> connectAs(
     String sessionId,
     String relayAuthAesKey,
     String signer, {
     required bool isSideA,
+    bool reads = true,
   }) async {
     final socket = await Socket.connect(
       InternetAddress.loopbackIPv4,
@@ -110,7 +111,8 @@ void main() {
       signingAlgo: SigningAlgoType.rsa2048,
       isSideA: isSideA,
     ).authenticate(socket);
-    stream!.listen((_) {}, onError: (_) {});
+    final subscription = stream!.listen((_) {}, onError: (_) {});
+    if (!reads) subscription.pause();
     return socket;
   }
 
@@ -181,5 +183,42 @@ void main() {
     }();
     expect(arrivals.indexOf('sessionComplete'), lessThan(exitAt),
         reason: 'run() kills the isolate once stopped completes');
+  });
+
+  test(
+      'A session whose device stops reading is reported complete before its'
+      ' worker is killed', () async {
+    worker.fromMain.close();
+    await server.close();
+    worker = SinglePortWorker(
+      toMain: toMain.sendPort,
+      logTraffic: false,
+      verbose: false,
+      loggingTag: 'single port connections test',
+      address: '127.0.0.1',
+      useTLS: false,
+      bindPort: 0,
+      connectorTimeout: const Duration(seconds: 1),
+    );
+    server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    server.listen(worker.socketHandler);
+    final key = await startSession('S1');
+    final a = await connectAs('S1', key, '@alice', isSideA: true);
+    await connectAs('S1', key, '@bob', isSideA: false, reads: false);
+    await reportsFor('newConnection', 'S1');
+    unawaited(a.done.then((_) {}, onError: (_) {}));
+    a.add(List<int>.filled(64 * 1024 * 1024, 7));
+    await Future<void>.delayed(const Duration(seconds: 1));
+    final stopwatch = Stopwatch()..start();
+
+    unawaited(worker.stop());
+    final complete = await reportsFor('sessionComplete', 'S1');
+
+    stopwatch.stop();
+    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)),
+        reason: 'the session is reported complete within the 5 seconds main'
+            ' gives a stopped worker');
+    expect(complete.single.payload['connectionsUnclosed'], 1);
+    expect(complete.single.payload['bytesClientToDevice'], greaterThan(0));
   });
 }
