@@ -337,7 +337,6 @@ void main() {
     expect(report['bytesClientToDevice'], greaterThan(0));
     expect(logged.where((m) => m.contains('killed')), isEmpty);
   });
-  });
 
   test('A session request arriving during a stop is refused', () async {
     final relay = srvd();

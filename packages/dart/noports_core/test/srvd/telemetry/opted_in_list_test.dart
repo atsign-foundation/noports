@@ -100,7 +100,7 @@ void main() {
     expect(list.atsigns, isEmpty);
     expect(asked, isNotNull);
     expect(asked!.key, CollectionOptedInListSource.manifestId);
-    expect(asked!.namespace, CollectionOptedInListSource.namespace);
+    expect(asked!.namespace, 'optedin.at_telemetry');
     expect(asked!.sharedBy, '@collector',
         reason: 'the list is the one the collector published');
     expect(asked!.sharedWith, '@relay',

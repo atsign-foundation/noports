@@ -160,8 +160,7 @@ void main() {
     );
   });
 
-  test('Records go to the collector as batched notifications', () async {
-    expect(AtTelemetryNotificationExporter.defaultMaxBatchRecords, 50);
+  test('A batch goes out within a second of its first record', () async {
     final sent = <(String, String, String)>[];
     when(
       () => notificationService.send(
@@ -201,6 +200,60 @@ void main() {
     final Stopwatch sw = Stopwatch()..start();
 
     telemetry.start();
+    await until(() => sent.isNotEmpty, what: 'a notification');
+    sw.stop();
+    await telemetry.stop();
+
+    expect(sw.elapsed, lessThan(const Duration(milliseconds: 1500)),
+        reason: 'a batch goes out within a second of its first record');
+    final (to, idAndNamespace, body) = sent.first;
+    expect(to, '@telemetry');
+    expect(idAndNamespace, 'logs.at_telemetry');
+    final records = const AtTelemetryLogsCodec().decode(body).single.records;
+    expect(records.first.eventName, N.lifecycleStarted);
+    expect(records, hasLength(1));
+  });
+
+  test('Records go to the collector as batched notifications', () async {
+    expect(AtTelemetryNotificationExporter.defaultMaxBatchRecords, 50);
+    final sent = <(String, String, String)>[];
+    when(
+      () => notificationService.send(
+        to: any(named: 'to'),
+        idAndNamespace: any(named: 'idAndNamespace'),
+        body: any(named: 'body'),
+        shouldEncrypt: any(named: 'shouldEncrypt'),
+      ),
+    ).thenAnswer((i) async {
+      sent.add((
+        i.namedArguments[#to].toString(),
+        i.namedArguments[#idAndNamespace] as String,
+        i.namedArguments[#body] as String,
+      ));
+      return 'notification id';
+    });
+    when(() => atClient.get(any(),
+            getRequestOptions: any(named: 'getRequestOptions')))
+        .thenAnswer((i) async {
+      final AtKey key = i.positionalArguments.first as AtKey;
+      final Object obj = key.key == CollectionOptedInListSource.manifestId
+          ? {
+              'builtAt': DateTime.timestamp().toUtc().toIso8601String(),
+              'chunks': 1,
+              'window': '30d',
+            }
+          : {
+              'atsigns': ['@alice'],
+            };
+      return AtValue()..value = jsonEncode({'type': 'n/a', 'obj': obj});
+    });
+    final telemetry = SrvdImpl.relayTelemetryFor(
+      atClient: atClient,
+      collector: '@telemetry',
+      version: 'srvd 9.9.9',
+    );
+
+    telemetry.start();
     await telemetry.list.firstGoodRead.timeout(const Duration(seconds: 2));
     for (int i = 0; i < 120; i++) {
       telemetry.connectionOpened(
@@ -210,11 +263,8 @@ void main() {
       );
     }
     await until(() => sent.isNotEmpty, what: 'a notification');
-    sw.stop();
     await telemetry.stop();
 
-    expect(sw.elapsed, lessThan(const Duration(milliseconds: 1500)),
-        reason: 'a batch goes out within a second of its first record');
     final (to, idAndNamespace, body) = sent.first;
     expect(to, '@telemetry');
     expect(idAndNamespace, 'logs.at_telemetry');
