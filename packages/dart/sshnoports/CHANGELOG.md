@@ -13,8 +13,9 @@
   it names a rule that isn't stored
 * fix: a manager RPC delete naming an id npp doesn't hold is answered with an
   error naming it
-* fix: npp answers a manager RPC put or delete whose value is malformed with
-  an error saying what it must hold
+* fix: npp answers a manager RPC delete whose value doesn't name its rule's id
+  as a string, or a put or delete whose value isn't a JSON object, with an
+  error saying what it must hold
 
 ## v5.18.2
 
