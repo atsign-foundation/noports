@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_client_cli/at_client_cli.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
+import 'package:noports_core/src/srvd/loop_lag.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
 
@@ -46,9 +47,9 @@ class SrvdParams {
   /// benchmarking; 0 logs none. At most [maxReportLoopLagSecs].
   final int reportLoopLagSecs;
 
-  /// The longest [reportLoopLagSecs]: the probe holds every sample until it
-  /// reports, 100 a second.
-  static const int maxReportLoopLagSecs = 3600;
+  /// The longest [reportLoopLagSecs], [LoopLagProbe.maxReportEvery].
+  static final int maxReportLoopLagSecs =
+      LoopLagProbe.maxReportEvery.inSeconds;
 
   // Non param variables
   static final ArgParser parser = _createArgParser();

@@ -29,6 +29,24 @@ void main() {
         greaterThan(100), reason: 'the 150 ms block shows as lag');
   });
 
+  test('A probe that would report less often than hourly is refused', () {
+    void noReport(String _) {}
+
+    expect(LoopLagProbe.maxReportEvery, const Duration(hours: 1));
+    expect(
+        LoopLagProbe(reportEvery: const Duration(hours: 1), onReport: noReport)
+            .reportEvery,
+        const Duration(hours: 1),
+        reason: 'the control: an hour is accepted');
+    expect(
+      () => LoopLagProbe(
+          reportEvery: const Duration(hours: 1, seconds: 1),
+          onReport: noReport),
+      throwsA(isA<ArgumentError>()
+          .having((e) => e.message, 'message', contains('must be at most'))),
+    );
+  });
+
   test('--report-loop-lag-secs over 3600 is refused', () async {
     Future<SrvdParams> parse(String secs) => SrvdParams.fromArgs(
         ['-a', '@relay', '-i', '127.0.0.1', '--report-loop-lag-secs', secs]);
