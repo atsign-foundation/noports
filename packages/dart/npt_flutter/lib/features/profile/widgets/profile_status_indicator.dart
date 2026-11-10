@@ -14,9 +14,29 @@ class ProfileStatusIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
 
-    final Widget content = BlocBuilder<ProfileBloc, ProfileState>(
+    final Widget content =
+        BlocBuilder<ProfileStartQueueCubit, ProfileStartQueueState>(
+      builder: (BuildContext context, ProfileStartQueueState queue) =>
+          BlocBuilder<ProfileBloc, ProfileState>(
         builder: (BuildContext context, ProfileState state) {
           log(state.runtimeType.toString());
+          if (queue.isWaiting(state.uuid) &&
+              (state is ProfileLoaded ||
+                  state is ProfileFailedSave ||
+                  state is ProfileFailedStart)) {
+            return StatusMessage(
+              tooltip: strings.profileStatusQueuedMessage,
+              status: strings.profileStatusQueued,
+              color: Colors.grey,
+              icon: PhosphorIcons.hourglass(),
+              onPressed: () {
+                context
+                    .read<ProfileStartQueueCubit>()
+                    .remove(<String>[state.uuid]);
+                context.read<ProfileBloc>().add(const ProfileStartEvent());
+              },
+            );
+          }
           if (state is ProfileLoading) {
             return StatusMessage(
               tooltip: strings.profileStatusLoading,
@@ -102,7 +122,8 @@ class ProfileStatusIndicator extends StatelessWidget {
 
           return gap0;
         },
-      );
+      ),
+    );
 
     if (width != null) {
       return SizedBox(width: width, child: content);

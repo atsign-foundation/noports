@@ -8,6 +8,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
@@ -16,6 +17,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../favorite/bloc/favorite_bloc_test.mocks.dart';
 import '../profile/bloc/profile_bloc_test.mocks.dart';
+import 'tray_favorite_folders_test.dart' show FakeProfileFolderRepository;
 
 /// Records the profile states the tray is reloaded with, and touches no
 /// platform tray.
@@ -37,6 +39,7 @@ class _RecordingTrayCubit extends TrayCubit {
     ProfilesRunningState? profilesRunningState,
     OnboardingState? onboardingState,
     ProfileState? profileState,
+    ProfileFolderState? profileFolderState,
   }) async {
     reloads++;
     if (profileState != null) reloadedWith.add(profileState);
@@ -99,6 +102,12 @@ void main() {
           ),
           BlocProvider<ProfilesRunningCubit>(
             create: (_) => ProfilesRunningCubit(),
+          ),
+          BlocProvider<ProfileFolderBloc>(
+            create: (_) => ProfileFolderBloc(FakeProfileFolderRepository()),
+          ),
+          BlocProvider<ProfileStartQueueCubit>(
+            create: (_) => ProfileStartQueueCubit(cache),
           ),
           BlocProvider<SettingsBloc>(
             create: (_) => SettingsBloc(const SettingsRepository()),

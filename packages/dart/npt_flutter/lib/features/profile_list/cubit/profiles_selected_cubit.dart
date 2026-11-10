@@ -21,4 +21,7 @@ class ProfilesSelectedCubit extends LoggingCubit<ProfilesSelectedState> {
       );
     }
   }
+
+  void selectOnly(Iterable<String> uuids) =>
+      emit(ProfilesSelectedState(uuids.toSet()));
 }

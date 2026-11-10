@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/bloc/profile_list_bloc.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/pages/profile_form_page.dart';
@@ -26,6 +27,9 @@ class ProfilePopupMenuButton extends StatelessWidget {
         state is ProfileStarting ||
         state is ProfileStarted ||
         state is ProfileStopping;
+    final ProfileFolderState folderState = context
+        .watch<ProfileFolderBloc>()
+        .state;
     return PopupMenuButton<PopupMenuEntry>(
       padding: EdgeInsets.zero,
       itemBuilder: (_) {
@@ -79,6 +83,21 @@ class ProfilePopupMenuButton extends StatelessWidget {
             },
           ),
           PopupMenuItem(
+            enabled: folderState.editable,
+            child: Row(
+              children: [
+                PhosphorIcon(PhosphorIcons.folderOpen()),
+                gapW10,
+                Text(strings.folderMoveToFolder),
+              ],
+            ),
+            onTap: () {
+              var state = context.read<ProfileBloc>().state;
+              if (state is! ProfileLoadedState) return;
+              ProfileFolderActions.moveToFolder(context, [state.uuid]);
+            },
+          ),
+          PopupMenuItem(
             child: Row(
               children: [
                 PhosphorIcon(PhosphorIcons.export()),
@@ -90,7 +109,7 @@ class ProfilePopupMenuButton extends StatelessWidget {
               var state = context.read<ProfileBloc>().state;
               if (state is! ProfileLoadedState) return;
 
-              var json = state.profile.toExportableJson();
+              var json = Export.exportableProfiles([state.profile]).single;
 
               showDialog(
                 context: context,
