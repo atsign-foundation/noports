@@ -507,6 +507,68 @@ void main() {
     'ServiceACL': 'serviceACLId',
   };
 
+  group('Given any rules', () {
+    test(
+      'when a manager deletes a rule with a value that lacks its id field, or names it as something other than a string, then the delete is answered "A delete of a <Kind> must name its <idKey> as a string, so nothing is deleted." and nothing changes',
+      () async {
+        cache.putClient(Client(name: 'Alice', atSign: '@alice'));
+        final before = cache.clients.toSet();
+        final c = callbacks();
+        for (final MapEntry(key: target, value: idKey) in idKeys.entries) {
+          for (final value in <Map<String, dynamic>>[
+            {},
+            {idKey: null},
+            {idKey: 7},
+            {idKey: ['a']},
+          ]) {
+            final response = await c.handleRequest(
+              req({'operation': 'delete', 'target': target, 'value': value}),
+              policy,
+            );
+
+            expect(response.respType, AtRpcRespType.error,
+                reason: '$target $value');
+            expect(
+              response.message,
+              'A delete of a $target must name its $idKey as a string, so'
+              ' nothing is deleted.',
+              reason: '$target $value',
+            );
+          }
+        }
+        expect(cache.clients, before);
+      },
+    );
+
+    test(
+      'when a manager puts or deletes with a value that isn\'t a JSON object, then the request is answered "value must be a JSON object, so nothing is changed." and nothing changes',
+      () async {
+        cache.putClient(Client(name: 'Alice', atSign: '@alice'));
+        final before = cache.clients.toSet();
+        final c = callbacks();
+        for (final operation in ['put', 'delete']) {
+          for (final value in <Object?>[null, 'clientId', 7, ['a']]) {
+            final response = await c.handleRequest(
+              req({
+                'operation': operation,
+                'target': 'Client',
+                'value': value,
+              }),
+              policy,
+            );
+
+            expect(response.respType, AtRpcRespType.error,
+                reason: '$operation $value');
+            expect(response.message,
+                'value must be a JSON object, so nothing is changed.',
+                reason: '$operation $value');
+          }
+        }
+        expect(cache.clients, before);
+      },
+    );
+  });
+
   Future<AtRpcResp> putValue(
     ManagerRpcCallbacks c,
     String target,

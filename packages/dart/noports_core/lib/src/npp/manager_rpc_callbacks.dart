@@ -51,6 +51,16 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     return 'No ${missing.join(' or ')}, so nothing is put.';
   }
 
+  /// The field naming the rule's id in a delete's value, for each target.
+  static const Map<String, String> _deleteIdKeys = {
+    'Client': 'clientId',
+    'ClientGroup': 'clientGroupId',
+    'ClientGroupMember': 'clientGroupMemberId',
+    'Daemon': 'daemonId',
+    'Service': 'serviceId',
+    'ServiceACL': 'serviceACLId',
+  };
+
   /// Why a delete of the [target] rule [id] is refused when npp holds no
   /// rule of that kind with that id.
   String _noRule(String target, String id) =>
@@ -362,7 +372,13 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           message = 'target or value JSON keys was not found in the payload.';
           break;
         }
-        final Map<String, dynamic> valueAsMap = requestPayload['value'];
+        final Object? value = requestPayload['value'];
+        if (value is! Map<String, dynamic>) {
+          success = false;
+          message = 'value must be a JSON object, so nothing is changed.';
+          break;
+        }
+        final Map<String, dynamic> valueAsMap = value;
         if (valueAsMap['id'] != null) {
           success = false;
           message = 'A put must not name an id: npp gives each new rule one.';
@@ -638,11 +654,24 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           message = 'target or value JSON keys was not found in the payload.';
           break;
         }
-        final Map<String, dynamic> valueAsMap = requestPayload['value'];
+        final Object? value = requestPayload['value'];
+        if (value is! Map<String, dynamic>) {
+          success = false;
+          message = 'value must be a JSON object, so nothing is changed.';
+          break;
+        }
+        final Map<String, dynamic> valueAsMap = value;
         final List<Map<String, dynamic>> removed = [];
         responsePayload['removed'] = removed;
         String? error;
         switch(target) {
+          case final String kind
+              when _deleteIdKeys.containsKey(kind) &&
+                  valueAsMap[_deleteIdKeys[kind]] is! String: {
+            error = message = 'A delete of a $kind must name its '
+                '${_deleteIdKeys[kind]} as a string, so nothing is deleted.';
+            break;
+          }
           case 'Client': {
             final String clientId = valueAsMap['clientId'];
             final Client? client = nppCache.findClient(clientId);
