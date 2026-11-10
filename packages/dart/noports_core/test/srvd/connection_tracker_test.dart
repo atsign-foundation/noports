@@ -162,6 +162,31 @@ void main() {
     await t.complete();
   });
 
+  test(
+      "A closed connection's bytes stay in the session's totals, and its close"
+      " time is the later of its sides'", () async {
+    final t = tracker();
+    final c = await connection();
+    opened.add(c);
+    await report('newConnection');
+    c.sideA.rcvd = 100;
+    c.sideB.rcvd = 7;
+    final later = DateTime.timestamp().subtract(const Duration(minutes: 1));
+    c.sideA.closedAt = later;
+    c.sideB.closedAt = later.subtract(const Duration(minutes: 1));
+
+    closed.add(c);
+    final r = await report('connectionClosed');
+    await t.complete();
+    final done = await report('sessionComplete');
+
+    expect(r.payload['closedAt'], later.millisecondsSinceEpoch,
+        reason: "the later side's close time, not the time it was reported");
+    expect(done.payload['bytesClientToDevice'], 100,
+        reason: 'a closed connection is no longer open, and its bytes count');
+    expect(done.payload['bytesDeviceToClient'], 7);
+  });
+
   test('sessionComplete is sent at the bound when a close is never reported',
       () async {
     const flush = Duration(milliseconds: 300);

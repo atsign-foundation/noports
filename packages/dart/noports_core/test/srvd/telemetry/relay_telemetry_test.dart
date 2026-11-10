@@ -83,6 +83,43 @@ void main() {
     await pumpEventQueue();
   }
 
+  /// Runs session the-session of [si] through a pair, a progress report, a
+  /// close and its end, then pairs a reported witness session, and returns
+  /// once the witness's connections record is out: a window the-session
+  /// opened first, of the same length, has closed by then.
+  Future<void> wholeSessionBesideWitness(RelayTelemetry t, SessionInfo si) async {
+    final o = opened(1);
+    t.connectionOpened('the-session', si, o);
+    t.progress('the-session', {
+      'at': nowMs(),
+      'openConnections': 1,
+      'connections': 1,
+      'bytesClientToDevice': 0,
+      'bytesDeviceToClient': 0,
+    });
+    t.connectionClosed(
+      'the-session',
+      closed(1, openedAt: o['at'], c2d: 5, d2c: 7),
+    );
+    t.sessionCompleted(
+      'the-session',
+      complete(c2d: 5, d2c: 7),
+      RelaySessionEndReason.connectionsClosed,
+    );
+    t.connectionOpened(
+      'witness',
+      sessionInfo(sessionParams(sessionId: 'witness', client: '@alice')),
+      opened(1),
+    );
+    await until(() => exporter.named(N.sessionConnections).isNotEmpty,
+        what: "the witness's connections record");
+  }
+
+  /// The session records that name the client session id the-session.
+  List<AtTelemetryLogRecord> theSessionRecords() => sessionRecords()
+      .where((r) => r.attributes[N.clientSessionId] == 'the-session')
+      .toList();
+
   test('srvd sends lifecycle records whatever the list says', () async {
     expect(RelayTelemetry.defaultHeartbeatInterval, const Duration(seconds: 60));
     source.list = null;
@@ -151,24 +188,34 @@ void main() {
       () async {
     final t = await telemetry();
 
-    await wholeSession(
+    await wholeSessionBesideWitness(
       t,
       sessionInfo(sessionParams(
           client: '@dave', device: '@bob', deviceVerified: false)),
     );
 
-    expect(sessionRecords(), isEmpty);
+    expect(theSessionRecords(), isEmpty);
+    expect(
+      exporter.named(N.sessionStarted).map((r) => r.attributes[N.clientSessionId]),
+      ['witness'],
+      reason: 'the witness, the control, is reported',
+    );
   });
 
   test('A session with neither party listed is not reported', () async {
     final t = await telemetry();
 
-    await wholeSession(
+    await wholeSessionBesideWitness(
       t,
       sessionInfo(sessionParams(client: '@dave', device: '@erin')),
     );
 
-    expect(sessionRecords(), isEmpty);
+    expect(theSessionRecords(), isEmpty);
+    expect(
+      exporter.named(N.sessionStarted).map((r) => r.attributes[N.clientSessionId]),
+      ['witness'],
+      reason: 'the witness, the control, is reported',
+    );
   });
 
   test('The decision is taken once, at first pair', () async {
