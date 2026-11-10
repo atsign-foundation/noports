@@ -1,5 +1,4 @@
-/// The event and attribute names a relay's telemetry carries, which the
-/// Control Center's collector and web service read.
+/// The event and attribute names a relay's telemetry carries.
 abstract final class RelayTelemetryNames {
   /// The service every relay record names.
   static const String serviceName = 'srvd';

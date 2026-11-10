@@ -10,8 +10,9 @@
 * feat: srvd's `--telemetry-collector-atsign` sends session telemetry to a
   collector Atsign, for the Atsigns on the opted-in list it shares with the
   relay; off when absent
-* feat: srvd stops gracefully on SIGINT or SIGTERM within 12 seconds; give its
-  container a 15-second stop grace period (Docker's default is 10)
+* feat: srvd stops gracefully on SIGINT, or SIGTERM outside Windows, within 12
+  seconds; give its container a 15-second stop grace period (Docker's default
+  is 10)
 
 ## v5.18.2
 

@@ -166,7 +166,8 @@ by cron using:
 
 ## Stopping srvd
 
-On its first SIGINT or SIGTERM, srvd closes every session's connections and
+On its first SIGINT, or SIGTERM (which srvd doesn't watch on Windows), srvd
+closes every session's connections and
 exits within 12 seconds; a second signal exits at once. Give it a stop grace
 period of at least 15 seconds: `stop_grace_period: 15s` in a compose file, or
 `docker stop -t 15` by hand, since Docker's default of 10 seconds can end it
