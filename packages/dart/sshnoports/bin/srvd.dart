@@ -6,6 +6,7 @@ import 'package:noports_core/srvd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
+import 'package:sshnoports/src/signal_stopper.dart';
 
 const String _description =
     'NoPorts relay daemon: the rendezvous service via which NoPorts clients'
@@ -97,25 +98,13 @@ void main(List<String> args) async {
     exit(exitCode);
   }
 
-  bool stopping = false;
-  Future<void> stopAndExit(ProcessSignal signal) async {
-    final relay = srvd;
-    if (stopping || relay == null) {
-      exitProgram(exitCode: 1);
-    }
-    stopping = true;
-    stderr.writeln('${DateTime.now()} : $signal received, stopping');
-    try {
-      await relay!.stop();
-    } catch (e) {
-      stderr.writeln('${DateTime.now()} : error while stopping: $e');
-    }
-    exitProgram(exitCode: 0);
-  }
-
-  ProcessSignal.sigint.watch().listen(stopAndExit);
+  final SignalStopper stopper = SignalStopper(
+    exit: (int code) => exitProgram(exitCode: code),
+    log: (String message) => stderr.writeln('${DateTime.now()} : $message'),
+  );
+  ProcessSignal.sigint.watch().listen(stopper.handle);
   if (!Platform.isWindows) {
-    ProcessSignal.sigterm.watch().listen(stopAndExit);
+    ProcessSignal.sigterm.watch().listen(stopper.handle);
   }
 
   try {
@@ -148,6 +137,7 @@ void main(List<String> args) async {
   }
 
   final relay = srvd;
+  stopper.stop = relay.stop;
   await runZonedGuarded(() async {
     await relay.init();
     await relay.run();
