@@ -130,6 +130,10 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
     When a session pairs whose client session id is 70 characters long
     Then the records carry no client session id and everything else
 
+  Scenario: A device Atsign that is not an Atsign is left out
+    When a session between client @alice and an unverified device pairs, whose request names the device by 60 characters, over the 55 an Atsign allows
+    Then the records carry no device Atsign and everything else
+
   Scenario: Connections that open together are reported in one record a window later
     Given a reported session
     When 6 connections pair within 100 milliseconds

@@ -308,6 +308,25 @@ void main() {
     expect(a[N.clientAtsign], '@alice');
   });
 
+  test('A device Atsign that is not an Atsign is left out', () async {
+    final t = await telemetry();
+    final String long = '@${'d' * 60}';
+
+    t.connectionOpened(
+        'the-session',
+        sessionInfo(sessionParams(device: long, deviceVerified: false)),
+        opened(1));
+    await pumpEventQueue();
+
+    final a = exporter.named(N.sessionStarted).single.attributes;
+    expect(a.containsKey(N.deviceAtsign), isFalse,
+        reason: 'a device named by something that is not an Atsign is not'
+            ' reported as one');
+    expect(a[N.deviceVerified], isFalse);
+    expect(a[N.clientAtsign], '@alice');
+    expect(a[N.clientSessionId], 'the-session');
+  });
+
   test(
       'Connections that open together are reported in one record a window'
       ' later', () async {

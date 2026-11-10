@@ -237,9 +237,13 @@ class RelayTelemetry {
       );
 
   bool _decide(SessionInfo si) {
-    if (list.listed(_canonical(si.params.atSignA))) return true;
-    return si.params.authenticateSocketB &&
-        list.listed(_canonical(si.params.atSignB));
+    if (_listed(si.params.atSignA)) return true;
+    return si.params.authenticateSocketB && _listed(si.params.atSignB);
+  }
+
+  bool _listed(String atsign) {
+    final String? canonical = _canonical(atsign);
+    return canonical != null && list.listed(canonical);
   }
 
   void _add(_Session s, Map<String, Object?> entry) {
@@ -335,8 +339,10 @@ class RelayTelemetry {
       RelayTelemetryNames.sequence: ++s.seq,
       if (_clientSessionIdShape.hasMatch(params.sessionId))
         RelayTelemetryNames.clientSessionId: params.sessionId,
-      RelayTelemetryNames.clientAtsign: _canonical(params.atSignA),
-      RelayTelemetryNames.deviceAtsign: _canonical(params.atSignB),
+      if (_canonical(params.atSignA) case final client?)
+        RelayTelemetryNames.clientAtsign: client,
+      if (_canonical(params.atSignB) case final device?)
+        RelayTelemetryNames.deviceAtsign: device,
       RelayTelemetryNames.deviceVerified: params.authenticateSocketB,
       RelayTelemetryNames.clientVerified: params.authenticateSocketA,
       RelayTelemetryNames.portMode: params.only443
@@ -397,11 +403,12 @@ class RelayTelemetry {
     return <String, Object?>{'ip': value['ip'], 'port': value['port']};
   }
 
-  static String _canonical(String atsign) {
+  /// [atsign] in canonical form, or null when it is not an Atsign.
+  static String? _canonical(String atsign) {
     try {
       return atsign.toAtsign().toString();
     } catch (_) {
-      return atsign;
+      return null;
     }
   }
 }
