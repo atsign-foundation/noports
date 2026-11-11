@@ -1,3 +1,4 @@
+import 'package:at_client/at_client.dart' show InvalidAtSignException;
 import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
@@ -38,6 +39,39 @@ void main() {
         allOf(contains(sessionId), contains('@alice'), contains('@bob')),
       );
       expect(params.relayAuthAesKey, key, reason: 'the params keep the key');
+    });
+  });
+
+  group("Given a session's client-side and device-side Atsigns,", () {
+    SrvdSessionParams between(String a, String b) => SrvdSessionParams(
+          sessionId: 'the-session',
+          atSignA: a,
+          atSignB: b,
+          rvdNonce: 'rvd-nonce',
+          only443: false,
+          multipleAcksOk: true,
+          preFetch: const [],
+          sendJsonResponse: true,
+        );
+
+    test('when they are valid, then the params hold them canonical', () {
+      final params = between('Alice', '@B.ob');
+
+      expect(params.atSignA, '@alice');
+      expect(params.atSignB, '@bob');
+    });
+
+    test('when either is not a valid Atsign, then no params are made', () {
+      expect(between('@alice', '@bob').atSignB, '@bob',
+          reason: 'the control: two valid Atsigns make params');
+      for (final (String a, String b) in [
+        ('@a@b', '@bob'),
+        ('@alice', '@a@b'),
+        ('@alice', '@${'d' * 56}'),
+      ]) {
+        expect(() => between(a, b), throwsA(isA<InvalidAtSignException>()),
+            reason: '$a and $b make no params');
+      }
     });
   });
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_client_cli/at_client_cli.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
+import 'package:noports_core/src/srvd/loop_lag.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
     show defaultRelayAuthDetectWindowMs;
 
@@ -39,6 +40,17 @@ class SrvdParams {
   /// withdrawn from; 0 turns the check off.
   final int signingKeyCheckSecs;
 
+  /// The collector Atsign this relay sends telemetry to; null sends none.
+  final String? telemetryCollectorAtsign;
+
+  /// How often (seconds) to log the main isolate's event-loop lag, for
+  /// benchmarking; 0 logs none. At most [maxReportLoopLagSecs].
+  final int reportLoopLagSecs;
+
+  /// The longest [reportLoopLagSecs], [LoopLagProbe.maxReportEvery].
+  static final int maxReportLoopLagSecs =
+      LoopLagProbe.maxReportEvery.inSeconds;
+
   // Non param variables
   static final ArgParser parser = _createArgParser();
 
@@ -58,6 +70,8 @@ class SrvdParams {
     required this.relayAuthDetectWindowMs,
     required this.signingKeyCheckSecs,
     required this.debug,
+    this.telemetryCollectorAtsign,
+    this.reportLoopLagSecs = 0,
   });
 
   static Future<SrvdParams> fromArgs(List<String> args) async {
@@ -94,12 +108,37 @@ class SrvdParams {
         int.parse(r['signing-key-check-secs']),
       ),
       debug: r['debug'],
+      telemetryCollectorAtsign: _atsignOption(
+        'telemetry-collector-atsign',
+        r['telemetry-collector-atsign'],
+      ),
+      reportLoopLagSecs: _atMost(
+        'report-loop-lag-secs',
+        _nonNegative(
+          'report-loop-lag-secs',
+          int.parse(r['report-loop-lag-secs']),
+        ),
+        maxReportLoopLagSecs,
+      ),
     );
+  }
+
+  static String? _atsignOption(String option, String? value) {
+    if (value == null) return null;
+    try {
+      return value.toAtsign().toString();
+    } catch (_) {
+      throw ArgumentError('--$option must be an Atsign, but was $value');
+    }
   }
 
   static int _nonNegative(String option, int value) => value >= 0
       ? value
       : throw ArgumentError('--$option must not be negative, but was $value');
+
+  static int _atMost(String option, int value, int max) => value <= max
+      ? value
+      : throw ArgumentError('--$option must be at most $max, but was $value');
 
   static ArgParser _createArgParser() {
     var parser = ArgParser(
@@ -219,6 +258,22 @@ class SrvdParams {
           ' session was authenticated with (ESCR) are still valid. A session'
           ' is ended once the enrollment that published one of them is'
           ' revoked, superseded, deleted or expires. 0 turns the check off.',
+    );
+    parser.addOption(
+      'telemetry-collector-atsign',
+      mandatory: false,
+      help:
+          'The Control Center collector Atsign to send session telemetry to,'
+          ' for the sessions of Atsigns on the opted-in list it shares with'
+          ' this relay. Off when absent.',
+    );
+    parser.addOption(
+      'report-loop-lag-secs',
+      mandatory: false,
+      defaultsTo: '0',
+      hide: true,
+      help: 'How often (seconds) to log the event-loop lag, for benchmarks;'
+          ' 0 logs none, and at most $maxReportLoopLagSecs.',
     );
     parser.addFlag(
       'help',

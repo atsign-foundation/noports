@@ -52,4 +52,42 @@ void main() {
 
     expect(connectors.where((c) => !c.closed), isEmpty);
   });
+
+  test('A second stop while the first is waiting finishes with it', () async {
+    final toMain = ReceivePort();
+    final worker = SinglePortWorker(
+      toMain: toMain.sendPort,
+      logTraffic: false,
+      verbose: false,
+      loggingTag: 'single port stop test',
+      address: '127.0.0.1',
+      useTLS: false,
+      bindPort: 0,
+    );
+    addTearDown(() {
+      worker.fromMain.close();
+      toMain.close();
+    });
+    await worker.startSession(IIRequest.create(
+      'start',
+      SrvdSessionParams(
+        sessionId: 'session one',
+        atSignA: '@alice',
+        atSignB: '@bob',
+        authenticateSocketA: true,
+        authenticateSocketB: true,
+        rvdNonce: 'rvd nonce',
+        relayAuthMode: RelayAuthMode.escr,
+        relayAuthAesKey: 'relay auth key',
+        only443: true,
+        multipleAcksOk: true,
+        preFetch: [],
+        sendJsonResponse: true,
+      ),
+    ));
+
+    await Future.wait([worker.stop(), worker.stop()]);
+
+    expect(worker.stopped.isCompleted, isTrue);
+  });
 }
