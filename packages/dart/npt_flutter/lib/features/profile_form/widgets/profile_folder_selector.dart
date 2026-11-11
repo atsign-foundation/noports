@@ -1,0 +1,275 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
+import 'package:npt_flutter/styles/sizes.dart';
+import 'package:npt_flutter/util/name_sort.dart';
+import 'package:npt_flutter/util/uuid.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+/// A [newName] is created on submit, with [folderId] as its uuid so a second
+/// submit can't create it twice.
+typedef ProfileFormFolder = ({String? folderId, String? newName});
+
+class ProfileFormFolderCubit extends Cubit<ProfileFormFolder> {
+  bool _picked;
+
+  ProfileFormFolderCubit(String? folderId, {bool picked = false})
+    : _picked = picked,
+      super((folderId: folderId, newName: null));
+
+  /// Until the user picks a folder, the field follows the folders.
+  bool get picked => _picked;
+
+  void choose(String? folderId) {
+    _picked = true;
+    emit((folderId: folderId, newName: null));
+  }
+
+  void create(String name) {
+    _picked = true;
+    emit((folderId: Uuid.generate(), newName: name));
+  }
+
+  void follow(String? folderId) {
+    if (!_picked) emit((folderId: folderId, newName: null));
+  }
+}
+
+class ProfileFolderSelector extends StatefulWidget {
+  const ProfileFolderSelector({super.key});
+
+  @override
+  State<ProfileFolderSelector> createState() => _ProfileFolderSelectorState();
+}
+
+class _ProfileFolderSelectorState extends State<ProfileFolderSelector> {
+  static const String _noFolder = '';
+  static const String _newFolder = ':new';
+  static const String _createFolder = ':create';
+  static const String _createNamed = ':create:';
+
+  /// One per menu: the old menu must not hear the new one's text.
+  TextEditingController _text = TextEditingController();
+  String? _textKey;
+  final FocusNode _focus = FocusNode();
+
+  /// Bumped to show the chosen folder again after typing without picking.
+  int _resets = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() {
+      if (_focus.hasFocus) {
+        _selectTextAfterFrame();
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_focus.hasFocus) setState(() => _resets++);
+      });
+    });
+  }
+
+  TextEditingController _controllerFor(String key) {
+    if (_textKey != null && _textKey != key) {
+      final TextEditingController old = _text;
+      WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+      _text = TextEditingController();
+    }
+    _textKey = key;
+    return _text;
+  }
+
+  @override
+  void dispose() {
+    _text.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _create() async {
+    final AppLocalizations strings = AppLocalizations.of(context)!;
+    final ProfileFormFolderCubit cubit = context.read<ProfileFormFolderCubit>();
+    final ProfileFolderState folders = context.read<ProfileFolderBloc>().state;
+    final String? name = await showDialog<String>(
+      context: context,
+      builder: (BuildContext _) => ProfileFolderNameDialog(
+        title: strings.folderNew,
+        takenNames: folders is ProfileFoldersLoaded
+            ? folders.folders.map((ProfileFolder f) => f.name)
+            : const <String>[],
+      ),
+    );
+    if (name != null && name.isNotEmpty) {
+      cubit.create(name);
+    } else if (mounted) {
+      setState(() => _resets++);
+    }
+  }
+
+  /// Typing replaces the chosen folder's name rather than adding to it.
+  void _selectTextAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_focus.hasFocus) return;
+      _text.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _text.text.length,
+      );
+    });
+  }
+
+  /// Cuts the typed text as the name dialog does, so a cut name repeats none.
+  static String _typedName(String typed) => typed
+      .trim()
+      .characters
+      .take(ProfileFolderNameDialog.maxLength)
+      .toString()
+      .trimRight();
+
+  static bool _matches(DropdownMenuEntry<String> entry, String needle) =>
+      nameSortKey(entry.label).contains(needle);
+
+  List<DropdownMenuEntry<String>> _filter(
+    List<DropdownMenuEntry<String>> entries,
+    String filter,
+  ) {
+    final String name = _typedName(filter);
+    final String typed = name.toLowerCase();
+    final String needle = nameSortKey(name);
+    final List<DropdownMenuEntry<String>> matches = entries
+        .where((DropdownMenuEntry<String> e) => _matches(e, needle))
+        .toList();
+    if (typed.isEmpty ||
+        entries.any(
+          (DropdownMenuEntry<String> e) => e.label.toLowerCase() == typed,
+        )) {
+      return matches;
+    }
+    return <DropdownMenuEntry<String>>[
+      ...matches,
+      DropdownMenuEntry<String>(
+        value: '$_createNamed$name',
+        label: '${AppLocalizations.of(context)!.folderNew}: $name',
+        leadingIcon: PhosphorIcon(PhosphorIcons.folderPlus(), size: Sizes.p20),
+      ),
+    ];
+  }
+
+  /// Highlights what Enter picks: the same name, then the same name with
+  /// accents folded, then the first entry [_filter] lists for it.
+  static int? _search(List<DropdownMenuEntry<String>> entries, String query) {
+    final String name = _typedName(query);
+    if (name.isEmpty) return null;
+    final String lower = name.toLowerCase();
+    final String needle = nameSortKey(name);
+    int first(bool Function(String label) test) =>
+        entries.indexWhere((DropdownMenuEntry<String> e) => test(e.label));
+    int index = first((String label) => label.toLowerCase() == lower);
+    if (index == -1) {
+      index = first((String label) => nameSortKey(label) == needle);
+    }
+    if (index == -1) {
+      index = first((String label) => nameSortKey(label).contains(needle));
+    }
+    return index == -1 ? null : index;
+  }
+
+  /// DropdownMenu reads its initialSelection once, so a new key rebuilds it.
+  String _menuKey(String selection, String? folderName, String? newName) =>
+      'ProfileFolderSelector-$selection-$folderName-$newName-$_resets';
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context)!;
+    return BlocBuilder<ProfileFolderBloc, ProfileFolderState>(
+      builder: (BuildContext context, ProfileFolderState state) {
+        if (state is! ProfileFoldersLoaded) return gap0;
+        final ProfileFormFolder chosen = context
+            .watch<ProfileFormFolderCubit>()
+            .state;
+        final ProfileFolder? folder = state.data.folderById(
+          chosen.folderId ?? '',
+        );
+        final String selection = chosen.newName != null
+            ? _newFolder
+            : folder?.uuid ?? _noFolder;
+        final String menuKey = _menuKey(
+          selection,
+          folder?.name,
+          chosen.newName,
+        );
+        return Padding(
+          padding: const EdgeInsets.only(
+            left: Sizes.p50,
+            right: Sizes.p50,
+            top: Sizes.p10,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(strings.profileFolder),
+              gapH4,
+              Text(
+                strings.profileFolderDescription,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              gapH10,
+              SizedBox(
+                width: double.infinity,
+                child: DropdownMenu<String>(
+                  enabled: state.editable,
+                  key: ValueKey<String>(menuKey),
+                  controller: _controllerFor(menuKey),
+                  focusNode: _focus,
+                  initialSelection: selection,
+                  enableFilter: true,
+                  filterCallback: _filter,
+                  searchCallback: _search,
+                  expandedInsets: EdgeInsets.zero,
+                  dropdownMenuEntries: <DropdownMenuEntry<String>>[
+                    DropdownMenuEntry<String>(
+                      value: _noFolder,
+                      label: strings.folderNone,
+                    ),
+                    DropdownMenuEntry<String>(
+                      value: _createFolder,
+                      label: strings.folderNew,
+                      leadingIcon: PhosphorIcon(
+                        PhosphorIcons.folderPlus(),
+                        size: Sizes.p20,
+                      ),
+                    ),
+                    if (chosen.newName != null)
+                      DropdownMenuEntry<String>(
+                        value: _newFolder,
+                        label: chosen.newName!,
+                      ),
+                    for (final ProfileFolder option in state.folders)
+                      DropdownMenuEntry<String>(
+                        value: option.uuid,
+                        label: option.name,
+                      ),
+                  ],
+                  onSelected: (String? value) {
+                    if (value == null || value == _newFolder) return;
+                    final ProfileFormFolderCubit cubit = context
+                        .read<ProfileFormFolderCubit>();
+                    if (value == _createFolder) {
+                      _create();
+                    } else if (value.startsWith(_createNamed)) {
+                      cubit.create(value.substring(_createNamed.length));
+                    } else {
+                      cubit.choose(value == _noFolder ? null : value);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

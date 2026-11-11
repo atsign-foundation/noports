@@ -38,6 +38,9 @@ class App extends StatelessWidget {
         RepositoryProvider<FavoriteRepository>(
           create: (_) => FavoriteRepository(),
         ),
+        RepositoryProvider<ProfileFolderRepository>(
+          create: (_) => ProfileFolderRepository(),
+        ),
         RepositoryProvider<BackUpKeyRepository>(
           create: (_) => BackUpKeyRepository(),
         ),
@@ -76,6 +79,11 @@ class App extends StatelessWidget {
             create: (ctx) => ProfileListBloc(ctx.read<ProfileRepository>()),
           ),
 
+          BlocProvider<ProfileFolderBloc>(
+            create: (ctx) =>
+                ProfileFolderBloc(ctx.read<ProfileFolderRepository>()),
+          ),
+
           /// A cubit which caches [ProfileBloc] by uuid so they can be shared
           /// between the dashboard and the system tray
           BlocProvider<ProfileCacheCubit>(
@@ -91,6 +99,11 @@ class App extends StatelessWidget {
           /// - A map of uuid: SocketConnector for running profiles (a cache of running connections)
           BlocProvider<ProfilesRunningCubit>(
             create: (_) => ProfilesRunningCubit(),
+          ),
+
+          BlocProvider<ProfileStartQueueCubit>(
+            create: (ctx) =>
+                ProfileStartQueueCubit(ctx.read<ProfileCacheCubit>()),
           ),
 
           /// A cubit which manages the system tray entries

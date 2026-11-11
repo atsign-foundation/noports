@@ -3,9 +3,9 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:at_commons/at_commons.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
+import 'package:noports_core/src/srvd/isolates/connection_tracker.dart';
 import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
@@ -37,6 +37,25 @@ class SinglePortWorker extends RelayWorker {
 
   Map<String, SessionInfo> sessions = {};
 
+  /// One per live session, completing once its connector is done and main
+  /// has been sent its sessionComplete.
+  final Set<Future<void>> _completions = {};
+
+  /// The tracker of each live session, until it has reported the session
+  /// complete.
+  final Set<ConnectionTracker> _trackers = {};
+
+  /// How long a side's close waits for its pending data before the side is
+  /// destroyed.
+  final Duration closeFlushTimeout;
+
+  /// How often each session's progress is reported to main.
+  final Duration progressInterval;
+
+  /// Each connector's grace period: how long from its creation it waits for
+  /// connections before closing itself once none is established.
+  final Duration connectorTimeout;
+
   SinglePortWorker({
     required super.toMain,
     required super.logTraffic,
@@ -45,6 +64,9 @@ class SinglePortWorker extends RelayWorker {
     required this.address,
     required this.useTLS,
     required this.bindPort,
+    this.closeFlushTimeout = SocketConnector.defaultCloseFlushTimeout,
+    this.progressInterval = defaultProgressInterval,
+    this.connectorTimeout = SocketConnector.defaultTimeout,
   }) {
     reqHandlers['start'] = startSession;
     reqHandlers['stop'] = stop;
@@ -172,7 +194,7 @@ class SinglePortWorker extends RelayWorker {
         throw Exception('Session not active: $sessionId');
       }
       SessionInfo si = sessions[sessionId]!;
-      final expected = (rav.isSideA! ? si.atSignA : si.atSignB).toAtsign();
+      final expected = rav.isSideA! ? si.atSignA : si.atSignB;
       if (atSign != expected) {
         throw Exception(
           'Connection from $atSign'
@@ -198,7 +220,16 @@ class SinglePortWorker extends RelayWorker {
     }
   }
 
-  Future<void> _stop() async {
+  Future<void>? _stopping;
+
+  /// Closes the listeners and every session, then waits for each session's
+  /// sessionComplete to be sent before completing [stopped]; runs once.
+  Future<void> _stop() => _stopping ??= _closeAll();
+
+  Future<void> _closeAll() async {
+    for (final tracker in _trackers) {
+      tracker.stopping();
+    }
     try {
       await _serverSocket?.close();
       await _secureServerSocket?.close();
@@ -209,6 +240,7 @@ class SinglePortWorker extends RelayWorker {
     for (final si in sessions.values) {
       si.connector?.close();
     }
+    await Future.wait(_completions.toList());
     stopped.complete();
   }
 
@@ -261,15 +293,19 @@ class SinglePortWorker extends RelayWorker {
       verbose: verbose,
       logTraffic: logTraffic,
       logger: ioSinkForLogger(sessionLogger),
+      timeout: connectorTimeout,
+      closeFlushTimeout: closeFlushTimeout,
     );
-    connector.connectionStream.listen(
-      (Connection c) => toMain.send(
-        IIRequest.create('newConnection', {
-          'sessionId': params.sessionId,
-          'stats': connector.stats,
-        }),
-      ),
+    final tracker = ConnectionTracker(
+      sessionId: params.sessionId,
+      toMain: toMain,
+      opened: connector.connectionStream,
+      closed: connector.connectionClosedStream,
+      stats: () => connector.stats,
+      closeFlushTimeout: closeFlushTimeout,
+      progressInterval: progressInterval,
     );
+    _trackers.add(tracker);
 
     sessions[params.sessionId] = SessionInfo(
       params: params,
@@ -277,17 +313,13 @@ class SinglePortWorker extends RelayWorker {
     );
 
     // When the session ends, we want to clean it up
-    unawaited(
-      connector.done.whenComplete(() {
-        logger.shout('sc.done for ${params.sessionId}');
-        sessions.remove(params.sessionId);
-        toMain.send(
-          IIRequest.create('sessionComplete', {
-            'sessionId': params.sessionId,
-            'stats': connector.stats,
-          }),
-        );
-      }),
-    );
+    final Future<void> completion = connector.done.whenComplete(() async {
+      logger.shout('sc.done for ${params.sessionId}');
+      sessions.remove(params.sessionId);
+      await tracker.complete();
+      _trackers.remove(tracker);
+    });
+    _completions.add(completion);
+    unawaited(completion.whenComplete(() => _completions.remove(completion)));
   }
 }

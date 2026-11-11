@@ -475,6 +475,24 @@ void main() {
         expect(await remoteUsername, 'myRemoteUsername');
       }); // test resolveRemoteUsername
 
+      // -u is the escape hatch the "not a plain login name" error points at,
+      // so it must be passed through as-is, without the plain-name check and
+      // without consulting the device's shared username record.
+      for (final username in ['John Smith', 'CORP\\alice']) {
+        test(
+            'resolveRemoteUsername - params.remoteUsername ${jsonEncode(username)}'
+            ' is not a plain login name, but is used as given', () async {
+          when(() => mockParams.remoteUsername).thenReturn(username);
+          when(() => mockParams.clientAtSign).thenReturn('@client');
+          when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
+          when(() => mockAtClient.get(any<AtKey>()))
+              .thenAnswer((i) async => AtValue()..value = 'mySharedUsername');
+
+          expect(await stubbedSshnpdChannel.resolveRemoteUsername(), username);
+          verifyNever(() => mockAtClient.get(any<AtKey>()));
+        });
+      }
+
       test('resolveRemoteUsername - params.remoteUsername null', () async {
         when(() => mockParams.remoteUsername).thenReturn(null);
         when(() => mockParams.clientAtSign).thenReturn('@client');
@@ -493,6 +511,100 @@ void main() {
         await expectLater(remoteUsername, completes);
         expect(await remoteUsername, 'mySharedUsername');
       }); // test resolveRemoteUsername
+
+      group("Given the device's shared username record", () {
+        void whenShared(Object? username) {
+          when(() => mockParams.remoteUsername).thenReturn(null);
+          when(() => mockParams.clientAtSign).thenReturn('@client');
+          when(() => mockParams.sshnpdAtSign).thenReturn('@sshnpd');
+          when(
+            () => mockAtClient.get(
+              any<AtKey>(
+                that: predicate(
+                  (AtKey key) => key.key.startsWith('username.'),
+                ),
+              ),
+            ),
+          ).thenAnswer((i) async => AtValue()..value = username);
+        }
+
+        for (final username in [
+          '-x',
+          'a b',
+          'a;b',
+          'a\$b',
+          'a\\b',
+          'a\nb',
+          'a\u200bb',
+          'a' * 65,
+        ]) {
+          test(
+              'when it is ${jsonEncode(username)}, which is not a plain login'
+              ' name, then resolveRemoteUsername refuses it and points at -u',
+              () async {
+            whenShared(username);
+            await expectLater(
+              stubbedSshnpdChannel.resolveRemoteUsername(),
+              throwsA(
+                isA<SshnpError>().having(
+                  (e) => e.toString(),
+                  'message',
+                  contains('-u'),
+                ),
+              ),
+            );
+          });
+        }
+
+        test(
+            'when it is not a string, then resolveRemoteUsername refuses it and'
+            ' points at -u', () async {
+          whenShared(42);
+          await expectLater(
+            stubbedSshnpdChannel.resolveRemoteUsername(),
+            throwsA(
+              isA<SshnpError>().having(
+                (e) => e.toString(),
+                'message',
+                contains('-u'),
+              ),
+            ),
+          );
+        });
+
+        // at_client answers a bare AtValue() (value null) when the server
+        // returns data:null or empty; sshnp then falls back to the default
+        // login name, so this must not be refused as "not a plain login name".
+        test(
+            'when it has no value, then resolveRemoteUsername returns null',
+            () async {
+          whenShared(null);
+          expect(await stubbedSshnpdChannel.resolveRemoteUsername(), isNull);
+        });
+
+        for (final username in [
+          'alice',
+          'a.b_c-d',
+          '_svc',
+          'alice@corp.example',
+          'jos\u00e9',
+          'a' * 64,
+          // digits (\p{N}), including a leading one
+          'ec2-user',
+          'user1',
+          'pi4',
+          '1user',
+          // a combining mark (\p{M}): "jose" + U+0301 COMBINING ACUTE ACCENT
+          'jose\u0301',
+        ]) {
+          test(
+              'when it is the plain login name ${jsonEncode(username)}, then'
+              ' resolveRemoteUsername returns it', () async {
+            whenShared(username);
+            expect(await stubbedSshnpdChannel.resolveRemoteUsername(), username);
+          });
+        }
+      });
 
       test('resolveTunnelUsername - params.tunnelUsername override', () async {
         when(() => mockParams.tunnelUsername).thenReturn('myTunnelUsername');

@@ -1,5 +1,12 @@
 # 7.0.0
 
+- feat: `SrvdParams.telemetryCollectorAtsign` (`--telemetry-collector-atsign`)
+  sends srvd's session telemetry to a collector Atsign
+- feat: `Srvd.stop` closes every session's connections and returns within
+  `Srvd.stopBound`, 12 seconds
+- fix: srvd refuses a session request whose device-side Atsign is not a valid
+  Atsign, and tells a client why it refused a malformed request, so the client
+  fails at once instead of waiting out its timeout
 - fix: `Npt.done` now completes when startup fails, instead of never
   completing. `run` and `runInline` close the session on their way out when
   they throw, so callers may always await `done` without having to call
@@ -39,7 +46,21 @@
 - feat: `NppOperationHooks` has pre-delete hooks, `NppCache` has `checkPut*`,
   and `npp.dart` exports npp's rule loaders and hooks
 - fix: npp assigns every new rule a random id
-- fix: improved handling of npp rule ids, references and deletes
+- fix: deleting an npp client, client group or service also deletes the client
+  group members and service ACLs naming it, and the answer lists them
+- fix: npp answers a daemon delete with an error while a service names the
+  daemon, saying how many do
+- fix: npp answers a put naming a rule it doesn't hold with an error, and
+  saves nothing
+- fix: npp's warning for a stored rule it doesn't load says where the rule is
+  stored and how to remove it
+- fix: a manager RPC delete also removes a stored rule npp didn't load because
+  it names a rule that isn't stored
+- fix: a manager RPC delete naming an id npp doesn't hold is answered with an
+  error naming it
+- fix: npp answers a manager RPC delete whose value doesn't name its rule's id
+  as a string, or a put or delete whose value isn't a JSON object, with an
+  error saying what it must hold
 - fix: tightened how npp loads its stored rules
 - fix: tightened how npp_atserver loads its policy groups
 

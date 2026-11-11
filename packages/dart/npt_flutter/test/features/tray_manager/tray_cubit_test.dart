@@ -10,12 +10,14 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 
 import '../favorite/bloc/favorite_bloc_test.mocks.dart';
 import '../profile/bloc/profile_bloc_test.mocks.dart';
+import 'tray_favorite_folders_test.dart' show FakeProfileFolderRepository;
 
 /// A [FavoriteBloc] pinned to one state - the tray only reads `.state`.
 class _FixedFavoriteBloc extends FavoriteBloc {
@@ -100,6 +102,12 @@ void main() {
               ),
               BlocProvider<ProfileListBloc>.value(value: listBloc),
               BlocProvider<ProfileCacheCubit>.value(value: cache),
+              BlocProvider<ProfileFolderBloc>(
+                create: (_) => ProfileFolderBloc(FakeProfileFolderRepository()),
+              ),
+              BlocProvider<ProfilesRunningCubit>(
+                create: (_) => ProfilesRunningCubit(),
+              ),
             ],
             child: MaterialApp(
               navigatorKey: App.navState,
