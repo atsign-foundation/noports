@@ -11,6 +11,10 @@ import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
 /// was authenticated with haven't been withdrawn.
 const Duration defaultSigningKeyCheckInterval = Duration(minutes: 5);
 
+/// How often srvd re-checks, by default, the client data signing keys of the
+/// sessions it reports to a collector Atsign.
+const Duration defaultReportedSigningKeyCheckInterval = Duration(seconds: 3);
+
 class SrvdParams {
   final String atSign;
   final String homeDirectory;
@@ -37,8 +41,14 @@ class SrvdParams {
 
   /// How often (seconds) to re-check that each live session's ESCR signing
   /// keys haven't been withdrawn, ending a session one of them has been
-  /// withdrawn from; 0 turns the check off.
+  /// withdrawn from; 0 turns the check off, [reportedSigningKeyCheckSecs]'s
+  /// included.
   final int signingKeyCheckSecs;
+
+  /// How often (seconds) to re-check the client data signing keys of the
+  /// sessions this relay reports to [telemetryCollectorAtsign], as well as
+  /// every [signingKeyCheckSecs]; 0 leaves them to that re-check alone.
+  final int reportedSigningKeyCheckSecs;
 
   /// The collector Atsign this relay sends telemetry to; null sends none.
   final String? telemetryCollectorAtsign;
@@ -72,7 +82,9 @@ class SrvdParams {
     required this.debug,
     this.telemetryCollectorAtsign,
     this.reportLoopLagSecs = 0,
-  });
+    int? reportedSigningKeyCheckSecs,
+  }) : reportedSigningKeyCheckSecs = reportedSigningKeyCheckSecs ??
+            defaultReportedSigningKeyCheckInterval.inSeconds;
 
   static Future<SrvdParams> fromArgs(List<String> args) async {
     // Arg check
@@ -106,6 +118,10 @@ class SrvdParams {
       signingKeyCheckSecs: _nonNegative(
         'signing-key-check-secs',
         int.parse(r['signing-key-check-secs']),
+      ),
+      reportedSigningKeyCheckSecs: _nonNegative(
+        'reported-signing-key-check-secs',
+        int.parse(r['reported-signing-key-check-secs']),
       ),
       debug: r['debug'],
       telemetryCollectorAtsign: _atsignOption(
@@ -257,7 +273,18 @@ class SrvdParams {
           'How often (seconds) to re-check that the signing keys each live'
           ' session was authenticated with (ESCR) are still valid. A session'
           ' is ended once the enrollment that published one of them is'
-          ' revoked, superseded, deleted or expires. 0 turns the check off.',
+          ' revoked, superseded, deleted or expires. 0 turns the check off,'
+          ' --reported-signing-key-check-secs included.',
+    );
+    parser.addOption(
+      'reported-signing-key-check-secs',
+      mandatory: false,
+      defaultsTo: '${defaultReportedSigningKeyCheckInterval.inSeconds}',
+      help:
+          'How often (seconds) to re-check the client data signing keys of'
+          ' the sessions this relay reports to --telemetry-collector-atsign,'
+          ' as well as every --signing-key-check-secs. 0 leaves them to that'
+          ' re-check alone.',
     );
     parser.addOption(
       'telemetry-collector-atsign',
