@@ -5,6 +5,8 @@ import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_utils/at_logger.dart';
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart' show RelayAuthMode;
 import 'package:noports_core/src/srv/relay_authenticators.dart';
@@ -130,6 +132,22 @@ void main() {
         (await messages).map((m) => (m as IIRequest).type),
         ['stop'],
       );
+    });
+
+    test("says at srvd's default level that it ended a session for a"
+        ' withdrawn signing key', () async {
+      final LoggingHandler previousHandler = AtSignLogger.defaultLoggingHandler;
+      final logged = <String>[];
+      AtSignLogger.defaultLoggingHandler = _Capture(logged);
+      addTearDown(() => AtSignLogger.defaultLoggingHandler = previousHandler);
+      relay = newRelay(atClient);
+      twoPortSession('s', {aliceKey});
+      withdraw(aliceKey);
+
+      await relay.checkSigningKeys();
+
+      expect(logged.where((m) => m.startsWith('Ending session s ')), hasLength(1),
+          reason: "srvd's main logger logs only SHOUT unless -v is given");
     });
 
     test('asks the port 443 worker to end a single-port session whose signing'
@@ -618,4 +636,14 @@ void main() {
       );
     });
   });
+}
+
+/// Keeps the message of every log record it is given.
+class _Capture implements LoggingHandler {
+  _Capture(this.messages);
+
+  final List<String> messages;
+
+  @override
+  void call(LogRecord record) => messages.add(record.message);
 }

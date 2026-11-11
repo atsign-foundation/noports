@@ -121,6 +121,14 @@ void main() {
       expect(req.payload['sideB'], 'payload');
     });
 
+    test('ignores a mode that is not a relay auth mode', () async {
+      registerSession();
+      await deliver(authModes(sideA: 'not-a-mode'));
+
+      expect(forwarded, isEmpty,
+          reason: 'only a relay auth mode reaches the worker');
+    });
+
     test('ignores a notification whose rvdNonce is another instance\'s',
         () async {
       // Several relays share @relay; this instance generated relayRvdNonce, but

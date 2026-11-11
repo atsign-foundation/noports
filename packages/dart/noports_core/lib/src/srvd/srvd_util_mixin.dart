@@ -86,47 +86,96 @@ mixin SrvdUtilMixin {
     }
   }
 
+  /// The device name a session request's key names, its first segment
+  /// lower-cased as [wellFormedRequest] lower-cases the key, when it matches
+  /// [sshnpDeviceNameRegex] in full; null otherwise.
+  String? deviceNameFromRequestKey(AtNotification n) {
+    final topicParts = n.key
+        .replaceAll('${n.to}:', '')
+        .replaceAll('.${Srvd.namespace}${n.from}', '')
+        .toLowerCase()
+        .split('.');
+    if (topicParts.length != 2 || topicParts.last != 'request_ports') {
+      return null;
+    }
+    final name = topicParts.first;
+    return RegExp('^$sshnpDeviceNameRegex\$').hasMatch(name) ? name : null;
+  }
+
   /// Reads a session request's fields, from clients v4 onwards, without
   /// looking anything up; [withPayloadKeys] adds the public keys a
   /// payload-mode session needs.
+  ///
+  /// Throws [FormatException] when [encodedJson] is not JSON, and
+  /// [ArgumentError] when it is not a map with a string sessionId. Once the
+  /// session id is read, throws [SrvdRequestRefused] when a field is missing
+  /// or malformed, naming the field and why, including when atSignA or
+  /// atSignB is not a valid Atsign.
   SrvdSessionParams srvdSessionParamsFromJson(String encodedJson) {
-    dynamic json = jsonDecode(encodedJson);
-
-    assertValidMapValue(json, 'sessionId', String);
-    assertValidMapValue(json, 'atSignA', String);
-    assertValidMapValue(json, 'atSignB', String);
-    assertValidMapValue(json, 'clientNonce', String);
-    assertValidMapValue(json, 'authenticateSocketA', bool);
-    assertValidMapValue(json, 'authenticateSocketA', bool);
-
+    final Object? json = jsonDecode(encodedJson);
+    if (json is! Map || json['sessionId'] is! String) {
+      throw ArgumentError('A session request must be a map with a sessionId');
+    }
     final String sessionId = json['sessionId'];
-    final String atSignA = json['atSignA'];
-    final String atSignB = json['atSignB'];
-    final String clientNonce = json['clientNonce'];
-    final bool authenticateSocketA = json['authenticateSocketA'];
-    final bool authenticateSocketB = json['authenticateSocketB'];
 
-    String rvdSessionNonce = DateTime.now().toIso8601String();
+    Never refuse(String reason) => throw SrvdRequestRefused(
+          sessionId: sessionId,
+          multipleAcksOk: json['multipleAcksOk'] == true,
+          reason: reason,
+        );
+    T required<T>(String name, String what) {
+      final Object? v = json[name];
+      return v is T ? v : refuse('Parameter $name must be $what');
+    }
 
-    String relayAuthModeName =
-        json['relayAuthMode'] ?? RelayAuthMode.payload.name;
-    RelayAuthMode relayAuthMode = RelayAuthMode.values.byName(
-      relayAuthModeName,
-    );
+    T? optional<T>(String name, String what) {
+      final Object? v = json[name];
+      if (v is T?) return v;
+      refuse('Parameter $name must be $what when present');
+    }
+
+    Atsign atsign(String name) {
+      final String value = required<String>(name, 'a String');
+      try {
+        return value.toAtsign();
+      } on InvalidAtSignException catch (e) {
+        refuse('Parameter $name is not a valid Atsign: ${e.message}');
+      }
+    }
+
+    final Atsign atSignA = atsign('atSignA');
+    final Atsign atSignB = atsign('atSignB');
+    final String clientNonce = required<String>('clientNonce', 'a String');
+    final bool authenticateSocketA =
+        required<bool>('authenticateSocketA', 'a bool');
+    final bool authenticateSocketB =
+        required<bool>('authenticateSocketB', 'a bool');
+    final String relayAuthModeName =
+        optional<String>('relayAuthMode', 'a String') ??
+            RelayAuthMode.payload.name;
+    final RelayAuthMode relayAuthMode =
+        RelayAuthMode.values.asNameMap()[relayAuthModeName] ??
+            refuse('Parameter relayAuthMode must name a relay auth mode');
+    final List preFetch =
+        optional<List>('preFetch', 'a list of strings') ?? const [];
+    if (preFetch.any((e) => e is! String)) {
+      refuse('Parameter preFetch must be a list of strings');
+    }
+
     return SrvdSessionParams(
       sessionId: sessionId,
       atSignA: atSignA,
       atSignB: atSignB,
       authenticateSocketA: authenticateSocketA,
       authenticateSocketB: authenticateSocketB,
-      rvdNonce: rvdSessionNonce,
+      rvdNonce: DateTime.now().toIso8601String(),
       clientNonce: clientNonce,
       relayAuthMode: relayAuthMode,
-      relayAuthAesKey: json['relayAuthAesKey'],
-      only443: json['only443'] ?? false,
-      multipleAcksOk: json['multipleAcksOk'] ?? false,
-      preFetch: List<String>.from(json['preFetch'] ?? []),
-      sendJsonResponse: json['sendJsonResponse'] ?? false,
+      relayAuthAesKey: optional<String>('relayAuthAesKey', 'a String'),
+      only443: optional<bool>('only443', 'a bool') ?? false,
+      multipleAcksOk: optional<bool>('multipleAcksOk', 'a bool') ?? false,
+      preFetch: List<String>.from(preFetch),
+      sendJsonResponse: optional<bool>('sendJsonResponse', 'a bool') ?? false,
     );
   }
 
