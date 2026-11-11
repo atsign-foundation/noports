@@ -46,6 +46,11 @@ extern uint8_t device_info_attempts;
 // A count of quiet monitor reads high enough to make the main loop reconnect
 #define MONITOR_RECONNECT_COUNTER (MONITOR_NOOP_TIMEOUT_MS / MONITOR_READ_TIMEOUT_MS + 1)
 
+// The longest pause between monitor reconnect attempts. The pause runs in the
+// main loop, which also reaps session children and answers the policy
+// service, so it stays short enough for those to carry on through an outage.
+#define MONITOR_RECONNECT_MAX_DELAY_S 15
+
 /**
  * @brief The main loop's count of quiet monitor reads after a read that
  * returned read_ret with a message of the given type: reset by a
@@ -54,6 +59,14 @@ extern uint8_t device_info_attempts;
  * any other failed read.
  */
 size_t sshnpd_next_timeout_counter(int read_ret, enum atclient_monitor_message_type type, size_t counter);
+
+/**
+ * @brief Seconds to pause before the next monitor reconnect attempt, the last
+ * `failures` attempts having failed in a row: 1 after the first failure,
+ * doubling with each, up to MONITOR_RECONNECT_MAX_DELAY_S; 0 when none has
+ * failed.
+ */
+unsigned sshnpd_reconnect_delay_s(unsigned failures);
 
 /**
  * @brief The request a notification key names: the text between "<to>:" and
