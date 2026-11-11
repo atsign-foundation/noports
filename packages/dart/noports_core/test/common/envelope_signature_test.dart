@@ -188,7 +188,7 @@ void main() {
         'when an envelope names a signingAlgo that is not one, then the check'
         ' fails, and the refusal names @a without quoting the name', () async {
       final envelope = await envelopeFrom(clientFor('@a'));
-      envelope['signingAlgo'] = 'not-an-algo\nnext-line ';
+      envelope['signingAlgo'] = 'not-an-algo\nnext-line\u2028';
 
       await expectLater(
         verifyEnvelopeSignature(
