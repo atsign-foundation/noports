@@ -2,6 +2,12 @@
 
 - feat: `SrvdParams.telemetryCollectorAtsign` (`--telemetry-collector-atsign`)
   sends srvd's session telemetry to a collector Atsign
+- feat: `SrvdParams.reportedSigningKeyCheckSecs`
+  (`--reported-signing-key-check-secs`, 3 by default): srvd ends a session it
+  reports within 10 seconds of the enrollment one of its sides signed with
+  being revoked
+- feat: srvd closes a session's sockets at once when it ends the session
+  because the enrollment one of its sides signed with was revoked
 - feat: `Srvd.stop` closes every session's connections and returns within
   `Srvd.stopBound`, 12 seconds
 - fix: srvd refuses a session request whose device-side Atsign is not a valid
