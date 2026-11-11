@@ -386,6 +386,38 @@ Future<bool> _waitForLog(
   return false;
 }
 
+/// The args that start an npt tunnel to [deviceName]'s sshd with the client
+/// keys in [keys], per [params], with npt told to listen where the banner
+/// check connects.
+List<String> nptTunnelArgs(
+  RevocationTestsParams params,
+  String deviceName,
+  File keys, {
+  String? relayAuthMode,
+}) {
+  return [
+    '-f',
+    params.clientAtsign,
+    '-t',
+    params.daemonAtsign,
+    '-d',
+    deviceName,
+    '-r',
+    params.relayAtsign,
+    '--root-domain',
+    params.rootDomain,
+    '--remote-port',
+    '22',
+    '-k',
+    keys.path,
+    '-T',
+    '60s',
+    '-x',
+    ...nptLocalHostArgs,
+    if (relayAuthMode != null) ...['--relay-auth-mode', relayAuthMode],
+  ];
+}
+
 /// Opens a tunnel to [deviceName]'s sshd with the client keys in [keys],
 /// returning the local port it listens on, or null when npt fails, and what
 /// npt printed
@@ -397,27 +429,12 @@ Future<({int? port, String output})> _openTunnel(
   File keys, {
   String? relayAuthMode,
 }) async {
-  final List<String> args = [
-    '-f',
-    context.params.clientAtsign,
-    '-t',
-    context.params.daemonAtsign,
-    '-d',
+  final List<String> args = nptTunnelArgs(
+    context.params,
     deviceName,
-    '-r',
-    context.params.relayAtsign,
-    '--root-domain',
-    context.params.rootDomain,
-    '--remote-port',
-    '22',
-    '-k',
-    keys.path,
-    '-T',
-    '60s',
-    '-x',
-    ...nptLocalHostArgs,
-    if (relayAuthMode != null) ...['--relay-auth-mode', relayAuthMode],
-  ];
+    keys,
+    relayAuthMode: relayAuthMode,
+  );
   context.transcript.withTag(tag).command(npt.file.path, args);
   final ProcessOutputCapture capture = await startCommandWithCapture(
     npt.file.path,
