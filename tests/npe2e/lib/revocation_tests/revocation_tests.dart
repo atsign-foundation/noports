@@ -388,7 +388,7 @@ Future<bool> _waitForLog(
 
 /// The args that start an npt tunnel to [deviceName]'s sshd with the client
 /// keys in [keys], per [params], with npt told to listen where the banner
-/// check connects it on.
+/// check connects.
 List<String> nptTunnelArgs(
   RevocationTestsParams params,
   String deviceName,

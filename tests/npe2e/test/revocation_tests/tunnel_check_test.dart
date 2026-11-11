@@ -19,7 +19,7 @@ void main() {
           'aDevice',
           File('atKeys'),
         ),
-        containsAllInOrder(nptLocalHostArgs),
+        containsAllInOrder(['--local-host', nptLocalHost]),
         reason: 'the pack tells npt to listen where the check connects',
       );
       final ServerSocket srvd = await ServerSocket.bind(
