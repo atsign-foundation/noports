@@ -20,6 +20,7 @@
 #include <sshnpd/daemon.h>
 #include <sshnpd/file_utils.h>
 #include <sshnpd/run_srv_process.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,24 +60,56 @@ exit:
   return ret;
 }
 
+unsigned sshnpd_reconnect_delay_s(unsigned failures) {
+  if (failures == 0) {
+    return 0;
+  }
+  // 1, 2, 4, 8, ... up to the cap; the shift is skipped once it could only
+  // exceed the cap, so a long outage can't overflow it
+  if (failures - 1 >= 8 * sizeof(unsigned) - 1 || (1u << (failures - 1)) > MONITOR_RECONNECT_MAX_DELAY_S) {
+    return MONITOR_RECONNECT_MAX_DELAY_S;
+  }
+  return 1u << (failures - 1);
+}
+
+// Monitor reconnect attempts that have failed in a row; reset by a success
+static unsigned monitor_reconnect_failures = 0;
+
+// Logs a failed monitor reconnect attempt and pauses before the next: the
+// main loop calls reconnect_monitor again at once, so without the pause an
+// atServer outage would be hammered with a TLS handshake per iteration
+static void monitor_reconnect_failed(const char *what) {
+  if (monitor_reconnect_failures < UINT_MAX) {
+    monitor_reconnect_failures++;
+  }
+  unsigned delay_s = sshnpd_reconnect_delay_s(monitor_reconnect_failures);
+  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "%s (attempt %u), trying again in %u second%s...\n", what,
+               monitor_reconnect_failures, delay_s, delay_s == 1 ? "" : "s");
+  sleep(delay_s);
+}
+
 int reconnect_monitor() {
   atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Seems the monitor connection is down, trying to reconnect\n");
 
   int ret = atclient_monitor_pkam_authenticate(&monitor_ctx, params.atsign, &atkeys, &monitor_options);
   if (ret != 0) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,
-                 "Monitor connection failed to reconnect, trying again in 1 second...\n");
-    sleep(1);
+    monitor_reconnect_failed("Monitor connection failed to reconnect");
     return ret;
   }
 
   ret = atclient_monitor_start(&monitor_ctx, regex);
   if (ret != 0) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Monitor verb failed to restart.\n");
+    monitor_reconnect_failed("Monitor verb failed to restart");
     return ret;
   }
 
-  atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Reconnected the monitor connection.\n");
+  if (monitor_reconnect_failures > 0) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Reconnected the monitor connection after %u failed attempt%s.\n",
+                 monitor_reconnect_failures, monitor_reconnect_failures == 1 ? "" : "s");
+  } else {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Reconnected the monitor connection.\n");
+  }
+  monitor_reconnect_failures = 0;
   return 0;
 }
 
