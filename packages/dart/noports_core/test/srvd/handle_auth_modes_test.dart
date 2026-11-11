@@ -19,7 +19,7 @@ void main() {
     const clientAtsign = '@alice';
     const daemonAtsign = '@bob';
     const relayAtSign = '@relay';
-    const sessionId = 'sess-123';
+    const sessionId = '5a1f7d0e-3b2c-4d6e-8f90-1a2b3c4d5e6f';
 
     // The rvdNonce THIS relay instance generated for the session.
     const relayRvdNonce = '2026-01-01T00:00:00.000001';

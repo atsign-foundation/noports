@@ -492,6 +492,13 @@ class SrvdImpl
     String sessionsMessageType = parts[0];
     String sessionId = parts[1];
 
+    if (!isValidSessionId(sessionId)) {
+      logger.warning(
+        'Ignoring a sessions message from ${n.from}'
+        ' about a session whose id is not a UUID',
+      );
+      return;
+    }
     if (sessions[sessionId] == null) {
       logger.info('This relay does not know about session $sessionId');
       return;
@@ -593,6 +600,12 @@ class SrvdImpl
     } on SrvdRequestRefused catch (e) {
       logger.shout('Unable to provide the socket pair for ${n.from}: $e');
       if (e.nackOk) await _tryNack(e.sessionId, n.from, e.reason);
+      return;
+    } on FormatException {
+      logger.shout(
+        'Unable to provide the socket pair for ${n.from}:'
+        ' the request is not JSON',
+      );
       return;
     } catch (e) {
       logger.shout(
@@ -808,20 +821,23 @@ class SrvdImpl
     final Map decoded;
     try {
       decoded = jsonDecode(n.value!);
-    } catch (e) {
-      logger.warning('Malformed auth_modes request from ${n.from}: $e');
+    } catch (_) {
+      logger.warning('Malformed auth_modes request from ${n.from}');
       return;
     }
 
-    final String? sessionId = decoded['sessionId'];
-    if (sessionId == null) {
-      logger.warning('auth_modes request from ${n.from} has no sessionId');
+    final Object? sessionId = decoded['sessionId'];
+    if (!isValidSessionId(sessionId)) {
+      logger.warning(
+        'auth_modes request from ${n.from} names no session by a UUID',
+      );
       return;
     }
 
-    final SessionInfo? si = sessions[sessionId];
+    final String id = (sessionId as String).toLowerCase();
+    final SessionInfo? si = sessions[id];
     if (si == null) {
-      logger.info('auth_modes: this relay does not know session $sessionId');
+      logger.info('auth_modes: this relay does not know session $id');
       return;
     }
     if (!sameAtsign(n.from, si.params.atSignA)) {

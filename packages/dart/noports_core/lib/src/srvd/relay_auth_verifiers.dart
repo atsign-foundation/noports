@@ -171,7 +171,14 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.malformedChallengeResponse,
       );
     }
-    sessionId = responseParts[0];
+    if (!isValidSessionId(responseParts[0])) {
+      throw RAVE(
+        'The response names a session whose id is not a UUID',
+        RAVEReason.malformedChallengeResponse,
+      );
+    }
+    // NOTE: folded, as srvd holds every session id
+    sessionId = responseParts[0].toLowerCase();
     String encryptedAuthEnvelope64 = responseParts[1];
     String encryptedAuthEnvelopeJson;
     try {
@@ -278,10 +285,12 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
         RAVEReason.malformedChallengeResponse,
       );
     }
-    if (signedPayload['sid'] != sessionId) {
+    final Object? signedSessionId = signedPayload['sid'];
+    if (signedSessionId is! String ||
+        signedSessionId.toLowerCase() != sessionId) {
       throw RAVE(
-        'signedPayload sessionId (${signedPayload['sid']})'
-        ' does not match expected sessionId ($sessionId)',
+        'signedPayload sessionId does not match expected sessionId'
+        ' ($sessionId)',
         RAVEReason.dataMismatch,
       );
     }

@@ -127,10 +127,10 @@ Feature: srvd reports its sessions to a collector Atsign, for the parties that o
   # The records
 
   Scenario: session.started carries the session set
-    When a session pairs whose request named the device gateway-1 and the client session id abc-123
+    When a session pairs whose request named the device gateway-1 and the client session id 0f8fad5b-d9cb-469f-a165-70867728950e
     Then noports.relay.session.started carries a fresh relay session id, sequence number 1, @alice and @bob, their verified flags, the port mode, the request and establishment times, the device name gateway-1 and the client session id
 
-  Scenario: A client session id outside the allowed shape is left out
+  Scenario: A client session id that is not a UUID is left out
     When a session pairs whose client session id is 70 characters long
     Then the records carry no client session id and everything else
 

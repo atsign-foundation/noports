@@ -319,12 +319,12 @@ void main() {
         await startedTelemetry(exporter, ScriptedListSource(listOf(['@alice'])));
     final relay = srvd(telemetry);
     addTearDown(telemetry.stop);
-    relay.sessions['the-session'] = sessionInfo(sessionParams())..ending = true;
+    relay.sessions[theSession] = sessionInfo(sessionParams())..ending = true;
 
     await relay.handleWorkerReport(IIRequest.create(
         'newConnection', {...opened(1), 'stats': Stats()}));
     await relay.handleWorkerReport(IIRequest.create('sessionComplete', {
-      'sessionId': 'the-session',
+      'sessionId': theSession,
       'at': nowMs(),
       'stats': Stats(),
       'connections': 1,
@@ -345,7 +345,7 @@ void main() {
         await startedTelemetry(exporter, ScriptedListSource(listOf(['@alice'])));
     final relay = srvd(telemetry);
     addTearDown(telemetry.stop);
-    relay.sessions['the-session'] = sessionInfo(sessionParams());
+    relay.sessions[theSession] = sessionInfo(sessionParams());
 
     await relay.handleWorkerReport(IIRequest.create(
         'newConnection', {...opened(1), 'stats': Stats()}));
@@ -366,7 +366,7 @@ void main() {
         await startedTelemetry(exporter, ScriptedListSource(listOf(['@alice'])));
     final relay = srvd(telemetry);
     addTearDown(telemetry.stop);
-    relay.sessions['the-session'] = sessionInfo(sessionParams());
+    relay.sessions[theSession] = sessionInfo(sessionParams());
     await relay.handleWorkerReport(IIRequest.create(
         'newConnection', {...opened(1), 'stats': Stats()}));
     final fromWorker = ReceivePort();
@@ -375,7 +375,7 @@ void main() {
     final worker =
         await Isolate.spawn(_exitAtOnce, null, onExit: exitPort.sendPort);
     relay.trackWorker(worker, fromWorker, exitPort, Completer<SendPort>().future,
-        sessionId: 'the-session');
+        sessionId: theSession);
     await until(() => exporter.named(N.sessionEnded).isNotEmpty,
         what: 'session.ended');
 
@@ -393,7 +393,7 @@ void main() {
         await startedTelemetry(exporter, ScriptedListSource(listOf(['@alice'])));
     final relay = srvd(telemetry);
     await relay.init();
-    relay.sessions['the-session'] = sessionInfo(sessionParams());
+    relay.sessions[theSession] = sessionInfo(sessionParams());
     await relay.handleWorkerReport(IIRequest.create(
         'newConnection', {...opened(1), 'stats': Stats()}));
     expect(exporter.named(N.sessionStarted), hasLength(1));
@@ -406,7 +406,7 @@ void main() {
     final deaf = await Isolate.spawn(_deafWorker, fromWorker.sendPort,
         onExit: exitPort.sendPort);
     relay.trackWorker(deaf, fromWorker, exitPort, toWorker.future,
-        sessionId: 'the-session');
+        sessionId: theSession);
     await toWorker.future.timeout(const Duration(seconds: 2));
 
     await relay.stop();
@@ -435,14 +435,14 @@ void main() {
       relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
       signingKeyCheckInterval: Duration.zero,
     );
-    relay.sessions['the-session'] = sessionInfo(sessionParams())
+    relay.sessions[theSession] = sessionInfo(sessionParams())
       ..eventLoggingConfig = AtEventConfig(
           atSign: '@events'.toAtsign(), topic: 'x.events.sshnp', ttln: 1000);
     final logged = <String>[];
     relay.logger.logger.onRecord.listen((r) => logged.add(r.message));
     final completing = relay.handleWorkerReport(IIRequest.create(
         'sessionComplete', {
-      'sessionId': 'the-session',
+      'sessionId': theSession,
       'at': nowMs(),
       'stats': Stats(),
       'connections': 1,
@@ -456,7 +456,7 @@ void main() {
         await Isolate.spawn(_exitAtOnce, null, onExit: exitPort.sendPort);
     relay.trackWorker(worker, fromWorker, exitPort,
         Completer<SendPort>().future,
-        sessionId: 'the-session');
+        sessionId: theSession);
     await exitHandled.future.timeout(const Duration(seconds: 5),
         onTimeout: () => fail('srvd never handled the worker exit'));
 
@@ -496,7 +496,7 @@ void main() {
     }
 
     test('ends the session it carried as workerExited', () async {
-      final worker = await liveSession('one');
+      final worker = await liveSession(sid('one'));
 
       worker.kill(priority: Isolate.immediate);
       await until(() => exporter.named(N.sessionEnded).isNotEmpty,
@@ -508,12 +508,12 @@ void main() {
     });
 
     test('leaves a later session that reuses its session id', () async {
-      final worker = await liveSession('one');
+      final worker = await liveSession(sid('one'));
       final (_, other, otherPort) = await relay.spawnNewPortPairIsolate(
-          sessionParams(sessionId: 'one', clientVerified: false, deviceVerified: false));
+          sessionParams(sessionId: sid('one'), clientVerified: false, deviceVerified: false));
       addTearDown(() => other.kill(priority: Isolate.immediate));
-      relay.sessions['one'] = SessionInfo(
-          params: sessionParams(sessionId: 'one'),
+      relay.sessions[sid('one')] = SessionInfo(
+          params: sessionParams(sessionId: sid('one')),
           connector: null,
           toWorker: otherPort);
       final exitedFirst = ReceivePort();
@@ -523,7 +523,7 @@ void main() {
       await exitedFirst.first;
       await pumpEventQueue();
 
-      expect(relay.sessions['one']?.toWorker, otherPort,
+      expect(relay.sessions[sid('one')]?.toWorker, otherPort,
           reason: "the session is the other worker's, so it is kept");
     });
   });
@@ -556,7 +556,7 @@ void main() {
     final relay = srvd(telemetry);
     await relay.init();
     await relay.run();
-    for (final id in ['one', 'two']) {
+    for (final id in [sid('one'), sid('two')]) {
       final ((portA, portB), _, toWorker) =
           await relay.spawnNewPortPairIsolate(sessionParams(sessionId: id, clientVerified: false, deviceVerified: false));
       relay.sessions[id] = SessionInfo(
@@ -580,7 +580,7 @@ void main() {
     expect(ended.map((r) => r.attributes[N.endReason]).toSet(),
         {'relayStopping'});
     expect(ended.map((r) => r.attributes[N.clientSessionId]).toSet(),
-        {'one', 'two'});
+        {sid('one'), sid('two')});
     final Iterable<String?> names = exporter.records.map((r) => r.eventName);
     expect(names.last, N.lifecycleStopped,
         reason: 'stopped comes after every ended record');

@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_telemetry/at_telemetry.dart';
+import 'package:noports_core/src/common/validation_utils.dart'
+    show isValidSessionId;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:noports_core/src/srvd/telemetry/opted_in_list.dart';
@@ -24,7 +26,6 @@ class RelayTelemetry {
   static const Duration defaultHeartbeatInterval = Duration(seconds: 60);
   static const Duration defaultShutdownTimeout = Duration(seconds: 5);
   static const Duration defaultDropReportInterval = Duration(minutes: 1);
-  static final RegExp _clientSessionIdShape = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
 
   RelayTelemetry({
     required AtTelemetryLogRecordExporter exporter,
@@ -335,7 +336,7 @@ class RelayTelemetry {
     return {
       RelayTelemetryNames.relaySessionId: s.id,
       RelayTelemetryNames.sequence: ++s.seq,
-      if (_clientSessionIdShape.hasMatch(params.sessionId))
+      if (isValidSessionId(params.sessionId))
         RelayTelemetryNames.clientSessionId: params.sessionId,
       RelayTelemetryNames.clientAtsign: params.atSignA,
       RelayTelemetryNames.deviceAtsign: params.atSignB,

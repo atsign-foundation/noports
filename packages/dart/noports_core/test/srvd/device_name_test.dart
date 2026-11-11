@@ -16,6 +16,8 @@ import '../sshnp/sshnp_mocks.dart';
 
 class FakeNotificationParams extends Fake implements NotificationParams {}
 
+const sessionId = '7e55e551-0000-4000-8000-000000000003';
+
 /// An srvd whose port pairs come from nowhere, so a request gets as far as
 /// being recorded as a session.
 class _RecordingSrvd extends SrvdImpl {
@@ -78,7 +80,7 @@ void main() {
         'key',
         true,
         value: jsonEncode({
-          'sessionId': 'the session',
+          'sessionId': sessionId,
           'atSignA': '@alice',
           'atSignB': '@bob',
           'clientNonce': 'client nonce',
@@ -93,29 +95,29 @@ void main() {
   test("The device name comes from the session request's key", () async {
     await srvd.handleRequestPorts(requestPorts('gateway-1'));
 
-    expect(srvd.sessions['the session']!.deviceName, 'gateway-1');
+    expect(srvd.sessions[sessionId]!.deviceName, 'gateway-1');
   });
 
   test('A device name that does not match the pattern is not recorded',
       () async {
     await srvd.handleRequestPorts(requestPorts('x'));
 
-    expect(srvd.sessions['the session'], isNotNull, reason: 'the session starts');
-    expect(srvd.sessions['the session']!.deviceName, isNull);
+    expect(srvd.sessions[sessionId], isNotNull, reason: 'the session starts');
+    expect(srvd.sessions[sessionId]!.deviceName, isNull);
   });
 
   test('A device name the pattern matches only in part is not recorded',
       () async {
     await srvd.handleRequestPorts(requestPorts('a' * 37));
 
-    expect(srvd.sessions['the session'], isNotNull, reason: 'the session starts');
-    expect(srvd.sessions['the session']!.deviceName, isNull,
+    expect(srvd.sessions[sessionId], isNotNull, reason: 'the session starts');
+    expect(srvd.sessions[sessionId]!.deviceName, isNull,
         reason: '37 characters is one over the bound');
   });
 
   test('The device name is lower-cased as the key is', () async {
     await srvd.handleRequestPorts(requestPorts('Gateway-1'));
 
-    expect(srvd.sessions['the session']!.deviceName, 'gateway-1');
+    expect(srvd.sessions[sessionId]!.deviceName, 'gateway-1');
   });
 }

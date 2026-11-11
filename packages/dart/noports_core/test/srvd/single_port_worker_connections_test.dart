@@ -12,6 +12,9 @@ import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:test/test.dart';
 
+const s1 = '51000000-0000-4000-8000-000000000001';
+const s2 = '52000000-0000-4000-8000-000000000002';
+
 void main() {
   late RsaKeyPair signingKP;
   late ReceivePort toMain;
@@ -140,14 +143,14 @@ void main() {
       'The port-443 worker reports the same messages for each of its'
       ' sessions', () async {
     final sockets = <String, (Socket, Socket)>{};
-    for (final sessionId in ['S1', 'S2']) {
+    for (final sessionId in [s1, s2]) {
       final key = await startSession(sessionId);
       final a = await connectAs(sessionId, key, '@alice', isSideA: true);
       final b = await connectAs(sessionId, key, '@bob', isSideA: false);
       sockets[sessionId] = (a, b);
     }
 
-    for (final sessionId in ['S1', 'S2']) {
+    for (final sessionId in [s1, s2]) {
       final paired = await reportsFor('newConnection', sessionId);
       expect(paired.single.payload['index'], 1);
       final (a, b) = sockets[sessionId]!;
@@ -166,17 +169,17 @@ void main() {
   test(
       'A stop of the port-443 worker reports each session complete before'
       ' the worker exits', () async {
-    final key = await startSession('S1');
-    final a = await connectAs('S1', key, '@alice', isSideA: true);
-    await connectAs('S1', key, '@bob', isSideA: false);
-    await reportsFor('newConnection', 'S1');
+    final key = await startSession(s1);
+    final a = await connectAs(s1, key, '@alice', isSideA: true);
+    await connectAs(s1, key, '@bob', isSideA: false);
+    await reportsFor('newConnection', s1);
     unawaited(a.done.then((_) {}, onError: (_) {}));
     a.add(List<int>.filled(1 << 22, 7));
     unawaited(worker.stopped.future.then((_) => toMain.sendPort.send('exit')));
 
     await worker.stop();
 
-    await reportsFor('sessionComplete', 'S1');
+    await reportsFor('sessionComplete', s1);
     final exitAt = await () async {
       while (!arrivals.contains('exit')) {
         await Future.delayed(const Duration(milliseconds: 10));
@@ -204,10 +207,10 @@ void main() {
     );
     server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
     server.listen(worker.socketHandler);
-    final key = await startSession('S1');
-    final a = await connectAs('S1', key, '@alice', isSideA: true);
-    await connectAs('S1', key, '@bob', isSideA: false, reads: false);
-    await reportsFor('newConnection', 'S1');
+    final key = await startSession(s1);
+    final a = await connectAs(s1, key, '@alice', isSideA: true);
+    await connectAs(s1, key, '@bob', isSideA: false, reads: false);
+    await reportsFor('newConnection', s1);
     unawaited(a.done.then((_) {}, onError: (_) {}));
     a.add(List<int>.filled(64 * 1024 * 1024, 7));
     await Future<void>.delayed(const Duration(seconds: 1));

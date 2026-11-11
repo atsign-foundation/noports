@@ -70,6 +70,7 @@ void main() {
       Object? payload, {
       String signingAlgo = 'rsa2048',
       String? signingKeyUri,
+      String? named,
     }) async {
       final envelope = {
         'p': payload,
@@ -87,7 +88,7 @@ void main() {
         key: relayAuthAesKey,
         iv: iv,
       );
-      return '$relaySessionId:'
+      return '${named ?? relaySessionId}:'
           '${base64Encode(jsonEncode({'iv': base64Encode(iv.ivBytes), 'e': encrypted}).codeUnits)}';
     }
 
@@ -471,6 +472,46 @@ void main() {
       expect(await verifier.verifyChallengeResponse(response), true);
       expect(verifier.atSign, '@alice');
       verify(() => h.lookup(relaySessionId, uri)).called(1);
+    });
+
+    test('A socket naming a session whose id is not a UUID is refused',
+        () async {
+      const notAUuid = 'no-uuid-zz';
+      final h = sessionHelper();
+      final verifier = RelayAuthVerifierESCR('test session id shape', h);
+      final response = await escrResponse(
+        {'sid': notAUuid, 'c': verifier.challenge, 'side': 'a'},
+        named: notAUuid,
+      );
+
+      await expectLater(
+        verifier.verifyChallengeResponse(response),
+        throwsA(isA<RAVE>()
+            .having((e) => e.reason, 'reason',
+                RAVEReason.malformedChallengeResponse)
+            .having((e) => e.message, 'message', contains('not a UUID'))
+            .having((e) => e.message, 'message', isNot(contains(notAUuid)))),
+      );
+      verifyNever(() => h.isSessionActive(any()));
+    });
+
+    test(
+        'Given a session held under a lower-case id, when a socket names it'
+        ' in upper case, then the socket is verified for that session',
+        () async {
+      final String upper = relaySessionId.toUpperCase();
+      final h = sessionHelper();
+      final verifier = RelayAuthVerifierESCR('test folded session id', h);
+      final response = await escrResponse(
+        {'sid': upper, 'c': verifier.challenge, 'side': 'a'},
+        named: upper,
+      );
+
+      await verifier.verifyChallengeResponse(response);
+
+      expect(upper, isNot(relaySessionId),
+          reason: 'the id has letters to fold');
+      expect(verifier.sessionId, relaySessionId);
     });
 
     test('a response for a session that is not active is refused', () async {

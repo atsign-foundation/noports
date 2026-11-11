@@ -4,6 +4,7 @@
   sends srvd's session telemetry to a collector Atsign
 - feat: `Srvd.stop` closes every session's connections and returns within
   `Srvd.stopBound`, 12 seconds
+- fix: srvd refuses a session request whose session id is not a UUID
 - fix: srvd refuses a session request whose device-side Atsign is not a valid
   Atsign, and tells a client why it refused a malformed request, so the client
   fails at once instead of waiting out its timeout

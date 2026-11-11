@@ -59,7 +59,7 @@ void main() {
     int d2c = 0,
   }) =>
       {
-        'sessionId': 'the-session',
+        'sessionId': theSession,
         'at': nowMs(),
         'connections': connections,
         'bytesClientToDevice': c2d,
@@ -67,30 +67,30 @@ void main() {
         'connectionsUnclosed': unclosed,
       };
 
-  /// Pairs, connects once and ends session the-session of [si].
+  /// Pairs, connects once and ends session [theSession] of [si].
   Future<void> wholeSession(RelayTelemetry t, SessionInfo si) async {
     final o = opened(1);
-    t.connectionOpened('the-session', si, o);
+    t.connectionOpened(theSession, si, o);
     t.connectionClosed(
-      'the-session',
+      theSession,
       closed(1, openedAt: o['at'], c2d: 5, d2c: 7),
     );
     t.sessionCompleted(
-      'the-session',
+      theSession,
       complete(c2d: 5, d2c: 7),
       RelaySessionEndReason.connectionsClosed,
     );
     await pumpEventQueue();
   }
 
-  /// Runs session the-session of [si] through a pair, a progress report, a
+  /// Runs session [theSession] of [si] through a pair, a progress report, a
   /// close and its end, then pairs a reported witness session, and returns
-  /// once the witness's connections record is out: a window the-session
+  /// once the witness's connections record is out: a window [theSession]
   /// opened first, of the same length, has closed by then.
   Future<void> wholeSessionBesideWitness(RelayTelemetry t, SessionInfo si) async {
     final o = opened(1);
-    t.connectionOpened('the-session', si, o);
-    t.progress('the-session', {
+    t.connectionOpened(theSession, si, o);
+    t.progress(theSession, {
       'at': nowMs(),
       'openConnections': 1,
       'connections': 1,
@@ -98,26 +98,26 @@ void main() {
       'bytesDeviceToClient': 0,
     });
     t.connectionClosed(
-      'the-session',
+      theSession,
       closed(1, openedAt: o['at'], c2d: 5, d2c: 7),
     );
     t.sessionCompleted(
-      'the-session',
+      theSession,
       complete(c2d: 5, d2c: 7),
       RelaySessionEndReason.connectionsClosed,
     );
     t.connectionOpened(
-      'witness',
-      sessionInfo(sessionParams(sessionId: 'witness', client: '@alice')),
+      sid('witness'),
+      sessionInfo(sessionParams(sessionId: sid('witness'), client: '@alice')),
       opened(1),
     );
     await until(() => exporter.named(N.sessionConnections).isNotEmpty,
         what: "the witness's connections record");
   }
 
-  /// The session records that name the client session id the-session.
+  /// The session records that name the client session id [theSession].
   List<AtTelemetryLogRecord> theSessionRecords() => sessionRecords()
-      .where((r) => r.attributes[N.clientSessionId] == 'the-session')
+      .where((r) => r.attributes[N.clientSessionId] == theSession)
       .toList();
 
   test('srvd sends lifecycle records whatever the list says', () async {
@@ -203,7 +203,7 @@ void main() {
     expect(theSessionRecords(), isEmpty);
     expect(
       exporter.named(N.sessionStarted).map((r) => r.attributes[N.clientSessionId]),
-      ['witness'],
+      [sid('witness')],
       reason: 'the witness, the control, is reported',
     );
   });
@@ -219,7 +219,7 @@ void main() {
     expect(theSessionRecords(), isEmpty);
     expect(
       exporter.named(N.sessionStarted).map((r) => r.attributes[N.clientSessionId]),
-      ['witness'],
+      [sid('witness')],
       reason: 'the witness, the control, is reported',
     );
   });
@@ -227,23 +227,23 @@ void main() {
   test('The decision is taken once, at first pair', () async {
     final t = await telemetry(listInterval: const Duration(milliseconds: 30));
     final unreported = sessionInfo(sessionParams(
-        sessionId: 'unreported', client: '@dave', device: '@erin'));
+        sessionId: sid('unreported'), client: '@dave', device: '@erin'));
     final reported =
-        sessionInfo(sessionParams(sessionId: 'reported', client: '@alice'));
-    t.connectionOpened('unreported', unreported, opened(1));
-    t.connectionOpened('reported', reported, opened(1));
-    expect(t.reporting('unreported'), isFalse);
-    expect(t.reporting('reported'), isTrue);
+        sessionInfo(sessionParams(sessionId: sid('reported'), client: '@alice'));
+    t.connectionOpened(sid('unreported'), unreported, opened(1));
+    t.connectionOpened(sid('reported'), reported, opened(1));
+    expect(t.reporting(sid('unreported')), isFalse);
+    expect(t.reporting(sid('reported')), isTrue);
 
     source.list = listOf(['@dave']);
     final int readsBefore = source.reads;
     await until(() => source.reads >= readsBefore + 2, what: 'two re-reads');
 
     expect(t.list.listed('@dave'), isTrue, reason: 'the new list is held');
-    expect(t.reporting('unreported'), isFalse);
-    expect(t.reporting('reported'), isTrue);
-    t.sessionCompleted('unreported', complete(), RelaySessionEndReason.connectionsClosed);
-    t.sessionCompleted('reported', complete(), RelaySessionEndReason.connectionsClosed);
+    expect(t.reporting(sid('unreported')), isFalse);
+    expect(t.reporting(sid('reported')), isTrue);
+    t.sessionCompleted(sid('unreported'), complete(), RelaySessionEndReason.connectionsClosed);
+    t.sessionCompleted(sid('reported'), complete(), RelaySessionEndReason.connectionsClosed);
     await pumpEventQueue();
     final ended = exporter.named(N.sessionEnded);
     expect(ended, hasLength(1));
@@ -254,7 +254,7 @@ void main() {
     final t = await telemetry();
 
     t.sessionCompleted(
-      'the-session',
+      theSession,
       complete(connections: 0),
       RelaySessionEndReason.connectionsClosed,
     );
@@ -269,13 +269,13 @@ void main() {
     await t.stop();
     final int sent = exporter.records.length;
 
-    t.connectionOpened('the-session', sessionInfo(sessionParams()), opened(1));
-    expect(t.reporting('the-session'), isNull,
+    t.connectionOpened(theSession, sessionInfo(sessionParams()), opened(1));
+    expect(t.reporting(theSession), isNull,
         reason: 'a stopped relay telemetry starts no session');
 
     await Future<void>.delayed(const Duration(milliseconds: 300));
 
-    expect(t.reporting('the-session'), isNull,
+    expect(t.reporting(theSession), isNull,
         reason: 'no window rebuilt the session after the stop');
     expect(exporter.records, hasLength(sent),
         reason: 'nothing is sent once the stopped record has gone');
@@ -284,12 +284,12 @@ void main() {
   test('session.started carries the session set', () async {
     final t = await telemetry();
     final si = sessionInfo(
-      sessionParams(sessionId: 'abc-123', device: '@bob'),
+      sessionParams(sessionId: '0f8fad5b-d9cb-469f-a165-70867728950e', device: '@bob'),
       deviceName: 'gateway-1',
     );
     final int at = nowMs();
 
-    t.connectionOpened('abc-123', si, opened(1, at: at));
+    t.connectionOpened('0f8fad5b-d9cb-469f-a165-70867728950e', si, opened(1, at: at));
     await pumpEventQueue();
 
     final a = exporter.named(N.sessionStarted).single.attributes;
@@ -303,10 +303,10 @@ void main() {
     expect(a[N.requestedAtMs], si.requestTime.millisecondsSinceEpoch);
     expect(a[N.establishedAtMs], at);
     expect(a[N.deviceName], 'gateway-1');
-    expect(a[N.clientSessionId], 'abc-123');
+    expect(a[N.clientSessionId], '0f8fad5b-d9cb-469f-a165-70867728950e');
   });
 
-  test('A client session id outside the allowed shape is left out', () async {
+  test('A client session id that is not a UUID is left out', () async {
     final t = await telemetry();
     final String long = 'a' * 70;
 
@@ -349,7 +349,7 @@ void main() {
     final Stopwatch sw = Stopwatch()..start();
 
     for (int i = 1; i <= 6; i++) {
-      t.connectionOpened('the-session', si, opened(i));
+      t.connectionOpened(theSession, si, opened(i));
     }
     await until(() => exporter.named(N.sessionConnections).isNotEmpty);
     sw.stop();
@@ -371,13 +371,13 @@ void main() {
     final si = sessionInfo(sessionParams());
     final int openedAt = nowMs();
     for (int i = 1; i <= 6; i++) {
-      t.connectionOpened('the-session', si, opened(i, at: openedAt));
+      t.connectionOpened(theSession, si, opened(i, at: openedAt));
     }
     await until(() => exporter.named(N.sessionConnections).length == 1);
 
     for (int i = 1; i <= 6; i++) {
       t.connectionClosed(
-        'the-session',
+        theSession,
         closed(i, openedAt: openedAt, c2d: 10, d2c: 20),
       );
     }
@@ -404,7 +404,7 @@ void main() {
     final si = sessionInfo(sessionParams());
 
     for (int i = 1; i <= 10; i++) {
-      t.connectionOpened('the-session', si, opened(i));
+      t.connectionOpened(theSession, si, opened(i));
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
     await until(() =>
@@ -423,7 +423,7 @@ void main() {
     final si = sessionInfo(sessionParams());
 
     for (int i = 1; i <= 150; i++) {
-      t.connectionOpened('the-session', si, opened(i));
+      t.connectionOpened(theSession, si, opened(i));
     }
     await pumpEventQueue();
     expect(exporter.named(N.sessionConnections), hasLength(1),
@@ -448,7 +448,7 @@ void main() {
     Future<Duration> oneWindow(int index) async {
       final int before = exporter.named(N.sessionConnections).length;
       final Stopwatch sw = Stopwatch()..start();
-      t.connectionOpened('the-session', si, opened(index));
+      t.connectionOpened(theSession, si, opened(index));
       await until(() => exporter.named(N.sessionConnections).length > before);
       return sw.elapsed;
     }
@@ -473,12 +473,12 @@ void main() {
       () async {
     final t = await telemetry(window: const Duration(milliseconds: 50));
     final si = sessionInfo(sessionParams());
-    t.connectionOpened('the-session', si, opened(1));
-    t.connectionOpened('the-session', si, opened(2));
+    t.connectionOpened(theSession, si, opened(1));
+    t.connectionOpened(theSession, si, opened(2));
     await until(() => exporter.named(N.sessionConnections).isNotEmpty);
 
     for (final int bytes in [10, 30]) {
-      t.progress('the-session', {
+      t.progress(theSession, {
         'at': nowMs(),
         'openConnections': 2,
         'connections': 2,
@@ -501,10 +501,10 @@ void main() {
       ' out in the window', () async {
     final t = await telemetry(window: const Duration(milliseconds: 50));
     final si = sessionInfo(sessionParams());
-    t.connectionOpened('the-session', si, opened(1));
+    t.connectionOpened(theSession, si, opened(1));
     await until(() => exporter.named(N.sessionConnections).isNotEmpty);
 
-    t.progress('the-session', {'at': nowMs(), 'openConnections': 1,
+    t.progress(theSession, {'at': nowMs(), 'openConnections': 1,
         'connections': 1, 'bytesClientToDevice': 0, 'bytesDeviceToClient': 0});
     await pumpEventQueue();
 
@@ -517,13 +517,13 @@ void main() {
     final si = sessionInfo(sessionParams());
     final int start = nowMs();
     for (int i = 1; i <= 3; i++) {
-      t.connectionOpened('the-session', si, opened(i, at: start));
+      t.connectionOpened(theSession, si, opened(i, at: start));
     }
-    t.connectionClosed('the-session', closed(1, openedAt: start, c2d: 1, d2c: 2));
-    t.connectionClosed('the-session', closed(2, openedAt: start, c2d: 3, d2c: 4));
+    t.connectionClosed(theSession, closed(1, openedAt: start, c2d: 1, d2c: 2));
+    t.connectionClosed(theSession, closed(2, openedAt: start, c2d: 3, d2c: 4));
 
     t.sessionCompleted(
-      'the-session',
+      theSession,
       complete(connections: 3, unclosed: 1, c2d: 9, d2c: 11),
       RelaySessionEndReason.connectionsClosed,
     );
@@ -547,16 +547,16 @@ void main() {
     final t = await telemetry(window: const Duration(milliseconds: 30));
     final si = sessionInfo(sessionParams());
     final o = opened(1);
-    t.connectionOpened('the-session', si, o);
+    t.connectionOpened(theSession, si, o);
     await until(() => exporter.named(N.sessionConnections).length == 1);
-    t.connectionClosed('the-session', closed(1, openedAt: o['at']));
+    t.connectionClosed(theSession, closed(1, openedAt: o['at']));
     await until(() => exporter.named(N.sessionConnections).length == 2);
-    t.progress('the-session', {'at': nowMs(), 'openConnections': 0,
+    t.progress(theSession, {'at': nowMs(), 'openConnections': 0,
         'connections': 1, 'bytesClientToDevice': 0, 'bytesDeviceToClient': 0});
-    t.progress('the-session', {'at': nowMs(), 'openConnections': 0,
+    t.progress(theSession, {'at': nowMs(), 'openConnections': 0,
         'connections': 1, 'bytesClientToDevice': 0, 'bytesDeviceToClient': 0});
 
-    t.sessionCompleted('the-session', complete(),
+    t.sessionCompleted(theSession, complete(),
         RelaySessionEndReason.connectionsClosed);
     await pumpEventQueue();
 
@@ -596,7 +596,7 @@ void main() {
     t.start();
     final si = sessionInfo(sessionParams());
     for (int i = 1; i <= 6; i++) {
-      t.connectionOpened('s$i', si, opened(1));
+      t.connectionOpened(sid('s$i'), si, opened(1));
     }
 
     await until(
@@ -619,8 +619,8 @@ void main() {
     addTearDown(other.stop);
     final si = sessionInfo(sessionParams());
 
-    pairing.connectionOpened('the-session', si, opened(1));
-    other.sessionCompleted('the-session', complete(connections: 0),
+    pairing.connectionOpened(theSession, si, opened(1));
+    other.sessionCompleted(theSession, complete(connections: 0),
         RelaySessionEndReason.connectionsClosed);
     await pumpEventQueue();
 
