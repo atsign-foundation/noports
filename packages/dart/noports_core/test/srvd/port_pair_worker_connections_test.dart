@@ -30,7 +30,10 @@ void main() {
 
   /// A worker for session S whose reports land in [reports] once [listen]
   /// has been called.
-  Future<void> start({bool listen = true}) async {
+  Future<void> start({
+    bool listen = true,
+    Duration closeFlushTimeout = flush,
+  }) async {
     toMain = ReceivePort();
     reports = [];
     if (listen) {
@@ -44,7 +47,7 @@ void main() {
       verbose: false,
       loggingTag: 'port pair connections test',
       relayAuthDetectWindowMs: 500,
-      closeFlushTimeout: flush,
+      closeFlushTimeout: closeFlushTimeout,
       connectorTimeout: const Duration(seconds: 1),
     );
     await worker.startSession(IIRequest.create('start', session()));
@@ -92,6 +95,99 @@ void main() {
     });
     return done.future.timeout(const Duration(seconds: 5));
   }
+
+  /// A session one of whose sides has stopped reading, with [sent] bytes
+  /// from the other on their way to it, in a worker that gives a closing
+  /// side the default 30 seconds to take its pending data. Returns the side
+  /// that sends, then the one that has stopped reading.
+  Future<(Socket, Socket)> withDataWaiting(
+    int sent, {
+    bool forTheDevice = true,
+  }) async {
+    await start(closeFlushTimeout: SocketConnector.defaultCloseFlushTimeout);
+    final (client, device) = await pair();
+    await report('newConnection');
+    final (sender, stalled) = forTheDevice ? (client, device) : (device, client);
+    unawaited(sender.done.then((_) {}, onError: (_) {}));
+    sender.add(List<int>.filled(sent, 7));
+    await Future<void>.delayed(const Duration(seconds: 1));
+    return (sender, stalled);
+  }
+
+  /// Whether [socket], which reads nothing, finds within a second that its
+  /// far end has gone: a write to it fails.
+  Future<bool> findsItsSocketClosed(Socket socket) async {
+    var gone = false;
+    unawaited(socket.done.then((_) => gone = true, onError: (_) => gone = true));
+    final DateTime giveUp = DateTime.now().add(const Duration(seconds: 1));
+    while (!gone && DateTime.now().isBefore(giveUp)) {
+      try {
+        socket.add([0]);
+      } catch (_) {
+        return true;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    return gone;
+  }
+
+  Future<void> endForAWithdrawnKey() =>
+      worker.reqHandlers['end']!(IIRequest.create('end', null));
+
+  test(
+      'A session ended for a withdrawn key has its sockets closed at once',
+      () async {
+    const int sent = 64 * 1024 * 1024;
+    final (client, device) = await withDataWaiting(sent);
+    final clientClosed = client
+        .listen((_) {}, onError: (_) {})
+        .asFuture<void>()
+        .catchError((_) {});
+
+    final stopwatch = Stopwatch()..start();
+    await endForAWithdrawnKey();
+    await clientClosed.timeout(const Duration(seconds: 5));
+    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 1)));
+    expect(await findsItsSocketClosed(device), isTrue,
+        reason: 'the side that reads nothing has lost its socket too');
+    var took = 0;
+    await device
+        .listen((data) => took += data.length, onError: (_) {})
+        .asFuture<void>()
+        .catchError((_) {})
+        .timeout(const Duration(seconds: 5));
+
+    expect(took, lessThan(sent),
+        reason: 'what was still waiting for the device was dropped');
+  });
+
+  test(
+      'Given a live session whose client side has stopped reading, when it'
+      ' is ended for a withdrawn key, then the client side\'s socket is'
+      ' closed within a second', () async {
+    final (_, client) =
+        await withDataWaiting(64 * 1024 * 1024, forTheDevice: false);
+
+    await endForAWithdrawnKey();
+
+    expect(await findsItsSocketClosed(client), isTrue);
+  });
+
+  test(
+      'A session ended for a withdrawn key is reported complete within a'
+      ' second', () async {
+    await withDataWaiting(64 * 1024 * 1024);
+
+    final stopwatch = Stopwatch()..start();
+    await endForAWithdrawnKey();
+    await worker.connector!.done;
+    unawaited(worker.tracker!.complete());
+    final complete = (await report('sessionComplete')).payload;
+
+    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 1)));
+    expect(complete['bytesClientToDevice'], greaterThan(0));
+    expect(complete['connectionsUnclosed'], 0);
+  });
 
   test('A worker reports a connection when its sides pair', () async {
     await start();

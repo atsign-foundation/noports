@@ -254,10 +254,14 @@ class SinglePortWorker extends RelayWorker {
     }
   }
 
-  /// Ends the session whose id is the request's payload, closing its
-  /// connections.
+  /// Ends the session whose id is the request's payload at once: destroys
+  /// its sockets, then closes its connections, so that no side is given
+  /// time to take its pending data.
   Future<void> endSession(IIRequest req) async {
-    sessions[req.payload]?.connector?.close();
+    final SocketConnector? connector = sessions[req.payload]?.connector;
+    if (connector == null) return;
+    destroySockets(connector);
+    connector.close();
   }
 
   Future<void> startSession(IIRequest req) async {

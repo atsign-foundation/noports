@@ -1297,7 +1297,7 @@ class SrvdImpl
       ' signing key $signingKey has been withdrawn to $withdrawnTo',
     );
     if (si.toWorker != null) {
-      si.toWorker!.send(IIRequest.create('stop', null));
+      si.toWorker!.send(IIRequest.create('end', null));
     } else if (si.params.only443) {
       toIsolate443?.send(IIRequest.create('endSession', sessionId));
     }

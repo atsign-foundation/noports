@@ -12,11 +12,13 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
   that fails, or is not answered in time, keeps the session. A key whose
   re-check fails, or whose atServer takes more than a second to answer, is
   re-checked less and less often, down to once a minute, until it is
-  answered promptly again.
+  answered promptly again. A session ended for a withdrawn key has its
+  sockets destroyed at once, so no side is given time to take data still
+  waiting for it; a relay that stops still gives each side that time.
 
   The unit tests prove the scenarios against a stand-in lookup, under
   controlled time. The scenario about many slow atServers runs over HTTP, at
-  a fifth of its times.
+  a fifth of its times, and those about closing sockets run on real sockets.
 
   Races: a key has one re-check under way at most on each timer, and the two
   timers never wait on each other; a key revoked and reinstated between two
@@ -118,3 +120,20 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
     And one more reported session whose atServer answers at once
     When that session's key is revoked
     Then the relay ends it within 10 seconds
+
+  Scenario: A session ended for a withdrawn key has its sockets closed at once
+    Given a live session whose device side has stopped reading, with data waiting for it
+    When the relay ends the session because a client data signing key was withdrawn
+    Then both of the session's sockets are closed within 1 second
+    And the data waiting for the device side is dropped
+
+  Scenario: A single-port session ended for a withdrawn key has its sockets closed at once
+    Given two live sessions on the relay's single port, one of whose device sides has stopped reading
+    When the relay ends that session because a client data signing key was withdrawn
+    Then both of that session's sockets are closed within 1 second
+    And the other session carries on
+
+  Scenario: A session ended for a withdrawn key is reported complete within a second
+    Given a live session whose device side has stopped reading, with data waiting for it
+    When the relay ends the session because a client data signing key was withdrawn
+    Then the worker reports the session complete within 1 second, with its byte counts

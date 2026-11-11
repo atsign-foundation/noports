@@ -402,10 +402,10 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       expect(
         [for (final m in received) (m as IIRequest).type],
-        ['stop'],
+        ['end'],
         reason:
             "the session's worker, which holds both sockets, is told"
-            ' to stop once',
+            ' once to end it at once',
       );
     });
   }

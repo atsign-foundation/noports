@@ -8,6 +8,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
+import 'package:socket_connector/socket_connector.dart';
 
 typedef RelayWorkerRequestHandler = Future<dynamic> Function(IIRequest);
 
@@ -24,6 +25,18 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
   late final ReceivePort fromMain;
   late final AtSignLogger logger;
   final Map<String, RelayWorkerRequestHandler> reqHandlers = {};
+
+  /// Destroys both sockets of every connection [connector] carries, with
+  /// whatever data was still waiting for them, so that closing [connector]
+  /// waits for no side to take its pending data.
+  @protected
+  void destroySockets(SocketConnector connector) {
+    // NOTE: a destroyed socket's connection leaves the list at once
+    for (final connection in connector.connections.toList()) {
+      connection.sideA.socket.destroy();
+      connection.sideB.socket.destroy();
+    }
+  }
   final Map<int, Completer<IIResponse>> rpcCompleters = {};
 
   RelayWorker({

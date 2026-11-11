@@ -130,7 +130,7 @@ void main() {
 
       expect(
         (await messages).map((m) => (m as IIRequest).type),
-        ['stop'],
+        ['end'],
       );
     });
 
