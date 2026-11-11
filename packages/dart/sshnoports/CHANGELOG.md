@@ -7,6 +7,15 @@
 * build: take socket_connector 2.7.0, so a tunnel connection closes once data
   has waited two minutes for one of its ends to read it, and a closing
   connection ends within 30 seconds even when an end has stopped reading
+* feat: srvd's `--telemetry-collector-atsign` sends session telemetry to a
+  collector Atsign, for the Atsigns on the opted-in list it shares with the
+  relay; off when absent
+* feat: srvd stops gracefully on SIGINT, or SIGTERM outside Windows, within 12
+  seconds; give its container a 15-second stop grace period (Docker's default
+  is 10)
+* fix: srvd refuses a session request whose device-side Atsign is not a valid
+  Atsign, and tells a client why it refused a malformed request, so the client
+  fails at once instead of waiting out its timeout
 * fix: npp's warning for a stored rule it doesn't load says where the rule is
   stored and how to remove it
 * fix: a manager RPC delete also removes a stored rule npp didn't load because
