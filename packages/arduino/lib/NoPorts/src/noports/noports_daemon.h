@@ -126,6 +126,14 @@ public:
   void stop();
 
   /**
+   * @brief Tell the daemon the network came back after an outage (WiFi
+   * re-associated, new DHCP lease). Both atServer connections are then
+   * assumed stale: the monitor is reconnected at once and the worker is
+   * checked with a heartbeat, instead of waiting for their timeouts.
+   */
+  void notifyNetworkChanged();
+
+  /**
    * @brief Check if the daemon is running
    */
   bool isRunning() const;
@@ -242,9 +250,12 @@ private:
   uint32_t         _last_key_check_ms;
 
   // Timeout tracking
-  uint32_t _timeout_counter;
+  uint32_t _timeout_counter;       // consecutive monitor reads that returned nothing
+  bool     _monitor_noop_sent;     // a noop has been sent during the current silence
+  bool     _worker_check_due;      // heartbeat the worker before its next use
+  int64_t  _last_monitor_msg_ms;   // when the monitor last delivered anything
+  int64_t  _last_health_log_ms;    // when the health line was last logged
   uint8_t  _reconnect_failures;    // consecutive TLS connection failures (monitor + worker)
-  uint8_t  _monitor_fail_streak;   // consecutive monitor-read failures; used to detect dead monitor socket
 
   // Worker TLS keep-alive
   uint32_t _worker_keepalive_ms;  // 0 = disabled; heartbeat interval in ms
@@ -341,6 +352,13 @@ private:
   // Reconnection
   bool _reconnectMonitor();
   bool _reconnectWorker();
+  // Reboots once _reconnect_failures reaches NOPORTS_MAX_RECONNECT_FAILURES
+  void _rebootIfUnreachable(const char *which);
+  // Pauses before a reconnect attempt: backs off after failures, then waits
+  // (briefly) for the heap a TLS handshake needs
+  void _prepareReconnect(const char *which);
+  // Logs one line of health every NOPORTS_HEALTH_LOG_MS
+  void _logHealth();
   // Re-runs the root-directory lookup and refreshes _atserver_host/_atserver_port
   // and both options structs if the address has changed.  Returns true if a new
   // address was discovered and cached, false if unchanged or the lookup failed.
