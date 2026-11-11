@@ -270,8 +270,13 @@ void main() {
     final int sent = exporter.records.length;
 
     t.connectionOpened('the-session', sessionInfo(sessionParams()), opened(1));
+    expect(t.reporting('the-session'), isNull,
+        reason: 'a stopped relay telemetry starts no session');
+
     await Future<void>.delayed(const Duration(milliseconds: 300));
 
+    expect(t.reporting('the-session'), isNull,
+        reason: 'no window rebuilt the session after the stop');
     expect(exporter.records, hasLength(sent),
         reason: 'nothing is sent once the stopped record has gone');
   });
