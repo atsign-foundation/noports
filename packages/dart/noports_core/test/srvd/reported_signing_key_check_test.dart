@@ -906,18 +906,18 @@ void main() {
   test(
       "A busy Atsign's keys are still re-checked while quiet Atsigns are served"
       ' first', () async {
-    const busyLastKey = 'public:_apsk.busy-e23.a.__e@busy';
+    const busyLastKey = 'public:_apsk.busy-e1.a.__e@busy';
     final rig = await fifthTimeRelayWith({
-      '@busy': (takes: const Duration(milliseconds: 750), keys: 24),
-      for (var i = 0; i < 96; i++)
+      for (var i = 0; i < 400; i++)
         '@one$i': (takes: const Duration(milliseconds: 750), keys: 1),
+      '@busy': (takes: const Duration(milliseconds: 750), keys: 2),
     });
 
     final Duration? took = await rig.revokeAndTime(busyLastKey);
 
     expect(took, isNotNull, reason: 'the relay ends the busy session');
-    expect(took, lessThan(const Duration(seconds: 10) ~/ 5),
-        reason: "the scenario's 10 seconds, at a fifth");
+    expect(took, lessThan(const Duration(seconds: 30) ~/ 5),
+        reason: "the scenario's 30 seconds, at a fifth");
     expect(rig.sessions.values.where((si) => si.ending), hasLength(1),
         reason: 'it ends no other');
   }, timeout: const Timeout(Duration(seconds: 90)));

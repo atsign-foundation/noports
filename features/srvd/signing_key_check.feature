@@ -20,8 +20,10 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
   gives each side that time.
 
   The unit tests prove the scenarios against a stand-in lookup, under
-  controlled time. The scenario about many slow atServers runs over HTTP, at
-  a fifth of its times, and those about closing sockets run on real sockets.
+  controlled time. The scenarios about many slow atServers run over HTTP, at
+  a fifth of their times, the one about the order of one Atsign's lookups
+  runs against the scheduler alone, and those about closing sockets run on
+  real sockets.
 
   Races: a key has one re-check under way at most on each timer, and the two
   timers never wait on each other; a key revoked and reinstated between two
@@ -35,19 +37,20 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
   DoS: one lookup per reported key every 3 seconds, on a kept connection,
   and two more when the key is no longer published, with at most 64 lookups
   at once and 8 for any one Atsign. An atServer that fails or is slow has
-  its keys re-checked less often, so it holds few of those lookups. The re-
-  check of a key waits for a free lookup of its own Atsign and then for one
-  of the 64, which goes to the waiting lookup whose Atsign has the fewest in
-  flight and, among those with as few, to the Atsign served least recently.
-  So Atsigns with many keys cannot hold up another Atsign's re-check, which
-  waits for at most one turn for each other Atsign with as few in flight,
-  and no Atsign's lookups wait forever. Many Atsigns with one slow key each
-  are served in turn as equals, so enough of them answering just under a
-  second can still delay another's re-check. An Atsign with more keys than
-  8 lookups at a time can serve in 3 seconds has them re-checked in turn,
-  less often; 64 keys on an atServer answering in 0.75
-  seconds are all re-checked within 10 seconds, and many more are not. A
-  key's failures are logged once a minute at most.
+  its keys re-checked less often, so it holds few of those lookups. The
+  re-check of a key waits for a free lookup of its own Atsign and then for
+  one of the 64, which goes to the waiting lookup whose Atsign has the
+  fewest in flight and, among those with as few, to the Atsign whose last
+  turn, or first ask since it last had nothing pending, came earliest. So
+  Atsigns with many keys cannot hold up another Atsign's re-check, which
+  waits for at most one turn for each other Atsign with as few in flight
+  that asked or was served before it, and no Atsign's lookups wait forever.
+  Many Atsigns with one slow key each are served in turn as equals, so
+  enough of them answering just under a second can still delay another's
+  re-check. An Atsign with more keys than 8 lookups at a time can serve in
+  3 seconds has them re-checked in turn, less often; 64 keys on an atServer
+  answering in 0.75 seconds are all re-checked within 10 seconds, and many
+  more are not. A key's failures are logged once a minute at most.
   Forgery: a withdrawal is read only from the key's own atServer, at the
   address the atDirectory gives, over TLS.
   Impersonation: nothing a client, daemon or collector sends ends a session
@@ -177,9 +180,9 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
 
   @dos
   Scenario: A busy Atsign's keys are still re-checked while quiet Atsigns are served first
-    Given one Atsign with 24 reported sessions and 96 Atsigns with one reported session each, all answering in 0.75 seconds
-    When the busy Atsign's last key is revoked
-    Then the relay ends that session within 10 seconds
+    Given 400 Atsigns with one reported session each and one Atsign with two, all answering in 0.75 seconds
+    When the second key of the Atsign with two is revoked
+    Then the relay ends that session within 30 seconds
 
   Scenario: One Atsign's lookups are served in the order they asked
     Given one Atsign with more lookups waiting than its 8 slots

@@ -7,12 +7,12 @@ import 'package:meta/meta.dart';
 /// and [maxPerAtSign] for any one atSign.
 ///
 /// A free turn goes to the waiting lookup whose atSign has the fewest under
-/// way; among atSigns with as few, to the one served least recently, one not
-/// served since it last had nothing pending counting as least recent. So an
-/// atSign with many lookups waiting cannot hold up another atSign's, which
-/// waits for at most one turn for each other atSign with as few under way,
-/// and the lookups of one atSign are begun in the order they were asked
-/// for.
+/// way; among atSigns with as few, to the one whose last turn, or first ask
+/// since it last had nothing pending, came earliest. So an atSign with many
+/// lookups waiting cannot hold up another atSign's, which waits for at most
+/// one turn for each other atSign with as few under way that asked or was
+/// served before it, and the lookups of one atSign are begun in the order
+/// they were asked for.
 class LookupSlots {
   LookupSlots({required this.maxConcurrent, required this.maxPerAtSign});
 
@@ -20,8 +20,7 @@ class LookupSlots {
   final int maxPerAtSign;
 
   int _held = 0;
-  int _arrivals = 0;
-  int _grants = 0;
+  int _stamps = 0;
   final Map<String, _Turns> _byAtSign = {};
   final SplayTreeSet<_Turns> _ready = SplayTreeSet(_Turns.compare);
 
@@ -38,8 +37,8 @@ class LookupSlots {
   /// is followed by one [release] for the same atSign.
   Future<void> acquire(String atSign) {
     final turn = Completer<void>();
-    final _Turns turns = _byAtSign.putIfAbsent(atSign, _Turns.new);
-    turns.waiting.add((arrival: _arrivals++, turn: turn));
+    final _Turns turns = _byAtSign.putIfAbsent(atSign, () => _Turns(_stamps++));
+    turns.waiting.add(turn);
     if (turns.waiting.length == 1) _place(turns);
     _dispatch();
     return turn.future;
@@ -82,12 +81,12 @@ class LookupSlots {
     while (_held < maxConcurrent && _ready.isNotEmpty) {
       final _Turns next = _ready.first;
       _unplace(next);
-      final waiter = next.waiting.removeFirst();
+      final Completer<void> turn = next.waiting.removeFirst();
       next.underWay++;
-      next.lastServed = _grants++;
+      next.stamp = _stamps++;
       _held++;
       _place(next);
-      waiter.turn.complete();
+      turn.complete();
     }
   }
 }
@@ -95,17 +94,21 @@ class LookupSlots {
 /// One atSign's lookups: those waiting, in the order asked for, and how many
 /// are under way.
 class _Turns {
-  final Queue<({int arrival, Completer<void> turn})> waiting = Queue();
+  _Turns(this.stamp);
+
+  final Queue<Completer<void>> waiting = Queue();
   int underWay = 0;
-  int? lastServed;
+
+  /// When this atSign last had a turn, or first asked since it last had
+  /// nothing pending.
+  int stamp;
   bool placed = false;
 
-  /// Fewest under way first, then least recently served, then first asked.
+  /// Fewest under way first, then the earliest [stamp], which no two
+  /// atSigns share.
   static int compare(_Turns a, _Turns b) {
     final int byUnderWay = a.underWay.compareTo(b.underWay);
     if (byUnderWay != 0) return byUnderWay;
-    final int byServed = (a.lastServed ?? -1).compareTo(b.lastServed ?? -1);
-    if (byServed != 0) return byServed;
-    return a.waiting.first.arrival.compareTo(b.waiting.first.arrival);
+    return a.stamp.compareTo(b.stamp);
   }
 }

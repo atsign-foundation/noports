@@ -131,50 +131,80 @@ void main() {
     });
   });
 
-  test(
-    'Given a busy atSign whose lookups have all ended, when quiet atSigns'
-    ' keep asking, then it is served once each of them has had a turn',
-    () async {
-      final slots = LookupSlots(maxConcurrent: 2, maxPerAtSign: 2);
-      final begun = <String>[];
-      ask(slots, '@busy', '@busy-0', begun);
-      ask(slots, '@busy', '@busy-1', begun);
-      ask(slots, '@busy', '@busy-2', begun);
-      await pumpEventQueue();
-      ask(slots, '@q1', '@q1-0', begun);
-      await pumpEventQueue();
+  test('Given a busy atSign whose lookups have all ended, when quiet atSigns'
+      ' keep asking, then it is served before atSigns that first asked after'
+      ' its last turn', () async {
+    final slots = LookupSlots(maxConcurrent: 2, maxPerAtSign: 2);
+    final begun = <String>[];
+    ask(slots, '@busy', '@busy-0', begun);
+    ask(slots, '@busy', '@busy-1', begun);
+    ask(slots, '@busy', '@busy-2', begun);
+    await pumpEventQueue();
+    ask(slots, '@q1', '@q1-0', begun);
+    await pumpEventQueue();
 
-      slots.release('@busy');
-      await pumpEventQueue();
-      expect(
-        begun.last,
-        '@q1-0',
-        reason: 'the quiet atSign, with none under way, goes first',
-      );
-      ask(slots, '@q2', '@q2-0', begun);
-      slots.release('@busy');
-      await pumpEventQueue();
-      expect(
-        begun.last,
-        '@q2-0',
-        reason:
-            'tied at none under way, the atSign not yet served goes'
-            ' first',
-      );
-      ask(slots, '@q1', '@q1-1', begun);
-      slots.release('@q1');
-      await pumpEventQueue();
+    slots.release('@busy');
+    await pumpEventQueue();
+    expect(
+      begun.last,
+      '@q1-0',
+      reason: 'the quiet atSign, with none under way, goes first',
+    );
+    ask(slots, '@q2', '@q2-0', begun);
+    slots.release('@busy');
+    await pumpEventQueue();
 
-      expect(
-        begun.last,
-        '@busy-2',
-        reason: 'tied with @q1, the busy atSign was served less recently',
-      );
-    },
-  );
+    expect(
+      begun.last,
+      '@busy-2',
+      reason:
+          'tied at none under way, @busy had its last turn before @q2'
+          ' first asked',
+    );
+  });
+
+  test('Given an atSign served once with another lookup waiting, when a new'
+      ' atSign asks before each turn frees, then its lookup begins within one'
+      ' turn', () async {
+    final slots = LookupSlots(maxConcurrent: 1, maxPerAtSign: 1);
+    final begun = <String>[];
+    ask(slots, '@v', '@v-0', begun);
+    ask(slots, '@v', '@v-1', begun);
+    await pumpEventQueue();
+
+    for (var i = 0; i < 3; i++) {
+      ask(slots, '@n$i', '@n$i-0', begun);
+      slots.release(begun.last.split('-').first);
+      await pumpEventQueue();
+    }
+
+    expect(begun, ['@v-0', '@v-1', '@n0-0', '@n1-0']);
+  });
+
+  test('Given an atSign whose lookups have all ended, when it asks again, then'
+      ' it is served after atSigns that asked before it', () async {
+    final slots = LookupSlots(maxConcurrent: 1, maxPerAtSign: 1);
+    final begun = <String>[];
+    ask(slots, '@x', '@x-0', begun);
+    ask(slots, '@r', '@r-0', begun);
+    await pumpEventQueue();
+    slots.release('@x');
+    await pumpEventQueue();
+    ask(slots, '@w', '@w-0', begun);
+    ask(slots, '@y', '@y-0', begun);
+    slots.release('@r');
+    await pumpEventQueue();
+    ask(slots, '@r', '@r-1', begun);
+    expect(begun, ['@x-0', '@r-0', '@w-0'], reason: 'the control');
+
+    slots.release('@w');
+    await pumpEventQueue();
+
+    expect(begun.last, '@y-0');
+  });
 
   test('Given atSigns tied at none under way, when turns free, then they are'
-      ' served in turn, least recently served first', () async {
+      ' served in turn, the earliest last turn or first ask first', () async {
     final slots = LookupSlots(maxConcurrent: 1, maxPerAtSign: 1);
     final begun = <String>[];
     for (final atSign in ['@a', '@b', '@c']) {
@@ -189,7 +219,14 @@ void main() {
       await pumpEventQueue();
     }
 
-    expect(begun, ['@a-0', '@b-0', '@c-0', '@a-1', '@b-1', '@c-1']);
+    expect(begun, [
+      '@a-0',
+      '@a-1',
+      '@b-0',
+      '@c-0',
+      '@b-1',
+      '@c-1',
+    ], reason: '@a had its first turn before @b and @c first asked');
   });
 
   test(
