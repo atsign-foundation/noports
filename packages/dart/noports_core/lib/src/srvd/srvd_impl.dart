@@ -565,6 +565,13 @@ class SrvdImpl
     String sessionsMessageType = parts[0];
     String sessionId = parts[1];
 
+    if (!isValidSessionId(sessionId)) {
+      logger.warning(
+        'Ignoring a sessions message from ${n.from}'
+        ' about a session whose id is not a UUID',
+      );
+      return;
+    }
     if (sessions[sessionId] == null) {
       logger.info('This relay does not know about session $sessionId');
       return;
@@ -666,6 +673,12 @@ class SrvdImpl
     } on SrvdRequestRefused catch (e) {
       logger.shout('Unable to provide the socket pair for ${n.from}: $e');
       if (e.nackOk) await _tryNack(e.sessionId, n.from, e.reason);
+      return;
+    } on FormatException {
+      logger.shout(
+        'Unable to provide the socket pair for ${n.from}:'
+        ' the request is not JSON',
+      );
       return;
     } catch (e) {
       logger.shout(
@@ -881,33 +894,36 @@ class SrvdImpl
     final Map decoded;
     try {
       decoded = jsonDecode(n.value!);
-    } catch (e) {
-      logger.warning('Malformed auth_modes request from ${n.from}: $e');
+    } catch (_) {
+      logger.warning('Malformed auth_modes request from ${n.from}');
       return;
     }
 
-    final String? sessionId = decoded['sessionId'];
-    if (sessionId == null) {
-      logger.warning('auth_modes request from ${n.from} has no sessionId');
+    final Object? sessionId = decoded['sessionId'];
+    if (!isValidSessionId(sessionId)) {
+      logger.warning(
+        'auth_modes request from ${n.from} names no session by a UUID',
+      );
       return;
     }
 
-    final SessionInfo? si = sessions[sessionId];
+    final String id = (sessionId as String).toLowerCase();
+    final SessionInfo? si = sessions[id];
     if (si == null) {
-      logger.info('auth_modes: this relay does not know session $sessionId');
+      logger.info('auth_modes: this relay does not know session $id');
       return;
     }
     if (!sameAtsign(n.from, si.params.atSignA)) {
       logger.shout(
         'auth_modes: ${n.from} is not the requester (${si.params.atSignA})'
-        ' of session $sessionId',
+        ' of session $id',
       );
       return;
     }
     if (decoded['rvdNonce'] != si.params.rvdNonce) {
       logger.info(
         'auth_modes: rvdNonce (${decoded['rvdNonce']}) is not this relay\'s'
-        ' rvdNonce (${si.params.rvdNonce}) for $sessionId'
+        ' rvdNonce (${si.params.rvdNonce}) for $id'
         ' — another instance is handling it; ignoring',
       );
       return;
@@ -917,7 +933,7 @@ class SrvdImpl
       final Object? mode = decoded[side];
       if (mode != null && !RelayAuthMode.values.any((m) => m.name == mode)) {
         logger.warning(
-          'auth_modes from ${n.from} for $sessionId names no relay auth mode'
+          'auth_modes from ${n.from} for $id names no relay auth mode'
           ' for $side; ignoring',
         );
         return;
@@ -927,7 +943,7 @@ class SrvdImpl
     final SendPort? toWorker = si.toWorker;
     if (toWorker == null) {
       logger.info(
-        'auth_modes: no worker isolate for session $sessionId'
+        'auth_modes: no worker isolate for session $id'
         ' (only443 sessions do not auto-detect)',
       );
       return;
@@ -940,7 +956,7 @@ class SrvdImpl
       }),
     );
     logger.info(
-      'Forwarded definitive auth modes for $sessionId to worker:'
+      'Forwarded definitive auth modes for $id to worker:'
       ' sideA=${decoded['sideA']} sideB=${decoded['sideB']}',
     );
   }

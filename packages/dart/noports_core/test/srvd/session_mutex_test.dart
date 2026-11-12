@@ -191,19 +191,19 @@ void main() {
     });
   });
 
-  group('Given a session id that cannot name a lock record', () {
+  group('Given a session id that is not a UUID', () {
     test(
-      'when srvd receives request_ports from a client that takes one ack,'
-      ' then it stops the port pair it spawned and does not answer',
+      'when srvd receives request_ports, then it takes no lock and does not'
+      ' answer',
       () async {
         const id = 'the session';
 
         await srvd.handleRequestPorts(requestPorts(id, multipleAcksOk: false));
         await pumpEventQueue();
 
-        expect(portPairStopped(), isTrue);
         expect(answered(id), isFalse);
         expect(srvd.sessions.containsKey(id), isFalse);
+        verifyNever(() => remote.executeVerb(any()));
       },
     );
   });

@@ -36,8 +36,12 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
   holds both canonical, so every session has a client-side and a
   device-side Atsign; the device-side one is the client's claim unless the
   device side authenticates. A refusal names the field and why in a fixed
-  text that never repeats the field's value, and a session id that is not a
-  UUID is neither logged nor used in a NACK.
+  text that never repeats the field's value. A session request whose session
+  id is not a UUID is refused, and that id is neither logged nor used in a
+  NACK; one that is not JSON is refused with a fixed text too. A session id
+  is held in lower case, so its spellings name one session, while a
+  payload-mode socket's signature is checked over the id as the client sent
+  it.
   Impersonation: the name is recorded against a session whose sender was
   checked as atSignA, as today; a NACK goes to the request's sender, never
   to the atSignA it named; nothing here changes who may start a session.
@@ -130,9 +134,35 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
     When @carol's refused request takes a NACK and the notification fails
     Then srvd logs at shout that the NACK for the session to @carol was not sent, and why
 
-  Scenario: A refused session request whose session id is not a UUID is sent nothing, and its id is not logged
-    When @alice requests a session whose id is not a UUID and whose atSignB is "@a@b", with multipleAcksOk true
-    Then srvd sends @alice nothing, and its refusal log says the id is not a UUID without repeating it
+  Scenario: A session request whose session id is not a UUID is refused
+    When @alice requests a session whose id is "the session", with every other field valid and multipleAcksOk true
+    Then srvd starts no session and sends @alice nothing
+    And its refusal log names @alice and says the id is not a UUID, without repeating it
+
+  Scenario: A session request whose session id is a UUID is served as before
+    When @alice requests a session whose id is a UUID, with every other field valid
+    Then srvd starts the session and sends @alice its ports
+
+  Scenario: A session request whose session id is a UUID in upper case is served under its lower-case form
+    When @alice requests a session whose id is a UUID in upper case, with every other field valid
+    Then srvd starts the session under that id in lower case and sends @alice its ports
+    And a socket, auth modes or a session log message naming the id in either case reaches that session
+
+  Scenario: A session request that is not JSON is refused, and its text is not logged
+    When @alice sends a session request whose value is not JSON
+    Then srvd starts no session and sends @alice nothing
+    And its refusal log names @alice and says the request is not JSON, without repeating any of it
+
+  Scenario: A socket naming a session whose id is not a UUID is refused
+    When a socket connects and names a session whose id is not a UUID
+    Then the relay closes the socket without looking any session up
+    And no log line repeats that id
+
+  Scenario: A message about a session whose id is not a UUID is ignored
+    Given a live session
+    When @alice sends auth modes, or @bob a session log message, naming a session whose id is not a UUID
+    Then the live session is unchanged
+    And srvd repeats that id in no log line beyond the notification's own key, which it logs for every notification
 
   Scenario: On a relay with a manager, a session request from another Atsign is refused before it is read, and sent nothing
     Given a relay whose manager is @manager

@@ -83,6 +83,32 @@ void main() {
         );
 
     test(
+        'when the session was requested with its id in upper case, then the'
+        ' id as sent is kept beside the lower-case one', () async {
+      const String sent = '0F8FAD5B-D9CB-469F-A165-70867728950E';
+
+      final params = await srvd.withPayloadKeys(SrvdSessionParams(
+        sessionId: sent.toLowerCase(),
+        sessionIdAsSent: sent,
+        atSignA: '@alice',
+        atSignB: '@bob',
+        authenticateSocketA: true,
+        authenticateSocketB: true,
+        rvdNonce: 'rvd nonce',
+        relayAuthMode: RelayAuthMode.payload,
+        only443: false,
+        multipleAcksOk: false,
+        preFetch: const [],
+        sendJsonResponse: true,
+      ));
+
+      expect(params.publicKeyA, publicKeys['@alice'],
+          reason: 'the control: the keys were added');
+      expect((params.sessionId, params.sessionIdAsSent),
+          (sent.toLowerCase(), sent));
+    });
+
+    test(
         "when the session's client side is @relay itself, then the relay"
         " authenticates that side with @relay's public key, fetched from its"
         ' atServer, and the session starts', () async {

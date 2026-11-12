@@ -12,6 +12,9 @@ import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:test/test.dart';
 
+const s1 = '51000000-0000-4000-8000-000000000001';
+const s2 = '52000000-0000-4000-8000-000000000002';
+
 void main() {
   late RsaKeyPair signingKP;
   late ReceivePort toMain;
@@ -142,14 +145,14 @@ void main() {
       'The port-443 worker reports the same messages for each of its'
       ' sessions', () async {
     final sockets = <String, (Socket, Socket)>{};
-    for (final sessionId in ['S1', 'S2']) {
+    for (final sessionId in [s1, s2]) {
       final key = await startSession(sessionId);
       final a = await connectAs(sessionId, key, '@alice', isSideA: true);
       final b = await connectAs(sessionId, key, '@bob', isSideA: false);
       sockets[sessionId] = (a, b);
     }
 
-    for (final sessionId in ['S1', 'S2']) {
+    for (final sessionId in [s1, s2]) {
       final paired = await reportsFor('newConnection', sessionId);
       expect(paired.single.payload['index'], 1);
       final (a, b) = sockets[sessionId]!;
@@ -168,17 +171,17 @@ void main() {
   test(
       'A stop of the port-443 worker reports each session complete before'
       ' the worker exits', () async {
-    final key = await startSession('S1');
-    final a = await connectAs('S1', key, '@alice', isSideA: true);
-    await connectAs('S1', key, '@bob', isSideA: false);
-    await reportsFor('newConnection', 'S1');
+    final key = await startSession(s1);
+    final a = await connectAs(s1, key, '@alice', isSideA: true);
+    await connectAs(s1, key, '@bob', isSideA: false);
+    await reportsFor('newConnection', s1);
     unawaited(a.done.then((_) {}, onError: (_) {}));
     a.add(List<int>.filled(1 << 22, 7));
     unawaited(worker.stopped.future.then((_) => toMain.sendPort.send('exit')));
 
     await worker.stop();
 
-    await reportsFor('sessionComplete', 'S1');
+    await reportsFor('sessionComplete', s1);
     final exitAt = await () async {
       while (!arrivals.contains('exit')) {
         await Future.delayed(const Duration(milliseconds: 10));
@@ -215,13 +218,13 @@ void main() {
       ' within a second', () async {
     await withDefaultFlush();
     const int sent = 3900000;
-    final key = await startSession('S1');
-    final a = await connectAs('S1', key, '@alice', isSideA: true);
-    await connectAs('S1', key, '@bob', isSideA: false, reads: false);
-    await reportsFor('newConnection', 'S1');
+    final key = await startSession(s1);
+    final a = await connectAs(s1, key, '@alice', isSideA: true);
+    await connectAs(s1, key, '@bob', isSideA: false, reads: false);
+    await reportsFor('newConnection', s1);
     a.add(List<int>.filled(sent, 7));
     await a.close();
-    final connector = worker.sessions['S1']!.connector!;
+    final connector = worker.sessions[s1]!.connector!;
     final DateTime giveUp = DateTime.now().add(const Duration(seconds: 5));
     while (connector.connections.isNotEmpty &&
         DateTime.now().isBefore(giveUp)) {
@@ -234,9 +237,9 @@ void main() {
 
     final stopwatch = Stopwatch()..start();
     await worker.reqHandlers['endSession']!(
-        IIRequest.create('endSession', 'S1'));
-    await reportsFor('connectionClosed', 'S1');
-    await reportsFor('sessionComplete', 'S1');
+        IIRequest.create('endSession', s1));
+    await reportsFor('connectionClosed', s1);
+    await reportsFor('sessionComplete', s1);
 
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 1)),
         reason: 'its 30 seconds to drain are cut short');
@@ -245,18 +248,18 @@ void main() {
   test(
       'Given a single-port session that has already finished, when it is'
       ' ended for a withdrawn key, then nothing happens', () async {
-    final key = await startSession('S1');
-    final a = await connectAs('S1', key, '@alice', isSideA: true);
-    final b = await connectAs('S1', key, '@bob', isSideA: false);
-    await reportsFor('newConnection', 'S1');
+    final key = await startSession(s1);
+    final a = await connectAs(s1, key, '@alice', isSideA: true);
+    final b = await connectAs(s1, key, '@bob', isSideA: false);
+    await reportsFor('newConnection', s1);
     a.destroy();
     b.destroy();
-    await reportsFor('sessionComplete', 'S1');
-    expect(worker.sessions.containsKey('S1'), isFalse,
+    await reportsFor('sessionComplete', s1);
+    expect(worker.sessions.containsKey(s1), isFalse,
         reason: 'the session is gone from the worker');
 
     await worker.reqHandlers['endSession']!(
-        IIRequest.create('endSession', 'S1'));
+        IIRequest.create('endSession', s1));
 
     expect(reports.where((r) => r.type == 'sessionComplete'), hasLength(1));
   });
@@ -279,27 +282,27 @@ void main() {
     server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
     server.listen(worker.socketHandler);
     const int sent = 64 * 1024 * 1024;
-    final key1 = await startSession('S1');
-    final a1 = await connectAs('S1', key1, '@alice', isSideA: true);
+    final key1 = await startSession(s1);
+    final a1 = await connectAs(s1, key1, '@alice', isSideA: true);
     final b1 =
-        await connectAs('S1', key1, '@bob', isSideA: false, reads: false);
-    final key2 = await startSession('S2');
-    final a2 = await connectAs('S2', key2, '@alice', isSideA: true);
-    final b2 = await connectAs('S2', key2, '@bob', isSideA: false);
-    await reportsFor('newConnection', 'S1');
-    await reportsFor('newConnection', 'S2');
+        await connectAs(s1, key1, '@bob', isSideA: false, reads: false);
+    final key2 = await startSession(s2);
+    final a2 = await connectAs(s2, key2, '@alice', isSideA: true);
+    final b2 = await connectAs(s2, key2, '@bob', isSideA: false);
+    await reportsFor('newConnection', s1);
+    await reportsFor('newConnection', s2);
     unawaited(a1.done.then((_) {}, onError: (_) {}));
     a1.add(List<int>.filled(sent, 7));
     await Future<void>.delayed(const Duration(seconds: 1));
 
     final stopwatch = Stopwatch()..start();
     await worker.reqHandlers['endSession']!(
-        IIRequest.create('endSession', 'S1'));
+        IIRequest.create('endSession', s1));
     await reading[a1]!
         .asFuture<void>()
         .catchError((_) {})
         .timeout(const Duration(seconds: 5));
-    final complete = (await reportsFor('sessionComplete', 'S1')).single.payload;
+    final complete = (await reportsFor('sessionComplete', s1)).single.payload;
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 1)),
         reason: 'the client side is closed and the session reported complete');
     expect(complete['bytesClientToDevice'], greaterThan(0));
@@ -339,7 +342,7 @@ void main() {
     }
     expect(carried, 1024, reason: 'the other session carries on');
     expect(reports.where((r) =>
-        r.type == 'sessionComplete' && r.payload['sessionId'] == 'S2'), isEmpty);
+        r.type == 'sessionComplete' && r.payload['sessionId'] == s2), isEmpty);
   });
 
   test(
@@ -359,10 +362,10 @@ void main() {
     );
     server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
     server.listen(worker.socketHandler);
-    final key = await startSession('S1');
-    final a = await connectAs('S1', key, '@alice', isSideA: true);
-    await connectAs('S1', key, '@bob', isSideA: false, reads: false);
-    await reportsFor('newConnection', 'S1');
+    final key = await startSession(s1);
+    final a = await connectAs(s1, key, '@alice', isSideA: true);
+    await connectAs(s1, key, '@bob', isSideA: false, reads: false);
+    await reportsFor('newConnection', s1);
     unawaited(a.done.then((_) {}, onError: (_) {}));
     a.add(List<int>.filled(64 * 1024 * 1024, 7));
     await Future<void>.delayed(const Duration(seconds: 1));

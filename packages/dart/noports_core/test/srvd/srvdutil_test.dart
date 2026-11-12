@@ -147,12 +147,47 @@ void main() {
         reason: 'no NACK under a session id that is not a UUID');
     expect('$notUuid', isNot(contains('the-session')),
         reason: 'a session id that is not a UUID stays out of the log');
+    expect(notUuid.reason, 'Parameter sessionId must be a UUID',
+        reason: 'the session id is checked before any other field, so it is'
+            ' the one named when another is wrong too');
+    expect(
+      refusal({
+        ...request,
+        'atSignB': '@bob',
+        'sessionId': 'the-session',
+        'multipleAcksOk': true,
+      }).reason,
+      'Parameter sessionId must be a UUID',
+      reason: 'a request is refused for its session id alone, by name',
+    );
     expect(
       () => (srvd as FakeSrvd).srvdSessionParamsFromJson(
           jsonEncode({...request}..remove('sessionId'))),
       throwsA(isA<ArgumentError>()),
       reason: 'a request with no session id names no session',
     );
+  });
+
+  test(
+      'Given a session request whose session id is a UUID in upper case, when'
+      ' it is read, then the session is held under the lower-case form and'
+      ' keeps the id as sent', () {
+    final String sent = Uuid().v4().toUpperCase();
+
+    final SrvdSessionParams params =
+        (srvd as FakeSrvd).srvdSessionParamsFromJson(jsonEncode({
+      'sessionId': sent,
+      'atSignA': '@alice',
+      'atSignB': '@bob',
+      'clientNonce': 'client nonce',
+      'authenticateSocketA': true,
+      'authenticateSocketB': true,
+      'relayAuthMode': 'payload',
+    }));
+
+    expect(sent, isNot(sent.toLowerCase()), reason: 'the id has letters');
+    expect(params.sessionId, sent.toLowerCase());
+    expect(params.sessionIdAsSent, sent);
   });
 
   test(
