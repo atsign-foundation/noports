@@ -108,7 +108,7 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
     Then the session carries on
 
   @race
-  Scenario: A key a re-check finds missing and that is reinstated before the lookup that confirms it keeps its session
+  Scenario: A key a re-check finds missing, and that is reinstated before the lookup that confirms its withdrawal, keeps its session
     Given the session is reported and @bob's atServer takes 0.5 seconds to answer
     When a re-check finds the device-side enrollment revoked and the atServer reinstates it before the lookup that confirms the withdrawal
     Then the session carries on
