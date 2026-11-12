@@ -68,11 +68,11 @@ abstract class PublicLookup {
 /// A [PublicLookup] that asks each record's own atServer, over the HTTPS GET
 /// (`/<atSign>/<key>`) that atServers serve public records on, at the address
 /// the atDirectory gives for it, offering `http/1.1` by ALPN, without which an
-/// atServer answers in atProtocol. Each lookup has its own connection and a
-/// deadline, at most [maxPerAtSign] of them run at once for any one atSign,
-/// and at most [maxConcurrent] in all. A lookup waiting for its turn goes
-/// ahead of those of atSigns with more lookups under way than its own (see
-/// [LookupSlots]).
+/// atServer answers in the Atsign Protocol. Each lookup has its own connection
+/// and a deadline, at most [maxPerAtSign] of them run at once for any one
+/// atSign, and at most [maxConcurrent] in all. A lookup waiting for its turn
+/// goes ahead of those of atSigns with more lookups under way than its own
+/// (see [LookupSlots]).
 ///
 /// [lookup] falls back to [atClient]'s own atServer when the record's
 /// atServer can't be connected to, or doesn't answer over HTTP as an
