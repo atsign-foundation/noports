@@ -231,5 +231,8 @@ reconciles per socket.
 - **Only an ESCR side is re-checked for revocation.** srvd ends a session
   once the enrollment an ESCR side signed with is revoked, superseded,
   deleted or expires (`--signing-key-check-secs`, every 5 minutes by
-  default). A legacy side signs with its atSign's shared key, which names no
-  enrollment, so the relay can't tell when that side's enrollment goes.
+  default). The sessions srvd reports to a collector Atsign are re-checked
+  every 3 seconds as well (`--reported-signing-key-check-secs`), so such a
+  session ends within 10 seconds while its atServer answers promptly. A
+  legacy side signs with its Atsign's shared key, which names no enrollment,
+  so the relay can't tell when that side's enrollment goes.

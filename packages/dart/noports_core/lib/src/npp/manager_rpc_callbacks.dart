@@ -51,6 +51,21 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
     return 'No ${missing.join(' or ')}, so nothing is put.';
   }
 
+  /// The field naming the rule's id in a delete's value, for each target.
+  static const Map<String, String> _deleteIdKeys = {
+    'Client': 'clientId',
+    'ClientGroup': 'clientGroupId',
+    'ClientGroupMember': 'clientGroupMemberId',
+    'Daemon': 'daemonId',
+    'Service': 'serviceId',
+    'ServiceACL': 'serviceACLId',
+  };
+
+  /// Why a delete of the [target] rule [id] is refused when npp holds no
+  /// rule of that kind with that id.
+  String _noRule(String target, String id) =>
+      'No $target with id $id, so nothing is deleted.';
+
   /// Runs [preDelete] on [entry], a [target] rule, and returns why it failed,
   /// or null when it succeeds or there is no hook.
   Future<String?> _preDelete<T extends PolicyEntry>(
@@ -357,7 +372,13 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           message = 'target or value JSON keys was not found in the payload.';
           break;
         }
-        final Map<String, dynamic> valueAsMap = requestPayload['value'];
+        final Object? value = requestPayload['value'];
+        if (value is! Map<String, dynamic>) {
+          success = false;
+          message = 'value must be a JSON object, so nothing is changed.';
+          break;
+        }
+        final Map<String, dynamic> valueAsMap = value;
         if (valueAsMap['id'] != null) {
           success = false;
           message = 'A put must not name an id: npp gives each new rule one.';
@@ -633,21 +654,38 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           message = 'target or value JSON keys was not found in the payload.';
           break;
         }
-        final Map<String, dynamic> valueAsMap = requestPayload['value'];
+        final Object? value = requestPayload['value'];
+        if (value is! Map<String, dynamic>) {
+          success = false;
+          message = 'value must be a JSON object, so nothing is changed.';
+          break;
+        }
+        final Map<String, dynamic> valueAsMap = value;
         final List<Map<String, dynamic>> removed = [];
         responsePayload['removed'] = removed;
         String? error;
         switch(target) {
+          case final String kind
+              when _deleteIdKeys.containsKey(kind) &&
+                  valueAsMap[_deleteIdKeys[kind]] is! String: {
+            error = message = 'A delete of a $kind must name its '
+                '${_deleteIdKeys[kind]} as a string, so nothing is deleted.';
+            break;
+          }
           case 'Client': {
             final String clientId = valueAsMap['clientId'];
-            final Client client = nppCache.getClientById(clientId);
+            final Client? client = nppCache.findClient(clientId);
+            if (client == null) {
+              error = message = _noRule('Client', clientId);
+              break;
+            }
             rule.addAll(client.toJson());
             error = await _deleteWithLinks(
               target: 'Client',
               entry: client,
               preDelete: nppOperationHooks?.preDeleteClient,
               removeEntry: () => nppCache.deleteClient(clientId),
-              members: nppCache.getClientGroupMembersByClientId(clientId),
+              members: nppCache.membersNaming(clientId: clientId),
               removed: removed,
               logRemoved: logRemoved,
             );
@@ -656,16 +694,21 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ClientGroup': {
             final String clientGroupId = valueAsMap['clientGroupId'];
-            final ClientGroup clientGroup = nppCache.getClientGroupById(clientGroupId);
+            final ClientGroup? clientGroup =
+                nppCache.findClientGroup(clientGroupId);
+            if (clientGroup == null) {
+              error = message = _noRule('ClientGroup', clientGroupId);
+              break;
+            }
             rule.addAll(clientGroup.toJson());
             error = await _deleteWithLinks(
               target: 'ClientGroup',
               entry: clientGroup,
               preDelete: nppOperationHooks?.preDeleteClientGroup,
               removeEntry: () => nppCache.deleteClientGroup(clientGroupId),
-              members:
-                  nppCache.getClientGroupMembersByClientGroupId(clientGroupId),
-              serviceACLs: nppCache.getServiceACLsByClientGroupId(clientGroupId),
+              members: nppCache.membersNaming(clientGroupId: clientGroupId),
+              serviceACLs:
+                  nppCache.serviceACLsNaming(clientGroupId: clientGroupId),
               removed: removed,
               logRemoved: logRemoved,
             );
@@ -675,8 +718,13 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ClientGroupMember': {
             final String clientGroupMemberId = valueAsMap['clientGroupMemberId'];
-            final ClientGroupMember clientGroupMember =
-                nppCache.getClientGroupMemberById(clientGroupMemberId);
+            final ClientGroupMember? clientGroupMember =
+                nppCache.findClientGroupMember(clientGroupMemberId);
+            if (clientGroupMember == null) {
+              error = message =
+                  _noRule('ClientGroupMember', clientGroupMemberId);
+              break;
+            }
             rule.addAll(clientGroupMember.toJson());
             error = await _deleteWithLinks(
               target: 'ClientGroupMember',
@@ -693,7 +741,11 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Daemon': {
             final String daemonId = valueAsMap['daemonId'];
-            final Daemon daemon = nppCache.getDaemonById(daemonId);
+            final Daemon? daemon = nppCache.findDaemon(daemonId);
+            if (daemon == null) {
+              error = message = _noRule('Daemon', daemonId);
+              break;
+            }
             rule.addAll(daemon.toJson());
             final int services = nppCache.getServicesByDaemonId(daemonId).length;
             if (services > 0) {
@@ -715,14 +767,18 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'Service': {
             final String serviceId = valueAsMap['serviceId'];
-            final Service service = nppCache.getServiceById(serviceId);
+            final Service? service = nppCache.findService(serviceId);
+            if (service == null) {
+              error = message = _noRule('Service', serviceId);
+              break;
+            }
             rule.addAll(service.toJson());
             error = await _deleteWithLinks(
               target: 'Service',
               entry: service,
               preDelete: nppOperationHooks?.preDeleteService,
               removeEntry: () => nppCache.deleteService(serviceId),
-              serviceACLs: nppCache.getServiceACLsByServiceID(serviceId),
+              serviceACLs: nppCache.serviceACLsNaming(serviceId: serviceId),
               removed: removed,
               logRemoved: logRemoved,
             );
@@ -731,7 +787,11 @@ class ManagerRpcCallbacks implements AtRpcCallbacks {
           }
           case 'ServiceACL': {
             final String serviceACLId = valueAsMap['serviceACLId'];
-            final ServiceACL serviceACL = nppCache.getServiceACLById(serviceACLId);
+            final ServiceACL? serviceACL = nppCache.findServiceACL(serviceACLId);
+            if (serviceACL == null) {
+              error = message = _noRule('ServiceACL', serviceACLId);
+              break;
+            }
             rule.addAll(serviceACL.toJson());
             error = await _deleteWithLinks(
               target: 'ServiceACL',

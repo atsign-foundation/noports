@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math' show min;
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:noports_core/events.dart';
@@ -64,11 +65,55 @@ class SrvdImpl
 
   /// How often to re-check that the signing keys each live session's ESCR
   /// sockets were accepted with haven't been withdrawn; [Duration.zero] turns
-  /// the check off.
+  /// the check off, [reportedSigningKeyCheckInterval]'s included.
   final Duration signingKeyCheckInterval;
+
+  /// How often to re-check the client data signing keys of the sessions
+  /// [telemetry] reports, as well as every [signingKeyCheckInterval];
+  /// [Duration.zero] leaves them to that re-check alone.
+  final Duration reportedSigningKeyCheckInterval;
+
+  /// How long the [reportedKeyLookup] srvd builds gives each lookup, finding
+  /// the atServer's address included.
+  final Duration reportedSigningKeyCheckDeadline;
+
+  /// The [reportedSigningKeyCheckDeadline] srvd runs with.
+  static const defaultReportedSigningKeyCheckDeadline = Duration(seconds: 2);
+
+  /// The longest an atServer may take to answer for a reported session's
+  /// key without that key's re-checks being spaced out.
+  final Duration reportedSigningKeyPromptAnswer;
+
+  /// The [reportedSigningKeyPromptAnswer] srvd runs with.
+  static const defaultReportedSigningKeyPromptAnswer = Duration(seconds: 1);
+
+  /// How many lookups the [reportedKeyLookup] srvd builds makes at once.
+  static const reportedKeyLookupsAtOnce = 64;
 
   /// How this relay looks up the `_apsk` records sockets sign with.
   final PublicLookup publicLookup;
+
+  final PublicLookup? _reportedKeyLookup;
+
+  /// How this relay looks up the keys of the sessions [telemetry] reports
+  /// when it re-checks them every [reportedSigningKeyCheckInterval]: as
+  /// [publicLookup] does and through its cache of atServer addresses, with
+  /// connections and limits of its own, so that these re-checks and
+  /// [publicLookup]'s lookups never wait on each other, and with
+  /// [reportedSigningKeyCheckDeadline] for each lookup. A [publicLookup] of
+  /// another kind serves both, and tells [reportedKeyAnswered] nothing.
+  PublicLookup get reportedKeyLookup =>
+      _builtReportedKeyLookup ??= _reportedKeyLookup ??
+          switch (publicLookup) {
+            final DirectPublicLookup direct => direct.sharingAddresses(
+                timeout: reportedSigningKeyCheckDeadline,
+                timeoutCoversAddress: true,
+                maxConcurrent: reportedKeyLookupsAtOnce,
+                onAnswered: reportedKeyAnswered,
+              ),
+            _ => publicLookup,
+          };
+  PublicLookup? _builtReportedKeyLookup;
 
   /// The telemetry this relay sends about its sessions; null when it was
   /// given no collector Atsign.
@@ -79,7 +124,14 @@ class SrvdImpl
   LoopLagProbe? _loopLag;
 
   Timer? _signingKeyCheckTimer;
+  Timer? _reportedSigningKeyCheckTimer;
   final Set<String> _keysBeingChecked = {};
+
+  /// What the re-checks of [checkReportedSigningKeys] have found, key by key.
+  final Map<String, _ReportedKey> _reportedKeys = {};
+
+  /// How many times [checkReportedSigningKeys] has run.
+  int _reportedPasses = 0;
 
   @override
   bool verbose = false;
@@ -131,10 +183,18 @@ class SrvdImpl
     required this.localBindPort443,
     required this.relayAuthDetectWindowMs,
     required this.signingKeyCheckInterval,
+    this.reportedSigningKeyCheckInterval =
+        defaultReportedSigningKeyCheckInterval,
+    this.reportedSigningKeyCheckDeadline =
+        defaultReportedSigningKeyCheckDeadline,
+    this.reportedSigningKeyPromptAnswer =
+        defaultReportedSigningKeyPromptAnswer,
     PublicLookup? publicLookup,
+    PublicLookup? reportedKeyLookup,
     this.telemetry,
     this.reportLoopLag = Duration.zero,
-  }) : publicLookup = publicLookup ?? DirectPublicLookup(atClient) {
+  })  : publicLookup = publicLookup ?? DirectPublicLookup(atClient),
+        _reportedKeyLookup = reportedKeyLookup {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -193,6 +253,8 @@ class SrvdImpl
         localBindPort443: p.localBindPort443,
         relayAuthDetectWindowMs: p.relayAuthDetectWindowMs,
         signingKeyCheckInterval: Duration(seconds: p.signingKeyCheckSecs),
+        reportedSigningKeyCheckInterval:
+            Duration(seconds: p.reportedSigningKeyCheckSecs),
         reportLoopLag: Duration(seconds: p.reportLoopLagSecs),
       );
 
@@ -251,6 +313,12 @@ class SrvdImpl
       _signingKeyCheckTimer = Timer.periodic(
         signingKeyCheckInterval,
         (_) => unawaited(checkSigningKeys()),
+      );
+    }
+    if (_reportedSessionsHaveTheirOwnCheck) {
+      _reportedSigningKeyCheckTimer = Timer.periodic(
+        reportedSigningKeyCheckInterval,
+        (_) => unawaited(checkReportedSigningKeys()),
       );
     }
 
@@ -342,7 +410,12 @@ class SrvdImpl
     _stopped = true;
     _loopLag?.stop();
     _signingKeyCheckTimer?.cancel();
+    _reportedSigningKeyCheckTimer?.cancel();
     publicLookup.close();
+    final PublicLookup? reportedKeyLookup = _builtReportedKeyLookup;
+    if (!identical(reportedKeyLookup, publicLookup)) {
+      reportedKeyLookup?.close();
+    }
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
@@ -1061,42 +1134,166 @@ class SrvdImpl
   Future<void> _recheck(String key) async {
     _keysBeingChecked.add(key);
     try {
-      final withdrawnTo = await _whereWithdrawn(key);
-      if (withdrawnTo == null) return;
-      for (final MapEntry(key: sessionId, value: si)
-          in sessions.entries.toList()) {
-        if (!si.ending && si.signingKeys.contains(key)) {
-          _endSession(sessionId, si, key, withdrawnTo);
-        }
-      }
+      final withdrawnTo = await _whereWithdrawn(
+        key,
+        lookup: publicLookup,
+        keeps: logger.warning,
+      );
+      if (withdrawnTo != null) _endSessionsSignedWith(key, withdrawnTo);
     } finally {
       _keysBeingChecked.remove(key);
     }
   }
 
-  /// Where [key] has been withdrawn to, or null when it is still published,
-  /// merely missing, or a lookup fails, all of which keep its sessions.
-  Future<String?> _whereWithdrawn(String key) async {
+  /// As [checkSigningKeys], and besides it, for the sessions [telemetry]
+  /// reports, through [reportedKeyLookup].
+  ///
+  /// A key has one of these re-checks under way at most, whatever
+  /// [checkSigningKeys] is doing with it, and one that outlasts the interval
+  /// still ends the key's sessions when it finds the key withdrawn. A key
+  /// whose re-check fails, or whose atServer takes longer than
+  /// [reportedSigningKeyPromptAnswer], is next re-checked after one
+  /// interval, then two, then four, doubling up to once a minute, and every
+  /// interval again once a re-check is answered promptly. A key's failures
+  /// are said at this relay's default log level once a minute at most, and
+  /// so is its being re-checked again.
+  @visibleForTesting
+  Future<void> checkReportedSigningKeys() async {
+    _reportedPasses++;
+    final keys = {
+      for (final MapEntry(key: sessionId, value: si) in sessions.entries)
+        if (!si.ending && _reported(sessionId)) ...si.signingKeys,
+    };
+    _reportedKeys.removeWhere(
+      (key, found) => !found.beingChecked && !keys.contains(key),
+    );
+    await Future.wait([
+      for (final key in keys)
+        if (_reportedKeys.putIfAbsent(key, _ReportedKey.new).due())
+          _recheckReported(key, _reportedKeys[key]!),
+    ]);
+  }
+
+  /// Whether the sessions [telemetry] reports are re-checked on their own,
+  /// every [reportedSigningKeyCheckInterval].
+  bool get _reportedSessionsHaveTheirOwnCheck =>
+      telemetry != null &&
+      signingKeyCheckInterval > Duration.zero &&
+      reportedSigningKeyCheckInterval > Duration.zero;
+
+  bool _reported(String sessionId) =>
+      _reportedSessionsHaveTheirOwnCheck &&
+      telemetry!.reporting(sessionId) == true;
+
+  /// How many of [checkReportedSigningKeys]'s intervals make a minute.
+  int get _reportedRechecksAMinute {
+    final int n = (const Duration(minutes: 1).inMicroseconds /
+            reportedSigningKeyCheckInterval.inMicroseconds)
+        .ceil();
+    return n < 1 ? 1 : n;
+  }
+
+  /// How many intervals pass between a key's re-checks once [notPrompt] of
+  /// them in a row failed or were answered late.
+  int _intervalsBetweenRechecks(int notPrompt) => notPrompt < 1
+      ? 1
+      : min(1 << min(notPrompt - 1, 30), _reportedRechecksAMinute);
+
+  /// Tells this relay that the atServer holding the record [uri] took [took]
+  /// to answer a lookup of [reportedKeyLookup].
+  @visibleForTesting
+  void reportedKeyAnswered(String uri, Duration took) {
+    if (took > reportedSigningKeyPromptAnswer) {
+      _reportedKeys[uri]?.answeredLate = true;
+    }
+  }
+
+  Future<void> _recheckReported(String key, _ReportedKey found) async {
+    found
+      ..beingChecked = true
+      ..answeredLate = false;
+    bool failed = false;
     try {
-      if (await publicLookup.lookupDirect(key) != null) return null;
+      final withdrawnTo = await _whereWithdrawn(
+        key,
+        lookup: reportedKeyLookup,
+        keeps: (String why) {
+          failed = true;
+          _reportedKeyKept(found, why);
+        },
+      );
+      if (withdrawnTo != null) _endSessionsSignedWith(key, withdrawnTo);
+    } finally {
+      found.beingChecked = false;
+      if (!failed && found.failures > 0) {
+        found.failures = 0;
+        if (found.owesAgain && !_stopped) {
+          found.owesAgain = false;
+          logger.shout('Client data signing key $key can be re-checked again');
+        }
+      }
+      found.notPrompt = failed || found.answeredLate ? found.notPrompt + 1 : 0;
+      found.toSkip = _intervalsBetweenRechecks(found.notPrompt) - 1;
+    }
+  }
+
+  /// Says why a reported session's key kept its sessions, unless it said so
+  /// of that key in the last minute.
+  void _reportedKeyKept(_ReportedKey found, String why) {
+    found.failures++;
+    if (_stopped) return;
+    final int? saidAt = found.saidAt;
+    if (saidAt != null && _reportedPasses - saidAt < _reportedRechecksAMinute) {
+      return;
+    }
+    found
+      ..saidAt = _reportedPasses
+      ..owesAgain = true;
+    logger.shout(
+      found.failures == 1
+          ? why
+          : '$why (re-check ${found.failures} in a row to end so)',
+    );
+  }
+
+  void _endSessionsSignedWith(String key, String withdrawnTo) {
+    for (final MapEntry(key: sessionId, value: si)
+        in sessions.entries.toList()) {
+      if (!si.ending && si.signingKeys.contains(key)) {
+        _endSession(sessionId, si, key, withdrawnTo);
+      }
+    }
+  }
+
+  /// Where [lookup] finds [key] withdrawn to, or null when it is still
+  /// published, merely missing, or a lookup fails, all of which keep its
+  /// sessions. [keeps] is told why whenever the sessions are kept without
+  /// [key] having been found published.
+  Future<String?> _whereWithdrawn(
+    String key, {
+    required PublicLookup lookup,
+    required void Function(String why) keeps,
+  }) async {
+    try {
+      if (await lookup.lookupDirect(key) != null) return null;
     } catch (e) {
-      logger.warning(
+      keeps(
         'Could not re-check signing key $key, so the sessions it signed'
         ' carry on: $e',
       );
       return null;
     }
     try {
-      final withdrawnTo = await publicLookup.withdrawnTo(key);
+      final withdrawnTo = await lookup.withdrawnTo(key);
       if (withdrawnTo == null) {
-        logger.warning(
+        keeps(
           'Signing key $key is missing but has not been withdrawn, so the'
           ' sessions it signed carry on',
         );
       }
       return withdrawnTo;
     } catch (e) {
-      logger.warning(
+      keeps(
         'Could not tell whether signing key $key was withdrawn, so the'
         ' sessions it signed carry on: $e',
       );
@@ -1116,7 +1313,7 @@ class SrvdImpl
       ' signing key $signingKey has been withdrawn to $withdrawnTo',
     );
     if (si.toWorker != null) {
-      si.toWorker!.send(IIRequest.create('stop', null));
+      si.toWorker!.send(IIRequest.create('end', null));
     } else if (si.params.only443) {
       toIsolate443?.send(IIRequest.create('endSession', sessionId));
     }
@@ -1485,5 +1682,37 @@ class SrvdImpl
       waitForFinalDeliveryStatus: false,
       checkForFinalDeliveryStatus: false,
     );
+  }
+}
+
+/// What srvd keeps, between re-checks, about one key of a session it
+/// reports.
+class _ReportedKey {
+  bool beingChecked = false;
+
+  /// Whether the key's atServer answered late in the re-check under way.
+  bool answeredLate = false;
+
+  /// The re-checks in a row that failed or were answered late.
+  int notPrompt = 0;
+
+  /// The re-checks in a row that could not tell where the key is.
+  int failures = 0;
+
+  /// The intervals still to let pass before the key's next re-check.
+  int toSkip = 0;
+
+  /// The pass at which a failure of the key was last said.
+  int? saidAt;
+
+  /// Whether a failure was said that no later good answer has been.
+  bool owesAgain = false;
+
+  /// Whether to re-check the key now, at an interval's end.
+  bool due() {
+    if (beingChecked) return false;
+    if (toSkip == 0) return true;
+    toSkip--;
+    return false;
   }
 }

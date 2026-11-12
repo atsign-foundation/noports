@@ -10,6 +10,11 @@
 * feat: srvd's `--telemetry-collector-atsign` sends session telemetry to a
   collector Atsign, for the Atsigns on the opted-in list it shares with the
   relay; off when absent
+* feat: srvd ends a session it reports within 10 seconds of the enrollment
+  one of its sides signed with being revoked;
+  `--reported-signing-key-check-secs` sets how often it re-checks, 3 by default
+* feat: srvd closes a session's sockets at once when it ends the session
+  because the enrollment one of its sides signed with was revoked
 * feat: srvd stops gracefully on SIGINT, or SIGTERM outside Windows, within 12
   seconds; give its container a 15-second stop grace period (Docker's default
   is 10)
@@ -17,6 +22,15 @@
 * fix: srvd refuses a session request whose device-side Atsign is not a valid
   Atsign, and tells a client why it refused a malformed request, so the client
   fails at once instead of waiting out its timeout
+* fix: npp's warning for a stored rule it doesn't load says where the rule is
+  stored and how to remove it
+* fix: a manager RPC delete also removes a stored rule npp didn't load because
+  it names a rule that isn't stored
+* fix: a manager RPC delete naming an id npp doesn't hold is answered with an
+  error naming it
+* fix: npp answers a manager RPC delete whose value doesn't name its rule's id
+  as a string, or a put or delete whose value isn't a JSON object, with an
+  error saying what it must hold
 
 ## v5.18.2
 
@@ -61,7 +75,12 @@
 * fix: npp saves manager RPC deletes and checks puts before saving them, so
   the rules it loads on a restart match the changes it accepted
 * fix: npp assigns every new rule a random id
-* fix: improved handling of npp rule ids, references and deletes
+* fix: deleting an npp client, client group or service also deletes the client
+  group members and service ACLs naming it, and the answer lists them
+* fix: npp answers a daemon delete with an error while a service names the
+  daemon, saying how many do
+* fix: npp answers a put naming a rule it doesn't hold with an error, and
+  saves nothing
 * fix: tightened how npp loads its stored rules
 * fix: tightened how npp_atserver loads its policy groups
 * feat: at_activate is at_client_cli's at_activate: its --help reports

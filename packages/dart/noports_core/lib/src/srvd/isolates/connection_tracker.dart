@@ -69,6 +69,10 @@ class ConnectionTracker {
   /// Connections paired but not yet reported closed.
   int get openConnections => _open.length;
 
+  /// The connections paired but not yet reported closed, those whose close
+  /// has begun among them.
+  List<Connection> get unclosed => _open.keys.toList();
+
   static int _now() => DateTime.timestamp().millisecondsSinceEpoch;
 
   static Map<String, Object>? _peer(Side side) {
