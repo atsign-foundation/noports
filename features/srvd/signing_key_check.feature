@@ -131,7 +131,7 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
     Given a live session whose device side has stopped reading, with data waiting for it
     When the relay ends the session because a client data signing key was withdrawn
     Then both of the session's sockets are closed within 1 second
-    And the data waiting for the device side is dropped
+    And the data the relay still holds for the device side is dropped
 
   Scenario: A single-port session ended for a withdrawn key has its sockets closed at once
     Given two live sessions on the relay's single port, one of whose device sides has stopped reading
