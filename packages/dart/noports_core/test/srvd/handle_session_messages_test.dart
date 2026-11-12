@@ -227,7 +227,8 @@ void main() {
         'names no session by a UUID',
       ]) {
         expect(
-          logs.records.where((r) => r.message.contains(line)),
+          logs.records
+              .where((r) => r.message.contains(line) && r.level == Level.WARNING),
           hasLength(1),
           reason: 'the relay says it ignored each message, the control that'
               ' these log lines are being read',

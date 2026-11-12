@@ -168,6 +168,7 @@ mixin SrvdUtilMixin {
 
     return SrvdSessionParams(
       sessionId: sessionId,
+      sessionIdAsSent: json['sessionId'] as String,
       atSignA: atSignA,
       atSignB: atSignB,
       authenticateSocketA: authenticateSocketA,
@@ -193,6 +194,7 @@ mixin SrvdUtilMixin {
     }
     return SrvdSessionParams(
       sessionId: params.sessionId,
+      sessionIdAsSent: params.sessionIdAsSent,
       atSignA: params.atSignA,
       atSignB: params.atSignB,
       authenticateSocketA: params.authenticateSocketA,

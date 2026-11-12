@@ -163,6 +163,27 @@ void main() {
       expect(forwarded, isEmpty);
     });
 
+    test(
+        'Given an auth modes message whose value is not JSON, when it arrives,'
+        ' then none of its text is logged', () async {
+      registerSession();
+      final logged = <String>[];
+      srvd.logger.logger.onRecord.listen((r) => logged.add(r.message));
+      srvd.logger.level = 'all';
+
+      await deliver(
+          authModes(value: '{"sessionId": zz-marker-zz\nSHOUT|a second line'));
+
+      expect(forwarded, isEmpty);
+      expect(logged.where((m) => m.startsWith('Malformed auth_modes')),
+          hasLength(1),
+          reason: 'the control: the refusal is logged');
+      expect(
+          logged.where(
+              (m) => m.contains('zz-marker') || m.contains('a second line')),
+          isEmpty);
+    });
+
     test('ignores a value with no sessionId', () async {
       registerSession();
       await deliver(authModes(value: jsonEncode({'sideA': 'escr'})));

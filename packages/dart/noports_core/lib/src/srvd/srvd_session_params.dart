@@ -30,7 +30,12 @@ class SrvdRequestRefused implements Exception {
 /// One session as srvd relays it, between a client-side and a device-side
 /// Atsign.
 class SrvdSessionParams {
+  /// The session id, in lower case.
   final String sessionId;
+
+  /// The session id as the client sent it, which a payload-mode socket's
+  /// signature covers.
+  final String sessionIdAsSent;
 
   /// The client-side Atsign, canonical.
   final Atsign atSignA;
@@ -54,6 +59,7 @@ class SrvdSessionParams {
   /// valid Atsign.
   SrvdSessionParams({
     required this.sessionId,
+    String? sessionIdAsSent,
     required String atSignA,
     required String atSignB,
     this.authenticateSocketA = false,
@@ -68,7 +74,8 @@ class SrvdSessionParams {
     required this.multipleAcksOk,
     required this.preFetch,
     required this.sendJsonResponse,
-  })  : atSignA = atSignA.toAtsign(),
+  })  : sessionIdAsSent = sessionIdAsSent ?? sessionId,
+        atSignA = atSignA.toAtsign(),
         atSignB = atSignB.toAtsign();
 
   /// These params for a log, with [relayAuthAesKey] redacted.

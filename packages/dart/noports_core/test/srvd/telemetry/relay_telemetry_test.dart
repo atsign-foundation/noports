@@ -308,15 +308,19 @@ void main() {
 
   test('A client session id that is not a UUID is left out', () async {
     final t = await telemetry();
-    final String long = 'a' * 70;
 
-    t.connectionOpened(long, sessionInfo(sessionParams(sessionId: long)),
-        opened(1));
+    for (final String id in ['abc-123', 'a' * 70]) {
+      t.connectionOpened(id, sessionInfo(sessionParams(sessionId: id)),
+          opened(1));
+    }
     await pumpEventQueue();
 
-    final a = exporter.named(N.sessionStarted).single.attributes;
-    expect(a.containsKey(N.clientSessionId), isFalse);
-    expect(a[N.clientAtsign], '@alice');
+    final started = exporter.named(N.sessionStarted);
+    expect(started, hasLength(2), reason: 'both sessions were reported');
+    for (final record in started) {
+      expect(record.attributes.containsKey(N.clientSessionId), isFalse);
+      expect(record.attributes[N.clientAtsign], '@alice');
+    }
   });
 
   test(

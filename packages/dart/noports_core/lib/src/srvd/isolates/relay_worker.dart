@@ -119,7 +119,7 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     SrvdSessionParams params,
   ) async {
     final String dataToVerify = jsonEncode({
-      'sessionId': params.sessionId,
+      'sessionId': params.sessionIdAsSent,
       'clientNonce': params.clientNonce,
       'rvdNonce': params.rvdNonce,
     });

@@ -38,7 +38,10 @@ Feature: srvd reports each connection's life to its main isolate and stops in bo
   device side authenticates. A refusal names the field and why in a fixed
   text that never repeats the field's value. A session request whose session
   id is not a UUID is refused, and that id is neither logged nor used in a
-  NACK.
+  NACK; one that is not JSON is refused with a fixed text too. A session id
+  is held in lower case, so its spellings name one session, while a
+  payload-mode socket's signature is checked over the id as the client sent
+  it.
   Impersonation: the name is recorded against a session whose sender was
   checked as atSignA, as today; a NACK goes to the request's sender, never
   to the atSignA it named; nothing here changes who may start a session.

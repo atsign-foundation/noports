@@ -55,8 +55,8 @@ void main() {
     /// any key URI, so the only thing that can refuse is the check under test.
     MockRelayAuthVerifyHelper sessionHelper({bool active = true}) {
       final h = MockRelayAuthVerifyHelper();
-      when(() => h.isSessionActive(relaySessionId))
-          .thenAnswer((_) async => active);
+      when(() => h.isSessionActive(any()))
+          .thenAnswer((i) async => active && i.positionalArguments.first == relaySessionId);
       when(() => h.getRelayAuthAesKey(relaySessionId))
           .thenAnswer((_) async => relayAuthAesKey);
       when(() => h.lookup(relaySessionId, any()))

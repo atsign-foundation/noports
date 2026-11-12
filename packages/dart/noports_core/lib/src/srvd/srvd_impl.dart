@@ -843,14 +843,14 @@ class SrvdImpl
     if (!sameAtsign(n.from, si.params.atSignA)) {
       logger.shout(
         'auth_modes: ${n.from} is not the requester (${si.params.atSignA})'
-        ' of session $sessionId',
+        ' of session $id',
       );
       return;
     }
     if (decoded['rvdNonce'] != si.params.rvdNonce) {
       logger.info(
         'auth_modes: rvdNonce (${decoded['rvdNonce']}) is not this relay\'s'
-        ' rvdNonce (${si.params.rvdNonce}) for $sessionId'
+        ' rvdNonce (${si.params.rvdNonce}) for $id'
         ' — another instance is handling it; ignoring',
       );
       return;
@@ -860,7 +860,7 @@ class SrvdImpl
       final Object? mode = decoded[side];
       if (mode != null && !RelayAuthMode.values.any((m) => m.name == mode)) {
         logger.warning(
-          'auth_modes from ${n.from} for $sessionId names no relay auth mode'
+          'auth_modes from ${n.from} for $id names no relay auth mode'
           ' for $side; ignoring',
         );
         return;
@@ -870,7 +870,7 @@ class SrvdImpl
     final SendPort? toWorker = si.toWorker;
     if (toWorker == null) {
       logger.info(
-        'auth_modes: no worker isolate for session $sessionId'
+        'auth_modes: no worker isolate for session $id'
         ' (only443 sessions do not auto-detect)',
       );
       return;
@@ -883,7 +883,7 @@ class SrvdImpl
       }),
     );
     logger.info(
-      'Forwarded definitive auth modes for $sessionId to worker:'
+      'Forwarded definitive auth modes for $id to worker:'
       ' sideA=${decoded['sideA']} sideB=${decoded['sideB']}',
     );
   }

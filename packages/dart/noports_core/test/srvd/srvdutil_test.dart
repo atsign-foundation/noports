@@ -169,6 +169,28 @@ void main() {
   });
 
   test(
+      'Given a session request whose session id is a UUID in upper case, when'
+      ' it is read, then the session is held under the lower-case form and'
+      ' keeps the id as sent', () {
+    final String sent = Uuid().v4().toUpperCase();
+
+    final SrvdSessionParams params =
+        (srvd as FakeSrvd).srvdSessionParamsFromJson(jsonEncode({
+      'sessionId': sent,
+      'atSignA': '@alice',
+      'atSignB': '@bob',
+      'clientNonce': 'client nonce',
+      'authenticateSocketA': true,
+      'authenticateSocketB': true,
+      'relayAuthMode': 'payload',
+    }));
+
+    expect(sent, isNot(sent.toLowerCase()), reason: 'the id has letters');
+    expect(params.sessionId, sent.toLowerCase());
+    expect(params.sessionIdAsSent, sent);
+  });
+
+  test(
       'A session request with a malformed field is refused naming the field,'
       ' never its value', () {
     final Map<String, Object?> request = {
