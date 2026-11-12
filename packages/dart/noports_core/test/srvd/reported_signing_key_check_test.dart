@@ -497,6 +497,32 @@ void main() {
     },
   );
 
+  test(
+    'A key a re-check finds missing, and that is reinstated before the'
+    ' lookup that confirms its withdrawal, keeps its session',
+    () {
+      fakeAsync((async) {
+        final rig = running(async, optedIn: ['@alice']);
+        final si = session(async, rig, 's');
+        rig.fast.delays['@bob'] = const Duration(milliseconds: 500);
+
+        async.elapse(const Duration(milliseconds: 2500));
+        rig.atServers.revoke(bobKey);
+        async.elapse(const Duration(milliseconds: 750));
+        rig.atServers.reinstate(bobKey);
+        async.elapse(const Duration(seconds: 27));
+
+        expect(si.ending, isFalse);
+        expect(
+          rig.fast.timesOf(bobKey).first,
+          const Duration(seconds: 3),
+          reason: 'the re-check at 3 s found the key revoked',
+        );
+        stop(async, rig.relay);
+      });
+    },
+  );
+
   test('A slow atServer delays only the re-checks of its own keys', () {
     fakeAsync((async) {
       final atsigns = [for (var i = 0; i < 100; i++) '@c$i'];
@@ -685,6 +711,83 @@ void main() {
       reason:
           'in its first 3 seconds a slow atServer was asked at 0.6,'
           ' 1.2 and 2.4 s, where every 0.6 s would be 5 times',
+    );
+  }, timeout: const Timeout(Duration(seconds: 60)));
+
+  // NOTE: real time and real HTTP, at a fifth of the scenario's times, so
+  // that the lookups srvd builds for itself carry the re-checks
+  test('An Atsign with 64 reported keys has a revoked one ended within 10'
+      ' seconds', () async {
+    const int fifth = 5;
+    const int keys = 64;
+    int? revoked;
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    server.listen((request) async {
+      await Future<void>.delayed(const Duration(milliseconds: 750 ~/ fifth));
+      final path = request.uri.path;
+      final bool held = revoked != null && path.contains('enrollment-$revoked.')
+          ? path.contains('.r.__e')
+          : path.contains('.a.__e');
+      request.response
+        ..statusCode = held ? HttpStatus.ok : HttpStatus.notFound
+        ..write(held ? 'a key' : '');
+      await request.response.close();
+    });
+    final telemetry = telemetryOver(
+      RecordingExporter(),
+      ScriptedListSource(listOf(['@alice'])),
+    );
+    final relay = relayWith(
+      publicLookup: DirectPublicLookup(
+        atClient,
+        addressFinder: _LoopbackFinder({'@bob': server.port}),
+        scheme: 'http',
+      ),
+      telemetry: telemetry,
+      reportedEvery: const Duration(milliseconds: 3000 ~/ fifth),
+      deadline: const Duration(milliseconds: 2000 ~/ fifth),
+      prompt: const Duration(milliseconds: 1000 ~/ fifth),
+    );
+    addTearDown(() async {
+      await relay.stop();
+      await server.close(force: true);
+    });
+    await relay.init();
+    await relay.run();
+    await telemetry.list.firstGoodRead.timeout(const Duration(seconds: 2));
+    final sessions = <SessionInfo>[];
+    for (var i = 0; i < keys; i++) {
+      final si = SessionInfo(
+        params: sessionParams(sessionId: 's$i', device: '@bob'),
+        connector: null,
+      )..signingKeys.add('public:_apsk.enrollment-$i.a.__e@bob');
+      relay.sessions['s$i'] = si;
+      unawaited(
+        relay.handleWorkerReport(
+          IIRequest.create('newConnection', firstPair('s$i')),
+        ),
+      );
+      sessions.add(si);
+    }
+    expect(relay.telemetry!.reporting('s${keys - 1}'), isTrue);
+
+    await Future<void>.delayed(const Duration(milliseconds: 3000));
+    revoked = keys - 1;
+    final Stopwatch took = Stopwatch()..start();
+    while (!sessions.last.ending && took.elapsed < const Duration(seconds: 6)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+
+    expect(sessions.last.ending, isTrue);
+    expect(
+      took.elapsed,
+      lessThan(const Duration(seconds: 10) ~/ fifth),
+      reason: "the scenario's 10 seconds, at a fifth",
+    );
+    expect(
+      sessions.where((s) => s.ending),
+      hasLength(1),
+      reason: 'only the revoked key ended its session',
     );
   }, timeout: const Timeout(Duration(seconds: 60)));
 
@@ -1221,7 +1324,8 @@ void main() {
     test(
       'when srvd is built with no lookups of its own, then reported'
       ' sessions are re-checked through a second lookup: 2 seconds for a'
-      ' whole lookup, 64 at once, and told how long each answer took',
+      ' whole lookup, 64 at once and 8 at once per Atsign, and told how long'
+      ' each answer took',
       () async {
         final srvd = await fromArgs(['--telemetry-collector-atsign', '@tel']);
 
@@ -1236,7 +1340,8 @@ void main() {
           [second.timeout, second.timeoutCoversAddress, second.maxConcurrent],
           [const Duration(seconds: 2), true, 64],
         );
-        expect(second.maxPerAtSign, first.maxPerAtSign);
+        expect(first.maxPerAtSign, DirectPublicLookup.defaultMaxPerAtSign);
+        expect(second.maxPerAtSign, 8);
         expect(second.onAnswered, isNotNull);
       },
     );

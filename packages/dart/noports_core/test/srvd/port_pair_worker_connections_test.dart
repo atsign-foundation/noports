@@ -170,6 +170,27 @@ void main() {
   });
 
   test(
+      'A session stopped without ending gives a side that has stopped reading'
+      ' the data already waiting for it', () async {
+    const int sent = 64 * 1024 * 1024;
+    final (_, device) = await withDataWaiting(sent);
+
+    await worker.stop();
+
+    expect(await findsItsSocketClosed(device), isFalse,
+        reason: 'its socket is still open a second after the stop');
+    var took = 0;
+    await device
+        .listen((data) => took += data.length, onError: (_) {})
+        .asFuture<void>()
+        .catchError((_) {})
+        .timeout(const Duration(seconds: 20));
+    expect(took, greaterThan(0),
+        reason: 'the device took the data that was waiting for it, which an end'
+            ' drops');
+  });
+
+  test(
       'Given a live session whose client side has stopped reading, when it'
       ' is ended for a withdrawn key, then the client side\'s socket is'
       ' closed within a second', () async {

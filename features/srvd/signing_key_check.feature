@@ -25,18 +25,24 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
 
   Races: a key has one re-check under way at most on each timer, and the two
   timers never wait on each other; a key revoked and reinstated between two
-  re-checks keeps its session. An end that reaches a worker after its
-  session has finished, or after a stop has closed it, does nothing; a
-  socket still authenticating or waiting to pair when the end arrives is
-  closed with the connector, holding no data for its far side.
+  re-checks keeps its session, including one the re-check found missing and
+  that is reinstated before the lookup that confirms its withdrawal. An end
+  that reaches a worker after its session has finished, or after a stop has
+  closed it, does nothing; a socket still authenticating or waiting to pair
+  when the end arrives is closed with the connector, holding no data for its
+  far side.
   Replay: none; srvd sends and accepts no message for this.
   DoS: one lookup per reported key every 3 seconds, on a kept connection,
   and two more when the key is no longer published, with at most 64 lookups
-  at once and 2 for any one Atsign. An atServer that fails or is slow has
-  its keys re-checked less often, so it holds few of those lookups. An
-  Atsign with more keys than 2 lookups at a time can serve in 3 seconds has
-  them re-checked in turn, less often. A key's failures are logged once a
-  minute at most.
+  at once and 8 for any one Atsign. An atServer that fails or is slow has
+  its keys re-checked less often, so it holds few of those lookups. One
+  Atsign can hold 8 of the 64, so enough Atsigns with many keys each can
+  delay the re-check of another Atsign's key: the re-check of a key waits
+  for a free lookup of its own Atsign and then for one of the 64. An Atsign
+  with more keys than 8 lookups at a time can serve in 3 seconds has them
+  re-checked in turn, less often; 64 keys on an atServer answering in 0.75
+  seconds are all re-checked within 10 seconds, and many more are not. A
+  key's failures are logged once a minute at most.
   Forgery: a withdrawal is read only from the key's own atServer, at the
   address the atDirectory gives, over TLS.
   Impersonation: nothing a client, daemon or collector sends ends a session
@@ -101,6 +107,12 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
     When @bob's atServer revokes the device-side enrollment and reinstates it before the next re-check
     Then the session carries on
 
+  @race
+  Scenario: A key a re-check finds missing, and that is reinstated before the lookup that confirms its withdrawal, keeps its session
+    Given the session is reported and @bob's atServer takes 0.5 seconds to answer
+    When a re-check finds the device-side enrollment revoked and the atServer reinstates it before the lookup that confirms the withdrawal
+    Then the session carries on
+
   @dos
   Scenario: A slow atServer delays only the re-checks of its own keys
     Given 100 reported sessions on 100 Atsigns, one of whose atServers takes 2 seconds to answer
@@ -119,6 +131,13 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
     Given the session is reported and its device-side key is re-checked once a minute
     When @bob's atServer answers a re-check within 1 second
     Then the key is re-checked 3 seconds later
+
+  @dos
+  Scenario: An Atsign with 64 reported keys has a revoked one ended within 10 seconds
+    Given 64 reported sessions on one Atsign, whose atServer takes 0.75 seconds to answer
+    When one of those keys is revoked
+    Then the relay ends that session within 10 seconds
+    And it ends no other
 
   @dos
   Scenario: Many slow atServers do not hold up another key's re-check
