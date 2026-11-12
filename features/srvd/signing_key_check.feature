@@ -35,12 +35,17 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
   DoS: one lookup per reported key every 3 seconds, on a kept connection,
   and two more when the key is no longer published, with at most 64 lookups
   at once and 8 for any one Atsign. An atServer that fails or is slow has
-  its keys re-checked less often, so it holds few of those lookups. One
-  Atsign can hold 8 of the 64, so enough Atsigns with many keys each can
-  delay the re-check of another Atsign's key: the re-check of a key waits
-  for a free lookup of its own Atsign and then for one of the 64. An Atsign
-  with more keys than 8 lookups at a time can serve in 3 seconds has them
-  re-checked in turn, less often; 64 keys on an atServer answering in 0.75
+  its keys re-checked less often, so it holds few of those lookups. The re-
+  check of a key waits for a free lookup of its own Atsign and then for one
+  of the 64, which goes to the waiting lookup whose Atsign has the fewest in
+  flight and, among those with as few, to the Atsign served least recently.
+  So Atsigns with many keys cannot hold up another Atsign's re-check, which
+  waits for at most one turn for each other Atsign with as few in flight,
+  and no Atsign's lookups wait forever. Many Atsigns with one slow key each
+  are served in turn as equals, so enough of them answering just under a
+  second can still delay another's re-check. An Atsign with more keys than
+  8 lookups at a time can serve in 3 seconds has them re-checked in turn,
+  less often; 64 keys on an atServer answering in 0.75
   seconds are all re-checked within 10 seconds, and many more are not. A
   key's failures are logged once a minute at most.
   Forgery: a withdrawal is read only from the key's own atServer, at the
@@ -162,3 +167,21 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
     Given a live session whose device side has stopped reading, with data waiting for it
     When the relay ends the session because a client data signing key was withdrawn
     Then the worker reports the session complete within 1 second, with its byte counts
+
+  @dos
+  Scenario: Many busy Atsigns do not hold up a quiet Atsign's re-check
+    Given 96 Atsigns each with 24 reported sessions, whose atServers each take 0.75 seconds to answer
+    And one more reported session on another Atsign, whose atServer answers at once
+    When that session's key is revoked
+    Then the relay ends it within 10 seconds
+
+  @dos
+  Scenario: A busy Atsign's keys are still re-checked while quiet Atsigns are served first
+    Given one Atsign with 24 reported sessions and 96 Atsigns with one reported session each, all answering in 0.75 seconds
+    When the busy Atsign's last key is revoked
+    Then the relay ends that session within 10 seconds
+
+  Scenario: One Atsign's lookups are served in the order they asked
+    Given one Atsign with more lookups waiting than its 8 slots
+    When its slots free one at a time
+    Then its lookups are made in the order they were asked for
