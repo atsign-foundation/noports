@@ -714,6 +714,83 @@ void main() {
     );
   }, timeout: const Timeout(Duration(seconds: 60)));
 
+  // NOTE: real time and real HTTP, at a fifth of the scenario's times, so
+  // that the lookups srvd builds for itself carry the re-checks
+  test('An Atsign with 64 reported keys has a revoked one ended within 10'
+      ' seconds', () async {
+    const int fifth = 5;
+    const int keys = 64;
+    int? revoked;
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    server.listen((request) async {
+      await Future<void>.delayed(const Duration(milliseconds: 750 ~/ fifth));
+      final path = request.uri.path;
+      final bool held = revoked != null && path.contains('enrollment-$revoked.')
+          ? path.contains('.r.__e')
+          : path.contains('.a.__e');
+      request.response
+        ..statusCode = held ? HttpStatus.ok : HttpStatus.notFound
+        ..write(held ? 'a key' : '');
+      await request.response.close();
+    });
+    final telemetry = telemetryOver(
+      RecordingExporter(),
+      ScriptedListSource(listOf(['@alice'])),
+    );
+    final relay = relayWith(
+      publicLookup: DirectPublicLookup(
+        atClient,
+        addressFinder: _LoopbackFinder({'@bob': server.port}),
+        scheme: 'http',
+      ),
+      telemetry: telemetry,
+      reportedEvery: const Duration(milliseconds: 3000 ~/ fifth),
+      deadline: const Duration(milliseconds: 2000 ~/ fifth),
+      prompt: const Duration(milliseconds: 1000 ~/ fifth),
+    );
+    addTearDown(() async {
+      await relay.stop();
+      await server.close(force: true);
+    });
+    await relay.init();
+    await relay.run();
+    await telemetry.list.firstGoodRead.timeout(const Duration(seconds: 2));
+    final sessions = <SessionInfo>[];
+    for (var i = 0; i < keys; i++) {
+      final si = SessionInfo(
+        params: sessionParams(sessionId: 's$i', device: '@bob'),
+        connector: null,
+      )..signingKeys.add('public:_apsk.enrollment-$i.a.__e@bob');
+      relay.sessions['s$i'] = si;
+      unawaited(
+        relay.handleWorkerReport(
+          IIRequest.create('newConnection', firstPair('s$i')),
+        ),
+      );
+      sessions.add(si);
+    }
+    expect(relay.telemetry!.reporting('s${keys - 1}'), isTrue);
+
+    await Future<void>.delayed(const Duration(milliseconds: 3000));
+    revoked = keys - 1;
+    final Stopwatch took = Stopwatch()..start();
+    while (!sessions.last.ending && took.elapsed < const Duration(seconds: 6)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+
+    expect(sessions.last.ending, isTrue);
+    expect(
+      took.elapsed,
+      lessThan(const Duration(seconds: 10) ~/ fifth),
+      reason: "the scenario's 10 seconds, at a fifth",
+    );
+    expect(
+      sessions.where((s) => s.ending),
+      hasLength(1),
+      reason: 'only the revoked key ended its session',
+    );
+  }, timeout: const Timeout(Duration(seconds: 60)));
+
   /// Revokes the device-side enrollment of [si] 10 seconds in, and expects
   /// the relay to look no key up before its 300-second re-check, which
   /// ends the session.
