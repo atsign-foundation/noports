@@ -161,11 +161,19 @@ public:
   const char* getLastError() const;
 
   /**
-   * @brief Get consecutive monitor reconnect failure count
-   * Resets to 0 on successful reconnect. Triggers ESP.restart()
+   * @brief Get consecutive atServer connection failure count (monitor or
+   * worker). Resets to 0 when the monitor reconnects. Triggers ESP.restart()
    * when it reaches NOPORTS_MAX_RECONNECT_FAILURES.
    */
   uint8_t getReconnectFailures() const;
+
+  /**
+   * @brief Seconds since the monitor last delivered anything from the
+   * atServer (a notification, its stats push, or a reply to the daemon's
+   * heartbeat). Normally under 20; past NOPORTS_MONITOR_NOOP_TIMEOUT_MS the
+   * monitor is reconnected.
+   */
+  uint32_t getMonitorSilentSecs() const;
 
   /**
    * @brief Get current number of relay TCP sockets in use

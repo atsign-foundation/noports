@@ -833,6 +833,11 @@ uint8_t NoPortsDaemon::getReconnectFailures() const {
   return _reconnect_failures;
 }
 
+uint32_t NoPortsDaemon::getMonitorSilentSecs() const {
+  if (_state != DAEMON_MONITORING) return 0;
+  return (uint32_t)((_now_ms() - _last_monitor_msg_ms) / 1000);
+}
+
 int NoPortsDaemon::getRelayPcbCount() const {
   return noports_relay_get_pcb_count();
 }

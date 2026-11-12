@@ -1352,8 +1352,25 @@ void loop() {
           last_update = millis();
           uint32_t tp_in = 0, tp_out = 0;
           npDaemon.getThroughput(tp_in, tp_out);
-          ui_dashboard_update(npDaemon.getActiveRelayCount(),
-                            daemon_state_str(npDaemon.getState()),
+          // The state indicator says "running" only while the monitor is
+          // actually hearing from the atServer; while the daemon is
+          // recovering it says so, so a device that is up but unreachable
+          // never looks healthy on its own screen.
+          static char state_buf[24];
+          const char *state = daemon_state_str(npDaemon.getState());
+          if (npDaemon.isRunning()) {
+            uint8_t  retries = npDaemon.getReconnectFailures();
+            uint32_t quiet   = npDaemon.getMonitorSilentSecs();
+            if (retries > 0) {
+              snprintf(state_buf, sizeof(state_buf), "retry %u/%u",
+                       (unsigned)retries, (unsigned)NOPORTS_MAX_RECONNECT_FAILURES);
+              state = state_buf;
+            } else if (quiet * 1000UL >= NOPORTS_MONITOR_HEARTBEAT_MS) {
+              snprintf(state_buf, sizeof(state_buf), "quiet %lus", (unsigned long)quiet);
+              state = state_buf;
+            }
+          }
+          ui_dashboard_update(npDaemon.getActiveRelayCount(), state,
                             _total_tunnels, _total_pings,
                             tp_in, tp_out, npDaemon.getRelayCpuPct(),
                             npDaemon.getRelayPcbCount(),
