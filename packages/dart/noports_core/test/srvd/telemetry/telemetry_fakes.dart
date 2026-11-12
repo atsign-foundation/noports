@@ -6,6 +6,17 @@ import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:noports_core/src/srvd/telemetry/opted_in_list.dart';
 import 'package:noports_core/src/srvd/telemetry/relay_telemetry.dart';
 
+const theSession = '7e11e7e1-0000-4000-8000-00000000cafe';
+
+/// A session id, a UUID, that stands for [label] in a test.
+String sid(String label) {
+  var h = 0x84222325;
+  for (final int c in label.codeUnits) {
+    h = ((h ^ c) * 0x1b3) & 0xFFFFFFFFFFFF;
+  }
+  return '00000000-0000-4000-8000-${h.toRadixString(16).padLeft(12, '0')}';
+}
+
 /// Keeps every record it is given, answering [delivers] for each.
 class RecordingExporter implements AtTelemetryLogRecordExporter {
   final List<AtTelemetryLogRecord> records = [];
@@ -59,7 +70,7 @@ OptedInList listOf(Iterable<String> atsigns, {DateTime? builtAt}) =>
     );
 
 SrvdSessionParams sessionParams({
-  String sessionId = 'the-session',
+  String sessionId = theSession,
   String client = '@alice',
   String device = '@carol',
   bool deviceVerified = true,
@@ -85,7 +96,7 @@ SessionInfo sessionInfo(SrvdSessionParams params, {String? deviceName}) =>
 int nowMs() => DateTime.timestamp().millisecondsSinceEpoch;
 
 Map<String, dynamic> opened(int index, {int? at}) => {
-      'sessionId': 'the-session',
+      'sessionId': theSession,
       'at': at ?? nowMs(),
       'index': index,
       'client': {'ip': '10.0.0.1', 'port': 40000 + index},
@@ -101,7 +112,7 @@ Map<String, dynamic> closed(
 }) {
   final int at = closedAt ?? nowMs();
   return {
-    'sessionId': 'the-session',
+    'sessionId': theSession,
     'at': at,
     'index': index,
     'openedAt': openedAt,

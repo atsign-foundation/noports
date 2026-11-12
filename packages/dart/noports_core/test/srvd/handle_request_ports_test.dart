@@ -21,6 +21,8 @@ class FakeAtKey extends Fake implements AtKey {}
 
 class FakeNotificationParams extends Fake implements NotificationParams {}
 
+const liveSessionId = '7e55e551-0000-4000-8000-000000000004';
+
 /// An srvd whose port pairs come from nowhere, so a request it accepts gets
 /// as far as being recorded as a session and answered.
 class AnsweringSrvd extends SrvdImpl {
@@ -83,7 +85,11 @@ class RecordingSrvd extends SrvdImpl {
 
 void main() {
   group('SrvdImpl.handleRequestPorts', () {
-    AtNotification requestPorts({required String from, required String atSignA}) =>
+    AtNotification requestPorts({
+      required String from,
+      required String atSignA,
+      String sessionId = liveSessionId,
+    }) =>
         AtNotification(
           'notif-id',
           '@relay:device.request_ports.sshrvd$from',
@@ -93,7 +99,7 @@ void main() {
           'key',
           true,
           value: jsonEncode({
-            'sessionId': 'the session',
+            'sessionId': sessionId,
             'atSignA': atSignA,
             'atSignB': '@device',
             'clientNonce': 'client nonce',
@@ -112,6 +118,21 @@ void main() {
       await srvd.handleRequestPorts(requestPorts(from: from, atSignA: atSignA));
       return srvd.allocated;
     }
+
+    test('refuses a session id that is not a UUID before allocating ports',
+        () async {
+      final srvd = RecordingSrvd(managerAtsign: 'open');
+
+      await srvd.handleRequestPorts(requestPorts(
+          from: '@alice', atSignA: '@alice', sessionId: 'the session'));
+
+      expect(srvd.allocated, isFalse);
+      expect(
+        await allocates(manager: 'open', from: '@alice', atSignA: '@alice'),
+        isTrue,
+        reason: 'the same request with a UUID gets as far as its ports',
+      );
+    });
 
     test('lets the manager through', () async {
       expect(
@@ -157,7 +178,7 @@ void main() {
       final srvd = RecordingSrvd(managerAtsign: 'open');
       final live = SessionInfo(
         params: SrvdSessionParams(
-          sessionId: 'the session',
+          sessionId: liveSessionId,
           atSignA: '@alice',
           atSignB: '@device',
           rvdNonce: 'rvd nonce',
@@ -168,14 +189,14 @@ void main() {
         ),
         connector: null,
       );
-      srvd.sessions['the session'] = live;
+      srvd.sessions[liveSessionId] = live;
 
       await srvd.handleRequestPorts(
         requestPorts(from: '@carol', atSignA: '@carol'),
       );
 
       expect(srvd.allocated, isFalse);
-      expect(srvd.sessions['the session'], same(live));
+      expect(srvd.sessions[liveSessionId], same(live));
     });
 
     test('refuses a session id that is still being started', () async {
@@ -208,7 +229,7 @@ void main() {
     AtNotification payloadRequest({
       required String from,
       required String atSignA,
-      String sessionId = 'the session',
+      String sessionId = liveSessionId,
     }) =>
         AtNotification(
           'notif-id',
@@ -253,9 +274,9 @@ void main() {
       );
 
       final liveId = srvdAnsweringLookups(managerAtsign: 'open');
-      liveId.sessions['the session'] = SessionInfo(
+      liveId.sessions[liveSessionId] = SessionInfo(
         params: SrvdSessionParams(
-          sessionId: 'the session',
+          sessionId: liveSessionId,
           atSignA: '@bob',
           atSignB: '@device',
           rvdNonce: 'rvd nonce',
@@ -390,7 +411,7 @@ void main() {
     Iterable<String> refusals() =>
         logged.where((m) => m.startsWith('Unable to provide the socket pair'));
 
-    test('the control: a request naming two valid Atsigns is answered',
+    test('A session request whose session id is a UUID is served as before',
         () async {
       final srvd = await relay();
 
@@ -486,17 +507,90 @@ void main() {
     });
 
     test(
-        'A refused session request whose session id is not a UUID is sent'
-        ' nothing, and its id is not logged', () async {
+        'A session request that is not JSON is refused, and its text is not'
+        ' logged', () async {
       final srvd = await relay();
 
-      await request(srvd,
-          id: 'not\nSHOUT|a line', atSignB: '@a@b', multipleAcksOk: true);
+      await srvd.handleRequestPorts(AtNotification(
+        'notif-id',
+        '@relay:gateway-1.request_ports.sshrvd@alice',
+        '@alice',
+        '@relay',
+        DateTime.now().millisecondsSinceEpoch,
+        'key',
+        true,
+        value: '{"sessionId": zz-marker-zz\nSHOUT|a second line',
+      ));
+      await pumpEventQueue();
 
-      expect(sent, isEmpty, reason: 'no NACK under a key that is not a UUID');
-      expect(refusals().single, contains('not a UUID'));
-      expect(logged.where((m) => m.contains('SHOUT|a line')), isEmpty,
-          reason: 'the id is not written to the log');
+      expect(srvd.sessions, isEmpty, reason: 'no session starts');
+      expect(sent, isEmpty, reason: '@alice is sent nothing');
+      expect(
+        shouts.where((m) => m.contains('@alice') && m.contains('is not JSON')),
+        hasLength(1),
+      );
+      expect(
+        logged.where(
+            (m) => m.contains('zz-marker') || m.contains('a second line')),
+        isEmpty,
+        reason: 'none of the request is written to the log',
+      );
+    });
+
+    test(
+        'A session request whose session id is a UUID in upper case is served'
+        ' under its lower-case form', () async {
+      final String upper = sessionId.toUpperCase();
+      final srvd = await relay();
+      final toWorker = <Object?>[];
+      srvd.portPair.listen(toWorker.add);
+
+      await request(srvd, id: upper, multipleAcksOk: true);
+
+      expect(upper, isNot(sessionId), reason: 'the id has letters to fold');
+      expect(srvd.sessions.keys, [sessionId]);
+      expect(sent, hasLength(1), reason: '@alice is sent its ports');
+      expect(sent.single.atKey.key, isNot(startsWith('nack.')));
+
+      await srvd.handleAuthModes(AtNotification(
+        'auth-modes-id',
+        '@relay:local.auth_modes.sshrvd@alice',
+        '@alice',
+        '@relay',
+        1,
+        'key',
+        true,
+        value: jsonEncode({
+          'sessionId': upper,
+          'rvdNonce': srvd.sessions[sessionId]!.params.rvdNonce,
+          'sideA': 'escr',
+          'sideB': 'escr',
+        }),
+      ));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect([for (final m in toWorker) (m as IIRequest).type], ['auth_modes'],
+          reason: 'auth modes naming the id in upper case reach its worker;'
+              ' the socket and the session log message have tests of their'
+              ' own');
+    });
+
+    test('A session request whose session id is not a UUID is refused',
+        () async {
+      for (final String id in ['the session', 'not\nSHOUT|a line']) {
+        final srvd = await relay();
+
+        await request(srvd, id: id, multipleAcksOk: true);
+
+        expect(srvd.sessions, isEmpty, reason: 'no session starts');
+        expect(sent, isEmpty,
+            reason: '@alice is sent nothing, a NACK included: its key would'
+                ' carry an id that is not a UUID');
+        expect(refusals().single,
+            allOf(contains('@alice'), contains('not a UUID')));
+        expect(logged.where((m) => m.contains(id.split('\n').last)), isEmpty,
+            reason: 'the id is not written to the log');
+      }
     });
 
     test(

@@ -12,9 +12,12 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
   that fails, or is not answered in time, keeps the session. A key whose
   re-check fails, or whose atServer takes more than a second to answer, is
   re-checked less and less often, down to once a minute, until it is
-  answered promptly again. A session ended for a withdrawn key has its
-  sockets destroyed at once, so no side is given time to take data still
-  waiting for it; a relay that stops still gives each side that time.
+  answered promptly again. A session ended for a withdrawn key has the
+  sockets of every connection it has not yet closed destroyed at once, a
+  connection whose close has begun among them, so no side is given time to
+  take data the relay still holds for it; what the operating system has
+  already accepted for sending may still arrive. A relay that stops still
+  gives each side that time.
 
   The unit tests prove the scenarios against a stand-in lookup, under
   controlled time. The scenario about many slow atServers runs over HTTP, at
@@ -23,7 +26,11 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
   Races: a key has one re-check under way at most on each timer, and the two
   timers never wait on each other; a key revoked and reinstated between two
   re-checks keeps its session, including one the re-check found missing and
-  that is reinstated before the lookup that confirms its withdrawal.
+  that is reinstated before the lookup that confirms its withdrawal. An end
+  that reaches a worker after its session has finished, or after a stop has
+  closed it, does nothing; a socket still authenticating or waiting to pair
+  when the end arrives is closed with the connector, holding no data for its
+  far side.
   Replay: none; srvd sends and accepts no message for this.
   DoS: one lookup per reported key every 3 seconds, on a kept connection,
   and two more when the key is no longer published, with at most 64 lookups
@@ -143,7 +150,7 @@ Feature: srvd re-checks the keys of the sessions it reports every few seconds
     Given a live session whose device side has stopped reading, with data waiting for it
     When the relay ends the session because a client data signing key was withdrawn
     Then both of the session's sockets are closed within 1 second
-    And the data waiting for the device side is dropped
+    And the data the relay still holds for the device side is dropped
 
   Scenario: A single-port session ended for a withdrawn key has its sockets closed at once
     Given two live sessions on the relay's single port, one of whose device sides has stopped reading

@@ -113,7 +113,7 @@ class PortPairWorker extends RelayWorker {
   /// so that no side is given time to take its pending data.
   Future<void> end([IIRequest? req]) async {
     final SocketConnector? started = connector;
-    if (started != null) destroySockets(started);
+    if (started != null) destroySockets(started, tracker);
     await stop(req);
   }
 

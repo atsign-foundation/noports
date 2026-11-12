@@ -109,20 +109,24 @@ mixin SrvdUtilMixin {
   /// Throws [FormatException] when [encodedJson] is not JSON, and
   /// [ArgumentError] when it is not a map with a string sessionId. Once the
   /// session id is read, throws [SrvdRequestRefused] when a field is missing
-  /// or malformed, naming the field and why, including when atSignA or
-  /// atSignB is not a valid Atsign.
+  /// or malformed, naming the field and why, including when the session id
+  /// is not a UUID, or atSignA or atSignB is not a valid Atsign.
   SrvdSessionParams srvdSessionParamsFromJson(String encodedJson) {
     final Object? json = jsonDecode(encodedJson);
     if (json is! Map || json['sessionId'] is! String) {
       throw ArgumentError('A session request must be a map with a sessionId');
     }
-    final String sessionId = json['sessionId'];
+    // NOTE: folded, so that every comparison and record key agrees on it
+    final String sessionId = (json['sessionId'] as String).toLowerCase();
 
     Never refuse(String reason) => throw SrvdRequestRefused(
           sessionId: sessionId,
           multipleAcksOk: json['multipleAcksOk'] == true,
           reason: reason,
         );
+    if (!isValidSessionId(sessionId)) {
+      refuse('Parameter sessionId must be a UUID');
+    }
     T required<T>(String name, String what) {
       final Object? v = json[name];
       return v is T ? v : refuse('Parameter $name must be $what');
@@ -164,6 +168,7 @@ mixin SrvdUtilMixin {
 
     return SrvdSessionParams(
       sessionId: sessionId,
+      sessionIdAsSent: json['sessionId'] as String,
       atSignA: atSignA,
       atSignB: atSignB,
       authenticateSocketA: authenticateSocketA,
@@ -189,6 +194,7 @@ mixin SrvdUtilMixin {
     }
     return SrvdSessionParams(
       sessionId: params.sessionId,
+      sessionIdAsSent: params.sessionIdAsSent,
       atSignA: params.atSignA,
       atSignB: params.atSignB,
       authenticateSocketA: params.authenticateSocketA,

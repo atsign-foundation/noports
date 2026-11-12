@@ -18,6 +18,7 @@
 * feat: srvd stops gracefully on SIGINT, or SIGTERM outside Windows, within 12
   seconds; give its container a 15-second stop grace period (Docker's default
   is 10)
+* fix: srvd refuses a session request whose session id is not a UUID
 * fix: srvd refuses a session request whose device-side Atsign is not a valid
   Atsign, and tells a client why it refused a malformed request, so the client
   fails at once instead of waiting out its timeout

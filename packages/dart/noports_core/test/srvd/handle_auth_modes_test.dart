@@ -19,7 +19,7 @@ void main() {
     const clientAtsign = '@alice';
     const daemonAtsign = '@bob';
     const relayAtSign = '@relay';
-    const sessionId = 'sess-123';
+    const sessionId = '5a1f7d0e-3b2c-4d6e-8f90-1a2b3c4d5e6f';
 
     // The rvdNonce THIS relay instance generated for the session.
     const relayRvdNonce = '2026-01-01T00:00:00.000001';
@@ -161,6 +161,27 @@ void main() {
       await deliver(authModes(value: 'not json'));
 
       expect(forwarded, isEmpty);
+    });
+
+    test(
+        'Given an auth modes message whose value is not JSON, when it arrives,'
+        ' then none of its text is logged', () async {
+      registerSession();
+      final logged = <String>[];
+      srvd.logger.logger.onRecord.listen((r) => logged.add(r.message));
+      srvd.logger.level = 'all';
+
+      await deliver(
+          authModes(value: '{"sessionId": zz-marker-zz\nSHOUT|a second line'));
+
+      expect(forwarded, isEmpty);
+      expect(logged.where((m) => m.startsWith('Malformed auth_modes')),
+          hasLength(1),
+          reason: 'the control: the refusal is logged');
+      expect(
+          logged.where(
+              (m) => m.contains('zz-marker') || m.contains('a second line')),
+          isEmpty);
     });
 
     test('ignores a value with no sessionId', () async {

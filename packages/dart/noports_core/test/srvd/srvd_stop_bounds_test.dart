@@ -353,7 +353,7 @@ void main() {
       'key',
       true,
       value: jsonEncode({
-        'sessionId': 'late',
+        'sessionId': '1a7e0000-0000-4000-8000-000000000001',
         'atSignA': '@alice',
         'atSignB': '@bob',
         'clientNonce': 'client nonce',
@@ -388,7 +388,7 @@ void main() {
       'key',
       true,
       value: jsonEncode({
-        'sessionId': 'late',
+        'sessionId': '1a7e0000-0000-4000-8000-000000000001',
         'atSignA': '@alice',
         'atSignB': '@bob',
         'clientNonce': 'client nonce',
@@ -437,7 +437,7 @@ void main() {
       'key',
       true,
       value: jsonEncode({
-        'sessionId': 'spawning',
+        'sessionId': '59a00000-0000-4000-8000-000000000002',
         'atSignA': '@alice',
         'atSignB': '@bob',
         'clientNonce': 'client nonce',

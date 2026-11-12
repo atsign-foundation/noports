@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:at_utils/at_logger.dart';
 import 'package:at_utils/at_utils_io.dart' show StdErrLoggingHandler;
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/srvd/isolates/connection_tracker.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
@@ -25,19 +26,23 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
   late final ReceivePort fromMain;
   late final AtSignLogger logger;
   final Map<String, RelayWorkerRequestHandler> reqHandlers = {};
+  final Map<int, Completer<IIResponse>> rpcCompleters = {};
 
-  /// Destroys both sockets of every connection [connector] carries, with
-  /// whatever data was still waiting for them, so that closing [connector]
-  /// waits for no side to take its pending data.
+  /// Destroys both sockets of every connection [connector] carries, and of
+  /// every one [tracker] has not yet seen closed, a connection whose close
+  /// has begun among them, with whatever data was still waiting for them,
+  /// so that closing [connector] waits for no side to take its pending data.
   @protected
-  void destroySockets(SocketConnector connector) {
-    // NOTE: a destroyed socket's connection leaves the list at once
-    for (final connection in connector.connections.toList()) {
+  void destroySockets(SocketConnector connector, ConnectionTracker? tracker) {
+    // NOTE: destroying a socket can take its connection out of either list
+    for (final connection in {
+      ...connector.connections,
+      ...?tracker?.unclosed,
+    }) {
       connection.sideA.socket.destroy();
       connection.sideB.socket.destroy();
     }
   }
-  final Map<int, Completer<IIResponse>> rpcCompleters = {};
 
   RelayWorker({
     required this.toMain,
@@ -132,7 +137,7 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     SrvdSessionParams params,
   ) async {
     final String dataToVerify = jsonEncode({
-      'sessionId': params.sessionId,
+      'sessionId': params.sessionIdAsSent,
       'clientNonce': params.clientNonce,
       'rvdNonce': params.rvdNonce,
     });
