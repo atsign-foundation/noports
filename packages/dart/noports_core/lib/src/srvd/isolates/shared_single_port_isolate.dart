@@ -260,7 +260,10 @@ class SinglePortWorker extends RelayWorker {
   Future<void> endSession(IIRequest req) async {
     final SocketConnector? connector = sessions[req.payload]?.connector;
     if (connector == null) return;
-    destroySockets(connector);
+    destroySockets(
+      connector,
+      _trackers.where((t) => t.sessionId == req.payload).firstOrNull,
+    );
     connector.close();
   }
 

@@ -33,6 +33,7 @@ void main() {
   Future<void> start({
     bool listen = true,
     Duration closeFlushTimeout = flush,
+    Duration connectorTimeout = const Duration(seconds: 1),
   }) async {
     toMain = ReceivePort();
     reports = [];
@@ -48,7 +49,7 @@ void main() {
       loggingTag: 'port pair connections test',
       relayAuthDetectWindowMs: 500,
       closeFlushTimeout: closeFlushTimeout,
-      connectorTimeout: const Duration(seconds: 1),
+      connectorTimeout: connectorTimeout,
     );
     await worker.startSession(IIRequest.create('start', session()));
   }
@@ -114,12 +115,15 @@ void main() {
     return (sender, stalled);
   }
 
-  /// Whether [socket], which reads nothing, finds within a second that its
-  /// far end has gone: a write to it fails.
-  Future<bool> findsItsSocketClosed(Socket socket) async {
+  /// Whether [socket], which reads nothing, finds within [within], a second
+  /// unless given, that its far end has gone: a write to it fails.
+  Future<bool> findsItsSocketClosed(
+    Socket socket, {
+    Duration within = const Duration(seconds: 1),
+  }) async {
     var gone = false;
     unawaited(socket.done.then((_) => gone = true, onError: (_) => gone = true));
-    final DateTime giveUp = DateTime.now().add(const Duration(seconds: 1));
+    final DateTime giveUp = DateTime.now().add(within);
     while (!gone && DateTime.now().isBefore(giveUp)) {
       try {
         socket.add([0]);
@@ -148,8 +152,12 @@ void main() {
     await endForAWithdrawnKey();
     await clientClosed.timeout(const Duration(seconds: 5));
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 1)));
-    expect(await findsItsSocketClosed(device), isTrue,
-        reason: 'the side that reads nothing has lost its socket too');
+    expect(
+        await findsItsSocketClosed(device,
+            within: const Duration(seconds: 1) - stopwatch.elapsed),
+        isTrue,
+        reason: 'the side that reads nothing has lost its socket too, within'
+            ' the same second');
     var took = 0;
     await device
         .listen((data) => took += data.length, onError: (_) {})
@@ -171,6 +179,48 @@ void main() {
     await endForAWithdrawnKey();
 
     expect(await findsItsSocketClosed(client), isTrue);
+  });
+
+  test(
+      'Given a connection whose client has closed while data still waits for'
+      ' its device, when the session is ended for a withdrawn key, then the'
+      ' connection is closed within a second', () async {
+    const int sent = 3900000;
+    await start(closeFlushTimeout: SocketConnector.defaultCloseFlushTimeout);
+    final (client, _) = await pair();
+    await report('newConnection');
+    client.add(List<int>.filled(sent, 7));
+    await client.close();
+    final DateTime giveUp = DateTime.now().add(const Duration(seconds: 5));
+    while (worker.connector!.connections.isNotEmpty &&
+        DateTime.now().isBefore(giveUp)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect(worker.connector!.connections, isEmpty,
+        reason: 'the connection is ending, its device side still draining');
+    expect(reports.where((r) => r.type == 'connectionClosed'), isEmpty,
+        reason: 'the control: nothing has closed it yet');
+
+    final stopwatch = Stopwatch()..start();
+    await endForAWithdrawnKey();
+    await report('connectionClosed');
+
+    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 1)),
+        reason: 'its 30 seconds to drain are cut short');
+  });
+
+  test(
+      'Given a session whose connector waits 30 seconds for a connection,'
+      ' when it is ended for a withdrawn key, then its connector closes at'
+      ' once', () async {
+    await start(connectorTimeout: SocketConnector.defaultTimeout);
+    await pair();
+    await report('newConnection');
+
+    await endForAWithdrawnKey();
+
+    expect(worker.connector!.closed, isTrue,
+        reason: 'no further socket is accepted on its ports');
   });
 
   test(
