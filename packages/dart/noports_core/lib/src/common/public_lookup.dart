@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,6 +9,7 @@ import 'package:at_lookup/at_lookup_io.dart'
         SecondaryAddress,
         SecondaryAddressFinder;
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/lookup_slots.dart';
 
 /// Looks up atSigns' public records, such as the `_apsk` records that
 /// enrollments publish their signing keys in.
@@ -70,7 +70,9 @@ abstract class PublicLookup {
 /// the atDirectory gives for it, offering `http/1.1` by ALPN, without which an
 /// atServer answers in atProtocol. Each lookup has its own connection and a
 /// deadline, at most [maxPerAtSign] of them run at once for any one atSign,
-/// and at most [maxConcurrent] in all.
+/// and at most [maxConcurrent] in all. A lookup waiting for its turn goes
+/// ahead of those of atSigns with more lookups under way than its own (see
+/// [LookupSlots]).
 ///
 /// [lookup] falls back to [atClient]'s own atServer when the record's
 /// atServer can't be connected to, or doesn't answer over HTTP as an
@@ -171,8 +173,10 @@ class DirectPublicLookup extends PublicLookup {
     ..connectionTimeout = timeout ~/ 2
     ..idleTimeout = const Duration(seconds: 15);
 
-  late final _Slots _all = _Slots(maxConcurrent);
-  final Map<String, _Slots> _byAtSign = {};
+  late final LookupSlots _slots = LookupSlots(
+    maxConcurrent: maxConcurrent,
+    maxPerAtSign: maxPerAtSign,
+  );
 
   @override
   Future<String?> lookup(String uri) async {
@@ -201,21 +205,15 @@ class DirectPublicLookup extends PublicLookup {
     final at = uri.lastIndexOf('@');
     final atSign = uri.substring(at);
     final key = uri.substring('public:'.length, at);
-    final slots = _byAtSign.putIfAbsent(atSign, () => _Slots(maxPerAtSign));
-    await slots.acquire();
+    final String turnsOf = atSign.toLowerCase();
+    await _slots.acquire(turnsOf);
     try {
-      await _all.acquire();
-      try {
-        final Stopwatch took = Stopwatch()..start();
-        final String? value = await _get(atSign, key);
-        onAnswered?.call(uri, took.elapsed);
-        return value;
-      } finally {
-        _all.release();
-      }
+      final Stopwatch took = Stopwatch()..start();
+      final String? value = await _get(atSign, key);
+      onAnswered?.call(uri, took.elapsed);
+      return value;
     } finally {
-      slots.release();
-      if (slots.idle) _byAtSign.remove(atSign);
+      _slots.release(turnsOf);
     }
   }
 
@@ -303,34 +301,4 @@ class _NotServedOverHttp implements Exception {
 
   @override
   String toString() => message;
-}
-
-/// A count of [max] slots, which [acquire] waits for in turn.
-class _Slots {
-  _Slots(this.max);
-
-  final int max;
-  int _held = 0;
-  final Queue<Completer<void>> _waiting = Queue();
-
-  bool get idle => _held == 0 && _waiting.isEmpty;
-
-  Future<void> acquire() async {
-    if (_held < max) {
-      _held++;
-      return;
-    }
-    final turn = Completer<void>();
-    _waiting.add(turn);
-    await turn.future;
-  }
-
-  /// Hands this slot to the longest waiter, if there is one.
-  void release() {
-    if (_waiting.isNotEmpty) {
-      _waiting.removeFirst().complete();
-    } else {
-      _held--;
-    }
-  }
 }

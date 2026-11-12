@@ -791,6 +791,137 @@ void main() {
     );
   }, timeout: const Timeout(Duration(seconds: 60)));
 
+  /// A running relay, at a fifth of real time, whose reported sessions each
+  /// have one key on the device-side Atsign [atServers] names, served over
+  /// HTTP by an atServer per Atsign answering after its delay; and a way to
+  /// revoke one of the keys and see how long its session takes to end.
+  Future<
+      ({
+        Map<String, SessionInfo> sessions,
+        Future<Duration?> Function(String key) revokeAndTime,
+      })> fifthTimeRelayWith(
+    Map<String, ({Duration takes, int keys})> atServers,
+  ) async {
+    const int fifth = 5;
+    final ports = <String, int>{};
+    final servers = <HttpServer>[];
+    final revoked = <String>{};
+    for (final MapEntry(key: atsign, value: (:takes, keys: _))
+        in atServers.entries) {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      servers.add(server);
+      ports[atsign] = server.port;
+      server.listen((request) async {
+        await Future<void>.delayed(takes ~/ fifth);
+        final String path = Uri.decodeComponent(request.uri.path);
+        final String approved = path.replaceFirst('.r.__e', '.a.__e');
+        final bool isRevoked = revoked.any((k) => k.contains(
+            approved.substring(approved.lastIndexOf('/') + 1)));
+        final bool held = isRevoked
+            ? path.contains('.r.__e')
+            : path.contains('.a.__e');
+        request.response
+          ..statusCode = held ? HttpStatus.ok : HttpStatus.notFound
+          ..write(held ? 'a key' : '');
+        await request.response.close();
+      });
+    }
+    final telemetry = telemetryOver(
+      RecordingExporter(),
+      ScriptedListSource(listOf(['@alice'])),
+    );
+    final relay = relayWith(
+      publicLookup: DirectPublicLookup(
+        atClient,
+        addressFinder: _LoopbackFinder(ports),
+        scheme: 'http',
+      ),
+      telemetry: telemetry,
+      reportedEvery: const Duration(milliseconds: 3000 ~/ fifth),
+      deadline: const Duration(milliseconds: 2000 ~/ fifth),
+      prompt: const Duration(milliseconds: 1000 ~/ fifth),
+    );
+    addTearDown(() async {
+      await relay.stop();
+      for (final server in servers) {
+        await server.close(force: true);
+      }
+    });
+    await relay.init();
+    await relay.run();
+    await telemetry.list.firstGoodRead.timeout(const Duration(seconds: 2));
+    final sessions = <String, SessionInfo>{};
+    for (final MapEntry(key: atsign, value: (takes: _, :keys))
+        in atServers.entries) {
+      for (var i = 0; i < keys; i++) {
+        final String name = atsign.substring(1);
+        final String id = '$name-$i';
+        final String key = 'public:_apsk.$name-e$i.a.__e$atsign';
+        final si = SessionInfo(
+          params: sessionParams(sessionId: id, device: atsign),
+          connector: null,
+        )..signingKeys.add(key);
+        relay.sessions[id] = si;
+        unawaited(relay.handleWorkerReport(
+          IIRequest.create('newConnection', firstPair(id)),
+        ));
+        sessions[key] = si;
+      }
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 3000));
+    expect(relay.telemetry!.reporting(sessions.values.last.params.sessionId),
+        isTrue,
+        reason: 'the sessions are reported');
+    return (
+      sessions: sessions,
+      revokeAndTime: (String key) async {
+        revoked.add(key);
+        final SessionInfo si = sessions[key]!;
+        final Stopwatch took = Stopwatch()..start();
+        while (!si.ending && took.elapsed < const Duration(seconds: 6)) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+        return si.ending ? took.elapsed : null;
+      },
+    );
+  }
+
+  test("Many busy Atsigns do not hold up a quiet Atsign's re-check", () async {
+    const quietKey = 'public:_apsk.quiet-e0.a.__e@quiet';
+    final rig = await fifthTimeRelayWith({
+      for (var i = 0; i < 96; i++)
+        '@busy$i': (takes: const Duration(milliseconds: 750), keys: 24),
+      '@quiet': (takes: Duration.zero, keys: 1),
+    });
+
+    final Duration? took = await rig.revokeAndTime(quietKey);
+
+    expect(took, isNotNull, reason: 'the relay ends the quiet session');
+    expect(took, lessThan(const Duration(seconds: 10) ~/ 5),
+        reason: "the scenario's 10 seconds, at a fifth");
+    expect(rig.sessions.values.where((si) => si.ending), hasLength(1),
+        reason: 'it ends no other');
+  }, timeout: const Timeout(Duration(seconds: 90)));
+
+  test(
+      "A busy Atsign's keys are still re-checked while quiet Atsigns are served"
+      ' first', () async {
+    const busyLastKey = 'public:_apsk.busy-e23.a.__e@busy';
+    final rig = await fifthTimeRelayWith({
+      '@busy': (takes: const Duration(milliseconds: 750), keys: 24),
+      for (var i = 0; i < 96; i++)
+        '@one$i': (takes: const Duration(milliseconds: 750), keys: 1),
+    });
+
+    final Duration? took = await rig.revokeAndTime(busyLastKey);
+
+    expect(took, isNotNull, reason: 'the relay ends the busy session');
+    expect(took, lessThan(const Duration(seconds: 10) ~/ 5),
+        reason: "the scenario's 10 seconds, at a fifth");
+    expect(rig.sessions.values.where((si) => si.ending), hasLength(1),
+        reason: 'it ends no other');
+  }, timeout: const Timeout(Duration(seconds: 90)));
+
   /// Revokes the device-side enrollment of [si] 10 seconds in, and expects
   /// the relay to look no key up before its 300-second re-check, which
   /// ends the session.
