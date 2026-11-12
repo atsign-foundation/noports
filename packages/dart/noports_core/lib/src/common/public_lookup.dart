@@ -205,7 +205,12 @@ class DirectPublicLookup extends PublicLookup {
     final at = uri.lastIndexOf('@');
     final atSign = uri.substring(at);
     final key = uri.substring('public:'.length, at);
-    final String turnsOf = atSign.toLowerCase();
+    final String turnsOf;
+    try {
+      turnsOf = atSign.toAtsign();
+    } on InvalidAtSignException catch (e) {
+      throw _NotServedOverHttp('$atSign is not an atSign: $e');
+    }
     await _slots.acquire(turnsOf);
     try {
       final Stopwatch took = Stopwatch()..start();

@@ -185,6 +185,16 @@ void main() {
       await expectLater(lookupWith().lookupDirect(aliceKey), throwsA(anything));
     });
 
+    test("lookup asks the client's own atServer when the record's atSign is"
+        ' not an atSign, and lookupDirect does not', () async {
+      const notAnAtSign = 'public:_apsk.x.a.__e@al!ce';
+      ownAtServerHolds(notAnAtSign, 'from my own atServer');
+
+      expect(await lookupWith().lookup(notAnAtSign), 'from my own atServer');
+      await expectLater(
+          lookupWith().lookupDirect(notAnAtSign), throwsA(anything));
+    });
+
     test('give up on a silent atServer at the deadline, without asking the'
         " client's own atServer", () async {
       await serveSilently('@mallory');
@@ -389,6 +399,24 @@ void main() {
 
       await Future.delayed(const Duration(milliseconds: 500));
       expect(taken(), 2);
+    });
+
+    test('ask one atServer at most maxPerAtSign at a time, however its atSign'
+        ' is spelt', () async {
+      final taken = await serveSilently('@alice');
+      ports['@a.lice'] = ports['@alice']!;
+      final lookup = lookupWith(
+        timeout: const Duration(seconds: 2),
+        maxPerAtSign: 1,
+      );
+      for (final atSign in ['@alice', '@a.lice']) {
+        unawaited(lookup
+            .lookupDirect('public:_apsk.m.a.__e$atSign')
+            .then((_) => null, onError: (_) => null));
+      }
+
+      await Future.delayed(const Duration(milliseconds: 500));
+      expect(taken(), 1);
     });
 
     test('ask at most maxConcurrent atServers at a time', () async {
