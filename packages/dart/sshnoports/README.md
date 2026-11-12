@@ -193,6 +193,26 @@ request named one, both peers' IP addresses and ports, the session's times,
 and its byte and connection counts. The relay's own lifecycle records carry no
 Atsign or address.
 
+srvd re-checks the client data signing keys of the sessions it reports
+every 3 seconds, as well as every 5 minutes with every other session's. A
+reported session therefore ends within 10 seconds of its atServer withdrawing
+a key one of its sides signed with: at once when the enrollment is revoked,
+superseded or deleted, and once the atServer has removed an expired one. That
+holds while the key's atServer answers within a second. A key whose re-check
+fails, or takes longer than that, is re-checked 3, 6, 12, 24 and 48 seconds
+later and then once a minute, and every 3 seconds again once it is answered
+promptly; srvd logs such a failure, once a minute at most for a key.
+
+`--reported-signing-key-check-secs` sets the interval, and 0 leaves reported
+sessions to the 5-minute re-check alone. `--signing-key-check-secs 0` turns
+every re-check off. A re-check is one HTTPS GET to the key's own atServer,
+given 2 seconds, and two more when the key is no longer published. A re-check
+that fails, or is not answered in time, keeps the session.
+
+A session srvd ends because one of its keys was withdrawn, reported or not,
+has its sockets closed at once, and data still waiting for either side is
+dropped.
+
 ## systemd units
 
 The systemd directory contains an example unit file with its own

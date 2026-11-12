@@ -58,6 +58,7 @@ class PortPairWorker extends RelayWorker {
   }) {
     reqHandlers['start'] = startSession;
     reqHandlers['stop'] = stop;
+    reqHandlers['end'] = end;
     reqHandlers['auth_modes'] = handleAuthModes;
   }
 
@@ -106,6 +107,14 @@ class PortPairWorker extends RelayWorker {
       logger.shout('Connector not yet started - killing this isolate');
       Isolate.current.kill();
     }
+  }
+
+  /// Ends the session at once: as [stop], with its sockets destroyed first,
+  /// so that no side is given time to take its pending data.
+  Future<void> end([IIRequest? req]) async {
+    final SocketConnector? started = connector;
+    if (started != null) destroySockets(started, tracker);
+    await stop(req);
   }
 
   Future<void> startSession(IIRequest req) async {

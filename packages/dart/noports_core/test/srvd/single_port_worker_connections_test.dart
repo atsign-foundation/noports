@@ -20,6 +20,7 @@ void main() {
   late SinglePortWorker worker;
   late ServerSocket server;
   final clients = <Socket>[];
+  final reading = <Socket, StreamSubscription<dynamic>>{};
 
   setUpAll(() {
     signingKP = RsaKeyPair.generate(keySize: 2048);
@@ -115,6 +116,7 @@ void main() {
     ).authenticate(socket);
     final subscription = stream!.listen((_) {}, onError: (_) {});
     if (!reads) subscription.pause();
+    reading[socket] = subscription;
     return socket;
   }
 
@@ -185,6 +187,159 @@ void main() {
     }();
     expect(arrivals.indexOf('sessionComplete'), lessThan(exitAt),
         reason: 'run() kills the isolate once stopped completes');
+  });
+
+  /// A worker that gives a closing side the default 30 seconds to take its
+  /// pending data, in place of the one [setUp] built.
+  Future<void> withDefaultFlush() async {
+    worker.fromMain.close();
+    await server.close();
+    worker = SinglePortWorker(
+      toMain: toMain.sendPort,
+      logTraffic: false,
+      verbose: false,
+      loggingTag: 'single port connections test',
+      address: '127.0.0.1',
+      useTLS: false,
+      bindPort: 0,
+      connectorTimeout: const Duration(seconds: 1),
+    );
+    server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    server.listen(worker.socketHandler);
+  }
+
+  test(
+      'Given a single-port connection whose client has closed while data still'
+      ' waits for its device, when the session is ended for a withdrawn key,'
+      ' then the connection is closed and the session reported complete'
+      ' within a second', () async {
+    await withDefaultFlush();
+    const int sent = 3900000;
+    final key = await startSession('S1');
+    final a = await connectAs('S1', key, '@alice', isSideA: true);
+    await connectAs('S1', key, '@bob', isSideA: false, reads: false);
+    await reportsFor('newConnection', 'S1');
+    a.add(List<int>.filled(sent, 7));
+    await a.close();
+    final connector = worker.sessions['S1']!.connector!;
+    final DateTime giveUp = DateTime.now().add(const Duration(seconds: 5));
+    while (connector.connections.isNotEmpty &&
+        DateTime.now().isBefore(giveUp)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect(connector.connections, isEmpty,
+        reason: 'the connection is ending, its device side still draining');
+    expect(reports.where((r) => r.type == 'connectionClosed'), isEmpty,
+        reason: 'the control: nothing has closed it yet');
+
+    final stopwatch = Stopwatch()..start();
+    await worker.reqHandlers['endSession']!(
+        IIRequest.create('endSession', 'S1'));
+    await reportsFor('connectionClosed', 'S1');
+    await reportsFor('sessionComplete', 'S1');
+
+    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 1)),
+        reason: 'its 30 seconds to drain are cut short');
+  });
+
+  test(
+      'Given a single-port session that has already finished, when it is'
+      ' ended for a withdrawn key, then nothing happens', () async {
+    final key = await startSession('S1');
+    final a = await connectAs('S1', key, '@alice', isSideA: true);
+    final b = await connectAs('S1', key, '@bob', isSideA: false);
+    await reportsFor('newConnection', 'S1');
+    a.destroy();
+    b.destroy();
+    await reportsFor('sessionComplete', 'S1');
+    expect(worker.sessions.containsKey('S1'), isFalse,
+        reason: 'the session is gone from the worker');
+
+    await worker.reqHandlers['endSession']!(
+        IIRequest.create('endSession', 'S1'));
+
+    expect(reports.where((r) => r.type == 'sessionComplete'), hasLength(1));
+  });
+
+  test(
+      'A single-port session ended for a withdrawn key has its sockets closed'
+      ' at once', () async {
+    worker.fromMain.close();
+    await server.close();
+    worker = SinglePortWorker(
+      toMain: toMain.sendPort,
+      logTraffic: false,
+      verbose: false,
+      loggingTag: 'single port connections test',
+      address: '127.0.0.1',
+      useTLS: false,
+      bindPort: 0,
+      connectorTimeout: const Duration(seconds: 1),
+    );
+    server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    server.listen(worker.socketHandler);
+    const int sent = 64 * 1024 * 1024;
+    final key1 = await startSession('S1');
+    final a1 = await connectAs('S1', key1, '@alice', isSideA: true);
+    final b1 =
+        await connectAs('S1', key1, '@bob', isSideA: false, reads: false);
+    final key2 = await startSession('S2');
+    final a2 = await connectAs('S2', key2, '@alice', isSideA: true);
+    final b2 = await connectAs('S2', key2, '@bob', isSideA: false);
+    await reportsFor('newConnection', 'S1');
+    await reportsFor('newConnection', 'S2');
+    unawaited(a1.done.then((_) {}, onError: (_) {}));
+    a1.add(List<int>.filled(sent, 7));
+    await Future<void>.delayed(const Duration(seconds: 1));
+
+    final stopwatch = Stopwatch()..start();
+    await worker.reqHandlers['endSession']!(
+        IIRequest.create('endSession', 'S1'));
+    await reading[a1]!
+        .asFuture<void>()
+        .catchError((_) {})
+        .timeout(const Duration(seconds: 5));
+    final complete = (await reportsFor('sessionComplete', 'S1')).single.payload;
+    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 1)),
+        reason: 'the client side is closed and the session reported complete');
+    expect(complete['bytesClientToDevice'], greaterThan(0));
+    var deviceFoundItClosed = false;
+    unawaited(b1.done.then((_) => deviceFoundItClosed = true,
+        onError: (_) => deviceFoundItClosed = true));
+    while (!deviceFoundItClosed &&
+        stopwatch.elapsed < const Duration(seconds: 1)) {
+      try {
+        b1.add([0]);
+      } catch (_) {
+        deviceFoundItClosed = true;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    expect(deviceFoundItClosed, isTrue,
+        reason: 'the side that reads nothing has lost its socket too: a'
+            ' write to it fails');
+    var took = 0;
+    reading[b1]!
+      ..onData((data) => took += (data as List<int>).length)
+      ..resume();
+    await reading[b1]!
+        .asFuture<void>()
+        .catchError((_) {})
+        .timeout(const Duration(seconds: 5));
+
+    expect(took, lessThan(sent),
+        reason: 'what was still waiting for the device was dropped');
+    var carried = 0;
+    reading[b2]!.onData((data) => carried += (data as List<int>).length);
+    a2.add(List<int>.filled(1024, 7));
+    await a2.flush();
+    final DateTime giveUp = DateTime.now().add(const Duration(seconds: 5));
+    while (carried < 1024 && DateTime.now().isBefore(giveUp)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect(carried, 1024, reason: 'the other session carries on');
+    expect(reports.where((r) =>
+        r.type == 'sessionComplete' && r.payload['sessionId'] == 'S2'), isEmpty);
   });
 
   test(
