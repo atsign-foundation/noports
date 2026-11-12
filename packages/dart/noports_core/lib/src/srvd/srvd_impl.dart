@@ -90,6 +90,10 @@ class SrvdImpl
   /// How many lookups the [reportedKeyLookup] srvd builds makes at once.
   static const reportedKeyLookupsAtOnce = 64;
 
+  /// How many lookups the [reportedKeyLookup] srvd builds makes at once to
+  /// one Atsign.
+  static const reportedKeyLookupsPerAtSign = 8;
+
   /// How this relay looks up the `_apsk` records sockets sign with.
   final PublicLookup publicLookup;
 
@@ -109,6 +113,7 @@ class SrvdImpl
                 timeout: reportedSigningKeyCheckDeadline,
                 timeoutCoversAddress: true,
                 maxConcurrent: reportedKeyLookupsAtOnce,
+                maxPerAtSign: reportedKeyLookupsPerAtSign,
                 onAnswered: reportedKeyAnswered,
               ),
             _ => publicLookup,

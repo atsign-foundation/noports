@@ -162,6 +162,16 @@ void main() {
   });
 
   test(
+      'A session stopped without ending keeps the sockets of a side that has'
+      ' stopped reading open for it to take its data', () async {
+    final (_, device) = await withDataWaiting(64 * 1024 * 1024);
+
+    await worker.stop();
+
+    expect(await findsItsSocketClosed(device), isFalse);
+  });
+
+  test(
       'Given a live session whose client side has stopped reading, when it'
       ' is ended for a withdrawn key, then the client side\'s socket is'
       ' closed within a second', () async {

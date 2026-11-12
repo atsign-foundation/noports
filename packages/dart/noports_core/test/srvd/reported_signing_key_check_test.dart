@@ -497,6 +497,32 @@ void main() {
     },
   );
 
+  test(
+    'A key a re-check finds missing, and that is reinstated before the'
+    ' lookup that confirms its withdrawal, keeps its session',
+    () {
+      fakeAsync((async) {
+        final rig = running(async, optedIn: ['@alice']);
+        final si = session(async, rig, 's');
+        rig.fast.delays['@bob'] = const Duration(milliseconds: 500);
+
+        async.elapse(const Duration(milliseconds: 2500));
+        rig.atServers.revoke(bobKey);
+        async.elapse(const Duration(milliseconds: 750));
+        rig.atServers.reinstate(bobKey);
+        async.elapse(const Duration(seconds: 27));
+
+        expect(si.ending, isFalse);
+        expect(
+          rig.fast.timesOf(bobKey).first,
+          const Duration(seconds: 3),
+          reason: 'the re-check at 3 s found the key revoked',
+        );
+        stop(async, rig.relay);
+      });
+    },
+  );
+
   test('A slow atServer delays only the re-checks of its own keys', () {
     fakeAsync((async) {
       final atsigns = [for (var i = 0; i < 100; i++) '@c$i'];
@@ -1221,7 +1247,8 @@ void main() {
     test(
       'when srvd is built with no lookups of its own, then reported'
       ' sessions are re-checked through a second lookup: 2 seconds for a'
-      ' whole lookup, 64 at once, and told how long each answer took',
+      ' whole lookup, 64 at once and 8 at once per Atsign, and told how long'
+      ' each answer took',
       () async {
         final srvd = await fromArgs(['--telemetry-collector-atsign', '@tel']);
 
@@ -1236,7 +1263,8 @@ void main() {
           [second.timeout, second.timeoutCoversAddress, second.maxConcurrent],
           [const Duration(seconds: 2), true, 64],
         );
-        expect(second.maxPerAtSign, first.maxPerAtSign);
+        expect(first.maxPerAtSign, DirectPublicLookup.defaultMaxPerAtSign);
+        expect(second.maxPerAtSign, 8);
         expect(second.onAnswered, isNotNull);
       },
     );
