@@ -62,15 +62,16 @@ void main() {
     test('when the relay sends 64 bytes with no newline, then authentication'
         ' fails with an error naming the 63-byte line limit and the srv closes'
         ' its relay socket', () {
-      for (final (before, after, chunks) in [
-        ('', '', 1),
-        ('somechallenge\n', '', 1),
-        ('', '\n', 1),
-        ('', '', 2),
+      for (final (answered, before, after, chunks) in [
+        (false, '', '', 1),
+        (false, 'somechallenge\n', '', 1),
+        (false, '', '\n', 1),
+        (false, '', '', 2),
+        (true, '', '', 1),
       ]) {
         final arm =
-            'preceded by "$before", followed by "$after",'
-            ' in $chunks write(s)';
+            'after an answered challenge: $answered, preceded by "$before",'
+            ' followed by "$after", in $chunks write(s)';
         fakeAsync((time) {
           final relay = FakeRelaySocket();
           Object? error;
@@ -84,6 +85,10 @@ void main() {
                     error = e;
                   },
                 );
+            if (answered) {
+              relay.sendText('somechallenge\n');
+              time.flushMicrotasks();
+            }
             for (var i = 0; i < chunks; i++) {
               relay.send(
                 Uint8List.fromList([
@@ -96,10 +101,18 @@ void main() {
             time.flushMicrotasks();
           }, (e, _) => raised.add(e));
 
-          expect('$error', contains('63'), reason: arm);
+          expect(
+            '$error',
+            'Relay sent a line longer than 63 bytes during authentication',
+            reason: arm,
+          );
           expect(raised, isEmpty, reason: arm);
           verify(() => relay.socket.destroy()).called(1);
-          verifyNever(() => relay.socket.writeln(any()));
+          if (answered) {
+            verify(() => relay.socket.writeln(any())).called(1);
+          } else {
+            verifyNever(() => relay.socket.writeln(any()));
+          }
         });
       }
     });
