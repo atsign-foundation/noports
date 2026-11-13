@@ -67,11 +67,19 @@ void main() {
         (false, 'somechallenge\n', '', 1),
         (false, '', '\n', 1),
         (false, '', '', 2),
+        (false, '', '', 64),
         (true, '', '', 1),
+        (true, '', '', 64),
       ]) {
         final arm =
             'after an answered challenge: $answered, preceded by "$before",'
-            ' followed by "$after", in $chunks write(s)';
+            ' followed by "$after", split across $chunks write(s)';
+        final payload = [
+          ...before.codeUnits,
+          ...List.filled(64, 0x41),
+          ...after.codeUnits,
+        ];
+        final chunkSize = (payload.length / chunks).ceil();
         fakeAsync((time) {
           final relay = FakeRelaySocket();
           Object? error;
@@ -89,17 +97,17 @@ void main() {
               relay.sendText('somechallenge\n');
               time.flushMicrotasks();
             }
-            for (var i = 0; i < chunks; i++) {
+            // Each write is at most chunkSize bytes, so with more than one
+            // write only the accumulated line exceeds the limit.
+            for (var i = 0; i < payload.length; i += chunkSize) {
               relay.send(
-                Uint8List.fromList([
-                  ...before.codeUnits,
-                  ...List.filled(64, 0x41),
-                  ...after.codeUnits,
-                ]),
+                Uint8List.fromList(
+                  payload.sublist(i, (i + chunkSize).clamp(0, payload.length)),
+                ),
               );
+              time.flushMicrotasks();
             }
-            time.flushMicrotasks();
-          }, (e, _) => raised.add(e));
+          },(e, _) => raised.add(e));
 
           expect(
             '$error',
