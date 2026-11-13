@@ -128,8 +128,12 @@ Future<({SigningAlgoType algorithm, String publicKey, String privateKey})>
 /// - waits for confirmation from relay
 ///   - `ok` is good
 ///   - anything else is bad
+/// - fails, and destroys the socket, when a line from the relay runs past
+///   63 bytes; the longest line a relay sends is its 44-byte challenge
 ///
 class RelayAuthenticatorESCR implements RelayAuthenticator {
+  static const int _maxRelayLineLength = 63;
+
   final String sessionId;
   final String relayAuthAesKey;
   final String publicSigningKeyUri;
@@ -190,6 +194,19 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
     );
     List<int> buffer = [];
 
+    bool failIfLineTooLong() {
+      final int newline = buffer.indexOf(10);
+      if ((newline == -1 ? buffer.length : newline) <= _maxRelayLineLength) {
+        return false;
+      }
+      completer.completeError(
+        'Relay sent a line longer than $_maxRelayLineLength bytes'
+        ' during authentication',
+      );
+      socket.destroy();
+      return true;
+    }
+
     Mutex listenMutex = Mutex();
 
     subscription = socket.listen(
@@ -204,14 +221,15 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
         try {
           if (authenticated) {
             sc.add(data);
-          } else {
-            // TODO maximum buffer size check to prevent dos attacks
-            // TODO unit test for same
+          } else if (!completer.isCompleted) {
             buffer.addAll(data);
-            if (buffer.contains(10)) {
+            final int newline = buffer.indexOf(10);
+            if (failIfLineTooLong()) {
+              return;
+            } else if (newline != -1) {
               if (receivedChallenge) {
-                List<int> received = buffer.sublist(0, buffer.indexOf(10));
-                buffer.removeRange(0, buffer.indexOf(10) + 1);
+                List<int> received = buffer.sublist(0, newline);
+                buffer.removeRange(0, newline + 1);
 
                 // "ok" - great. Anything else - error.
                 try {
@@ -241,8 +259,11 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
                   }
                 }
               } else {
-                List<int> received = buffer.sublist(0, buffer.indexOf(10));
-                buffer.removeRange(0, buffer.indexOf(10) + 1);
+                List<int> received = buffer.sublist(0, newline);
+                buffer.removeRange(0, newline + 1);
+                if (failIfLineTooLong()) {
+                  return;
+                }
 
                 try {
                   /// We've got the `$challenge\n` from relay
