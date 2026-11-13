@@ -419,6 +419,24 @@ void main() {
       expect(taken(), 1);
     });
 
+    test(
+        'Given a lookup of an atSign however it is spelt, when it is answered,'
+        ' then it gives back its turns for the next lookup', () async {
+      await serve('@alice', (_) => (200, 'a public key'));
+      ports['@A.lice'] = ports['@alice']!;
+      final lookup = lookupWith(maxConcurrent: 1, maxPerAtSign: 1);
+
+      expect(await lookup.lookupDirect('public:_apsk.m.a.__e@A.lice'),
+          'a public key');
+      expect(
+        await lookup
+            .lookupDirect(aliceKey)
+            .timeout(const Duration(seconds: 2), onTimeout: () => 'no turn'),
+        'a public key',
+        reason: 'the only global and per-Atsign turns were given back',
+      );
+    });
+
     test('ask at most maxConcurrent atServers at a time', () async {
       final takenByMallory = await serveSilently('@mallory');
       final takenByEve = await serveSilently('@eve');
