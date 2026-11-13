@@ -18,6 +18,10 @@
 * feat: srvd stops gracefully on SIGINT, or SIGTERM outside Windows, within 12
   seconds; give its container a 15-second stop grace period (Docker's default
   is 10)
+* fix: sshnpd creates `~/.ssh/authorized_keys` when it is missing, so an sshnp
+  session to a freshly installed device no longer fails with
+  `PathNotFoundException`, and an sshnpd run with `-s` no longer drops the
+  public key a client sends it
 * fix: srvd refuses a session request whose session id is not a UUID
 * fix: srvd refuses a session request whose device-side Atsign is not a valid
   Atsign, and tells a client why it refused a malformed request, so the client
