@@ -5,7 +5,9 @@
 - feat: `SrvdParams.reportedSigningKeyCheckSecs`
   (`--reported-signing-key-check-secs`, 3 by default): srvd ends a session it
   reports within 10 seconds of the enrollment one of its sides signed with
-  being revoked, with at most 8 of those lookups at once to one Atsign
+  being revoked, with at most 8 of those lookups at once to one Atsign, and
+  each Atsign's re-checks get a fair share of them however many sessions
+  other Atsigns have
 - feat: srvd closes a session's sockets at once when it ends the session
   because the enrollment one of its sides signed with was revoked
 - feat: `Srvd.stop` closes every session's connections and returns within
