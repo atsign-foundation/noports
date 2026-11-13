@@ -867,6 +867,82 @@ void main() {
     );
   });
 
+  group('RelayAuthenticatorESCR when the relay closes the connection', () {
+    late RsaKeyPair signingKP;
+    late ServerSocket relay;
+    late Socket client;
+
+    setUpAll(() {
+      signingKP = RsaKeyPair.generate(keySize: 2048);
+    });
+
+    tearDown(() async {
+      client.destroy();
+      await relay.close();
+    });
+
+    /// Connects to a loopback relay which runs [relaySide] on the accepted
+    /// socket, and authenticates to it.
+    Future<(bool, Stream<Uint8List>?)> authenticateTo(
+      Future<void> Function(Socket socket, StreamIterator<String> lines)
+          relaySide,
+    ) async {
+      relay = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      // Errors here surface as uncaught errors in the test's zone, failing it.
+      unawaited(relay.first.then(
+        (socket) => relaySide(
+          socket,
+          StreamIterator(
+            utf8.decoder.bind(socket).transform(const LineSplitter()),
+          ),
+        ),
+      ));
+      client = await Socket.connect(InternetAddress.loopbackIPv4, relay.port);
+      return RelayAuthenticatorESCR(
+        sessionId: Uuid().v4(),
+        relayAuthAesKey: AESKey.generate(32).key,
+        publicSigningKeyUri: '_apsk.my_enrollment_id.a.__e@alice',
+        publicSigningKey: signingKP.atPublicKey.publicKey,
+        privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
+        isSideA: false,
+      ).authenticate(client);
+    }
+
+    test('before sending a challenge, authentication fails', () async {
+      await expectLater(
+        authenticateTo((socket, _) async => socket.destroy()),
+        throwsA(contains('closed the connection')),
+      );
+    });
+
+    test('after reading the response but before "ok", authentication fails',
+        () async {
+      await expectLater(
+        authenticateTo((socket, lines) async {
+          socket.writeln('somechallenge');
+          await socket.flush();
+          expect(await lines.moveNext(), isTrue);
+          socket.destroy();
+        }),
+        throwsA(contains('closed the connection')),
+      );
+    });
+
+    test('right after "ok", authentication still succeeds', () async {
+      final (ok, stream) = await authenticateTo((socket, lines) async {
+        socket.writeln('somechallenge');
+        await socket.flush();
+        expect(await lines.moveNext(), isTrue);
+        socket.writeln('ok');
+        await socket.flush();
+        socket.destroy();
+      });
+      expect(ok, isTrue);
+      expect(stream, isNotNull);
+    });
+  });
+
   group('Relay authentication signed with a post-quantum key', () {
     const uri = '_apsk.my_enrollment_id.a.__e@alice';
     final sessionId = Uuid().v4();
