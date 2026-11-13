@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
 const _userKey = 'ssh-ed25519 AAAAexistingUserKey user@laptop';
+const _clientKey = 'ssh-ed25519 AAAAclientKey user@client';
 
 void main() {
   group('LocalSshKeyUtil authorized_keys', () {
@@ -170,6 +171,50 @@ void main() {
         _userKey,
         ephemeralLine('ssh-ed25519 AAAAkeyB', idB),
       ]);
+    });
+
+    test(
+      'addPublicKey creates a missing authorized_keys readable only by its owner',
+      () async {
+        authKeys.deleteSync();
+
+        await keyUtil.addPublicKey(sshPublicKey: '$_clientKey\n');
+
+        expect(authKeys.readAsLinesSync(), [_clientKey]);
+        if (!Platform.isWindows) {
+          final int permissions = authKeys.statSync().mode & 0x1ff;
+          expect(permissions, int.parse('600', radix: 8));
+        }
+      },
+    );
+
+    test('addPublicKey puts the permissions before the key', () async {
+      await keyUtil.addPublicKey(
+        sshPublicKey: '$_clientKey\n',
+        permissions: 'no-pty',
+      );
+
+      expect(authKeys.readAsLinesSync(), [_userKey, 'no-pty $_clientKey']);
+    });
+
+    test('addPublicKey adds a key only once', () async {
+      await keyUtil.addPublicKey(sshPublicKey: '$_clientKey\n');
+      await keyUtil.addPublicKey(sshPublicKey: '$_clientKey\n');
+
+      expect(authKeys.readAsLinesSync(), [_userKey, _clientKey]);
+    });
+
+    test('an addition concurrent with a removal keeps the added key', () async {
+      await authorize('ssh-ed25519 AAAAkeyA', idA);
+
+      await Future.wait([
+        keyUtil.deauthorizePublicKey(idA),
+        LocalSshKeyUtil(
+          homeDirectory: home.path,
+        ).addPublicKey(sshPublicKey: '$_clientKey\n'),
+      ]);
+
+      expect(authKeys.readAsLinesSync(), [_userKey, _clientKey]);
     });
   });
 }
