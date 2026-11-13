@@ -194,8 +194,9 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     // Check to see if the ssh Publickey is already in the authorized_keys file.
     // If not, then append it.
     await _editAuthorizedKeys((authKeys) async {
+      await _createAuthorizedKeysIfMissing(authKeys);
       var authKeysContent = await authKeys.readAsString();
-      if (!authKeysContent.endsWith('\n')) {
+      if (authKeysContent.isNotEmpty && !authKeysContent.endsWith('\n')) {
         await authKeys.writeAsString('\n', mode: FileMode.append);
       }
 
@@ -239,6 +240,20 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
         'Failed to remove ephemeral key from authorized_keys',
         error: e,
       );
+    }
+  }
+
+  Future<void> _createAuthorizedKeysIfMissing(File authKeys) async {
+    if (await authKeys.exists()) {
+      return;
+    }
+    await authKeys.create(recursive: true);
+    if (!Platform.isWindows) {
+      try {
+        chmod(authKeys.path, '600');
+      } on PosixException catch (e, s) {
+        throw SshnpError(e.toString(), error: e, stackTrace: s);
+      }
     }
   }
 }

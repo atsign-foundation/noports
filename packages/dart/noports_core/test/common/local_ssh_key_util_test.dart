@@ -52,6 +52,48 @@ void main() {
       },
     );
 
+    test(
+      'authorizePublicKey creates a missing authorized_keys readable only by its owner',
+      () async {
+        authKeys.deleteSync();
+
+        await authorize('ssh-ed25519 AAAAkeyA', idA);
+
+        expect(authKeys.readAsLinesSync(), [
+          ephemeralLine('ssh-ed25519 AAAAkeyA', idA),
+        ]);
+        if (!Platform.isWindows) {
+          final int permissions = authKeys.statSync().mode & 0x1ff;
+          expect(permissions, int.parse('600', radix: 8));
+        }
+      },
+    );
+
+    test(
+      'authorizePublicKey writes no blank line into an empty authorized_keys',
+      () async {
+        authKeys.writeAsStringSync('');
+
+        await authorize('ssh-ed25519 AAAAkeyA', idA);
+
+        expect(authKeys.readAsLinesSync(), [
+          ephemeralLine('ssh-ed25519 AAAAkeyA', idA),
+        ]);
+      },
+    );
+
+    test(
+      'authorizePublicKey leaves an existing authorized_keys\' permissions alone',
+      () async {
+        Process.runSync('chmod', ['644', authKeys.path]);
+
+        await authorize('ssh-ed25519 AAAAkeyA', idA);
+
+        expect(authKeys.statSync().mode & 0x1ff, int.parse('644', radix: 8));
+      },
+      testOn: '!windows',
+    );
+
     test('deauthorizePublicKey removes only that session\'s line', () async {
       await authorize('ssh-ed25519 AAAAkeyA', idA);
       await authorize('ssh-ed25519 AAAAkeyB', idB);
