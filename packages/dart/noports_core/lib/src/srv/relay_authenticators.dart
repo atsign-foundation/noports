@@ -209,6 +209,15 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
 
     Mutex listenMutex = Mutex();
 
+    // Fails authentication unless it has already completed. Every path that
+    // ends authentication without 'ok' (including the socket closing or
+    // erroring) calls this, so callers never wait on the future forever.
+    void failIfPending(String message) {
+      if (!completer.isCompleted) {
+        completer.completeError(message);
+      }
+    }
+
     subscription = socket.listen(
       (Uint8List data) async {
         // Fast path: safe only because no `await` separates the residual
@@ -252,11 +261,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
                     }
                   }
                 } catch (e) {
-                  if (!completer.isCompleted) {
-                    completer.completeError(
-                      'Error during relay authentication: $e',
-                    );
-                  }
+                  failIfPending('Error during relay authentication: $e');
                 }
               } else {
                 List<int> received = buffer.sublist(0, newline);
@@ -274,9 +279,7 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
                   socket.writeln(await responseToChallenge(challenge));
                   await socket.flush();
                 } catch (e) {
-                  completer.completeError(
-                    'Error during relay authentication: $e',
-                  );
+                  failIfPending('Error during relay authentication: $e');
                 }
               }
             }
@@ -286,11 +289,21 @@ class RelayAuthenticatorESCR implements RelayAuthenticator {
         }
       },
       onError: (Object error, StackTrace stackTrace) {
+        failIfPending('Error during relay authentication: $error');
         sc.addError(error);
 
         sc.close();
       },
-      onDone: () => sc.close(),
+      // Run after any data handler already queued on the mutex, so an 'ok'
+      // that arrived just before the close is still honoured.
+      onDone: () => unawaited(
+        listenMutex.protect(() async {
+          failIfPending(
+            'Relay closed the connection before authentication completed',
+          );
+          await sc.close();
+        }),
+      ),
     );
 
     return completer.future;
