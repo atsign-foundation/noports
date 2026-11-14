@@ -197,6 +197,8 @@ Or use the hosted installer at [cyd.crushware.com](https://cyd.crushware.com).
 | PoE power | — | ✓ |
 | Hardware watchdog + heap recovery | ✓ | ✓ |
 | Auto-recovery on network loss / DHCP expiry | ✓ | ✓ |
+| atServer session liveness (dead sessions detected at once, heartbeat, reboot after 10 failed reconnects) | ✓ | ✓ |
+| Health line on serial every minute | ✓ | ✓ |
 
 ### Known Limitations
 

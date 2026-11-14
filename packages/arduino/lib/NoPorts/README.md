@@ -18,7 +18,7 @@ infrastructure.
 | Capability | Status | Notes |
 |---|---|---|
 | atProtocol authentication (PKAM) | **Working** | Via the at_client library |
-| Monitor for notifications | **Working** | Long-lived TLS connection with auto-reconnect and exponential backoff |
+| Monitor for notifications | **Working** | Long-lived TLS connection; dead sessions detected at once, silence probed with a heartbeat, reconnect with capped backoff (see [Staying connected](#staying-connected)) |
 | Ping/heartbeat responses | **Working** | JSON notify via atProtocol |
 | NPT (network port tunneling) | **Working** | Dual-connection relay via WiFiClient + FreeRTOS tasks; SSH tested |
 | AES-CTR end-to-end encryption | **Working** | Twin-key (C2D + D2C) via ESP-IDF mbedTLS; compatible with Dart NPT client |
@@ -204,6 +204,9 @@ struct NoPortsConfig {
 | `NoPortsDaemonState getState()` | Get current state |
 | `uint8_t getActiveRelayCount()` | Number of active tunnel relays |
 | `const char* getLastError()` | Last error message |
+| `uint32_t getMonitorSilentSecs()` | Seconds since the atServer last sent anything on the monitor; normally under 20 |
+| `uint8_t getReconnectFailures()` | Consecutive failed reconnect attempts (monitor or worker); reboots at 10 |
+| `void notifyNetworkChanged()` | Call after a WiFi re-association or a new DHCP lease: reconnects the monitor at once and heartbeats the worker |
 
 ### Key Loading
 
@@ -212,6 +215,49 @@ struct NoPortsConfig {
 | `noports_keys_set(config, ...)` | Set keys from hardcoded base64 strings |
 | `noports_keys_load_from_file(config, path)` | Load keys from LittleFS/SPIFFS JSON |
 | `noports_keys_free(config)` | Free dynamically loaded keys |
+
+---
+
+## Staying connected
+
+The daemon holds two TLS sessions to the atServer: the **monitor**, which the
+atServer pushes notifications down, and the **worker**, which the daemon uses
+to fetch keys and send replies. A ping is only answered if both are up, so the
+daemon watches both and never lets either stay dead quietly:
+
+- **Dead sessions fail fast.** The at_client socket layer (1.0.2 and later)
+  reports a closed TLS session as a read error rather than a timeout, keeps
+  TCP keepalive on every session (a half-open path errors within about a
+  minute), and caps the TLS handshake at 20 s.
+- **Monitor.** The atServer sends a stats notification every ~15 s, so a
+  healthy monitor is never silent for long. After 20 s of silence the daemon
+  sends it `noop:0`; the `data:ok` reply proves it alive. After 40 s of
+  silence, or on any read error, the monitor is torn down and reconnected,
+  and the worker is checked with a heartbeat.
+- **Worker.** A heartbeat every `setWorkerKeepaliveMs()` (default 4 min)
+  keeps NAT tables from expiring the session; a failed heartbeat, notify or
+  key lookup reconnects it.
+- **Escalation.** Reconnects back off 2.5, 5, 10 then 15 s and wait at most
+  10 s for heap, so one attempt stays inside the sketch's 60 s task watchdog.
+  Ten consecutive failures on either session restart the ESP32: on a
+  microcontroller a reboot is the only reliable cure for heap fragmentation
+  or a wedged network stack, and the Linux sshnpd gets the same from
+  systemd.
+- **Health line.** Once a minute at INFO:
+
+  <!-- pyml disable-num-lines 3 md013-->
+  ```text
+  Health: heap=142880 largest=110592 monitor_silent=12s worker_idle=180s reconnect_failures=0 relays=0 pcbs=0/11
+  ```
+
+  `reconnect_failures` above 0 or `monitor_silent` past 20 s means recovery
+  is in progress; include a few of these lines in any bug report about a
+  device that stopped answering.
+
+The daemon also frees each session's resources itself before every reconnect,
+so it does not depend on the SDK for that (at_client before 1.0.2 leaked about
+6 KB on every reconnect that failed part-way, which eventually left too little
+heap for a TLS handshake while the monitor still looked connected).
 
 ---
 
@@ -324,6 +370,15 @@ ctest --test-dir build/host-tests --output-on-failure
 - Use `ESP.getFreeHeap()` to monitor available RAM
 - Reduce `NOPORTS_MAX_RELAYS` to 2
 - Avoid running other memory-intensive tasks alongside the daemon
+
+### Device stops answering pings but still looks connected
+- Read the `Health:` line on serial (see
+  [Staying connected](#staying-connected)). `reconnect_failures` climbing
+  means the atServer cannot be reached on the
+  worker session; the daemon reboots at 10. A `heap` that only ever goes
+  down points at a leak: make sure the build uses at_client 1.0.2 or later.
+- The CYD dashboard shows the same thing as its state indicator: `quiet Ns`
+  or `retry n/10` instead of `running`.
 
 ### RSA operations are slow
 - RSA-2048 takes 1-2 seconds on ESP32 — this is expected

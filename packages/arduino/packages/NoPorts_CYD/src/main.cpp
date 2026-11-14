@@ -74,6 +74,11 @@ static uint32_t _last_wifi_check_ms = 0;
 #define DAEMON_RESTART_MAX      3         // in-place attempts before rebooting
 #define DAEMON_STABLE_MS        600000UL  // up this long = healthy, reset attempts
 
+// Free heap below which the device is rebooted (after 30 s of it): a TLS
+// handshake needs ~40 KB, the relay sheds sessions below 15 KB, so this is
+// already past any recovery short of a restart.
+#define HEAP_REBOOT_BYTES       12000
+
 // Reboot-reason breadcrumb.  RTC noinit memory survives a software reset
 // (not a power cycle), so the next boot's log can say why the device
 // rebooted itself instead of looking like a random power event.
@@ -1236,6 +1241,34 @@ void loop() {
       }
       Serial.println("[main] WiFi reconnected");
       ui_load_led_color();  // restore LED
+      // The daemon's atServer sessions did not survive the re-association:
+      // have it reconnect now rather than after its timeouts
+      if (daemon_running) npDaemon.notifyNetworkChanged();
+    }
+  }
+
+  // Heap safety net (every 10 s).  A leak or runaway fragmentation ends in a
+  // daemon that can no longer open a TLS session while still looking
+  // connected; the Linux sshnpd would be restarted by systemd, here a reboot
+  // is the equivalent.  Three low samples in a row, so a burst of relay
+  // traffic dipping the heap for a moment does not count.
+  {
+    static uint32_t _last_heap_ms = 0;
+    static uint8_t  _low_samples  = 0;
+    static uint8_t  _heap_log_n   = 0;
+    if (millis() - _last_heap_ms > 10000) {
+      _last_heap_ms = millis();
+      uint32_t free_h = ESP.getFreeHeap();
+      if (++_heap_log_n >= 6) {  // one line a minute
+        _heap_log_n = 0;
+        Serial.printf("[mem] free=%u min=%u largest=%u\n",
+                      free_h, ESP.getMinFreeHeap(), ESP.getMaxAllocHeap());
+      }
+      if (free_h < HEAP_REBOOT_BYTES) {
+        if (++_low_samples >= 3) reboot_with_reason("heap critically low");
+      } else {
+        _low_samples = 0;
+      }
     }
   }
 
@@ -1319,8 +1352,25 @@ void loop() {
           last_update = millis();
           uint32_t tp_in = 0, tp_out = 0;
           npDaemon.getThroughput(tp_in, tp_out);
-          ui_dashboard_update(npDaemon.getActiveRelayCount(),
-                            daemon_state_str(npDaemon.getState()),
+          // The state indicator says "running" only while the monitor is
+          // actually hearing from the atServer; while the daemon is
+          // recovering it says so, so a device that is up but unreachable
+          // never looks healthy on its own screen.
+          static char state_buf[24];
+          const char *state = daemon_state_str(npDaemon.getState());
+          if (npDaemon.isRunning()) {
+            uint8_t  retries = npDaemon.getReconnectFailures();
+            uint32_t quiet   = npDaemon.getMonitorSilentSecs();
+            if (retries > 0) {
+              snprintf(state_buf, sizeof(state_buf), "retry %u/%u",
+                       (unsigned)retries, (unsigned)NOPORTS_MAX_RECONNECT_FAILURES);
+              state = state_buf;
+            } else if (quiet * 1000UL >= NOPORTS_MONITOR_HEARTBEAT_MS) {
+              snprintf(state_buf, sizeof(state_buf), "quiet %lus", (unsigned long)quiet);
+              state = state_buf;
+            }
+          }
+          ui_dashboard_update(npDaemon.getActiveRelayCount(), state,
                             _total_tunnels, _total_pings,
                             tp_in, tp_out, npDaemon.getRelayCpuPct(),
                             npDaemon.getRelayPcbCount(),

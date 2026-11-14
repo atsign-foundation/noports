@@ -27,13 +27,32 @@
 // Monitor read timeout in milliseconds — keep short so the Arduino loop()
 // remains responsive to touch input (the UI runs on the same core).
 #define NOPORTS_MONITOR_READ_TIMEOUT_MS  100
-// Noop timeout – after this many ms without data we send a noop/reconnect
+// After this long without anything from the monitor the daemon sends it a
+// noop, whose data:ok reply proves the connection is alive. The atServer sends
+// a stats notification about every 15 s, so on a healthy connection this never
+// fires; on a half-open one the write fails or the reply never comes.
+#define NOPORTS_MONITOR_HEARTBEAT_MS     20000
+// After this long without anything from the monitor, noop included, the monitor
+// is torn down and reconnected
 #define NOPORTS_MONITOR_NOOP_TIMEOUT_MS  40000
 
-// Maximum consecutive monitor reconnect failures before forced ESP.restart().
-// With 30s max backoff, 10 failures = ~5 minutes of retrying before reboot.
-// This handles memory fragmentation where mbedTLS can't allocate contiguous
-// blocks for TLS even with sufficient total free heap.
+// Longest pause between reconnect attempts, and longest wait for heap before
+// one. Both sit inside loop(), so together with a connect they must stay well
+// under the sketch's task watchdog (60 s).
+#define NOPORTS_RECONNECT_BACKOFF_MAX_MS 15000
+#define NOPORTS_RECONNECT_HEAP_WAIT_MS   10000
+
+// How often the daemon logs one line of health: heap, how long the monitor has
+// been silent, when the worker last succeeded, and the reconnect failure count
+#define NOPORTS_HEALTH_LOG_MS            60000
+
+// Maximum consecutive atServer connection failures (monitor or worker, reset
+// when the monitor reconnects) before a forced ESP.restart(). With 15 s max
+// backoff, 10 failures is a few minutes of retrying before reboot. This
+// handles memory fragmentation where mbedTLS can't allocate contiguous blocks
+// for TLS even with sufficient total free heap, and a worker that can no
+// longer be reached while the monitor still is: without the reboot such a
+// daemon looks connected but answers no ping and opens no tunnel.
 #define NOPORTS_MAX_RECONNECT_FAILURES 10
 
 // Minimum TOTAL free heap before attempting a TLS reconnect.
