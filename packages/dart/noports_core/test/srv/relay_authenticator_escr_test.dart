@@ -204,14 +204,19 @@ void main() {
       addTearDown(relay.close);
       final relaySide = relay.first;
       final socket = await Socket.connect(relay.address, relay.port);
-      final auth = authenticator().authenticate(socket);
+      // Listen for the failure before the relay sends anything, so the error
+      // cannot complete the future while it has no listener.
+      final failed = expectLater(
+        authenticator().authenticate(socket),
+        throwsA(predicate((e) => '$e'.contains('63'))),
+      );
       final fromSrv = await relaySide;
       final srvClosed = fromSrv.drain<void>();
 
       fromSrv.add(List.filled(64, 0x41));
       await fromSrv.flush();
 
-      await expectLater(auth, throwsA(predicate((e) => '$e'.contains('63'))));
+      await failed;
       await srvClosed.timeout(const Duration(seconds: 5));
       fromSrv.destroy();
     });
