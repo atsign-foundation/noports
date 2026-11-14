@@ -62,18 +62,24 @@ void main() {
     test('when the relay sends 64 bytes with no newline, then authentication'
         ' fails with an error naming the 63-byte line limit and the srv closes'
         ' its relay socket', () {
-      for (final (answered, before, after, chunks) in [
-        (false, '', '', 1),
-        (false, 'somechallenge\n', '', 1),
-        (false, '', '\n', 1),
-        (false, '', '', 2),
-        (false, '', '', 64),
-        (true, '', '', 1),
-        (true, '', '', 64),
+      // Each arm sends the 64-byte payload `copies` times, splitting each
+      // copy into `chunks` writes. With more than one chunk no single write
+      // exceeds the limit, only the accumulated line does; with more than
+      // one copy, data keeps arriving after authentication has failed.
+      for (final (answered, before, after, copies, chunks) in [
+        (false, '', '', 1, 1),
+        (false, 'somechallenge\n', '', 1, 1),
+        (false, '', '\n', 1, 1),
+        (false, '', '', 2, 1),
+        (false, '', '', 1, 2),
+        (false, '', '', 1, 64),
+        (true, '', '', 1, 1),
+        (true, '', '', 1, 64),
       ]) {
         final arm =
             'after an answered challenge: $answered, preceded by "$before",'
-            ' followed by "$after", split across $chunks write(s)';
+            ' followed by "$after", sent $copies time(s), each split across'
+            ' $chunks write(s)';
         final payload = [
           ...before.codeUnits,
           ...List.filled(64, 0x41),
@@ -97,17 +103,20 @@ void main() {
               relay.sendText('somechallenge\n');
               time.flushMicrotasks();
             }
-            // Each write is at most chunkSize bytes, so with more than one
-            // write only the accumulated line exceeds the limit.
-            for (var i = 0; i < payload.length; i += chunkSize) {
-              relay.send(
-                Uint8List.fromList(
-                  payload.sublist(i, (i + chunkSize).clamp(0, payload.length)),
-                ),
-              );
-              time.flushMicrotasks();
+            for (var copy = 0; copy < copies; copy++) {
+              for (var i = 0; i < payload.length; i += chunkSize) {
+                relay.send(
+                  Uint8List.fromList(
+                    payload.sublist(
+                      i,
+                      (i + chunkSize).clamp(0, payload.length),
+                    ),
+                  ),
+                );
+                time.flushMicrotasks();
+              }
             }
-          },(e, _) => raised.add(e));
+          }, (e, _) => raised.add(e));
 
           expect(
             '$error',
