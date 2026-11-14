@@ -10,33 +10,71 @@
   <Package Name="NoPorts" Language="1033" Version="$(var.ProductVersion)"
            Manufacturer="Atsign" UpgradeCode="d0fde95b-ae6c-40d0-8192-82f755f32dde"
            InstallerVersion="500" Compressed="yes" Scope="perMachine" >
+    <!-- Shown in the UAC prompt's details and in file Properties. Match the
+         signing certificate's subject. -->
+    <SummaryInformation Description="NoPorts installer" Manufacturer="Atsign, Inc." Keywords="NoPorts, sshnpd, Atsign" />
     <MajorUpgrade AllowSameVersionUpgrades="yes"
                   DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
     <!-- Apps & Features metadata -->
     <Property Id="ARPHELPLINK" Value="https://docs.noports.com" />
     <Property Id="ARPURLINFOABOUT" Value="https://noports.com" />
-    <!-- Main Feature - Core Tools (always installed) -->
-    <Feature Id="CoreTools" Title="NoPorts Core Tools" Level="1" 
-            Description="Core NoPorts command-line tools">
+    <Property Id="ARPCOMMENTS" Value="Reach this machine from anywhere without open ports." />
+    <Icon Id="NoPortsIcon" SourceFile="noports.ico" />
+    <Property Id="ARPPRODUCTICON" Value="NoPortsIcon" />
+
+    <!-- Features as the user sees them on the "Custom Setup" page. Titles
+         and descriptions are the only explanation they get, so say what
+         each piece is for. All are on by default; Custom Setup lets an
+         admin drop the service or the app on, say, a client-only box. -->
+    <Feature Id="CoreTools" Title="Command-line tools" Level="1" Display="expand"
+             AllowAbsent="no"
+             Description="The NoPorts command-line tools (sshnp, npt, npp, srv, at_activate, noports and the daemon binary sshnpd), added to the system PATH. Required.">
       <ComponentGroupRef Id="ProductComponents" />
     </Feature>
-    <!-- Optional Feature - Service (selected by default, installed stopped) -->
-    <Feature Id="ServiceFeature" Title="NoPorts Daemon Service" Level="1" 
-            Description="Install NoPorts Daemon as a Windows service (sshnpd)">
+    <Feature Id="ServiceFeature" Title="Device daemon service (sshnpd)" Level="1" Display="expand"
+             Description="Registers sshnpd as a Windows service so this machine can be reached over NoPorts. It is installed but not started: it needs a device atSign, keys and a list of who may connect first. NoPorts Configuration sets those up and starts it.">
       <ComponentGroupRef Id="sshnpdComponents" />
+    </Feature>
+    <Feature Id="ConfigAppFeature" Title="NoPorts Configuration app" Level="1" Display="expand"
+             Description="Desktop app that walks you through setting up the daemon: enroll this device with NoPorts Desktop, choose who can connect, then start, stop and watch the service. Available from the Start Menu afterwards. Recommended.">
+      <ComponentGroupRef Id="configAppComponents" />
     </Feature>
     <!-- Directory structure -->
     <StandardDirectory Id="ProgramFiles6432Folder">
-      <Directory Id="INSTALLFOLDER" Name="NoPorts"/>
+      <Directory Id="INSTALLFOLDER" Name="NoPorts">
+        <!-- The Flutter app is a directory (exe, flutter_windows.dll, data\).
+             Keep it out of the way of the CLI binaries on PATH. -->
+        <Directory Id="CONFIGAPPFOLDER" Name="NoPortsConfig" />
+      </Directory>
     </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
     <StandardDirectory Id="CommonAppDataFolder">
       <Directory Id="APPDATADIR" Name="NoPorts"/>
     </StandardDirectory>
-    <!-- License File -->
+    <!-- Installer UI: Welcome, License, Custom Setup (feature tree), Ready,
+         Progress, Finish. Wording overrides live in noports.en-us.wxl. -->
     <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
-    <!-- Use the Feature Tree UI -->
+    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="dialog.bmp" />
     <ui:WixUI Id="WixUI_FeatureTree" />
+
+    <!-- Finish page: say what state things are in and offer to open the
+         configuration app. Silent installs never see this dialog. -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT"
+              Value="The NoPorts tools are installed. The device daemon service is registered but not running yet: open NoPorts Configuration to enroll this device with NoPorts Desktop, choose who may connect, and start it. You can find it in the Start Menu at any time." />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Open NoPorts Configuration now" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <!-- Set at run time once directories are resolved, rather than as a
+         static Property, to avoid WIX1077 (property reference inside a
+         property value). WixShellExec formats the value before launching. -->
+    <SetProperty Id="WixShellExecTarget" Value="[CONFIGAPPFOLDER]noports_config.exe" After="CostFinalize" Sequence="both" />
+    <CustomAction Id="LaunchConfigApp" DllEntry="WixShellExec" Impersonate="yes" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" />
+    <UI>
+      <!-- Only when the app feature is actually being installed (action state 3 = local). -->
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchConfigApp"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed and &amp;ConfigAppFeature = 3" />
+    </UI>
   </Package>
   <!-- Core product component group -->
   <Fragment>
@@ -89,6 +127,23 @@
       </Component>
       <Component Id="CertUpdaterScript" Guid="*">
         <File Id="certupdaterfile" Source="certupdater.ps1" Name="certupdater.ps1" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+  <!-- Configuration app component group -->
+  <Fragment>
+    <ComponentGroup Id="configAppComponents">
+      <!-- Everything `flutter build windows` put in the Release folder. CI
+           copies it to bin\noports_config before building the MSI. -->
+      <Files Include="bin\noports_config\**" Directory="CONFIGAPPFOLDER" />
+      <Component Id="configAppShortcut" Directory="ProgramMenuFolder" Guid="7c1d0a52-6b7e-4f0e-9b57-3c2f9d6a1e21">
+        <Shortcut Id="configAppStartMenuShortcut"
+                  Name="NoPorts Configuration"
+                  Description="Configure the NoPorts daemon and control its service"
+                  Target="[CONFIGAPPFOLDER]noports_config.exe"
+                  WorkingDirectory="CONFIGAPPFOLDER"
+                  Icon="NoPortsIcon" />
+        <RegistryValue Root="HKCU" Key="Software\Atsign\NoPorts" Name="ConfigAppShortcut" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>
