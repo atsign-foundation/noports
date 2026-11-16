@@ -5,9 +5,9 @@ import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:noports_core/events.dart';
 import 'package:at_commons/at_builders.dart';
-import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/mixins/async_initialization.dart';
+import 'package:noports_core/src/common/mixins/subscription_tracking.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
@@ -30,7 +30,11 @@ enum SshnpdAck {
 /// and the daemon. It is responsible for sending the request to the daemon and
 /// receiving the response from the daemon.
 abstract class SshnpdChannel
-    with AsyncInitialization, AtClientBindings, AtEventLogger {
+    with
+        AsyncInitialization,
+        AtClientBindings,
+        AtEventLogger,
+        SubscriptionTracking {
   @override
   final logger = AtSignLogger(' SshnpdChannel ');
   @override
@@ -95,7 +99,12 @@ abstract class SshnpdChannel
   Future<void> initialize() async {
     String regex = '$sessionId.$namespace${params.sshnpdAtSign}\$';
     logger.info('Starting monitor for notifications with regex: "$regex"');
-    subscribe(regex: regex, shouldDecrypt: true).listen(handleSshnpdResponses);
+    track(
+      subscribe(
+        regex: regex,
+        shouldDecrypt: true,
+      ).listen(handleSshnpdResponses),
+    );
 
     try {
       cachedPingResponse = jsonDecode(
@@ -245,6 +254,7 @@ abstract class SshnpdChannel
   /// If [params.remoteUsername] is set, it will be used.
   /// Otherwise, the username will be fetched from the remote atSign.
   /// Returns null if the username could not be resolved.
+  /// Throws [SshnpError] if the device's username is not a plain login name.
   Future<String?> resolveRemoteUsername() async {
     if (params.remoteUsername != null) {
       return params.remoteUsername!;
@@ -253,13 +263,28 @@ abstract class SshnpdChannel
       '${params.clientAtSign}:username.$namespace${params.sshnpdAtSign}',
     );
 
-    return (await atClient.get(userNameRecordID).catchError((_) {
+    final username = (await atClient.get(userNameRecordID).catchError((_) {
       throw SshnpError(
         "Device is hidden or doesn't exist.\n"
         "Hint: If the device is set to hidden, use -u to specify the login username.",
       );
     })).value;
+    if (username == null) {
+      return null;
+    }
+    if (username is! String || !_plainLoginName.hasMatch(username)) {
+      throw SshnpError(
+        "The device's username is not a plain login name.\n"
+        "Hint: use -u to specify the login username.",
+      );
+    }
+    return username;
   }
+
+  static final _plainLoginName = RegExp(
+    r'^[\p{L}\p{M}\p{N}_.@][\p{L}\p{M}\p{N}_.@-]{0,63}$',
+    unicode: true,
+  );
 
   /// Resolve the username to use in the initial ssh tunnel
   /// If [params.tunnelUsername] is set, it will be used.
@@ -324,23 +349,27 @@ abstract class SshnpdChannel
   Future<Map<String, dynamic>> ping() async {
     Completer<Map<String, dynamic>> completer = Completer();
 
-    subscribe(
-      regex:
-          'heartbeat'
-          '.${params.device}'
-          '.${DefaultArgs.namespace}',
-      shouldDecrypt: true,
-    ).listen((notification) {
-      logger.info(
-        'Received ping response from ${notification.from} : ${notification.key} : ${notification.value}',
-      );
-      if (notification.from == params.sshnpdAtSign) {
-        if (!completer.isCompleted) {
-          logger.info('Completing the future');
-          completer.complete(jsonDecode(notification.value ?? '{}'));
+    late final StreamSubscription<AtNotification> subscription;
+    subscription = track(
+      subscribe(
+        regex:
+            'heartbeat'
+            '.${params.device}'
+            '.${DefaultArgs.namespace}',
+        shouldDecrypt: true,
+      ).listen((notification) {
+        logger.info(
+          'Received ping response from ${notification.from} : ${notification.key} : ${notification.value}',
+        );
+        if (notification.from.toAtsign() == params.sshnpdAtSign.toAtsign()) {
+          if (!completer.isCompleted) {
+            logger.info('Completing the future');
+            completer.complete(jsonDecode(notification.value ?? '{}'));
+            unawaited(subscription.cancel());
+          }
         }
-      }
-    });
+      }),
+    );
     var pingKey = AtKey()
       ..key = "ping.${params.device}"
       ..sharedBy = params.clientAtSign

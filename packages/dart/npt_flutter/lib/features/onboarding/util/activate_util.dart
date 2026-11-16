@@ -150,7 +150,8 @@ class ActivateUtil {
     Atsign atsign,
     String cramkey,
     String rootDomain,
-  ) async => atsign.activate(
+  ) async => const AtsignFlows().activate(
+    atsign,
     cramSecret: cramkey,
     keys: KeychainAtKeysIo(),
     preference: await AtClientMethods.loadAtClientPreference(rootDomain),

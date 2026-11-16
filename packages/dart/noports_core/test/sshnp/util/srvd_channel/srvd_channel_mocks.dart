@@ -75,9 +75,13 @@ class StubbedSrvdChannel<T> extends SrvdChannel<T> {
     /// maxTries must be a non-zero positive integer
     int maxTries = 3,
     String? cryptoProviderId,
+    String? sealToNamespace,
   }) async {
     if (cryptoProviderId != null) {
       throw UnimplementedError('StubbedSrvdChannel drops cryptoProviderId');
+    }
+    if (sealToNamespace != null) {
+      throw UnimplementedError('StubbedSrvdChannel drops sealToNamespace');
     }
     return _notify.call(
       atKey,

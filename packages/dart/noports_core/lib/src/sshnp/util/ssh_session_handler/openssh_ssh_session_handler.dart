@@ -20,26 +20,23 @@ mixin OpensshSshSessionHandler on SshnpCore
     Process? process;
     // If we are starting an initial tunnel, it should be to the local srv,
     // so it is safe to assume that localRvPort is non-null
-    String argsString =
-        '$tunnelUsername@localhost'
-        ' -p ${localRvPort!}'
-        ' -i $ephemeralKeyPairIdentifier'
-        ' -L $localPort:localhost:${params.remoteSshdPort}'
-        ' -o LogLevel=VERBOSE'
-        ' -t -t'
-        ' -o StrictHostKeyChecking=accept-new'
-        ' -o IdentitiesOnly=yes'
-        ' -o BatchMode=yes'
-        ' -o ExitOnForwardFailure=yes'
-        ' -n'
-        ' -f' // fork after authentication - this is important
-        ;
-    if (params.addForwardsToTunnel) {
-      argsString += ' ${params.localSshOptions.join(' ')}';
-    }
-    argsString += ' sleep 15';
-
-    List<String> args = argsString.split(' ');
+    final args = [
+      '$tunnelUsername@localhost',
+      '-p', '${localRvPort!}',
+      '-i', ephemeralKeyPairIdentifier,
+      '-L', '$localPort:localhost:${params.remoteSshdPort}',
+      '-o', 'LogLevel=VERBOSE',
+      '-t', '-t',
+      '-o', 'StrictHostKeyChecking=accept-new',
+      '-o', 'IdentitiesOnly=yes',
+      '-o', 'BatchMode=yes',
+      '-o', 'ExitOnForwardFailure=yes',
+      '-n',
+      '-f', // fork after authentication - this is important
+      if (params.addForwardsToTunnel)
+        ...params.localSshOptions.join(' ').split(' '),
+      'sleep', '15',
+    ];
 
     logger.info('$sessionId | Executing $opensshBinaryPath ${args.join(' ')}');
 
@@ -91,11 +88,26 @@ mixin OpensshSshSessionHandler on SshnpCore
           soutBuf.write(s);
           logger.info(' $sessionId | sshStdOut | $s');
         }, onError: (e) {});
-        process.stderr.transform(Utf8Decoder()).listen((String s) {
-          serrBuf.write(s);
-          logger.info(' $sessionId | sshStdErr | $s');
-        }, onError: (e) {});
-        await process.exitCode.timeout(Duration(seconds: 10));
+        final serrDone = process.stderr
+            .transform(Utf8Decoder())
+            .listen((String s) {
+              serrBuf.write(s);
+              logger.info(' $sessionId | sshStdErr | $s');
+            })
+            .asFuture<void>()
+            .then((_) {}, onError: (_) {});
+        final exitCode = await process.exitCode.timeout(Duration(seconds: 10));
+        if (exitCode != 0) {
+          // ssh has exited without forking a tunnel, so its stderr closes
+          // promptly; wait briefly so the reason is in serrBuf.
+          await serrDone.timeout(Duration(seconds: 1), onTimeout: () {});
+          final stderr = serrBuf.toString().trim();
+          throw SshnpError(
+            'SSHNP failed to start the initial tunnel:'
+            ' ssh exited with code $exitCode'
+            '${stderr.isEmpty ? '' : '\n$stderr'}',
+          );
+        }
       }
     } on TimeoutException catch (e) {
       throw SshnpError('SSHNP failed to start the initial tunnel', error: e);

@@ -100,8 +100,9 @@ mixin AtEventListener on AtClientBindings {
         continue;
       }
       try {
-        final event =
-            AtEventEnvelope.fromJson(jsonDecode(n.value!)).atEventPayload;
+        final event = AtEventEnvelope.fromJson(
+          jsonDecode(n.value!),
+        ).atEventPayload;
         yield jsonEncode({...event, 'sender': n.from.toAtsign()});
       } catch (e) {
         logger.shout('Skipping event from ${n.from}: $e');
@@ -116,6 +117,7 @@ mixin AtEventLogger on AtClientBindings {
   final StreamController<(AtEventConfig, AtEventEnvelope)>
   eventStreamController = StreamController<(AtEventConfig, AtEventEnvelope)>();
   bool eventLoggerRunning = false;
+  Future<void>? _eventLoggerDone;
 
   /// [atSign] `@alice` and [namespace] `events.logging.sshnp` and our atSign
   /// being `@bob` will result in the config being fetched from
@@ -145,11 +147,11 @@ mixin AtEventLogger on AtClientBindings {
       ),
     ));
     if (!eventLoggerRunning) {
-      startEventLogger();
+      _eventLoggerDone = startEventLogger();
     }
   }
 
-  void startEventLogger() async {
+  Future<void> startEventLogger() async {
     eventLoggerRunning = true;
     await for (final tuple in eventStreamController.stream) {
       final AtEventConfig config = tuple.$1;
@@ -176,6 +178,13 @@ mixin AtEventLogger on AtClientBindings {
         logger.severe('Error while sending ${envelope.payload} to $config');
       }
     }
+  }
+
+  /// Sends every event already logged, then stops the event logger, which
+  /// takes no more events: [logEvent] throws after this.
+  Future<void> closeEventLogger() async {
+    unawaited(eventStreamController.close());
+    await _eventLoggerDone;
   }
 }
 

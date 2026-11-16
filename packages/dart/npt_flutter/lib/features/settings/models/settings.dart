@@ -17,6 +17,9 @@ enum PreferredViewLayout {
   final String displayName;
 }
 
+@JsonEnum(fieldRename: FieldRename.kebab)
+enum ProfileSortMode { manual, nameAscending, nameDescending }
+
 @JsonSerializable()
 class Settings extends Loggable {
   final Atsign relayAtsign;
@@ -29,12 +32,20 @@ class Settings extends Loggable {
 
   final Language language;
 
+  /// Falls back to manual for a mode added by a newer version.
+  @JsonKey(unknownEnumValue: ProfileSortMode.manual)
+  final ProfileSortMode sortMode;
+
+  final bool favoritesFirst;
+
   const Settings({
     required this.relayAtsign,
     required this.overrideRelay,
     required this.viewLayout,
     this.darkMode = false,
     required this.language,
+    this.sortMode = ProfileSortMode.manual,
+    this.favoritesFirst = false,
   });
 
   Settings copyWith({
@@ -43,6 +54,8 @@ class Settings extends Loggable {
     PreferredViewLayout? viewLayout,
     bool? darkMode,
     Language? language,
+    ProfileSortMode? sortMode,
+    bool? favoritesFirst,
   }) {
     return Settings(
       relayAtsign: (relayAtsign == null || relayAtsign.isEmpty)
@@ -52,6 +65,8 @@ class Settings extends Loggable {
       viewLayout: viewLayout ?? this.viewLayout,
       darkMode: darkMode ?? this.darkMode,
       language: language ?? this.language,
+      sortMode: sortMode ?? this.sortMode,
+      favoritesFirst: favoritesFirst ?? this.favoritesFirst,
     );
   }
 
@@ -68,13 +83,16 @@ class Settings extends Loggable {
     viewLayout,
     darkMode,
     language,
+    sortMode,
+    favoritesFirst,
   ];
 
   @override
   String toString() {
     return 'Settings with relay:$relayAtsign, '
         'overrideRelay: $overrideRelay, view: $viewLayout, '
-        'darkMode: $darkMode, lang: ${_$LanguageEnumMap[language]}';
+        'darkMode: $darkMode, lang: ${_$LanguageEnumMap[language]}, '
+        'sort: $sortMode, favoritesFirst: $favoritesFirst';
   }
 }
 

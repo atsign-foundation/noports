@@ -1,8 +1,8 @@
 # =============================================================================
 # NoPorts CYD – Firmware builder + web flasher
 #
-# Build context must be the repo root (at_Arduino_NoPorts/) so both lib/ and
-# packages/NoPorts_CYD/ are accessible:
+# Build context must be the repo root (noports/packages/arduino) so both lib/ 
+# and packages/NoPorts_CYD/ are accessible:
 #
 #   docker build -f packages/NoPorts_CYD/Dockerfile -t noports-cyd-flasher .
 #
@@ -13,7 +13,8 @@
 # ---------------------------------------------------------------------------
 # Stage 1: build firmware
 # ---------------------------------------------------------------------------
-FROM --platform=linux/amd64 python:3.11-slim AS builder
+# Using Python 3.14 as espressif32@55.3.312 specifies Python 3.10 - 3.14
+FROM python:3.15-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928 AS builder
 
 # System dependencies needed by PlatformIO / esptool
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -21,7 +22,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir platformio esptool
+# Install uv and use it to install pinned Python dependencies for platformio
+# and esptool
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+COPY tools/pylock.toml .
+RUN uv pip install --system --require-hashes -r pylock.toml
 
 # ---------------------------------------------------------------------------
 # Vendor ESP Web Tools (the browser-side flasher) at a pinned, checksum-verified
@@ -127,7 +132,7 @@ RUN cp .pio/build/cyd2usb/firmware.bin      firmware-cyd2usb.bin       && \
 # ---------------------------------------------------------------------------
 # Stage 2: minimal nginx web server
 # ---------------------------------------------------------------------------
-FROM nginx:1.28-alpine
+FROM nginx:stable-alpine@sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949
 
 # Remove default nginx config; replace with our own
 RUN rm /etc/nginx/conf.d/default.conf

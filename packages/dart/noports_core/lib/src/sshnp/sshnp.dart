@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
-import 'package:at_utils/at_logger.dart';
 import 'package:noports_core/src/common/streaming_logging_handler.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 

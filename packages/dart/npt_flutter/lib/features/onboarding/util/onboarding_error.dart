@@ -14,8 +14,7 @@ String describeOnboardingError(Object? error, AppLocalizations strings) {
 
   final String detail = onboardingErrorDetail(error);
 
-  // The atServer rejected the CRAM secret. Nearly always a spent activation
-  // file, since each secret is single use.
+  // The atServer rejected the activation key, which is single use.
   if (detail.contains('Cram authentication failed') ||
       detail.contains('cram authentication failed')) {
     return strings.errorCramAuthFailed;
@@ -60,6 +59,12 @@ String describeOnboardingError(Object? error, AppLocalizations strings) {
 /// new request rather than a report of denial.
 bool isEnrollmentExpired(Object error) =>
     error is AtEnrollmentException && error.message.contains('AT0028');
+
+/// Whether [error] ended an enrollment wait because the atServer has revoked
+/// the request (AT0027): approved, then withdrawn by a manager, so the way on
+/// is a new request rather than a report of denial.
+bool isEnrollmentRevoked(Object error) =>
+    error is AtEnrollmentException && error.message.contains('AT0027');
 
 /// The human-readable part of [error], without the `Exception: ` noise that
 /// [AtException.toString] prepends.

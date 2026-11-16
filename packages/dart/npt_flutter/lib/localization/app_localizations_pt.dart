@@ -9,6 +9,25 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return 'Não foi possível abandonar a inscrição $enrollmentId: as suas chaves continuam no porta-chaves. Escolha Cancelar para tentar novamente.';
+  }
+
+  @override
+  String get abandonRequest => 'Abandonar';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return 'Isto abandona a inscrição $enrollmentId de $atsign. Para tentar novamente, é necessário um novo OTP de outra inscrição de $atsign.';
+  }
+
+  @override
+  String get abandonRequestTitle => 'Abandonar esta solicitação?';
+
+  @override
+  String get abandoningRequest => 'A abandonar a solicitação...';
+
+  @override
   String get activate => 'Ativar';
 
   @override
@@ -228,10 +247,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get connectionRetrying => 'Reconectando (keep-alive)...';
 
   @override
-  String get connectionTimedOut =>
-      'Tempo limite da conexão, tentará novamente...';
-
-  @override
   String get connections => 'Conexões';
 
   @override
@@ -440,7 +455,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get errorCramAuthFailed =>
-      'A chave de ativação foi rejeitada pelo atServer. Este ficheiro de ativação pode já ter sido usado.';
+      'A chave de ativação foi rejeitada pelo atServer. Pode já ter sido usada.';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
@@ -500,6 +515,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get fastest => 'Mais Rápido';
 
   @override
+  String get favoriteAdd => 'Adicionar aos favoritos';
+
+  @override
+  String get favoriteRemove => 'Remover dos favoritos';
+
+  @override
   String get feedback => 'Feedback';
 
   @override
@@ -522,6 +543,89 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get findOtp =>
       'A solicitação será exibida no Authenticator em Solicitações em qualquer aplicativo conectado ao seu Atsign com chaves de gerenciador.';
+
+  @override
+  String get folderAddConnection => 'Adicionar conexão';
+
+  @override
+  String get folderChooseStartAll => 'Escolher conexões a iniciar';
+
+  @override
+  String get folderChooseStartAllDescription =>
+      'Iniciar todos inicia as conexões marcadas, uma após a outra.';
+
+  @override
+  String get folderCollapse => 'Recolher';
+
+  @override
+  String get folderDelete => 'Excluir pasta';
+
+  @override
+  String get folderDeleteMessage =>
+      'Esta pasta será excluída. As conexões dentro dela serão mantidas.';
+
+  @override
+  String get folderExpand => 'Expandir';
+
+  @override
+  String get folderLoadFailedRetry =>
+      'Falha ao carregar as pastas. Tentar novamente';
+
+  @override
+  String get folderMoveDown => 'Mover para baixo';
+
+  @override
+  String get folderMoveTo => 'Mover para';
+
+  @override
+  String get folderMoveToFolder => 'Mover para pasta';
+
+  @override
+  String get folderMoveUp => 'Mover para cima';
+
+  @override
+  String get folderName => 'Nome da pasta';
+
+  @override
+  String get folderNameRequired => 'Insira um nome para a pasta';
+
+  @override
+  String get folderNameTaken => 'Já existe uma pasta com este nome';
+
+  @override
+  String get folderNew => 'Nova pasta';
+
+  @override
+  String get folderNone => 'Sem pasta';
+
+  @override
+  String get folderRename => 'Renomear';
+
+  @override
+  String get folderRenameTitle => 'Renomear pasta';
+
+  @override
+  String get folderSaveFailed => 'Falha ao salvar as pastas';
+
+  @override
+  String get folderStartAll => 'Iniciar todos';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return 'Iniciar $count de $total';
+  }
+
+  @override
+  String get folderStopAll => 'Parar todos';
+
+  @override
+  String folderStopSome(Object count, Object total) {
+    return 'Parar $count de $total';
+  }
+
+  @override
+  String get folderSyncing =>
+      'As pastas poderão ser alteradas quando terminarem de sincronizar';
 
   @override
   String get getStarted => 'Começar';
@@ -553,6 +657,9 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get jsonPayloadCopiedToClipboard =>
       'Payload JSON copiado para a área de transferência';
+
+  @override
+  String get keepWaiting => 'Continuar a aguardar';
 
   @override
   String get keys => 'Enviar atKeys';
@@ -654,10 +761,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout =>
-      'Tempo limite de inicialização do Npt excedido';
-
-  @override
   String get ok => 'OK';
 
   @override
@@ -757,6 +860,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileFailedUnknownMessage => 'Nenhuma razão fornecida';
 
   @override
+  String get profileFolder => 'Pasta';
+
+  @override
+  String get profileFolderDescription => 'A pasta em que esta conexão aparece.';
+
+  @override
   String get profileImportDialogTitle => 'Escolha o Método de Importação';
 
   @override
@@ -796,6 +905,42 @@ class AppLocalizationsPt extends AppLocalizations {
       'O(s) seguinte(s) perfil(is) está(ão) conectado(s):';
 
   @override
+  String get profileSearchClear => 'Limpar pesquisa';
+
+  @override
+  String get profileSearchHint => 'Pesquisar conexões';
+
+  @override
+  String get profileSearchNoResults =>
+      'Nenhuma conexão corresponde à sua pesquisa';
+
+  @override
+  String get profileSortByNameMessage =>
+      'A lista está ordenada por nome, então os itens são posicionados pelo nome';
+
+  @override
+  String get profileSortFavoritesFirst => 'Favoritos primeiro';
+
+  @override
+  String get profileSortFavoritesMessage =>
+      'Os favoritos ficam no topo enquanto Favoritos primeiro está ativado';
+
+  @override
+  String get profileSortManual => 'Ordem manual';
+
+  @override
+  String get profileSortNameAscending => 'Nome, de A a Z';
+
+  @override
+  String get profileSortNameDescending => 'Nome, de Z a A';
+
+  @override
+  String get profileSortReset => 'Voltar à ordem manual';
+
+  @override
+  String get profileSortTooltip => 'Ordenar';
+
+  @override
   String get profileStatusFailedLoad => 'Falha ao carregar';
 
   @override
@@ -812,6 +957,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileStatusLoading => 'Carregando';
+
+  @override
+  String get profileStatusQueued => 'Em espera';
+
+  @override
+  String get profileStatusQueuedMessage =>
+      'Aguarda que as conexões anteriores iniciem. Clique para a iniciar agora.';
 
   @override
   String get profileStatusStarted => 'Conectado';
@@ -865,6 +1017,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get removeAtsign => 'Remover Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return 'Inscrição $enrollmentId abandonada. Para tentar novamente, insira um novo OTP de outra inscrição e negue $enrollmentId em Solicitações no Authenticator.';
+  }
+
+  @override
   String get requestExpired =>
       'A solicitação original expirou. Por favor, envie novamente';
 
@@ -873,11 +1030,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get resendPin => 'Reenviar Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return 'Falha ao tentar novamente: $errorMessage, tentará novamente...';
-  }
 
   @override
   String get roleAddNew => 'Adicionar Nova Função';
@@ -1077,7 +1229,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get validationErrorDeviceNameField =>
-      'O campo só pode conter letras minúsculas, dígitos e underscores.';
+      'Use de 2 a 36 minúsculas, dígitos, \"_\" ou \"-\", sem começar por \"-\".';
 
   @override
   String get validationErrorEmptyField =>
@@ -1093,7 +1245,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get validationErrorLongField =>
-      'O campo deve ter entre 1 e 36 caracteres';
+      'O campo deve ter entre 2 e 36 caracteres';
 
   @override
   String get validationErrorRelayField => 'O relay deve ser um Atsign válido';
@@ -1132,6 +1284,25 @@ class AppLocalizationsPt extends AppLocalizations {
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
 class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
+
+  @override
+  String abandonFailed(Object enrollmentId) {
+    return 'Não foi possível abandonar a inscrição $enrollmentId: suas chaves ainda estão no chaveiro. Escolha Cancelar para tentar novamente.';
+  }
+
+  @override
+  String get abandonRequest => 'Abandonar';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return 'Isso abandona a inscrição $enrollmentId de $atsign. Para tentar novamente, é preciso um novo OTP de outra inscrição de $atsign.';
+  }
+
+  @override
+  String get abandonRequestTitle => 'Abandonar esta solicitação?';
+
+  @override
+  String get abandoningRequest => 'Abandonando a solicitação...';
 
   @override
   String get activate => 'Ativar';
@@ -1353,10 +1524,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get connectionRetrying => 'Reconectando (keep-alive)...';
 
   @override
-  String get connectionTimedOut =>
-      'Tempo limite da conexão, tentará novamente...';
-
-  @override
   String get connections => 'Conexões';
 
   @override
@@ -1565,7 +1732,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get errorCramAuthFailed =>
-      'A chave de ativação foi rejeitada pelo atServer. Este arquivo de ativação pode já ter sido usado.';
+      'A chave de ativação foi rejeitada pelo atServer. Pode já ter sido usada.';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
@@ -1625,6 +1792,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get fastest => 'Mais Rápido';
 
   @override
+  String get favoriteAdd => 'Adicionar aos favoritos';
+
+  @override
+  String get favoriteRemove => 'Remover dos favoritos';
+
+  @override
   String get feedback => 'Feedback';
 
   @override
@@ -1647,6 +1820,89 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get findOtp =>
       'A solicitação será exibida no Authenticator em Solicitações em qualquer aplicativo conectado ao seu Atsign com chaves de gerenciador.';
+
+  @override
+  String get folderAddConnection => 'Adicionar conexão';
+
+  @override
+  String get folderChooseStartAll => 'Escolher conexões a iniciar';
+
+  @override
+  String get folderChooseStartAllDescription =>
+      'Iniciar todos inicia as conexões marcadas, uma após a outra.';
+
+  @override
+  String get folderCollapse => 'Recolher';
+
+  @override
+  String get folderDelete => 'Excluir pasta';
+
+  @override
+  String get folderDeleteMessage =>
+      'Esta pasta será excluída. As conexões dentro dela serão mantidas.';
+
+  @override
+  String get folderExpand => 'Expandir';
+
+  @override
+  String get folderLoadFailedRetry =>
+      'Falha ao carregar as pastas. Tentar novamente';
+
+  @override
+  String get folderMoveDown => 'Mover para baixo';
+
+  @override
+  String get folderMoveTo => 'Mover para';
+
+  @override
+  String get folderMoveToFolder => 'Mover para pasta';
+
+  @override
+  String get folderMoveUp => 'Mover para cima';
+
+  @override
+  String get folderName => 'Nome da pasta';
+
+  @override
+  String get folderNameRequired => 'Insira um nome para a pasta';
+
+  @override
+  String get folderNameTaken => 'Já existe uma pasta com este nome';
+
+  @override
+  String get folderNew => 'Nova pasta';
+
+  @override
+  String get folderNone => 'Sem pasta';
+
+  @override
+  String get folderRename => 'Renomear';
+
+  @override
+  String get folderRenameTitle => 'Renomear pasta';
+
+  @override
+  String get folderSaveFailed => 'Falha ao salvar as pastas';
+
+  @override
+  String get folderStartAll => 'Iniciar todos';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return 'Iniciar $count de $total';
+  }
+
+  @override
+  String get folderStopAll => 'Parar todos';
+
+  @override
+  String folderStopSome(Object count, Object total) {
+    return 'Parar $count de $total';
+  }
+
+  @override
+  String get folderSyncing =>
+      'As pastas poderão ser alteradas quando terminarem de sincronizar';
 
   @override
   String get getStarted => 'Começar';
@@ -1678,6 +1934,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get jsonPayloadCopiedToClipboard =>
       'Payload JSON copiado para a área de transferência';
+
+  @override
+  String get keepWaiting => 'Continuar aguardando';
 
   @override
   String get keys => 'Enviar atKeys';
@@ -1779,10 +2038,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout =>
-      'Tempo limite de inicialização do Npt excedido';
-
-  @override
   String get ok => 'OK';
 
   @override
@@ -1882,6 +2137,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get profileFailedUnknownMessage => 'Nenhuma razão fornecida';
 
   @override
+  String get profileFolder => 'Pasta';
+
+  @override
+  String get profileFolderDescription => 'A pasta em que esta conexão aparece.';
+
+  @override
   String get profileImportDialogTitle => 'Escolha o Método de Importação';
 
   @override
@@ -1921,6 +2182,42 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'O(s) seguinte(s) perfil(is) está(ão) conectado(s):';
 
   @override
+  String get profileSearchClear => 'Limpar pesquisa';
+
+  @override
+  String get profileSearchHint => 'Pesquisar conexões';
+
+  @override
+  String get profileSearchNoResults =>
+      'Nenhuma conexão corresponde à sua pesquisa';
+
+  @override
+  String get profileSortByNameMessage =>
+      'A lista está ordenada por nome, então os itens são posicionados pelo nome';
+
+  @override
+  String get profileSortFavoritesFirst => 'Favoritos primeiro';
+
+  @override
+  String get profileSortFavoritesMessage =>
+      'Os favoritos ficam no topo enquanto Favoritos primeiro está ativado';
+
+  @override
+  String get profileSortManual => 'Ordem manual';
+
+  @override
+  String get profileSortNameAscending => 'Nome, de A a Z';
+
+  @override
+  String get profileSortNameDescending => 'Nome, de Z a A';
+
+  @override
+  String get profileSortReset => 'Voltar à ordem manual';
+
+  @override
+  String get profileSortTooltip => 'Ordenar';
+
+  @override
   String get profileStatusFailedLoad => 'Falha ao carregar';
 
   @override
@@ -1937,6 +2234,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get profileStatusLoading => 'Carregando';
+
+  @override
+  String get profileStatusQueued => 'Aguardando';
+
+  @override
+  String get profileStatusQueuedMessage =>
+      'Aguarda as conexões anteriores iniciarem. Clique para iniciá-la agora.';
 
   @override
   String get profileStatusStarted => 'Conectado';
@@ -1990,6 +2294,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get removeAtsign => 'Remover Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return 'Inscrição $enrollmentId abandonada. Para tentar novamente, insira um novo OTP de outra inscrição e negue $enrollmentId em Solicitações no Authenticator.';
+  }
+
+  @override
   String get requestExpired =>
       'A solicitação original expirou. Por favor, envie novamente';
 
@@ -1998,11 +2307,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get resendPin => 'Reenviar Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return 'Falha ao tentar novamente: $errorMessage, tentará novamente...';
-  }
 
   @override
   String get roleAddNew => 'Adicionar Nova Função';
@@ -2202,7 +2506,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get validationErrorDeviceNameField =>
-      'O campo só pode conter letras minúsculas, dígitos e underscores.';
+      'Use de 2 a 36 minúsculas, dígitos, \"_\" ou \"-\", sem começar com \"-\".';
 
   @override
   String get validationErrorEmptyField =>
@@ -2218,7 +2522,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get validationErrorLongField =>
-      'O campo deve ter entre 1 e 36 caracteres';
+      'O campo deve ter entre 2 e 36 caracteres';
 
   @override
   String get validationErrorRelayField => 'O relay deve ser um Atsign válido';

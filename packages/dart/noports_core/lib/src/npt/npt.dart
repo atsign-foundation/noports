@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
-import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart'
     show signAndWrapRequest;
@@ -55,9 +54,16 @@ abstract interface class Npt {
   Future<SocketConnector> runInline({int? localRvPort});
 
   /// Ends this session, closing the tunnel [runInline] started, if any, and
-  /// completing [done].
+  /// completing [done]. A [runInline] still starting then closes the tunnel it
+  /// opens and throws. A teardown step that fails is
+  /// logged and the rest still run, so this never throws.
   Future<void> close();
 
+  /// Completes when the session has ended, or when it failed to start.
+  ///
+  /// [run] and [runInline] guarantee this by closing on their way out when
+  /// startup throws, so callers may always await [done] without first having
+  /// to call [close] themselves.
   Future get done;
 
   factory Npt.create({
@@ -140,6 +146,10 @@ class _NptImpl extends NptBase
 
   SocketConnector? _inlineConnector;
 
+  /// Set when [close] starts, so a startup still in flight can't hand back a
+  /// tunnel afterwards.
+  bool _closed = false;
+
   @override
   Future get done => _completer.future;
 
@@ -172,7 +182,24 @@ class _NptImpl extends NptBase
 
   @override
   Future<void> close() async {
-    _inlineConnector?.close();
+    _closed = true;
+    Future<void> step(String name, FutureOr<void> Function() teardown) async {
+      try {
+        await teardown();
+      } catch (e) {
+        logger.warning('Session $sessionId: $name failed while closing: $e');
+      }
+    }
+
+    await step('closing the tunnel', () => _inlineConnector?.close());
+    await step(
+      'cancelling the daemon channel',
+      _sshnpdChannel.cancelSubscriptions,
+    );
+    await step(
+      'cancelling the relay channel',
+      _srvdChannel.cancelSubscriptions,
+    );
     if (!_completer.isCompleted) {
       _completer.complete();
     }
@@ -221,6 +248,11 @@ class _NptImpl extends NptBase
       requiredFeatures,
       timeout: params.daemonPingTimeout,
     );
+    // NOTE: this is awaited only once the relay has answered. A failure before
+    // then - or the relay step throwing, so it is never awaited at all - would
+    // otherwise be an unhandled error, which kills the npt binary. The await
+    // below still sees the error.
+    featureCheckFuture.ignore();
 
     /// Retrieve the srvd host and port pair
     sendProgress('Fetching host and port from srvd');
@@ -380,68 +412,80 @@ class _NptImpl extends NptBase
 
   @override
   Future<int> run() async {
-    int localRvPort = await _preRun();
+    try {
+      int localRvPort = await _preRun();
 
-    /// Start srv
-    if (params.inline) {
-      // not detached
-      await runInline(localRvPort: localRvPort);
-    } else {
+      /// Start srv
+      if (params.inline) {
+        // not detached
+        await runInline(localRvPort: localRvPort);
+      } else {
+        sendProgress('Creating connection to socket rendezvous');
+
+        await _srvdChannel.runSrv(
+          localRvPort: localRvPort,
+          aesC2D: sshnpdChannel.aesC2D,
+          ivC2D: sshnpdChannel.ivC2D,
+          aesD2C: sshnpdChannel.aesD2C,
+          ivD2C: sshnpdChannel.ivD2C,
+          multi: true,
+          detached: true,
+          timeout: params.timeout,
+          controlChannelHeartbeat: sendControlHeartbeats
+              ? params.controlChannelHeartbeat
+              : null,
+        );
+        await close();
+      }
+
+      return localRvPort;
+    } catch (_) {
+      await close();
+      rethrow;
+    }
+  }
+
+  @override
+  Future<SocketConnector> runInline({int? localRvPort}) async {
+    try {
+      localRvPort ??= await _preRun();
       sendProgress('Creating connection to socket rendezvous');
+      if (!params.inline) {
+        logger.warning(
+          "WAT - runInline() was called but params.inline = false, running under the assumption that params.inline was meant to be true.",
+        );
+      }
 
-      await _srvdChannel.runSrv(
+      SocketConnector sc = await _srvdChannel.runSrv(
         localRvPort: localRvPort,
         aesC2D: sshnpdChannel.aesC2D,
         ivC2D: sshnpdChannel.ivC2D,
         aesD2C: sshnpdChannel.aesD2C,
         ivD2C: sshnpdChannel.ivD2C,
         multi: true,
-        detached: true,
+        detached: false,
         timeout: params.timeout,
         controlChannelHeartbeat: sendControlHeartbeats
             ? params.controlChannelHeartbeat
             : null,
       );
-      _completer.complete();
-    }
 
-    return localRvPort;
-  }
-
-  @override
-  Future<SocketConnector> runInline({int? localRvPort}) async {
-    localRvPort ??= await _preRun();
-    sendProgress('Creating connection to socket rendezvous');
-    if (!params.inline) {
-      logger.warning(
-        "WAT - runInline() was called but params.inline = false, running under the assumption that params.inline was meant to be true.",
+      if (_closed) {
+        sc.close();
+        throw SshnpError('Session $sessionId was closed while it was starting');
+      }
+      _inlineConnector = sc;
+      unawaited(
+        sc.done.then((_) async {
+          logger.info('SocketConnector done');
+          await close();
+        }),
       );
+
+      return sc;
+    } catch (_) {
+      await close();
+      rethrow;
     }
-
-    SocketConnector sc = await _srvdChannel.runSrv(
-      localRvPort: localRvPort,
-      aesC2D: sshnpdChannel.aesC2D,
-      ivC2D: sshnpdChannel.ivC2D,
-      aesD2C: sshnpdChannel.aesD2C,
-      ivD2C: sshnpdChannel.ivD2C,
-      multi: true,
-      detached: false,
-      timeout: params.timeout,
-      controlChannelHeartbeat: sendControlHeartbeats
-          ? params.controlChannelHeartbeat
-          : null,
-    );
-
-    _inlineConnector = sc;
-    unawaited(
-      sc.done.then((_) {
-        logger.info('SocketConnector done');
-        if (!_completer.isCompleted) {
-          _completer.complete();
-        }
-      }),
-    );
-
-    return sc;
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile_form/profile_form.dart';
 import 'package:npt_flutter/features/profile_form/widgets/profile_local_host_text_field.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/styles/sizes.dart';
 import 'package:npt_flutter/widgets/custom_card.dart';
@@ -10,18 +11,80 @@ import 'package:npt_flutter/widgets/custom_card.dart';
 class ProfileFormView extends StatelessWidget {
   final String uuid;
   final Profile? copyFrom;
-  const ProfileFormView(this.uuid, {super.key, this.copyFrom});
+  final String? folderId;
+  const ProfileFormView(this.uuid, {super.key, this.copyFrom, this.folderId});
+
+  String get _followed => copyFrom?.uuid ?? uuid;
+
+  /// Read before saving: the page closes when the save succeeds.
+  ProfileFolderEvent? _folderEvent(BuildContext context) {
+    final folderCubit = context.read<ProfileFormFolderCubit>();
+    final chosen = folderCubit.state;
+    final folders = context.read<ProfileFolderBloc>().state;
+    if (folders is! ProfileFoldersLoaded) return null;
+    final bool folderLeftAsIs = !folderCubit.picked && copyFrom == null;
+    if (folderLeftAsIs) return null;
+    final newName = chosen.newName;
+    if (newName != null) {
+      return ProfileFolderCreateEvent(
+        uuid: chosen.folderId!,
+        name: newName,
+        profileIds: [uuid],
+      );
+    }
+    final String? target = folders.data.folderById(chosen.folderId ?? '')?.uuid;
+    if (folders.data.folderForProfile(uuid)?.uuid == target) return null;
+    return ProfileFolderMoveProfilesEvent(
+      profileIds: [uuid],
+      folderId: target,
+      visibleUnfiled: target == null
+          ? ProfileFolderActions.visibleUnfiled(context)
+          : null,
+    );
+  }
+
+  Future<void> _submit(BuildContext context, Profile profile) async {
+    final ProfileBloc saved = context.read<ProfileCacheCubit>().getProfileBloc(
+      uuid,
+    );
+    final ProfileFolderBloc folderBloc = context.read<ProfileFolderBloc>();
+    final ProfileFolderEvent? folderEvent = _folderEvent(context);
+    final Future<ProfileState> done = saved.stream.firstWhere(
+      (ProfileState s) => s is ProfileLoaded || s is ProfileFailedSave,
+    );
+    saved.add(ProfileSaveEvent(profile: profile));
+    if (await done is ProfileLoaded && folderEvent != null) {
+      folderBloc.add(folderEvent);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final GlobalKey<FormState> formkey = GlobalKey<FormState>();
     final deviceSize = MediaQuery.of(context).size;
-    return BlocProvider<ProfileBloc>(
-      create: (BuildContext context) =>
-          /// Local copy of the profile which is used by the form
-          ProfileBloc(context.read<ProfileRepository>(), uuid)
-            ..add(ProfileLoadOrCreateEvent(copyFrom: copyFrom)),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ProfileBloc>(
+          create: (BuildContext context) =>
+              /// Local copy of the profile which is used by the form
+              ProfileBloc(context.read<ProfileRepository>(), uuid)
+                ..add(ProfileLoadOrCreateEvent(copyFrom: copyFrom)),
+        ),
+        BlocProvider<ProfileFormFolderCubit>(
+          lazy: false,
+          create: (BuildContext context) {
+            final folders = context.read<ProfileFolderBloc>().state;
+            return ProfileFormFolderCubit(
+              folderId ??
+                  (folders is ProfileFoldersLoaded
+                      ? folders.data.folderForProfile(_followed)?.uuid
+                      : null),
+              picked: folderId != null,
+            );
+          },
+        ),
+      ],
       child: Padding(
         padding: const EdgeInsets.only(left: Sizes.p100, right: Sizes.p100),
         child: Stack(
@@ -41,6 +104,17 @@ class ProfileFormView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const ProfileDisplayNameTextField(),
+                            BlocListener<ProfileFolderBloc, ProfileFolderState>(
+                              listener: (context, folders) {
+                                if (folders is! ProfileFoldersLoaded) return;
+                                context.read<ProfileFormFolderCubit>().follow(
+                                  folders.data
+                                      .folderForProfile(_followed)
+                                      ?.uuid,
+                                );
+                              },
+                              child: const ProfileFolderSelector(),
+                            ),
                             gapH10,
                             const Padding(
                               padding: EdgeInsets.symmetric(
@@ -112,35 +186,36 @@ class ProfileFormView extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: Sizes.p50,
                               ),
-                              child: Builder(
-                                builder: (context) => SizedBox(
+                              child: BlocBuilder<ProfileBloc, ProfileState>(
+                                bloc: context
+                                    .read<ProfileCacheCubit>()
+                                    .getProfileBloc(uuid),
+                                builder: (context, saveState) => SizedBox(
                                   width: Sizes.p743,
                                   child: ElevatedButton(
-                                    onPressed: () {
-                                      if (!formkey.currentState!.validate()) {
-                                        return;
-                                      }
+                                    onPressed: saveState is ProfileLoading
+                                        ? null
+                                        : () {
+                                            if (!formkey.currentState!
+                                                .validate()) {
+                                              return;
+                                            }
 
-                                      var localBloc = context
-                                          .read<ProfileBloc>();
-                                      if (localBloc.state
-                                          is! ProfileLoadedState) {
-                                        return;
-                                      }
+                                            var localBloc = context
+                                                .read<ProfileBloc>();
+                                            if (localBloc.state
+                                                is! ProfileLoadedState) {
+                                              return;
+                                            }
 
-                                      /// Now take the localBloc and upload it back to the global bloc
-                                      context
-                                          .read<ProfileCacheCubit>()
-                                          .getProfileBloc(uuid)
-                                          .add(
-                                            ProfileSaveEvent(
-                                              profile:
-                                                  (localBloc.state
-                                                          as ProfileLoadedState)
-                                                      .profile,
-                                            ),
-                                          );
-                                    },
+                                            /// Now take the localBloc and upload it back to the global bloc
+                                            _submit(
+                                              context,
+                                              (localBloc.state
+                                                      as ProfileLoadedState)
+                                                  .profile,
+                                            );
+                                          },
                                     child: Text(strings.submit),
                                   ),
                                 ),

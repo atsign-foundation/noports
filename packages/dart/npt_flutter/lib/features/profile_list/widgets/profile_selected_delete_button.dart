@@ -45,11 +45,22 @@ class ProfileSelectedDeleteButton extends StatelessWidget {
                         : null,
                     actionText: strings.delete,
                     action: () {
-                      App.navState.currentContext
-                          ?.read<ProfilesSelectedCubit>()
-                          .deselectAll();
-                      App.navState.currentContext?.read<ProfileListBloc>().add(
-                        ProfileListDeleteEvent(toDelete: filtered),
+                      final context = App.navState.currentContext;
+                      // NOTE: running profiles are kept, so re-read them: one
+                      // may have started while this dialog was open.
+                      final runningNow =
+                          context
+                              ?.read<ProfilesRunningCubit>()
+                              .state
+                              .socketConnectors
+                              .keys
+                              .toSet() ??
+                          running;
+                      context?.read<ProfilesSelectedCubit>().deselectAll();
+                      context?.read<ProfileListBloc>().add(
+                        ProfileListDeleteEvent(
+                          toDelete: selected.difference(runningNow),
+                        ),
                       );
                     },
                   ),

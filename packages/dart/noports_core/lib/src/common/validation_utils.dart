@@ -1,8 +1,7 @@
 import 'dart:convert';
 
 import 'package:at_chops/at_chops.dart';
-import 'package:at_cli_commons/at_cli_commons.dart';
-import 'package:at_client/at_client.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:at_utils/at_utils.dart';
 
 import 'package:noports_core/src/common/io_types.dart';
@@ -200,6 +199,10 @@ Future<RsaKeyPair> _encryptionKeyPair(AtClient atClient) async {
   return keyPair;
 }
 
+/// Checks that [envelope] was signed with [requestingAtsign]'s public key,
+/// fetched from its atServer. Throws [AtSigningVerificationException] if not;
+/// its message names [requestingAtsign] and quotes nothing the envelope or
+/// the atServer supplied.
 Future<void> verifyEnvelopeSignature(
   AtClient atClient,
   String requestingAtsign,
@@ -207,15 +210,31 @@ Future<void> verifyEnvelopeSignature(
   Map envelope) async {
   final String signature = envelope['signature'];
   Map payload = envelope['payload'];
-  final hashingAlgo = HashingAlgoType.values.byName(envelope['hashingAlgo']);
-  final signingAlgo = SigningAlgoType.values.byName(envelope['signingAlgo']);
-  if (signingAlgo != SigningAlgoType.rsa2048) {
+  final hashingAlgo =
+      HashingAlgoType.values.asNameMap()[envelope['hashingAlgo']];
+  if (hashingAlgo == null) {
     throw AtSigningVerificationException(
-      'Unsupported signingAlgo ${signingAlgo.name} from $requestingAtsign',
+      'Unsupported hashingAlgo from $requestingAtsign',
     );
   }
-  // final pk = await getLocallyCachedPK(atClient, requestingAtsign, fs: fs);
-  final pk = await getRemotePK(atClient: atClient, atSign: requestingAtsign);
+  final signingAlgo =
+      SigningAlgoType.values.asNameMap()[envelope['signingAlgo']];
+  if (signingAlgo != SigningAlgoType.rsa2048) {
+    throw AtSigningVerificationException(
+      'Unsupported signingAlgo from $requestingAtsign',
+    );
+  }
+  final String pk;
+  try {
+    pk = await getRemotePK(atClient: atClient, atSign: requestingAtsign);
+  } on Exception catch (e) {
+    logger.warning(
+      "Could not fetch $requestingAtsign's public key: ${e.runtimeType}",
+    );
+    throw AtSigningVerificationException(
+      "could not fetch $requestingAtsign's public key",
+    );
+  }
   final verified = await rsaVerifyString(
     jsonEncode(payload),
     signature: signature,
@@ -225,7 +244,7 @@ Future<void> verifyEnvelopeSignature(
   logger.info('Signature verification result: $verified');
   if (!verified) {
     throw AtSigningVerificationException(
-      'signature verification returned false using cached public key for $requestingAtsign $pk',
+      "signature verification returned false using $requestingAtsign's public key",
     );
   }
 }

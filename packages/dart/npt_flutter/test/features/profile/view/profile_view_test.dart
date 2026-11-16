@@ -1,4 +1,5 @@
 import 'package:at_client_flutter/at_client_flutter.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
 import 'package:npt_flutter/features/profile/widgets/profile_delete_button.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
@@ -16,6 +18,10 @@ import 'package:npt_flutter/widgets/loader_bar.dart';
 import 'package:npt_flutter/widgets/spinner.dart';
 
 import 'profile_view_test.mocks.dart';
+
+class MockProfileFolderBloc
+    extends MockBloc<ProfileFolderEvent, ProfileFolderState>
+    implements ProfileFolderBloc {}
 
 // Mock classes for testing
 @GenerateNiceMocks([
@@ -34,6 +40,7 @@ void main() {
     late MockProfilesSelectedCubit mockProfilesSelectedCubit;
     late MockFavoriteBloc mockFavoriteBloc;
     late MockFavoriteRepository mockFavoriteRepository;
+    late MockProfileFolderBloc mockProfileFolderBloc;
 
     const testUuid = 'test-uuid-123';
     final testProfile = Profile(
@@ -60,6 +67,12 @@ void main() {
       mockProfilesSelectedCubit = MockProfilesSelectedCubit();
       mockFavoriteBloc = MockFavoriteBloc();
       mockFavoriteRepository = MockFavoriteRepository();
+      mockProfileFolderBloc = MockProfileFolderBloc();
+      whenListen(
+        mockProfileFolderBloc,
+        const Stream<ProfileFolderState>.empty(),
+        initialState: const ProfileFoldersInitial(),
+      );
 
       // Provide dummy values for the mocks
       provideDummy<ProfileState>(const ProfileInitial(testUuid));
@@ -117,11 +130,19 @@ void main() {
           body: MultiBlocProvider(
             providers: [
               BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+              BlocProvider<ProfileStartQueueCubit>(
+                create: (_) => ProfileStartQueueCubit(
+                  ProfileCacheCubit(ProfileRepository()),
+                ),
+              ),
               BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
               BlocProvider<ProfilesSelectedCubit>.value(
                 value: mockProfilesSelectedCubit,
               ),
               BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
+              BlocProvider<ProfileFolderBloc>.value(
+                value: mockProfileFolderBloc,
+              ),
             ],
             child: const ProfileView(),
           ),
@@ -372,11 +393,19 @@ void main() {
             body: MultiBlocProvider(
               providers: [
                 BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<ProfileStartQueueCubit>(
+                  create: (_) => ProfileStartQueueCubit(
+                    ProfileCacheCubit(ProfileRepository()),
+                  ),
+                ),
                 BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
                 BlocProvider<ProfilesSelectedCubit>.value(
                   value: mockProfilesSelectedCubit,
                 ),
                 BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
+                BlocProvider<ProfileFolderBloc>.value(
+                  value: mockProfileFolderBloc,
+                ),
               ],
               child: const ProfileViewMinimal(),
             ),
@@ -470,11 +499,19 @@ void main() {
             body: MultiBlocProvider(
               providers: [
                 BlocProvider<ProfileBloc>.value(value: mockProfileBloc),
+                BlocProvider<ProfileStartQueueCubit>(
+                  create: (_) => ProfileStartQueueCubit(
+                    ProfileCacheCubit(ProfileRepository()),
+                  ),
+                ),
                 BlocProvider<SettingsBloc>.value(value: mockSettingsBloc),
                 BlocProvider<ProfilesSelectedCubit>.value(
                   value: mockProfilesSelectedCubit,
                 ),
                 BlocProvider<FavoriteBloc>.value(value: mockFavoriteBloc),
+                BlocProvider<ProfileFolderBloc>.value(
+                  value: mockProfileFolderBloc,
+                ),
               ],
               child: const ProfileViewSshStyle(),
             ),

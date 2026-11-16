@@ -1,3 +1,78 @@
+# 7.0.0
+
+- feat: `SrvdParams.telemetryCollectorAtsign` (`--telemetry-collector-atsign`)
+  sends srvd's session telemetry to a collector Atsign
+- feat: `SrvdParams.reportedSigningKeyCheckSecs`
+  (`--reported-signing-key-check-secs`, 3 by default): srvd ends a session it
+  reports within 10 seconds of the enrollment one of its sides signed with
+  being revoked, with at most 8 of those lookups at once to one Atsign, and
+  each Atsign's re-checks get a fair share of them however many sessions
+  other Atsigns have
+- feat: srvd closes a session's sockets at once when it ends the session
+  because the enrollment one of its sides signed with was revoked
+- feat: `Srvd.stop` closes every session's connections and returns within
+  `Srvd.stopBound`, 12 seconds
+- fix: srvd refuses a session request whose session id is not a UUID
+- fix: srvd refuses a session request whose device-side Atsign is not a valid
+  Atsign, and tells a client why it refused a malformed request, so the client
+  fails at once instead of waiting out its timeout
+- fix: `Npt.done` now completes when startup fails, instead of never
+  completing. `run` and `runInline` close the session on their way out when
+  they throw, so callers may always await `done` without having to call
+  `close` themselves first. A caller that awaited `done` after a failed
+  startup previously waited forever. See #2789.
+- fix: `Npt.close` cancels the notification subscriptions its daemon and relay
+  channels opened, which previously stayed attached to the `AtClient` for the
+  life of the process. A client that retried a session repeatedly accumulated
+  one set of listeners per attempt.
+- fix: an npt session whose daemon feature check, or relay signing key
+  publish, failed before the relay answered no longer raises an unhandled
+  error, which killed the npt binary.
+- fix: a `runInline` still starting when `Npt.close` is called closes its
+  tunnel and throws.
+- fix: `Npt.close` cancels both its daemon and relay channels' subscriptions
+  even when cancelling one of them fails, and logs such a failure rather than
+  throwing it.
+- fix: an sshnp session whose daemon feature check fails no longer raises an
+  unhandled error.
+- **BREAKING CHANGE** build: depends on the at_client 4.0.0 set: at_client
+  4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli and
+  at_cli_commons, at_auth 4.0.0, at_lookup 4.0.0 and at_utils 4.0.0, so the
+  at_client types in noports_core's API are at_client 4's
+- build: requires socket_connector 2.7.0, so a tunnel connection closes once
+  data has waited two minutes for one of its ends to read it, and a closing
+  connection ends within 30 seconds even when an end has stopped reading
+- **BREAKING CHANGE** refactor: `ActivateFlows.activate` requires a
+  `storage`
+- feat: npp logs manager RPC rule changes and refused senders to the event
+  logging Atsign
+- fix: npp saves a manager RPC delete, so the rule isn't loaded again on the
+  next start
+- fix: npp checks a manager RPC put before saving it, so a rejected put saves
+  nothing
+- fix: npp makes one manager RPC change at a time, so two puts can't share an
+  id
+- feat: `NppOperationHooks` has pre-delete hooks, `NppCache` has `checkPut*`,
+  and `npp.dart` exports npp's rule loaders and hooks
+- fix: npp assigns every new rule a random id
+- fix: deleting an npp client, client group or service also deletes the client
+  group members and service ACLs naming it, and the answer lists them
+- fix: npp answers a daemon delete with an error while a service names the
+  daemon, saying how many do
+- fix: npp answers a put naming a rule it doesn't hold with an error, and
+  saves nothing
+- fix: npp's warning for a stored rule it doesn't load says where the rule is
+  stored and how to remove it
+- fix: a manager RPC delete also removes a stored rule npp didn't load because
+  it names a rule that isn't stored
+- fix: a manager RPC delete naming an id npp doesn't hold is answered with an
+  error naming it
+- fix: npp answers a manager RPC delete whose value doesn't name its rule's id
+  as a string, or a put or delete whose value isn't a JSON object, with an
+  error saying what it must hold
+- fix: tightened how npp loads its stored rules
+- fix: tightened how npp_atserver loads its policy groups
+
 # 6.16.0
 
 - build: depends on the at_client_sdk release candidates: at_client
@@ -21,6 +96,8 @@
 - **BREAKING CHANGE** feat: `RelayAuthenticatorESCR` requires `signingAlgo`
 - **BREAKING CHANGE** fix: `NPARequestHandler` implementations must add
   `hasRulesFor`
+- **BREAKING CHANGE** feat: `NPA` implementations must add `sendEvent` and
+  `flushEvents`
 - feat: ESCR relay authentication works for an enrollment that holds signing
   keys of its own or authenticates with ML-DSA-65, which srvd now verifies
   as well as RSA-2048
@@ -99,6 +176,8 @@
 - fix: policy services answer only daemons that have rules, and each only
   about itself
 - fix: `--list-devices` lists a daemon on the client's own atSign
+- feat: npp logs rulesLoaded, heartbeat and stopped events to the event
+  logging Atsign
 
 # 6.15.0
 

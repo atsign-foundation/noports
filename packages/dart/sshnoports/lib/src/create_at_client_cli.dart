@@ -1,8 +1,6 @@
-import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/utils.dart';
-import 'package:path/path.dart' as path;
 
 /// Opens [atsign] from its keyfile, waits for it to come online, and makes it
 /// the manager's current client.
@@ -26,13 +24,9 @@ Future<AtClient> createAtClientCli({
   atsign = AtUtils.fixAtSign(atsign);
   final AtRootDomain parsedRootDomain = AtRootDomain.parse(rootDomain);
 
-  final AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-    ..storagePath = storagePath
+  final AtClientPreference preference = AtClientPreference()
     ..namespace = namespace
-    ..downloadPath = path.normalize('$storagePath/downloads')
     ..fetchOfflineNotifications = false
-    ..atKeysFilePath = atKeysFilePath
-    ..passPhrase = passPhrase
     ..rootDomain = parsedRootDomain.rootDomain
     ..rootPort = parsedRootDomain.rootPort;
 
@@ -46,37 +40,45 @@ Future<AtClient> createAtClientCli({
     client = await Atsign(atsign).open(
       keys:
           FileAtKeysIo(filePath: (_) => atKeysFilePath, passPhrase: passPhrase),
-      preference: atOnboardingConfig,
-      storage: atOnboardingConfig.storageFor(atsign),
+      preference: preference,
+      storage: HiveAtClientStorage(
+        atSign: atsign,
+        storagePath: storagePath,
+        closedByClient: true,
+      ),
       serviceFactory: atServiceFactory,
-      lookUps: atOnboardingConfig.lookUps,
+      lookUps: lookUpsFor(preference.rootDomain),
+      secondaryAddressFinder: CacheableSecondaryAddressFinder(
+        preference.rootDomain,
+        preference.rootPort,
+      ),
     );
   } on AtOpenRefusedException catch (e) {
     if (e.state.cause == AtConnectionCause.noAtServer) {
-      throw SecondaryNotFoundException(
-        '$atsign is not in the atDirectory at $rootDomain: check the atSign,'
-        ' and that it has been activated',
-      );
+      throw _notInAtDirectory(atsign, rootDomain);
     }
     throw UnAuthenticatedException(
       'Unable to authenticate $atsign: ${e.message}',
     );
   }
 
-  await onlineOrThrow(client, atsign, onlineBudget);
+  await onlineOrThrow(client, atsign, onlineBudget, rootDomain: rootDomain);
   AtClientManager.getInstance().use(client);
   return client;
 }
 
 /// Waits up to [onlineBudget] for [client] to come online, retrying every
 /// three seconds. Stops the client and throws [UnAuthenticatedException]
-/// with the atServer's reason when it is refused, or
-/// [SecondaryServerConnectivityException] when it is still offline.
+/// with the atServer's reason when it is refused,
+/// [SecondaryNotFoundException] when the atDirectory at [rootDomain] has no
+/// atServer for [atsign], or [SecondaryServerConnectivityException] when it
+/// is still offline.
 Future<void> onlineOrThrow(
   AtClient client,
   String atsign,
-  Duration onlineBudget,
-) async {
+  Duration onlineBudget, {
+  required String rootDomain,
+}) async {
   final state = await client.connection.awaitOnline(
     budget: onlineBudget,
     retryInterval: const Duration(seconds: 3),
@@ -91,8 +93,20 @@ Future<void> onlineOrThrow(
       'Unable to authenticate $atsign: the atServer refused it$reason',
     );
   }
+  if (state.cause == AtConnectionCause.noAtServer) {
+    throw _notInAtDirectory(atsign, rootDomain);
+  }
   throw SecondaryServerConnectivityException(
     '$atsign could not connect to its atServer within'
     ' ${onlineBudget.inSeconds} seconds: ${state.outcome.name}$reason',
   );
 }
+
+SecondaryNotFoundException _notInAtDirectory(
+  String atsign,
+  String rootDomain,
+) =>
+    SecondaryNotFoundException(
+      '$atsign is not in the atDirectory at $rootDomain: check the atSign,'
+      ' and that it has been activated',
+    );

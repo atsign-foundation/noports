@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:noports_core/npp.dart';
 import 'package:noports_core/utils.dart';
@@ -9,7 +8,9 @@ import 'package:chalkdart/chalk.dart';
 import 'package:cli_menu/cli_menu.dart';
 import 'package:sshnoports/src/print_version.dart';
 import 'package:sshnoports/src/cli_menu_helper.dart';
+import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:noports_core/npa.dart';
+import 'package:path/path.dart' as path;
 
 
 late AtSignLogger logger;
@@ -58,16 +59,13 @@ Future<void> main(List<String> args) async {
   if (nppCLIParams.verbose) {
     AtSignLogger.root_level = 'info';
   }
-  final AtOnboardingPreference atOnboardingPreference = generateAtOnboardingPreference(nppCLIParams);
-  final AtOnboardingService atOnboardingService = AtOnboardingServiceImpl(nppCLIParams.atSign, atOnboardingPreference);
-  if (!await atOnboardingService.authenticate()) {
-    stderr.writeln('Error: ${nppCLIParams.atSign} could not be opened: '
-        '${atOnboardingService.atClient == null ? 'the atServer refused it' : 'its atServer could not be reached'}'
-        '${nppCLIParams.verbose ? '' : '; run with -v for the reason'}');
+  final AtClient atClient;
+  try {
+    atClient = await openNppClient(nppCLIParams);
+  } catch (e) {
+    stderr.writeln('Error: ${e is AtException ? e.message : e}');
     exit(1);
   }
-
-  final AtClient atClient = atOnboardingService.atClient!;
 
   final NppClient nppClient = NppClient(
     atClient: atClient,
@@ -759,17 +757,20 @@ String showMenuAndGetSelection() {
   return (result.index + 1).toString();
 }
 
-AtOnboardingPreference generateAtOnboardingPreference(
-  NPPCLIParams nppCLIParams
-) {
-  final AtOnboardingPreference atOnboardingPreference = AtOnboardingPreference()
-  ..rootDomain = nppCLIParams.rootServer.split(':')[0]
-  ..rootPort = int.parse(nppCLIParams.rootServer.split(':')[1])
-  ..atKeysFilePath = nppCLIParams.atKeysFilePath;
-
-  if(nppCLIParams.storagePath != null) {
-    atOnboardingPreference.storagePath = nppCLIParams.storagePath;
-  }
-
-  return atOnboardingPreference;
+/// Opens the atSign [nppCLIParams] names from its keyfile, once it is online,
+/// as the manager's current client; throws as [createAtClientCli] does,
+/// saying why, when the atServer refuses it, the atDirectory has no atServer
+/// for it, or its atServer cannot be reached.
+Future<AtClient> openNppClient(NPPCLIParams nppCLIParams) {
+  final atSign = nppCLIParams.atSign.toAtsign();
+  return createAtClientCli(
+    atsign: atSign,
+    atKeysFilePath: nppCLIParams.atKeysFilePath,
+    rootDomain: nppCLIParams.rootServer,
+    atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+    namespace: nppCLIParams.baseNamespace,
+    storagePath: nppCLIParams.storagePath ??
+        path.join(getHomeDirectory(throwIfNull: true)!, '.atsign',
+            'at_onboarding_cli', 'storage', atSign, 'hive'),
+  );
 }

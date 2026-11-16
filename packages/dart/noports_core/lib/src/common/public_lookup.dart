@@ -1,16 +1,15 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client/at_client.dart';
-import 'package:at_lookup/at_lookup.dart'
+import 'package:at_lookup/at_lookup_io.dart'
     show
         CacheableSecondaryAddressFinder,
         SecondaryAddress,
         SecondaryAddressFinder;
-import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/lookup_slots.dart';
 
 /// Looks up atSigns' public records, such as the `_apsk` records that
 /// enrollments publish their signing keys in.
@@ -69,9 +68,11 @@ abstract class PublicLookup {
 /// A [PublicLookup] that asks each record's own atServer, over the HTTPS GET
 /// (`/<atSign>/<key>`) that atServers serve public records on, at the address
 /// the atDirectory gives for it, offering `http/1.1` by ALPN, without which an
-/// atServer answers in atProtocol. Each lookup has its own connection and a
-/// deadline, at most [maxPerAtSign] of them run at once for any one atSign,
-/// and at most [maxConcurrent] in all.
+/// atServer answers in the Atsign Protocol. Each lookup has its own connection
+/// and a deadline, at most [maxPerAtSign] of them run at once for any one
+/// atSign, and at most [maxConcurrent] in all. A lookup waiting for its turn
+/// goes ahead of those of atSigns with more lookups under way than its own
+/// (see [LookupSlots]).
 ///
 /// [lookup] falls back to [atClient]'s own atServer when the record's
 /// atServer can't be connected to, or doesn't answer over HTTP as an
@@ -82,12 +83,48 @@ class DirectPublicLookup extends PublicLookup {
     this.atClient, {
     SecondaryAddressFinder? addressFinder,
     this.timeout = defaultTimeout,
+    this.timeoutCoversAddress = false,
     this.maxConcurrent = defaultMaxConcurrent,
     this.maxPerAtSign = defaultMaxPerAtSign,
+    this.onAnswered,
     @visibleForTesting this.scheme = 'https',
     @visibleForTesting SecurityContext? securityContext,
   })  : _addressFinder = addressFinder,
+        _addressesFrom = null,
         _securityContext = securityContext;
+
+  DirectPublicLookup._sharing(
+    DirectPublicLookup other, {
+    required this.timeout,
+    required this.timeoutCoversAddress,
+    required this.maxConcurrent,
+    required this.maxPerAtSign,
+    required this.onAnswered,
+  })  : atClient = other.atClient,
+        scheme = other.scheme,
+        _addressFinder = null,
+        _addressesFrom = other,
+        _securityContext = other._securityContext;
+
+  /// A lookup that finds atServers' addresses through this one's finder, so
+  /// the two share one cache of what the atDirectory answered, and reaches
+  /// them as this one does, with connections, a deadline and limits of its
+  /// own.
+  DirectPublicLookup sharingAddresses({
+    required Duration timeout,
+    bool timeoutCoversAddress = false,
+    int? maxConcurrent,
+    int? maxPerAtSign,
+    void Function(String uri, Duration took)? onAnswered,
+  }) =>
+      DirectPublicLookup._sharing(
+        this,
+        timeout: timeout,
+        timeoutCoversAddress: timeoutCoversAddress,
+        maxConcurrent: maxConcurrent ?? this.maxConcurrent,
+        maxPerAtSign: maxPerAtSign ?? this.maxPerAtSign,
+        onAnswered: onAnswered,
+      );
 
   static const defaultTimeout = Duration(seconds: 10);
   static const defaultMaxConcurrent = 16;
@@ -98,17 +135,30 @@ class DirectPublicLookup extends PublicLookup {
   static const maxValueBytes = 64 * 1024;
 
   final AtClient atClient;
+
+  /// How long finding a record's atServer may take, and how long that
+  /// atServer then has to answer.
   final Duration timeout;
+
+  /// Whether [timeout] is for the two together, so that a lookup ends
+  /// within it once it has begun.
+  final bool timeoutCoversAddress;
   final int maxConcurrent;
   final int maxPerAtSign;
+
+  /// Told each record an atServer answered for, held or not, and how long
+  /// that took from the lookup's turn coming, the wait for a turn left out.
+  final void Function(String uri, Duration took)? onAnswered;
   final String scheme;
 
   final AtSignLogger logger = AtSignLogger(' DirectPublicLookup ');
 
   final SecondaryAddressFinder? _addressFinder;
+  final DirectPublicLookup? _addressesFrom;
   final SecurityContext? _securityContext;
 
   late final SecondaryAddressFinder _finder = _addressFinder ??
+      _addressesFrom?._finder ??
       CacheableSecondaryAddressFinder(
         atClient.getPreferences()!.rootDomain,
         atClient.getPreferences()!.rootPort,
@@ -123,8 +173,10 @@ class DirectPublicLookup extends PublicLookup {
     ..connectionTimeout = timeout ~/ 2
     ..idleTimeout = const Duration(seconds: 15);
 
-  late final _Slots _all = _Slots(maxConcurrent);
-  final Map<String, _Slots> _byAtSign = {};
+  late final LookupSlots _slots = LookupSlots(
+    maxConcurrent: maxConcurrent,
+    maxPerAtSign: maxPerAtSign,
+  );
 
   @override
   Future<String?> lookup(String uri) async {
@@ -153,22 +205,25 @@ class DirectPublicLookup extends PublicLookup {
     final at = uri.lastIndexOf('@');
     final atSign = uri.substring(at);
     final key = uri.substring('public:'.length, at);
-    final slots = _byAtSign.putIfAbsent(atSign, () => _Slots(maxPerAtSign));
-    await slots.acquire();
+    final String turnsOf;
     try {
-      await _all.acquire();
-      try {
-        return await _get(atSign, key);
-      } finally {
-        _all.release();
-      }
+      turnsOf = atSign.toAtsign();
+    } on InvalidAtSignException catch (e) {
+      throw _NotServedOverHttp('$atSign is not an atSign: $e');
+    }
+    await _slots.acquire(turnsOf);
+    try {
+      final Stopwatch took = Stopwatch()..start();
+      final String? value = await _get(atSign, key);
+      onAnswered?.call(uri, took.elapsed);
+      return value;
     } finally {
-      slots.release();
-      if (slots.idle) _byAtSign.remove(atSign);
+      _slots.release(turnsOf);
     }
   }
 
   Future<String?> _get(String atSign, String key) async {
+    final Stopwatch finding = Stopwatch()..start();
     final SecondaryAddress address;
     try {
       address = await _finder.findSecondary(atSign, timeout: timeout);
@@ -177,6 +232,11 @@ class DirectPublicLookup extends PublicLookup {
         'The atDirectory has no address for $atSign: $e',
       );
     }
+    final Duration left =
+        timeoutCoversAddress ? timeout - finding.elapsed : timeout;
+    if (left <= Duration.zero) {
+      throw TimeoutException('Finding the atServer of $atSign', timeout);
+    }
     final url = Uri(
       scheme: scheme,
       host: address.host,
@@ -184,9 +244,17 @@ class DirectPublicLookup extends PublicLookup {
       pathSegments: [atSign, key],
     );
     HttpClientRequest? request;
+    bool gaveUp = false;
     try {
       return await () async {
-        request = await _client.getUrl(url);
+        final HttpClientRequest connected = await _client.getUrl(url);
+        // NOTE: a connection made after the deadline is closed here, since
+        // nothing waits for its answer any more
+        if (gaveUp) {
+          connected.abort();
+          return null;
+        }
+        request = connected;
         request!.followRedirects = false;
         final response = await request!.close();
         switch (response.statusCode) {
@@ -200,8 +268,9 @@ class DirectPublicLookup extends PublicLookup {
             throw _NotServedOverHttp('$url answered ${response.statusCode}');
         }
       }()
-          .timeout(timeout);
+          .timeout(left);
     } on TimeoutException {
+      gaveUp = true;
       request?.abort();
       rethrow;
     } on HttpException catch (e) {
@@ -237,34 +306,4 @@ class _NotServedOverHttp implements Exception {
 
   @override
   String toString() => message;
-}
-
-/// A count of [max] slots, which [acquire] waits for in turn.
-class _Slots {
-  _Slots(this.max);
-
-  final int max;
-  int _held = 0;
-  final Queue<Completer<void>> _waiting = Queue();
-
-  bool get idle => _held == 0 && _waiting.isEmpty;
-
-  Future<void> acquire() async {
-    if (_held < max) {
-      _held++;
-      return;
-    }
-    final turn = Completer<void>();
-    _waiting.add(turn);
-    await turn.future;
-  }
-
-  /// Hands this slot to the longest waiter, if there is one.
-  void release() {
-    if (_waiting.isNotEmpty) {
-      _waiting.removeFirst().complete();
-    } else {
-      _held--;
-    }
-  }
 }

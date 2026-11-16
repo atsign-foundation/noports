@@ -20,6 +20,16 @@ typedef PostPutDaemonHook = Future<void> Function(Daemon daemon);
 typedef PostPutServiceHook = Future<void> Function(Service service);
 typedef PostPutServiceACLHook = Future<void> Function(ServiceACL serviceACL);
 
+/// Pre-delete hooks are called before the entity is removed from the cache.
+/// This is the time to delete it from wherever it is persisted.
+/// If that fails, the hook should throw, and the entity stays in the cache.
+typedef PreDeleteClientHook = Future<void> Function(Client client);
+typedef PreDeleteClientGroupHook = Future<void> Function(ClientGroup clientGroup);
+typedef PreDeleteClientGroupMemberHook = Future<void> Function(ClientGroupMember clientGroupMember);
+typedef PreDeleteDaemonHook = Future<void> Function(Daemon daemon);
+typedef PreDeleteServiceHook = Future<void> Function(Service service);
+typedef PreDeleteServiceACLHook = Future<void> Function(ServiceACL serviceACL);
+
 /// If the hook is null, then it is simply not called and no action is taken.
 class NppOperationHooks {
   PrePutClientHook? prePutClient; // This is called before the policy service is about to put the Client into the cache.
@@ -36,6 +46,13 @@ class NppOperationHooks {
   PostPutServiceHook? postPutService; // This is called after the policy service has put the Service into the cache.
   PostPutServiceACLHook? postPutServiceACL; // This is called after the policy service has put the ServiceACL into the cache.
 
+  PreDeleteClientHook? preDeleteClient; // This is called before the policy service removes the Client from the cache.
+  PreDeleteClientGroupHook? preDeleteClientGroup; // This is called before the policy service removes the ClientGroup from the cache.
+  PreDeleteClientGroupMemberHook? preDeleteClientGroupMember; // This is called before the policy service removes the ClientGroupMember from the cache.
+  PreDeleteDaemonHook? preDeleteDaemon; // This is called before the policy service removes the Daemon from the cache.
+  PreDeleteServiceHook? preDeleteService; // This is called before the policy service removes the Service from the cache.
+  PreDeleteServiceACLHook? preDeleteServiceACL; // This is called before the policy service removes the ServiceACL from the cache.
+
   NppOperationHooks({
     this.prePutClient,
     this.prePutClientGroup,
@@ -49,5 +66,11 @@ class NppOperationHooks {
     this.postPutDaemon,
     this.postPutService,
     this.postPutServiceACL,
+    this.preDeleteClient,
+    this.preDeleteClientGroup,
+    this.preDeleteClientGroupMember,
+    this.preDeleteDaemon,
+    this.preDeleteService,
+    this.preDeleteServiceACL,
   });
 }

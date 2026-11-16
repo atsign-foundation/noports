@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_client_flutter/at_client_flutter.dart';
@@ -26,14 +27,7 @@ void main() {
       final logs = await _pumpApp(tester);
       final strings = AppLocalizations.of(App.navState.currentContext!)!;
 
-      final error = await tester.runAsync(() async {
-        try {
-          await FileAtKeysIo(filePath: (_) => file.path).read('@alice');
-        } catch (e) {
-          return e;
-        }
-        return null;
-      });
+      final error = await _readError(tester, file);
       expect(error, isA<FormatException>(), reason: 'the read the app does');
 
       final result = NoPortsOnboardingUtil.atKeysLoginFailure(
@@ -65,8 +59,121 @@ void main() {
         reason: 'the log says the sign-in failed, and why',
       );
     });
+
+    testWidgets("when the file isn't JSON at all (empty, or plain text), then"
+        " the error says the atKeys file isn't valid JSON and where it stops", (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      final strings = AppLocalizations.of(App.navState.currentContext!)!;
+
+      for (final (text, reason) in [
+        ('', 'Unexpected end of input'),
+        ('hello: world', 'Unexpected character'),
+      ]) {
+        final file = File('${dir.path}/@alice_key.atKeys')
+          ..writeAsStringSync(text);
+        final error = await _readError(tester, file);
+        expect(
+          error,
+          isA<FormatException>(),
+          reason: 'reading a file holding "$text" fails',
+        );
+
+        final result = NoPortsOnboardingUtil.atKeysLoginFailure(
+          '@alice'.toAtsign(),
+          error!,
+          strings,
+        );
+
+        expect(
+          result.message,
+          strings.errorAtKeysNotJson(1, reason),
+          reason:
+              'a file holding "$text" is not valid JSON from its first'
+              ' character',
+        );
+      }
+    });
+
+    testWidgets("when it is valid JSON but a key in it isn't valid base64,"
+        ' then sign-in fails with "Invalid atKeys file detected"', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      final strings = AppLocalizations.of(App.navState.currentContext!)!;
+      final file = File('${dir.path}/@alice_key.atKeys')
+        ..writeAsStringSync(jsonEncode({'selfEncryptionKey': '!!!'}));
+
+      final error = await _readError(tester, file);
+      expect(error, isA<FormatException>(), reason: 'reading the file fails');
+
+      final result = NoPortsOnboardingUtil.atKeysLoginFailure(
+        '@alice'.toAtsign(),
+        error!,
+        strings,
+      );
+
+      expect(
+        result.message,
+        strings.errorAtKeysInvalid,
+        reason: 'a file that is JSON but unreadable is an invalid atKeys file',
+      );
+    });
+
+    testWidgets(
+      'when the file sits in a folder whose name contains "is not valid JSON:"'
+      " and is cut short, then the error still gives the parser's reason and"
+      ' position',
+      (tester) async {
+        await _pumpApp(tester);
+        final strings = AppLocalizations.of(App.navState.currentContext!)!;
+        const text = '{"a":"b';
+
+        for (final name in [
+          'x is not valid JSON: FOLDER (at character 9)',
+          'x\ny is not valid JSON: FOLDER (at character 9)',
+        ]) {
+          final folder = Directory('${dir.path}/$name')..createSync();
+          final file = File('${folder.path}/@alice_key.atKeys')
+            ..writeAsStringSync(text);
+          final error = await _readError(tester, file);
+          expect(
+            error,
+            isA<FormatException>(),
+            reason: 'reading the file fails',
+          );
+
+          final result = NoPortsOnboardingUtil.atKeysLoginFailure(
+            '@alice'.toAtsign(),
+            error!,
+            strings,
+          );
+
+          expect(
+            result.message,
+            strings.errorAtKeysNotJson(text.length + 1, 'Unterminated string'),
+            reason:
+                'the reason and position come from the parser, not the folder'
+                ' "$name"',
+          );
+        }
+      },
+      skip: Platform.isWindows,
+    );
   });
 }
+
+/// What reading [file] as an atKeys file throws, the read the app does.
+Future<Object?> _readError(WidgetTester tester, File file) =>
+    tester.runAsync<Object?>(() async {
+      try {
+        await FileAtKeysIo(filePath: (_) => file.path).read('@alice');
+      } catch (e) {
+        return e;
+      }
+      return null;
+    });
 
 /// Provides the app log [App.log] writes to and the app's strings, and
 /// returns the log.

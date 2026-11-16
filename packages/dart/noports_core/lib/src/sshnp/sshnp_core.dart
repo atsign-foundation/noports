@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_client/at_client_mixins.dart';
-import 'package:at_utils/at_logger.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/mixins/async_completion.dart';
@@ -147,6 +146,10 @@ abstract class SshnpCore
       requiredFeatures,
       timeout: params.daemonPingTimeout,
     );
+    // NOTE: awaited only after the relay step. A failure before then, or one
+    // never awaited because an earlier step threw, must not go unhandled; the
+    // await below still sees it.
+    featureCheckFuture.ignore();
 
     /// Set the remote username to use for the ssh session
     sendProgress('Resolving remote username for user session');

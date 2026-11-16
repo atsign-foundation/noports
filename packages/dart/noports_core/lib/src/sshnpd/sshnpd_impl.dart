@@ -6,7 +6,6 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:at_client/at_client_mixins.dart';
 import 'package:noports_core/events.dart';
-import 'package:at_utils/at_logger.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:file/local.dart';
 import 'package:logging/logging.dart';

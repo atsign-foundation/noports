@@ -1,5 +1,6 @@
 import 'package:at_commons/atsign.dart';
 import 'package:socket_connector/socket_connector.dart';
+import 'package:noports_core/src/npa/npa_rpcs.dart';
 
 enum SessionState {
   requested, // daemon receives request from client
@@ -129,5 +130,242 @@ abstract class SessionEvent {
       },
       "stats": stats.toJson(),
     },
+  };
+}
+
+/// The `event` field of every [PolicyEvent].
+enum PolicyEventType {
+  clientAdmitted, // policy check authorised the client
+  clientRejected, // policy check refused the client
+  policyCheckFailed, // policy check threw; the client was refused
+  requestRefused, // a daemon asked about another daemon; nothing was checked
+  rulesLoaded, // the policy service loaded its rules and is answering checks
+  heartbeat, // the policy service is still running and answering checks
+  stopped, // the policy service is shutting down
+  ruleChanged, // a manager RPC put or deleted a rule
+  ruleChangeFailed, // a manager RPC failed to put or delete a rule
+  managerRequestRefused, // an Atsign other than this service sent a manager RPC
+}
+
+/// The events a policy service sends to its event logging Atsign: one for
+/// each auth check it answers, and [rulesLoaded], [heartbeat] and [stopped]
+/// for its own lifecycle. Every event carries `event` (a [PolicyEventType]
+/// name), `timestamp` (UTC) and `policyAtsign`. Each auth check event also
+/// carries `fromAtsign` (the Atsign that sent the check) and the request's
+/// `clientAtsign`, `daemonAtsign`, `daemonDeviceName` and
+/// `daemonDeviceGroupName`.
+/// Each manager RPC event also carries `fromAtsign` (the Atsign that sent the
+/// request) and the request's `reqId`. Only the policy service's own Atsign
+/// may change rules, so on [ruleChanged] and [ruleChangeFailed] `fromAtsign`
+/// is always `policyAtsign`; it doesn't say which manager made the change.
+/// Rule changes are made one at a time, and each one's event is sent before
+/// the next starts, so [ruleChanged] and [ruleChangeFailed] come in the order
+/// the rules changed. Auth check events and refusals can come between them.
+abstract class PolicyEvent {
+  /// The policy check authorised the client, with the answer's `message` and
+  /// `permitOpen`.
+  static Map<String, dynamic> clientAdmitted({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required NPAAuthCheckRequest request,
+    required NPAAuthCheckResponse response,
+  }) => {
+    ..._policyCheckFields(
+      PolicyEventType.clientAdmitted,
+      policyAtsign,
+      fromAtsign,
+      request,
+    ),
+    "message": response.message,
+    "permitOpen": response.permitOpen,
+  };
+
+  /// The policy check refused the client, with the answer's `message`.
+  static Map<String, dynamic> clientRejected({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required NPAAuthCheckRequest request,
+    required NPAAuthCheckResponse response,
+  }) => {
+    ..._policyCheckFields(
+      PolicyEventType.clientRejected,
+      policyAtsign,
+      fromAtsign,
+      request,
+    ),
+    "message": response.message,
+  };
+
+  /// The policy check threw, so the client was refused; `error` says why.
+  static Map<String, dynamic> policyCheckFailed({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required NPAAuthCheckRequest request,
+    required String error,
+  }) => {
+    ..._policyCheckFields(
+      PolicyEventType.policyCheckFailed,
+      policyAtsign,
+      fromAtsign,
+      request,
+    ),
+    "error": error,
+  };
+
+  /// A daemon asked about a different daemon, so the request was refused
+  /// without a policy check and no client was evaluated. `fromAtsign` is the
+  /// daemon that asked; `daemonAtsign` is the one it asked about.
+  static Map<String, dynamic> requestRefused({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required NPAAuthCheckRequest request,
+    required NPAAuthCheckResponse response,
+  }) => {
+    ..._policyCheckFields(
+      PolicyEventType.requestRefused,
+      policyAtsign,
+      fromAtsign,
+      request,
+    ),
+    "message": response.message,
+  };
+
+  /// The policy service has loaded its rules and is answering checks.
+  /// `persistenceMethod` is where the rules came from, and `rules` counts
+  /// each kind of rule it holds; the rules themselves are not sent.
+  static Map<String, dynamic> rulesLoaded({
+    required Atsign policyAtsign,
+    required String? persistenceMethod,
+    required String binariesVersion,
+    required Map<String, int> rules,
+  }) => {
+    "event": PolicyEventType.rulesLoaded.name,
+    "timestamp": DateTime.now().toUtc().toIso8601String(),
+    "policyAtsign": policyAtsign,
+    "persistenceMethod": persistenceMethod,
+    "binariesVersion": binariesVersion,
+    "rules": rules,
+  };
+
+  /// The policy service is still running and answering checks. `interval` is
+  /// how many seconds apart its heartbeats are, and `rules` counts each kind
+  /// of rule it holds now.
+  static Map<String, dynamic> heartbeat({
+    required Atsign policyAtsign,
+    required Duration interval,
+    required Map<String, int> rules,
+  }) => {
+    "event": PolicyEventType.heartbeat.name,
+    "timestamp": DateTime.now().toUtc().toIso8601String(),
+    "policyAtsign": policyAtsign,
+    "interval": interval.inSeconds,
+    "rules": rules,
+  };
+
+  /// The policy service is shutting down. `reason` says why (e.g. `SIGINT`),
+  /// and `uptime` is how many seconds it ran.
+  static Map<String, dynamic> stopped({
+    required Atsign policyAtsign,
+    required String reason,
+    required Duration uptime,
+  }) => {
+    "event": PolicyEventType.stopped.name,
+    "timestamp": DateTime.now().toUtc().toIso8601String(),
+    "policyAtsign": policyAtsign,
+    "reason": reason,
+    "uptime": uptime.inSeconds,
+  };
+
+  /// A manager RPC changed a rule. `operation` is `put` or `delete`, `target`
+  /// is the kind of rule, and `rule` is the rule as the policy service now
+  /// holds it, in its cache and in any persistence, or as it was just before
+  /// it was deleted from both.
+  static Map<String, dynamic> ruleChanged({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required int reqId,
+    required String operation,
+    required String? target,
+    required Map<String, dynamic> rule,
+  }) => {
+    ..._managerRequestFields(
+      PolicyEventType.ruleChanged,
+      policyAtsign,
+      fromAtsign,
+      reqId,
+    ),
+    "operation": operation,
+    "target": target,
+    "rule": rule,
+  };
+
+  /// A manager RPC failed to change a rule; `error` says why. `rule` is empty
+  /// if the request failed before a rule was read from it.
+  static Map<String, dynamic> ruleChangeFailed({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required int reqId,
+    required String operation,
+    required String? target,
+    required Map<String, dynamic> rule,
+    required String error,
+  }) => {
+    ..._managerRequestFields(
+      PolicyEventType.ruleChangeFailed,
+      policyAtsign,
+      fromAtsign,
+      reqId,
+    ),
+    "operation": operation,
+    "target": target,
+    "rule": rule,
+    "error": error,
+  };
+
+  /// An Atsign on the manager allow list sent a manager RPC, and was refused
+  /// because it isn't this policy service's own Atsign. Only `reqId` is
+  /// repeated from the request; that Atsign chose it, so it may not be unique.
+  /// One is sent for every refused request, reads included, so the manager
+  /// allow list is the only limit on how many.
+  static Map<String, dynamic> managerRequestRefused({
+    required Atsign policyAtsign,
+    required Atsign fromAtsign,
+    required int reqId,
+  }) => _managerRequestFields(
+    PolicyEventType.managerRequestRefused,
+    policyAtsign,
+    fromAtsign,
+    reqId,
+  );
+
+  /// The fields every policy check event carries.
+  static Map<String, dynamic> _policyCheckFields(
+    PolicyEventType event,
+    Atsign policyAtsign,
+    Atsign fromAtsign,
+    NPAAuthCheckRequest request,
+  ) => {
+    "event": event.name,
+    "timestamp": DateTime.now().toUtc().toIso8601String(),
+    "policyAtsign": policyAtsign,
+    "fromAtsign": fromAtsign,
+    "clientAtsign": request.clientAtsign,
+    "daemonAtsign": request.daemonAtsign,
+    "daemonDeviceName": request.daemonDeviceName,
+    "daemonDeviceGroupName": request.daemonDeviceGroupName,
+  };
+
+  /// The fields every manager RPC event carries.
+  static Map<String, dynamic> _managerRequestFields(
+    PolicyEventType event,
+    Atsign policyAtsign,
+    Atsign fromAtsign,
+    int reqId,
+  ) => {
+    "event": event.name,
+    "timestamp": DateTime.now().toUtc().toIso8601String(),
+    "policyAtsign": policyAtsign,
+    "fromAtsign": fromAtsign,
+    "reqId": reqId,
   };
 }

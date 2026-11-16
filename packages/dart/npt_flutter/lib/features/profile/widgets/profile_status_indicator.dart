@@ -14,9 +14,29 @@ class ProfileStatusIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
 
-    final Widget content = BlocBuilder<ProfileBloc, ProfileState>(
+    final Widget content =
+        BlocBuilder<ProfileStartQueueCubit, ProfileStartQueueState>(
+      builder: (BuildContext context, ProfileStartQueueState queue) =>
+          BlocBuilder<ProfileBloc, ProfileState>(
         builder: (BuildContext context, ProfileState state) {
           log(state.runtimeType.toString());
+          if (queue.isWaiting(state.uuid) &&
+              (state is ProfileLoaded ||
+                  state is ProfileFailedSave ||
+                  state is ProfileFailedStart)) {
+            return StatusMessage(
+              tooltip: strings.profileStatusQueuedMessage,
+              status: strings.profileStatusQueued,
+              color: Colors.grey,
+              icon: PhosphorIcons.hourglass(),
+              onPressed: () {
+                context
+                    .read<ProfileStartQueueCubit>()
+                    .remove(<String>[state.uuid]);
+                context.read<ProfileBloc>().add(const ProfileStartEvent());
+              },
+            );
+          }
           if (state is ProfileLoading) {
             return StatusMessage(
               tooltip: strings.profileStatusLoading,
@@ -72,8 +92,11 @@ class ProfileStatusIndicator extends StatelessWidget {
               tooltip: state.status ?? strings.profileFailedUnknownMessage,
               status: strings.profileStatusStarting,
               color: Colors.grey,
-              icon: PhosphorIcons.circleDashed(),
+              icon: PhosphorIcons.stop(PhosphorIconsStyle.fill),
               showSpinner: true,
+              onPressed: () {
+                context.read<ProfileBloc>().add(const ProfileStopEvent());
+              },
             );
           }
           if (state is ProfileStarted) {
@@ -99,7 +122,8 @@ class ProfileStatusIndicator extends StatelessWidget {
 
           return gap0;
         },
-      );
+      ),
+    );
 
     if (width != null) {
       return SizedBox(width: width, child: content);
@@ -127,12 +151,25 @@ class StatusMessage extends StatelessWidget {
   final bool showSpinner;
   @override
   Widget build(BuildContext context) {
+    const spinner = SizedBox(
+      width: Sizes.p20,
+      height: Sizes.p20,
+      child: CircularProgressIndicator(strokeWidth: 2.0),
+    );
     final Widget iconWidget = showSpinner
-        ? const SizedBox(
-            width: Sizes.p20,
-            height: Sizes.p20,
-            child: CircularProgressIndicator(strokeWidth: 2.0),
-          )
+        ? onPressed != null
+            ? InkWell(
+                borderRadius: BorderRadius.circular(Sizes.p12),
+                onTap: onPressed,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    spinner,
+                    PhosphorIcon(icon, color: color, size: Sizes.p10),
+                  ],
+                ),
+              )
+            : spinner
         : onPressed != null
             ? InkWell(
                 borderRadius: BorderRadius.circular(Sizes.p12),

@@ -4,12 +4,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 // other packages
-import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:dartssh2/dartssh2.dart';
 
 // atPlatform packages
-import 'package:at_utils/at_logger.dart';
 
 // local packages
 import 'package:noports_core/sshnp_foundation.dart';
@@ -26,7 +25,7 @@ const String _description =
 
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
-  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
 
   ExtendedArgParser parser = ExtendedArgParser(
     usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : null,

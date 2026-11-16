@@ -2,25 +2,33 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math' show min;
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
 import 'package:noports_core/events.dart';
-import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/enrollment_signature.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/public_lookup.dart';
+import 'package:noports_core/src/common/types.dart' show RelayAuthMode;
 import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/events/noports_event_types.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/isolates/port_pair_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
+import 'package:noports_core/src/srvd/loop_lag.dart';
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
 import 'package:noports_core/src/srvd/srvd_util_mixin.dart';
+import 'package:noports_core/src/srvd/telemetry/opted_in_list.dart';
+import 'package:noports_core/src/srvd/telemetry/relay_telemetry.dart';
+import 'package:noports_core/src/srvd/telemetry/relay_telemetry_names.dart';
+import 'package:noports_core/src/version.dart';
+import 'package:at_telemetry/at_telemetry.dart'
+    show AtTelemetryNotificationExporter;
 import 'package:socket_connector/socket_connector.dart';
 
 import 'isolates/types.dart';
@@ -57,14 +65,78 @@ class SrvdImpl
 
   /// How often to re-check that the signing keys each live session's ESCR
   /// sockets were accepted with haven't been withdrawn; [Duration.zero] turns
-  /// the check off.
+  /// the check off, [reportedSigningKeyCheckInterval]'s included.
   final Duration signingKeyCheckInterval;
+
+  /// How often to re-check the client data signing keys of the sessions
+  /// [telemetry] reports, as well as every [signingKeyCheckInterval];
+  /// [Duration.zero] leaves them to that re-check alone.
+  final Duration reportedSigningKeyCheckInterval;
+
+  /// How long the [reportedKeyLookup] srvd builds gives each lookup, finding
+  /// the atServer's address included.
+  final Duration reportedSigningKeyCheckDeadline;
+
+  /// The [reportedSigningKeyCheckDeadline] srvd runs with.
+  static const defaultReportedSigningKeyCheckDeadline = Duration(seconds: 2);
+
+  /// The longest an atServer may take to answer for a reported session's
+  /// key without that key's re-checks being spaced out.
+  final Duration reportedSigningKeyPromptAnswer;
+
+  /// The [reportedSigningKeyPromptAnswer] srvd runs with.
+  static const defaultReportedSigningKeyPromptAnswer = Duration(seconds: 1);
+
+  /// How many lookups the [reportedKeyLookup] srvd builds makes at once.
+  static const reportedKeyLookupsAtOnce = 64;
+
+  /// How many lookups the [reportedKeyLookup] srvd builds makes at once to
+  /// one Atsign.
+  static const reportedKeyLookupsPerAtSign = 8;
 
   /// How this relay looks up the `_apsk` records sockets sign with.
   final PublicLookup publicLookup;
 
+  final PublicLookup? _reportedKeyLookup;
+
+  /// How this relay looks up the keys of the sessions [telemetry] reports
+  /// when it re-checks them every [reportedSigningKeyCheckInterval]: as
+  /// [publicLookup] does and through its cache of atServer addresses, with
+  /// connections and limits of its own, so that these re-checks and
+  /// [publicLookup]'s lookups never wait on each other, and with
+  /// [reportedSigningKeyCheckDeadline] for each lookup. A [publicLookup] of
+  /// another kind serves both, and tells [reportedKeyAnswered] nothing.
+  PublicLookup get reportedKeyLookup =>
+      _builtReportedKeyLookup ??= _reportedKeyLookup ??
+          switch (publicLookup) {
+            final DirectPublicLookup direct => direct.sharingAddresses(
+                timeout: reportedSigningKeyCheckDeadline,
+                timeoutCoversAddress: true,
+                maxConcurrent: reportedKeyLookupsAtOnce,
+                maxPerAtSign: reportedKeyLookupsPerAtSign,
+                onAnswered: reportedKeyAnswered,
+              ),
+            _ => publicLookup,
+          };
+  PublicLookup? _builtReportedKeyLookup;
+
+  /// The telemetry this relay sends about its sessions; null when it was
+  /// given no collector Atsign.
+  final RelayTelemetry? telemetry;
+
+  /// How often to log the event-loop lag; [Duration.zero] logs none.
+  final Duration reportLoopLag;
+  LoopLagProbe? _loopLag;
+
   Timer? _signingKeyCheckTimer;
+  Timer? _reportedSigningKeyCheckTimer;
   final Set<String> _keysBeingChecked = {};
+
+  /// What the re-checks of [checkReportedSigningKeys] have found, key by key.
+  final Map<String, _ReportedKey> _reportedKeys = {};
+
+  /// How many times [checkReportedSigningKeys] has run.
+  int _reportedPasses = 0;
 
   @override
   bool verbose = false;
@@ -83,14 +155,22 @@ class SrvdImpl
 
   final List<StreamSubscription> _subscriptions = [];
 
-  /// The relay isolates still running: where to send them requests, and when
-  /// they exit.
-  final Map<Isolate, ({Future<SendPort> toWorker, Future<void> exited})>
-  _workers = {};
+  /// The relay isolates still running: where to send them requests, when
+  /// they exit, and which sessions each carries.
+  final Map<
+      Isolate,
+      ({
+        Future<SendPort> toWorker,
+        Future<void> exited,
+        Iterable<String> Function() carries,
+      })> _workers = {};
 
   bool _stopped = false;
 
-  static const _workerStopTimeout = Duration(seconds: 5);
+  /// How long a worker has to exit after being told to stop before it is
+  /// killed, which bounds the closes a stop waits for.
+  @visibleForTesting
+  static const workerStopTimeout = Duration(seconds: 5);
 
   @visibleForTesting
   int get runningWorkers => _workers.length;
@@ -108,8 +188,18 @@ class SrvdImpl
     required this.localBindPort443,
     required this.relayAuthDetectWindowMs,
     required this.signingKeyCheckInterval,
+    this.reportedSigningKeyCheckInterval =
+        defaultReportedSigningKeyCheckInterval,
+    this.reportedSigningKeyCheckDeadline =
+        defaultReportedSigningKeyCheckDeadline,
+    this.reportedSigningKeyPromptAnswer =
+        defaultReportedSigningKeyPromptAnswer,
     PublicLookup? publicLookup,
-  }) : publicLookup = publicLookup ?? DirectPublicLookup(atClient) {
+    PublicLookup? reportedKeyLookup,
+    this.telemetry,
+    this.reportLoopLag = Duration.zero,
+  })  : publicLookup = publicLookup ?? DirectPublicLookup(atClient),
+        _reportedKeyLookup = reportedKeyLookup {
     logger.hierarchicalLoggingEnabled = true;
     logger.logger.level = Level.SHOUT;
   }
@@ -119,6 +209,7 @@ class SrvdImpl
     AtClient? atClient,
     FutureOr<AtClient> Function(SrvdParams)? atClientGenerator,
     void Function(Object, StackTrace)? usageCallback,
+    String version = packageVersion,
   }) async {
     try {
       SrvdParams p;
@@ -146,7 +237,15 @@ class SrvdImpl
 
       atClient ??= await atClientGenerator!(p);
 
+      final String? collector = p.telemetryCollectorAtsign;
       var srvd = SrvdImpl(
+        telemetry: collector == null
+            ? null
+            : relayTelemetryFor(
+                atClient: atClient,
+                collector: collector,
+                version: version,
+              ),
         atClient: atClient,
         atSign: p.atSign.toAtsign(),
         homeDirectory: p.homeDirectory,
@@ -159,6 +258,9 @@ class SrvdImpl
         localBindPort443: p.localBindPort443,
         relayAuthDetectWindowMs: p.relayAuthDetectWindowMs,
         signingKeyCheckInterval: Duration(seconds: p.signingKeyCheckSecs),
+        reportedSigningKeyCheckInterval:
+            Duration(seconds: p.reportedSigningKeyCheckSecs),
+        reportLoopLag: Duration(seconds: p.reportLoopLagSecs),
       );
 
       if (p.verbose) {
@@ -193,6 +295,10 @@ class SrvdImpl
 
   @override
   Future<void> run() async {
+    if (_stopped) {
+      logger.shout('Not running: srvd has been stopped');
+      return;
+    }
     if (!initialized) {
       throw StateError('Cannot run() - not initialized');
     }
@@ -214,24 +320,131 @@ class SrvdImpl
         (_) => unawaited(checkSigningKeys()),
       );
     }
+    if (_reportedSessionsHaveTheirOwnCheck) {
+      _reportedSigningKeyCheckTimer = Timer.periodic(
+        reportedSigningKeyCheckInterval,
+        (_) => unawaited(checkReportedSigningKeys()),
+      );
+    }
+
+    telemetry?.start();
+    if (reportLoopLag > Duration.zero) {
+      _loopLag = LoopLagProbe(
+        reportEvery: reportLoopLag,
+        onReport: (String report) => logger.shout(report),
+      )..start();
+    }
   }
 
+  /// Telemetry sent as notifications to [collector] through [atClient],
+  /// reporting the sessions of the Atsigns on the opted-in list [collector]
+  /// shares with this relay.
+  static RelayTelemetry relayTelemetryFor({
+    required AtClient atClient,
+    required String collector,
+    required String version,
+  }) {
+    final AtSignLogger telemetryLogger = AtSignLogger(' srvd telemetry ');
+    final exporter = AtTelemetryNotificationExporter(
+      notify: (String idAndNamespace, String value) async {
+        await atClient.notificationService.send(
+          to: collector.toAtsign(),
+          idAndNamespace: idAndNamespace,
+          body: value,
+          shouldEncrypt: true,
+        );
+      },
+      enrollmentId: () => atClient.enrollmentId,
+      flushInterval: const Duration(seconds: 1),
+      shutdownTimeout: RelayTelemetry.defaultShutdownTimeout,
+    );
+    return RelayTelemetry(
+      exporter: exporter,
+      backlog: () => exporter.unsentBatches,
+      serviceVersion: version,
+      logger: telemetryLogger,
+      list: OptedInListPoller(
+        source: CollectionOptedInListSource.forCollector(
+          atClient: atClient,
+          collector: collector,
+        ),
+        onWarning: telemetryLogger.shout,
+        onRead: telemetryLogger.info,
+      ),
+    );
+  }
+
+  /// Handles one of the reports both kinds of worker send about a session:
+  /// newConnection, connectionClosed, progress and sessionComplete.
+  @visibleForTesting
+  Future<void> handleWorkerReport(IIRequest msg) async {
+    switch (msg.type) {
+      case 'newConnection':
+        await _handleNewConnection(msg);
+      case 'connectionClosed':
+        telemetry?.connectionClosed(msg.payload['sessionId'], msg.payload);
+      case 'progress':
+        telemetry?.progress(msg.payload['sessionId'], msg.payload);
+      case 'sessionComplete':
+        await _handleSessionComplete(msg);
+    }
+  }
+
+  Future<void>? _stopping;
+
+  /// Runs once; every call shares the first call's future.
   @override
-  Future<void> stop() async {
+  Future<void> stop() => _stopping ??= _stop().timeout(
+        Srvd.stopBound,
+        onTimeout: () {
+          logger.shout(
+            'Stop did not finish within ${Srvd.stopBound.inSeconds}s;'
+            ' killing every relay isolate',
+          );
+          for (final worker in _workers.keys.toList()) {
+            worker.kill(priority: Isolate.immediate);
+          }
+          sessions.clear();
+        },
+      );
+
+  /// Stops every worker at once, so each closes its connections and reports
+  /// its sessions complete, and forgets the sessions once every worker has
+  /// exited or been killed.
+  Future<void> _stop() async {
     _stopped = true;
+    _loopLag?.stop();
     _signingKeyCheckTimer?.cancel();
+    _reportedSigningKeyCheckTimer?.cancel();
     publicLookup.close();
+    final PublicLookup? reportedKeyLookup = _builtReportedKeyLookup;
+    if (!identical(reportedKeyLookup, publicLookup)) {
+      reportedKeyLookup?.close();
+    }
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
     _subscriptions.clear();
     await Future.wait([
-      for (final MapEntry(key: worker, value: (:toWorker, :exited))
+      for (final MapEntry(key: worker, value: (:toWorker, :exited, :carries))
           in _workers.entries.toList())
-        _stopWorker(worker, toWorker, exited),
+        _stopWorker(worker, toWorker, exited, carries),
     ]);
+    await telemetry?.stop();
     sessions.clear();
   }
+
+  /// [_register], for a test that supplies a worker of its own.
+  @visibleForTesting
+  void trackWorker(
+    Isolate worker,
+    ReceivePort fromWorker,
+    ReceivePort exitPort,
+    Future<SendPort> toWorker, {
+    String? sessionId,
+  }) =>
+      _register(worker, fromWorker, exitPort, toWorker,
+          carries: () => [if (sessionId != null) sessionId]);
 
   /// Tracks [worker] until [exitPort] reports it has exited, then closes
   /// [fromWorker]. A worker registered after [stop] is stopped at once.
@@ -239,24 +452,46 @@ class SrvdImpl
     Isolate worker,
     ReceivePort fromWorker,
     ReceivePort exitPort,
-    Future<SendPort> toWorker,
-  ) {
+    Future<SendPort> toWorker, {
+    required Iterable<String> Function() carries,
+  }) {
     final exited = exitPort.first.then((_) {
       exitPort.close();
       fromWorker.close();
+      _endOrphans(carries());
     });
-    _workers[worker] = (toWorker: toWorker, exited: exited);
+    _workers[worker] = (toWorker: toWorker, exited: exited, carries: carries);
     if (_stopped) {
-      unawaited(_stopWorker(worker, toWorker, exited));
+      unawaited(_stopWorker(worker, toWorker, exited, carries));
+    }
+  }
+
+  /// Ends each of [sessionIds] its worker never reported complete, in main
+  /// and in telemetry.
+  void _endOrphans(Iterable<String> sessionIds) {
+    for (final String id in sessionIds.toList()) {
+      final SessionInfo? si = sessions[id];
+      if (si == null) continue;
+      logger.shout('The worker carrying session $id exited without'
+          ' reporting it complete');
+      telemetry?.sessionLost(
+        id,
+        _stopped
+            ? RelaySessionEndReason.relayStopping
+            : RelaySessionEndReason.workerExited,
+      );
+      sessions.remove(id);
     }
   }
 
   /// Asks [worker] to stop, so that it closes its own sockets, and kills it
-  /// only if it hasn't exited within [_workerStopTimeout].
+  /// only if it hasn't exited within [workerStopTimeout], naming the
+  /// sessions it [carries].
   Future<void> _stopWorker(
     Isolate worker,
     Future<SendPort> toWorker,
     Future<void> exited,
+    Iterable<String> Function() carries,
   ) async {
     try {
       await Future.any([
@@ -265,10 +500,13 @@ class SrvdImpl
           port.send(IIRequest.create('stop', null));
           return exited;
         }),
-      ]).timeout(_workerStopTimeout);
+      ]).timeout(workerStopTimeout);
     } on TimeoutException {
-      logger.warning(
-        'A relay isolate did not stop within ${_workerStopTimeout.inSeconds}s,'
+      final List<String> ids = carries().toList();
+      logger.shout(
+        'The relay isolate carrying'
+        ' ${ids.isEmpty ? 'no session' : 'session ${ids.join(', ')}'}'
+        ' did not stop within ${workerStopTimeout.inSeconds}s,'
         ' so it was killed; its sockets may stay open',
       );
       worker.kill(priority: Isolate.immediate);
@@ -332,6 +570,13 @@ class SrvdImpl
     String sessionsMessageType = parts[0];
     String sessionId = parts[1];
 
+    if (!isValidSessionId(sessionId)) {
+      logger.warning(
+        'Ignoring a sessions message from ${n.from}'
+        ' about a session whose id is not a UUID',
+      );
+      return;
+    }
     if (sessions[sessionId] == null) {
       logger.info('This relay does not know about session $sessionId');
       return;
@@ -339,7 +584,7 @@ class SrvdImpl
 
     final SessionInfo sessionInfo = sessions[sessionId]!;
 
-    if (n.from.toAtsign() != sessionInfo.atSignB.toAtsign()) {
+    if (n.from.toAtsign() != sessionInfo.atSignB) {
       logger.warning(
         'Ignoring $topic from ${n.from},'
         ' which is not the daemon ${sessionInfo.atSignB}',
@@ -401,24 +646,24 @@ class SrvdImpl
   }
 
   Future<void> handleRequestPorts(AtNotification n) async {
+    // NOTE: a relay with a manager reads, answers and NACKs only the
+    // manager's requests.
+    if (managerAtsign != 'open' && !sameAtsign(managerAtsign, n.from)) {
+      logger.shout(
+        'A session request from ${n.from} is denied:'
+        ' only the manager may request sessions',
+      );
+      return;
+    }
     SrvdSessionParams sessionParams;
     try {
       sessionParams = srvdSessionParamsFromJson(n.value!);
 
-      if (n.from.toAtsign() != sessionParams.atSignA.toAtsign()) {
+      if (n.from.toAtsign() != sessionParams.atSignA) {
         logger.shout(
           'Session ${sessionParams.sessionId}'
           ' for ${sessionParams.atSignA}'
           ' requested by ${n.from} is denied',
-        );
-        return;
-      }
-      if (managerAtsign != 'open' &&
-          !sameAtsign(managerAtsign, sessionParams.atSignA)) {
-        logger.shout(
-          'Session ${sessionParams.sessionId}'
-          ' for ${sessionParams.atSignA}'
-          ' is denied',
         );
         return;
       }
@@ -430,8 +675,19 @@ class SrvdImpl
         );
         return;
       }
+    } on SrvdRequestRefused catch (e) {
+      logger.shout('Unable to provide the socket pair for ${n.from}: $e');
+      if (e.nackOk) await _tryNack(e.sessionId, n.from, e.reason);
+      return;
+    } on FormatException {
+      logger.shout(
+        'Unable to provide the socket pair for ${n.from}:'
+        ' the request is not JSON',
+      );
+      return;
     } catch (e) {
-      logger.shout('Unable to provide the socket pair due to: $e');
+      logger.shout(
+          'Unable to provide the socket pair for ${n.from} due to: $e');
       return;
     }
 
@@ -443,15 +699,7 @@ class SrvdImpl
           ' is denied: $refusal',
         );
         if (sessionParams.multipleAcksOk) {
-          try {
-            await sendNack(
-              sessionId: sessionParams.sessionId,
-              requestingAtsign: n.from,
-              message: refusal,
-            );
-          } catch (e) {
-            logger.shout('Error while sending NACK: $e');
-          }
+          await _tryNack(sessionParams.sessionId, n.from, refusal);
         }
         return;
       }
@@ -538,21 +786,21 @@ class SrvdImpl
       }
     }
 
+    if (_stopped) {
+      logger.shout(
+        'Not starting session ${sessionParams.sessionId}: srvd is stopping',
+      );
+      ppiSendToSpawned?.send(IIRequest.create('stop', null));
+      return;
+    }
+
     if (sessionParams.only443 && !bind443) {
       var message =
           'Client requested port 443'
           ' but this relay is not bound to port 443';
       logger.shout(message);
       if (sessionParams.multipleAcksOk) {
-        try {
-          await sendNack(
-            sessionId: sessionParams.sessionId,
-            requestingAtsign: n.from,
-            message: message,
-          );
-        } catch (e) {
-          logger.shout('Error while sending NACK: $e');
-        }
+        await _tryNack(sessionParams.sessionId, n.from, message);
       }
       return;
     }
@@ -561,7 +809,7 @@ class SrvdImpl
       params: sessionParams,
       connector: null,
       toWorker: ppiSendToSpawned,
-    );
+    )..deviceName = deviceNameFromRequestKey(n);
     if (sessionParams.only443) {
       toIsolate443!.send(IIRequest.create('start', sessionParams));
     }
@@ -651,42 +899,56 @@ class SrvdImpl
     final Map decoded;
     try {
       decoded = jsonDecode(n.value!);
-    } catch (e) {
-      logger.warning('Malformed auth_modes request from ${n.from}: $e');
+    } catch (_) {
+      logger.warning('Malformed auth_modes request from ${n.from}');
       return;
     }
 
-    final String? sessionId = decoded['sessionId'];
-    if (sessionId == null) {
-      logger.warning('auth_modes request from ${n.from} has no sessionId');
+    final Object? sessionId = decoded['sessionId'];
+    if (!isValidSessionId(sessionId)) {
+      logger.warning(
+        'auth_modes request from ${n.from} names no session by a UUID',
+      );
       return;
     }
 
-    final SessionInfo? si = sessions[sessionId];
+    final String id = (sessionId as String).toLowerCase();
+    final SessionInfo? si = sessions[id];
     if (si == null) {
-      logger.info('auth_modes: this relay does not know session $sessionId');
+      logger.info('auth_modes: this relay does not know session $id');
       return;
     }
     if (!sameAtsign(n.from, si.params.atSignA)) {
       logger.shout(
         'auth_modes: ${n.from} is not the requester (${si.params.atSignA})'
-        ' of session $sessionId',
+        ' of session $id',
       );
       return;
     }
     if (decoded['rvdNonce'] != si.params.rvdNonce) {
       logger.info(
         'auth_modes: rvdNonce (${decoded['rvdNonce']}) is not this relay\'s'
-        ' rvdNonce (${si.params.rvdNonce}) for $sessionId'
+        ' rvdNonce (${si.params.rvdNonce}) for $id'
         ' — another instance is handling it; ignoring',
       );
       return;
     }
 
+    for (final String side in ['sideA', 'sideB']) {
+      final Object? mode = decoded[side];
+      if (mode != null && !RelayAuthMode.values.any((m) => m.name == mode)) {
+        logger.warning(
+          'auth_modes from ${n.from} for $id names no relay auth mode'
+          ' for $side; ignoring',
+        );
+        return;
+      }
+    }
+
     final SendPort? toWorker = si.toWorker;
     if (toWorker == null) {
       logger.info(
-        'auth_modes: no worker isolate for session $sessionId'
+        'auth_modes: no worker isolate for session $id'
         ' (only443 sessions do not auto-detect)',
       );
       return;
@@ -699,7 +961,7 @@ class SrvdImpl
       }),
     );
     logger.info(
-      'Forwarded definitive auth modes for $sessionId to worker:'
+      'Forwarded definitive auth modes for $id to worker:'
       ' sideA=${decoded['sideA']} sideB=${decoded['sideB']}',
     );
   }
@@ -798,10 +1060,20 @@ class SrvdImpl
     final sessionId = msg.payload['sessionId'];
     logger.info('_handleSessionComplete $sessionId');
     SessionInfo? si = sessions[sessionId];
+    telemetry?.sessionCompleted(
+      sessionId,
+      msg.payload,
+      _stopped
+          ? RelaySessionEndReason.relayStopping
+          : (si?.ending ?? false)
+              ? RelaySessionEndReason.signingKeyWithdrawn
+              : RelaySessionEndReason.connectionsClosed,
+    );
     logger.info(
       'sessionInfo:'
       ' $si eventLoggingConfig: ${si?.eventLoggingConfig}',
     );
+    sessions.remove(sessionId);
     if (si != null && si.eventLoggingConfig != null) {
       await logEvent(
         si.eventLoggingConfig!,
@@ -811,7 +1083,6 @@ class SrvdImpl
         ),
       );
     }
-    sessions.remove(sessionId);
   }
 
   /// Forgets a session the single-port isolate refused to start, which would
@@ -868,42 +1139,166 @@ class SrvdImpl
   Future<void> _recheck(String key) async {
     _keysBeingChecked.add(key);
     try {
-      final withdrawnTo = await _whereWithdrawn(key);
-      if (withdrawnTo == null) return;
-      for (final MapEntry(key: sessionId, value: si)
-          in sessions.entries.toList()) {
-        if (!si.ending && si.signingKeys.contains(key)) {
-          _endSession(sessionId, si, key, withdrawnTo);
-        }
-      }
+      final withdrawnTo = await _whereWithdrawn(
+        key,
+        lookup: publicLookup,
+        keeps: logger.warning,
+      );
+      if (withdrawnTo != null) _endSessionsSignedWith(key, withdrawnTo);
     } finally {
       _keysBeingChecked.remove(key);
     }
   }
 
-  /// Where [key] has been withdrawn to, or null when it is still published,
-  /// merely missing, or a lookup fails, all of which keep its sessions.
-  Future<String?> _whereWithdrawn(String key) async {
+  /// As [checkSigningKeys], and besides it, for the sessions [telemetry]
+  /// reports, through [reportedKeyLookup].
+  ///
+  /// A key has one of these re-checks under way at most, whatever
+  /// [checkSigningKeys] is doing with it, and one that outlasts the interval
+  /// still ends the key's sessions when it finds the key withdrawn. A key
+  /// whose re-check fails, or whose atServer takes longer than
+  /// [reportedSigningKeyPromptAnswer], is next re-checked after one
+  /// interval, then two, then four, doubling up to once a minute, and every
+  /// interval again once a re-check is answered promptly. A key's failures
+  /// are said at this relay's default log level once a minute at most, and
+  /// so is its being re-checked again.
+  @visibleForTesting
+  Future<void> checkReportedSigningKeys() async {
+    _reportedPasses++;
+    final keys = {
+      for (final MapEntry(key: sessionId, value: si) in sessions.entries)
+        if (!si.ending && _reported(sessionId)) ...si.signingKeys,
+    };
+    _reportedKeys.removeWhere(
+      (key, found) => !found.beingChecked && !keys.contains(key),
+    );
+    await Future.wait([
+      for (final key in keys)
+        if (_reportedKeys.putIfAbsent(key, _ReportedKey.new).due())
+          _recheckReported(key, _reportedKeys[key]!),
+    ]);
+  }
+
+  /// Whether the sessions [telemetry] reports are re-checked on their own,
+  /// every [reportedSigningKeyCheckInterval].
+  bool get _reportedSessionsHaveTheirOwnCheck =>
+      telemetry != null &&
+      signingKeyCheckInterval > Duration.zero &&
+      reportedSigningKeyCheckInterval > Duration.zero;
+
+  bool _reported(String sessionId) =>
+      _reportedSessionsHaveTheirOwnCheck &&
+      telemetry!.reporting(sessionId) == true;
+
+  /// How many of [checkReportedSigningKeys]'s intervals make a minute.
+  int get _reportedRechecksAMinute {
+    final int n = (const Duration(minutes: 1).inMicroseconds /
+            reportedSigningKeyCheckInterval.inMicroseconds)
+        .ceil();
+    return n < 1 ? 1 : n;
+  }
+
+  /// How many intervals pass between a key's re-checks once [notPrompt] of
+  /// them in a row failed or were answered late.
+  int _intervalsBetweenRechecks(int notPrompt) => notPrompt < 1
+      ? 1
+      : min(1 << min(notPrompt - 1, 30), _reportedRechecksAMinute);
+
+  /// Tells this relay that the atServer holding the record [uri] took [took]
+  /// to answer a lookup of [reportedKeyLookup].
+  @visibleForTesting
+  void reportedKeyAnswered(String uri, Duration took) {
+    if (took > reportedSigningKeyPromptAnswer) {
+      _reportedKeys[uri]?.answeredLate = true;
+    }
+  }
+
+  Future<void> _recheckReported(String key, _ReportedKey found) async {
+    found
+      ..beingChecked = true
+      ..answeredLate = false;
+    bool failed = false;
     try {
-      if (await publicLookup.lookupDirect(key) != null) return null;
+      final withdrawnTo = await _whereWithdrawn(
+        key,
+        lookup: reportedKeyLookup,
+        keeps: (String why) {
+          failed = true;
+          _reportedKeyKept(found, why);
+        },
+      );
+      if (withdrawnTo != null) _endSessionsSignedWith(key, withdrawnTo);
+    } finally {
+      found.beingChecked = false;
+      if (!failed && found.failures > 0) {
+        found.failures = 0;
+        if (found.owesAgain && !_stopped) {
+          found.owesAgain = false;
+          logger.shout('Client data signing key $key can be re-checked again');
+        }
+      }
+      found.notPrompt = failed || found.answeredLate ? found.notPrompt + 1 : 0;
+      found.toSkip = _intervalsBetweenRechecks(found.notPrompt) - 1;
+    }
+  }
+
+  /// Says why a reported session's key kept its sessions, unless it said so
+  /// of that key in the last minute.
+  void _reportedKeyKept(_ReportedKey found, String why) {
+    found.failures++;
+    if (_stopped) return;
+    final int? saidAt = found.saidAt;
+    if (saidAt != null && _reportedPasses - saidAt < _reportedRechecksAMinute) {
+      return;
+    }
+    found
+      ..saidAt = _reportedPasses
+      ..owesAgain = true;
+    logger.shout(
+      found.failures == 1
+          ? why
+          : '$why (re-check ${found.failures} in a row to end so)',
+    );
+  }
+
+  void _endSessionsSignedWith(String key, String withdrawnTo) {
+    for (final MapEntry(key: sessionId, value: si)
+        in sessions.entries.toList()) {
+      if (!si.ending && si.signingKeys.contains(key)) {
+        _endSession(sessionId, si, key, withdrawnTo);
+      }
+    }
+  }
+
+  /// Where [lookup] finds [key] withdrawn to, or null when it is still
+  /// published, merely missing, or a lookup fails, all of which keep its
+  /// sessions. [keeps] is told why whenever the sessions are kept without
+  /// [key] having been found published.
+  Future<String?> _whereWithdrawn(
+    String key, {
+    required PublicLookup lookup,
+    required void Function(String why) keeps,
+  }) async {
+    try {
+      if (await lookup.lookupDirect(key) != null) return null;
     } catch (e) {
-      logger.warning(
+      keeps(
         'Could not re-check signing key $key, so the sessions it signed'
         ' carry on: $e',
       );
       return null;
     }
     try {
-      final withdrawnTo = await publicLookup.withdrawnTo(key);
+      final withdrawnTo = await lookup.withdrawnTo(key);
       if (withdrawnTo == null) {
-        logger.warning(
+        keeps(
           'Signing key $key is missing but has not been withdrawn, so the'
           ' sessions it signed carry on',
         );
       }
       return withdrawnTo;
     } catch (e) {
-      logger.warning(
+      keeps(
         'Could not tell whether signing key $key was withdrawn, so the'
         ' sessions it signed carry on: $e',
       );
@@ -918,12 +1313,12 @@ class SrvdImpl
     String withdrawnTo,
   ) {
     si.ending = true;
-    logger.warning(
+    logger.shout(
       'Ending session $sessionId (${si.atSignA} to ${si.atSignB}):'
       ' signing key $signingKey has been withdrawn to $withdrawnTo',
     );
     if (si.toWorker != null) {
-      si.toWorker!.send(IIRequest.create('stop', null));
+      si.toWorker!.send(IIRequest.create('end', null));
     } else if (si.params.only443) {
       toIsolate443?.send(IIRequest.create('endSession', sessionId));
     }
@@ -936,6 +1331,7 @@ class SrvdImpl
     if (si == null) {
       return;
     }
+    telemetry?.connectionOpened(sessionId, si, msg.payload);
     // If we've already got stats then this isn't the first connection, and we
     // only really care about the first connection in order to send the
     // "connected" event.
@@ -1003,7 +1399,12 @@ class SrvdImpl
       onExit: exitPort.sendPort,
     );
     final toWorker = Completer<SendPort>();
-    _register(spawned, fromSpawned, exitPort, toWorker.future);
+    SendPort? workerPort;
+    _register(spawned, fromSpawned, exitPort, toWorker.future,
+        carries: () => [
+              for (final MapEntry(key: id, value: si) in sessions.entries)
+                if (workerPort != null && si.toWorker == workerPort) id,
+            ]);
 
     Completer receivedSendToSpawned = Completer();
     late SendPort toSpawned;
@@ -1017,6 +1418,7 @@ class SrvdImpl
     fromSpawned.listen((msg) async {
       if (msg is SendPort) {
         toSpawned = msg;
+        workerPort = msg;
         toWorker.complete(msg);
         receivedSendToSpawned.complete();
         return;
@@ -1034,11 +1436,11 @@ class SrvdImpl
           case 'signingKey':
             recordSigningKey(msg.payload['sessionId'], msg.payload['key']);
             break;
-          case 'newConnection':
-            await _handleNewConnection(msg);
-            break;
-          case 'sessionComplete':
-            await _handleSessionComplete(msg);
+          case 'newConnection' ||
+              'connectionClosed' ||
+              'progress' ||
+              'sessionComplete':
+            await handleWorkerReport(msg);
             break;
           default:
             toSpawned.send(
@@ -1159,7 +1561,11 @@ class SrvdImpl
       onExit: exitPort.sendPort,
     );
     final toWorker = Completer<SendPort>();
-    _register(spawned, fromSpawned, exitPort, toWorker.future);
+    _register(spawned, fromSpawned, exitPort, toWorker.future,
+        carries: () => [
+              for (final MapEntry(key: id, value: si) in sessions.entries)
+                if (si.params.only443) id,
+            ]);
 
     Completer receivedSendToSpawned = Completer();
     late SendPort toSpawned;
@@ -1180,11 +1586,11 @@ class SrvdImpl
           case 'signingKey':
             recordSigningKey(msg.payload['sessionId'], msg.payload['key']);
             break;
-          case 'newConnection':
-            await _handleNewConnection(msg);
-            break;
-          case 'sessionComplete':
-            await _handleSessionComplete(msg);
+          case 'newConnection' ||
+              'connectionClosed' ||
+              'progress' ||
+              'sessionComplete':
+            await handleWorkerReport(msg);
             break;
           case 'startRefused':
             _handleStartRefused(msg);
@@ -1235,7 +1641,27 @@ class SrvdImpl
     return (portPair443, spawned, toSpawned);
   }
 
-  Future<void> sendNack({
+  Future<void> _tryNack(String sessionId, String to, String message) async {
+    Object? failure;
+    try {
+      final NotificationResult result = await sendNack(
+        sessionId: sessionId,
+        requestingAtsign: to,
+        message: message,
+      );
+      failure = result.atClientException;
+    } catch (e) {
+      failure = e;
+    }
+    if (failure != null) {
+      logger.shout('The NACK for session $sessionId to $to was not sent:'
+          ' $failure');
+    }
+  }
+
+  /// Notifies [requestingAtsign] that session [sessionId] was refused, and
+  /// why; the result says whether the notification failed.
+  Future<NotificationResult> sendNack({
     required String sessionId,
     required String requestingAtsign,
     required String message,
@@ -1252,7 +1678,7 @@ class SrvdImpl
       ..namespace = Srvd.namespace
       ..metadata = metaData;
 
-    await atClient.notificationService.notify(
+    return atClient.notificationService.notify(
       NotificationParams.forUpdate(
         atKey,
         value: message,
@@ -1261,5 +1687,37 @@ class SrvdImpl
       waitForFinalDeliveryStatus: false,
       checkForFinalDeliveryStatus: false,
     );
+  }
+}
+
+/// What srvd keeps, between re-checks, about one key of a session it
+/// reports.
+class _ReportedKey {
+  bool beingChecked = false;
+
+  /// Whether the key's atServer answered late in the re-check under way.
+  bool answeredLate = false;
+
+  /// The re-checks in a row that failed or were answered late.
+  int notPrompt = 0;
+
+  /// The re-checks in a row that could not tell where the key is.
+  int failures = 0;
+
+  /// The intervals still to let pass before the key's next re-check.
+  int toSkip = 0;
+
+  /// The pass at which a failure of the key was last said.
+  int? saidAt;
+
+  /// Whether a failure was said that no later good answer has been.
+  bool owesAgain = false;
+
+  /// Whether to re-check the key now, at an interval's end.
+  bool due() {
+    if (beingChecked) return false;
+    if (toSkip == 0) return true;
+    toSkip--;
+    return false;
   }
 }

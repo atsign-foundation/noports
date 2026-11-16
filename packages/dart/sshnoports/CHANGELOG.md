@@ -2,6 +2,36 @@
 
 <!-- pyml disable md034-->
 
+## v5.18.3
+
+* build: take socket_connector 2.7.0, so a tunnel connection closes once data
+  has waited two minutes for one of its ends to read it, and a closing
+  connection ends within 30 seconds even when an end has stopped reading
+* feat: srvd's `--telemetry-collector-atsign` sends session telemetry to a
+  collector Atsign, for the Atsigns on the opted-in list it shares with the
+  relay; off when absent
+* feat: srvd ends a session it reports within 10 seconds of the enrollment
+  one of its sides signed with being revoked;
+  `--reported-signing-key-check-secs` sets how often it re-checks, 3 by default
+* feat: srvd closes a session's sockets at once when it ends the session
+  because the enrollment one of its sides signed with was revoked
+* feat: srvd stops gracefully on SIGINT, or SIGTERM outside Windows, within 12
+  seconds; give its container a 15-second stop grace period (Docker's default
+  is 10)
+* fix: srvd refuses a session request whose session id is not a UUID
+* fix: srvd refuses a session request whose device-side Atsign is not a valid
+  Atsign, and tells a client why it refused a malformed request, so the client
+  fails at once instead of waiting out its timeout
+* fix: npp's warning for a stored rule it doesn't load says where the rule is
+  stored and how to remove it
+* fix: a manager RPC delete also removes a stored rule npp didn't load because
+  it names a rule that isn't stored
+* fix: a manager RPC delete naming an id npp doesn't hold is answered with an
+  error naming it
+* fix: npp answers a manager RPC delete whose value doesn't name its rule's id
+  as a string, or a put or delete whose value isn't a JSON object, with an
+  error saying what it must hold
+
 ## v5.18.2
 
 * feat: sshnpd and srvd take their session locks with at_client's server
@@ -27,13 +57,49 @@
   where it stops being valid, and a field that isn't valid base64 with its
   name and position
 * fix: when an atServer refuses an activation, at_activate reports its reason
+* fix: npp_client says whether the atServer refused the atSign it signs in as
+  (`-a`), and why, or the atDirectory has no atServer for it, or its atServer
+  could not be reached, rather than calling every failure unreachable
+* fix: sshnp, sshnpd, srvd, npp, npp_atserver and policy services built on
+  npa_bootstrapper report an atSign the atDirectory has no atServer for as not
+  found, rather than unreachable, when this device has opened it before
 * chore: sshnpd logs a session lock it can't take at warning
 * chore: load-balanced sshnpd instances, and srvd serving clients older than
   v5.11.2, need their atServer at p3.13.0 or later; on an older one every
   sshnpd instance handles every session request, and srvd answers no session
   from those clients
-* build: at_client 3.15.0-rc8, at_auth 4.0.0-rc7, at_lookup 3.7.0-rc4,
-  at_onboarding_cli 2.0.0-rc8 and at_utils 3.5.0
+* feat: npp logs rulesLoaded, heartbeat and stopped events to the event
+  logging Atsign, and on SIGINT or SIGTERM sends stopped before it exits
+* feat: npp logs manager RPC rule changes and refused senders to the event
+  logging Atsign
+* fix: npp saves manager RPC deletes and checks puts before saving them, so
+  the rules it loads on a restart match the changes it accepted
+* fix: npp assigns every new rule a random id
+* fix: deleting an npp client, client group or service also deletes the client
+  group members and service ACLs naming it, and the answer lists them
+* fix: npp answers a daemon delete with an error while a service names the
+  daemon, saying how many do
+* fix: npp answers a put naming a rule it doesn't hold with an error, and
+  saves nothing
+* fix: tightened how npp loads its stored rules
+* fix: tightened how npp_atserver loads its policy groups
+* feat: at_activate is at_client_cli's at_activate: its --help reports
+  at_client_cli's version, and --arx and --drx match app and device names
+  whatever their case
+* feat(BREAKING CHANGE): np_admin and npevents take the root domain only as
+  `-r` or `--root-server`, not `-d` or `--legacy-root-domain`, and
+  at_activate no longer accepts `--hashingAlgoType`, which it ignored
+* feat: npt, npevents and np_admin, given an atKeys file that holds only an
+  enrollment request, wait for its approval and then run, rather than
+  failing; a denial or expiry ends them
+* feat: npt, npevents and np_admin, given an atKeys file whose enrollment was
+  denied, cancelled or expired, say so and stop at once
+* feat: npt, npevents and np_admin print warnings to stderr without `-v`,
+  such as a notification they could not decrypt
+* fix: after an enrollment request expires, the next at_activate or noports
+  activate run submits a new request rather than resuming the expired one
+* build: at_client 4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli
+  and at_cli_commons, at_auth 4.0.0, at_lookup 4.0.0 and at_utils 4.0.0
 
 ## v5.18.1
 

@@ -1,9 +1,13 @@
 import 'package:at_commons/atsign.dart';
 import 'package:at_utils/at_utils.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:noports_core/src/common/validation_utils.dart';
 
 import './models.dart';
+
+/// A new policy entry id. Ids are random, so npp never gives one out twice.
+String newPolicyEntryId() => const Uuid().v4();
 
 class NppCache {
   static final AtSignLogger logger = AtSignLogger('NppCache');
@@ -14,6 +18,9 @@ class NppCache {
   final Set<Daemon> _daemons; // Daemon.atSign must be unique across all daemons
   final Set<Service> _services;
   final Set<ServiceACL> _serviceACLs;
+  final Set<ClientGroupMember> _unloadedClientGroupMembers = {};
+  final Set<Service> _unloadedServices = {};
+  final Set<ServiceACL> _unloadedServiceACLs = {};
   final CanonicalAtsigns _canonical = CanonicalAtsigns();
 
   Set<Client> get clients => _clients;
@@ -99,8 +106,12 @@ class NppCache {
     Set<ClientGroupMember> matchedClientGroupMembers = _clientGroupMembers.where((clientGroupMember) => clientGroupMember.clientId == clientId).toSet();
     Set<ClientGroup> matchedClientGroups = {};
     for(final ClientGroupMember clientGroupMember in matchedClientGroupMembers) {
-      final ClientGroup clientGroup = getClientGroupById(clientGroupMember.clientGroupId);
-      matchedClientGroups.add(clientGroup);
+      final ClientGroup? clientGroup = _clientGroups
+          .where((cg) => cg.id == clientGroupMember.clientGroupId)
+          .firstOrNull;
+      if (clientGroup != null) {
+        matchedClientGroups.add(clientGroup);
+      }
     }
     return matchedClientGroups;
   }
@@ -209,8 +220,59 @@ class NppCache {
     return _serviceACLs.where((serviceACL) => serviceACL.id == serviceACLId).first;
   }
 
-  /// put* object into NppCache
-  bool putClient(final Client client) {
+  /// The client with [id], or null when there is none.
+  Client? findClient(final String id) => _withId(_clients, id);
+
+  /// The client group with [id], or null when there is none.
+  ClientGroup? findClientGroup(final String id) => _withId(_clientGroups, id);
+
+  /// The client group member with [id], loaded or removed by
+  /// [removeRulesNamingMissing], or null when there is none.
+  ClientGroupMember? findClientGroupMember(final String id) =>
+      _withId(_clientGroupMembers, id) ??
+      _withId(_unloadedClientGroupMembers, id);
+
+  /// The daemon with [id], or null when there is none.
+  Daemon? findDaemon(final String id) => _withId(_daemons, id);
+
+  /// The service with [id], loaded or removed by [removeRulesNamingMissing],
+  /// or null when there is none.
+  Service? findService(final String id) =>
+      _withId(_services, id) ?? _withId(_unloadedServices, id);
+
+  /// The service ACL with [id], loaded or removed by
+  /// [removeRulesNamingMissing], or null when there is none.
+  ServiceACL? findServiceACL(final String id) =>
+      _withId(_serviceACLs, id) ?? _withId(_unloadedServiceACLs, id);
+
+  /// The client group members naming the client [clientId] or the client
+  /// group [clientGroupId], loaded or removed by [removeRulesNamingMissing],
+  /// for a delete to remove with what they name.
+  Set<ClientGroupMember> membersNaming(
+          {final String? clientId, final String? clientGroupId}) =>
+      {..._clientGroupMembers, ..._unloadedClientGroupMembers}
+          .where((m) =>
+              (clientId != null && m.clientId == clientId) ||
+              (clientGroupId != null && m.clientGroupId == clientGroupId))
+          .toSet();
+
+  /// The service ACLs naming the service [serviceId] or the client group
+  /// [clientGroupId], loaded or removed by [removeRulesNamingMissing], for a
+  /// delete to remove with what they name.
+  Set<ServiceACL> serviceACLsNaming(
+          {final String? serviceId, final String? clientGroupId}) =>
+      {..._serviceACLs, ..._unloadedServiceACLs}
+          .where((sa) =>
+              (serviceId != null && sa.serviceId == serviceId) ||
+              (clientGroupId != null && sa.clientGroupId == clientGroupId))
+          .toSet();
+
+  static T? _withId<T extends PolicyEntry>(Set<T> rules, String id) =>
+      rules.where((rule) => rule.id == id).firstOrNull;
+
+  /// put* object into NppCache. Each checkPut* throws if that object can't be
+  /// put, so a caller can check before saving it anywhere else.
+  void checkPutClient(final Client client) {
     // ensure no other clients exist with the same atSign
     for(final Client c in _clients) {
       if(c.atSign == client.atSign) {
@@ -224,11 +286,15 @@ class NppCache {
           '${client.id} when that id already exists in the policy cache.');
       }
     }
-    client.id ??= (_maxId(_clients) + 1).toString();
+  }
+
+  bool putClient(final Client client) {
+    checkPutClient(client);
+    client.id ??= newPolicyEntryId();
     return _clients.add(client);
   }
 
-  bool putClientGroup(final ClientGroup clientGroup) {
+  void checkPutClientGroup(final ClientGroup clientGroup) {
     // ensure no duplicate client group names
     for(final ClientGroup cg in _clientGroups) {
       if(cg.name == clientGroup.name) {
@@ -238,11 +304,15 @@ class NppCache {
         throw Exception('Found duplicate client group id ${clientGroup.id}');
       }
     }
-    clientGroup.id ??= (_maxId(_clientGroups) + 1).toString();
+  }
+
+  bool putClientGroup(final ClientGroup clientGroup) {
+    checkPutClientGroup(clientGroup);
+    clientGroup.id ??= newPolicyEntryId();
     return _clientGroups.add(clientGroup);
   }
 
-  bool putClientGroupMember(final ClientGroupMember clientGroupMember) {
+  void checkPutClientGroupMember(final ClientGroupMember clientGroupMember) {
     // ensure no duplicate client group member (Client.id, ClientGroup.id)
     for(final ClientGroupMember cgm in _clientGroupMembers) {
       if(cgm.clientId == clientGroupMember.clientId && cgm.clientGroupId == clientGroupMember.clientGroupId) {
@@ -253,11 +323,15 @@ class NppCache {
         throw Exception('Found duplicate client group member id ${clientGroupMember.id}');
       }
     }
-    clientGroupMember.id ??= (_maxId(_clientGroupMembers) + 1).toString();
+  }
+
+  bool putClientGroupMember(final ClientGroupMember clientGroupMember) {
+    checkPutClientGroupMember(clientGroupMember);
+    clientGroupMember.id ??= newPolicyEntryId();
     return _clientGroupMembers.add(clientGroupMember);
   }
 
-  bool putDaemon(final Daemon daemon) {
+  void checkPutDaemon(final Daemon daemon) {
     // ensure policy cache only has one unique daemon atSign
     for(final Daemon d in _daemons) {
       if(d.atSign == daemon.atSign) {
@@ -267,11 +341,15 @@ class NppCache {
         throw Exception('Found duplicate daemon id ${daemon.id}');
       }
     }
-    daemon.id ??= (_maxId(_daemons) + 1).toString();
+  }
+
+  bool putDaemon(final Daemon daemon) {
+    checkPutDaemon(daemon);
+    daemon.id ??= newPolicyEntryId();
     return _daemons.add(daemon);
   }
 
-  bool putService(final Service service) {
+  void checkPutService(final Service service) {
     // ensure no duplicate services
     for(final Service s in _services) {
       if(s.daemonId == service.daemonId &&
@@ -285,11 +363,15 @@ class NppCache {
         throw Exception('Found duplicate service id ${service.id}');
       }
     }
-    service.id ??= (_maxId(_services) + 1).toString();
+  }
+
+  bool putService(final Service service) {
+    checkPutService(service);
+    service.id ??= newPolicyEntryId();
     return _services.add(service);
   }
 
-  bool putServiceACL(final ServiceACL serviceACL) {
+  void checkPutServiceACL(final ServiceACL serviceACL) {
     for(final ServiceACL sa in _serviceACLs) {
       if(sa.clientGroupId == serviceACL.clientGroupId &&
         sa.serviceId == serviceACL.serviceId &&
@@ -306,53 +388,86 @@ class NppCache {
         throw Exception('Found duplicate service ACL id ${serviceACL.id}');
       }
     }
-    serviceACL.id ??= (_maxId(_serviceACLs) + 1).toString();
+   }
+
+  bool putServiceACL(final ServiceACL serviceACL) {
+    checkPutServiceACL(serviceACL);
+    serviceACL.id ??= newPolicyEntryId();
     return _serviceACLs.add(serviceACL);
   }
 
-  bool deleteClient(final String clientId) {
-    final Client client = getClientById(clientId);
-    return _clients.remove(client);
-  }
-
-  bool deleteClientGroup(final String clientGroupId) {
-    final ClientGroup clientGroup = getClientGroupById(clientGroupId);
-    return _clientGroups.remove(clientGroup);
-  }
-
-  bool deleteClientGroupMember(final String clientGroupMemberId) {
-    final ClientGroupMember clientGroupMember = getClientGroupMemberById(clientGroupMemberId);
-    return _clientGroupMembers.remove(clientGroupMember);
-  }
-
-  bool deleteDaemon(final String daemonId) {
-    final Daemon daemon = getDaemonById(daemonId);
-    return _daemons.remove(daemon);
-  }
-
-  bool deleteService(final String serviceId) {
-    final Service service = getServiceById(serviceId);
-    return _services.remove(service);
-  }
-
-  bool deleteServiceACL(final String serviceACLId) {
-    final ServiceACL serviceACL = getServiceACLById(serviceACLId);
-    return _serviceACLs.remove(serviceACL);
-  }
-
-  int _maxId(final Set<PolicyEntry> entries) {
-    int maxId = 0;
-    for(final PolicyEntry entry in entries) {
-      if(entry.id == null) {
-        logger.warning('Encountered PolicyEntry with null id: $entry');
-        continue;
-      }
-      final int entryId = int.tryParse(entry.id!) ?? 0;
-      if(entryId > maxId) {
-        maxId = entryId;
+  /// The rules [entry] names that this cache doesn't hold, each as
+  /// `<kind> with id <id>`. Empty when it names none, or all are here.
+  List<String> missingReferences(final PolicyEntry entry) {
+    final List<String> missing = [];
+    void need(
+        final Set<PolicyEntry> rules, final String kind, final String id) {
+      if (!rules.any((rule) => rule.id == id)) {
+        missing.add('$kind with id $id');
       }
     }
-    return maxId;
+
+    switch (entry) {
+      case ClientGroupMember member:
+        need(_clients, 'Client', member.clientId);
+        need(_clientGroups, 'ClientGroup', member.clientGroupId);
+      case Service service:
+        need(_daemons, 'Daemon', service.daemonId);
+      case ServiceACL serviceACL:
+        need(_services, 'Service', serviceACL.serviceId);
+        need(_clientGroups, 'ClientGroup', serviceACL.clientGroupId);
+    }
+    return missing;
+  }
+
+  /// Removes every rule naming a rule this cache doesn't hold, services before
+  /// the service ACLs naming them, and returns each one removed with its
+  /// kind and [missingReferences]. Each removed rule answers no check, and
+  /// stays findable by id so that it can be deleted.
+  List<(String, PolicyEntry, List<String>)> removeRulesNamingMissing() {
+    final List<(String, PolicyEntry, List<String>)> removed = [];
+    void removeFrom<T extends PolicyEntry>(
+        String kind, Set<T> rules, Set<T> unloaded) {
+      for (final T rule in rules.toList()) {
+        final List<String> missing = missingReferences(rule);
+        if (missing.isNotEmpty) {
+          rules.remove(rule);
+          unloaded.add(rule);
+          removed.add((kind, rule, missing));
+        }
+      }
+    }
+
+    removeFrom('Service', _services, _unloadedServices);
+    removeFrom('ServiceACL', _serviceACLs, _unloadedServiceACLs);
+    removeFrom(
+        'ClientGroupMember', _clientGroupMembers, _unloadedClientGroupMembers);
+    return removed;
+  }
+
+  bool deleteClient(final String clientId) => _removeWithId(_clients, clientId);
+
+  bool deleteClientGroup(final String clientGroupId) =>
+      _removeWithId(_clientGroups, clientGroupId);
+
+  bool deleteClientGroupMember(final String clientGroupMemberId) =>
+      _removeWithId(_clientGroupMembers, clientGroupMemberId) |
+      _removeWithId(_unloadedClientGroupMembers, clientGroupMemberId);
+
+  bool deleteDaemon(final String daemonId) => _removeWithId(_daemons, daemonId);
+
+  bool deleteService(final String serviceId) =>
+      _removeWithId(_services, serviceId) |
+      _removeWithId(_unloadedServices, serviceId);
+
+  bool deleteServiceACL(final String serviceACLId) =>
+      _removeWithId(_serviceACLs, serviceACLId) |
+      _removeWithId(_unloadedServiceACLs, serviceACLId);
+
+  /// Removes the rule with [id] from [rules], and returns whether it was there.
+  static bool _removeWithId<T extends PolicyEntry>(Set<T> rules, String id) {
+    final T? rule = _withId(rules, id);
+    return rule != null && rules.remove(rule);
   }
 
 }

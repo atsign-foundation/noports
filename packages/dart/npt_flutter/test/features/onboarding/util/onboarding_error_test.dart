@@ -39,6 +39,26 @@ void main() {
     });
   });
 
+  group('isEnrollmentRevoked', () {
+    test('an enrollment a manager withdrew is revoked', () {
+      // at_auth's wording around the atServer's PKAM refusal.
+      final error = AtEnrollmentException(
+        'Enrollment e1 was refused for a reason this wait cannot resolve: '
+        'Failed connecting to @alice. '
+        'error:AT0027-enrollment_id: e1 is revoked',
+      );
+      expect(isEnrollmentRevoked(error), isTrue);
+    });
+
+    test('an expired enrollment is not revoked', () {
+      final error = AtEnrollmentException(
+        'Enrollment e1 has expired or does not exist: '
+        'error:AT0028-enrollment_id: e1 is expired or invalid',
+      );
+      expect(isEnrollmentRevoked(error), isFalse);
+    });
+  });
+
   group('describeOnboardingError', () {
     test('names the stale-keys conflict', () {
       // The exact throw when keys already exist locally.
@@ -52,12 +72,38 @@ void main() {
     });
 
     test('names a rejected CRAM secret', () {
-      final error = AtException(
-        'Cram authentication failed. Please check the cram key and try again',
+      for (final error in [
+        UnAuthenticatedException(
+          'Cram authentication failed for @alice:'
+          ' error:AT0401-Exception: Authentication Failed',
+        ),
+        AtException(
+          'Cram authentication failed. Please check the cram key and try'
+          ' again (or) contact support@atsign.com',
+        ),
+      ]) {
+        expect(
+          describeOnboardingError(error, strings),
+          equals(strings.errorCramAuthFailed),
+          reason: 'at_auth refuses a CRAM secret with "${error.message}"',
+        );
+      }
+    });
+
+    test('in English, a refused activation key says it may have already been'
+        ' used, word for word', () {
+      final error = UnAuthenticatedException(
+        'Cram authentication failed for @alice:'
+        ' error:AT0401-Exception: Authentication Failed',
       );
       expect(
         describeOnboardingError(error, strings),
-        equals(strings.errorCramAuthFailed),
+        equals(
+          'The activation key was rejected by the atServer.'
+          ' It may have already been used.',
+        ),
+        reason: 'the English message for an activation key the atServer'
+            ' refused',
       );
     });
 

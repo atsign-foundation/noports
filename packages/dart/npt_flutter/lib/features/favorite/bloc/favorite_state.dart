@@ -27,6 +27,11 @@ final class FavoritesLoaded extends FavoritesState {
   final Iterable<Favorite> favorites;
   const FavoritesLoaded(this.favorites);
 
+  Set<String> get profileUuids => <String>{
+    for (final Favorite favorite in favorites)
+      if (favorite is FavoriteProfile) favorite.uuid,
+  };
+
   @override
   List<Object?> get props => [favorites];
 

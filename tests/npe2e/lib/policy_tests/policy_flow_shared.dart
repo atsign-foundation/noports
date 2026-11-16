@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:at_cli_commons/at_cli_commons.dart';
-import 'package:at_client/at_client.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:npe2e/client_binary.dart';
 import 'package:npe2e/docker_image.dart';
 import 'package:npe2e/docker_instance.dart';
@@ -431,28 +429,35 @@ Future<AtClient> createPolicyAtClient({
   required String rootDomain,
   required Directory storageDirectory,
 }) async {
+  final canonical = atsign.toAtsign();
   final AtRootDomain parsedRootDomain = AtRootDomain.parse(rootDomain);
-  final AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-    ..hiveStoragePath = storageDirectory.path
+  final AtClientPreference preference = AtClientPreference()
     ..namespace = 'sshnp'
-    ..downloadPath = path.join(storageDirectory.path, 'downloads')
-    // ignore: deprecated_member_use
-    ..isLocalStoreRequired = true
-    ..commitLogPath = path.join(storageDirectory.path, 'commitLog')
     ..fetchOfflineNotifications = false
-    ..atKeysFilePath = apkamKeysFile.path
-    ..passPhrase = ''
     ..rootDomain = parsedRootDomain.rootDomain
     ..rootPort = parsedRootDomain.rootPort;
 
-  final onboardingService = AtOnboardingServiceImpl(
-    atsign,
-    atOnboardingConfig,
-    atServiceFactory: ServiceFactoryWithNoOpSyncService(),
+  // NOTE open refuses while a client for the atSign is live in this process
+  for (final live in AtClientImpl.liveClientsFor(canonical)) {
+    await live.stop();
+  }
+  final client = await Atsign(canonical).open(
+    keys: FileAtKeysIo(filePath: (_) => apkamKeysFile.path, passPhrase: ''),
+    preference: preference,
+    storage: HiveAtClientStorage(
+      atSign: canonical,
+      storagePath: storageDirectory.path,
+      closedByClient: true,
+    ),
+    lookUps: lookUpsFor(preference.rootDomain),
+    secondaryAddressFinder: CacheableSecondaryAddressFinder(
+      preference.rootDomain,
+      preference.rootPort,
+    ),
+    serviceFactory: ServiceFactoryWithNoOpSyncService(),
   );
-
-  await onboardingService.authenticate();
-  return AtClientManager.getInstance().atClient;
+  AtClientManager.getInstance().use(client);
+  return client;
 }
 
 Future<PolicyTestResult> runPolicyFlow({

@@ -1,14 +1,66 @@
 ## 1.9.7+34
 
+- FEAT: Connection folders, saved with the atSign and ordered by drag and drop.
+- FEAT: A folder's Start all starts the chosen connections one at a time.
+- FEAT: Favorite folders in the menu bar menu.
+- FEAT: Search and sort connections, with favorites first.
+- FEAT: A Folder field in the connection form.
+- FEAT: Exported profiles keep their favorites.
 - FIX: When activating an atSign fails, from the activation dialog or an
   activation file, the app log names the type of error.
 - FIX: When an activation file can't be read, the app log gives the number of
   the entry at fault, or the line where the file isn't valid YAML.
+- FIX: When the atServer refuses an activation key, the error says the key may
+  have already been used, whether it came from a file or the activation dialog.
 - FIX: Signing in with an atKeys file that isn't valid JSON says so, and gives
   the position where it stops being valid.
 - FIX: The activation dialog no longer stays on its spinner when the registrar
   fails or doesn't answer: after an error, or 30 seconds without an answer, it
   says the request failed and closes or returns to the PIN step.
+- FIX: Tunnels reconnect automatically after the daemon's device reboots,
+  instead of leaving the profile stuck on "starting" until the app is
+  relaunched.
+- FIX: Keep-alive retry now covers startup failures too, not just drops after a
+  successful connection.
+- FIX: Keep-alive backs off when a tunnel keeps failing to start, from 5
+  seconds up to a minute between attempts, and stopping takes effect at once
+  rather than after the wait.
+- FIX: A profile that is connecting, or waiting to retry, can be stopped from
+  its status indicator in the main window, not only from the tray.
+- FIX: Signing out stops every profile, including ones still connecting or
+  waiting to retry, instead of leaving them retrying in the background.
+- FIX: The enrollment dialog keeps a request until it is approved, denied or
+  expires. Leaving the waiting screen or quitting the app keeps it, and the
+  next sign-in through the Authenticator waits on it again. Cancel asks first,
+  then abandons the request and returns to the OTP prompt, which says a new
+  OTP from another enrollment is needed and asks for the old request to be
+  denied in the Authenticator. A request the manager revokes returns to the
+  OTP prompt and says so. A wait that ends because the atServer can't be
+  reached keeps the request instead of reporting it denied.
+- FIX: Signing in with an atKeys file backs its keys up to the keychain even
+  when the keychain still holds an enrollment request this device was waiting
+  on, once the atServer has accepted the file's keys. The request's pending
+  keys are dropped, and the app log names it so it can be denied in the
+  Authenticator. Until now every later sign-in went back to the old request.
+- CHORE: at_client_flutter is now 2.0.0, bringing at_client 4.0.0. Signing in,
+  activating and enrolling keep using the app's existing local store.
+- FIX: Deleting the selected profiles leaves running ones alone, including a
+  keep-alive profile waiting to retry and one started while the delete was
+  being confirmed.
+- FIX: Confirming the connected profiles prompt when switching, adding or
+  signing out of an atSign stops keep-alive profiles, instead of them
+  reconnecting a few seconds later.
+- FIX: Deleting a profile that is still connected stops its connection,
+  instead of leaving it running in the background.
+- FIX: The tray menu updates when a favourite profile's name or status
+  changes, instead of waiting for another change to refresh it.
+- FIX: Stopping a connection ends the sessions open through it within 30
+  seconds, even one whose program has stopped reading. A session closes once
+  data has waited two minutes for either end to read it.
+ - FIX: The Authenticator no longer lists a request that was approved or denied
+  elsewhere: the Requests list and its badge are read again from the Atsign
+  Server when the window regains focus, and keep what they showed if a read
+  fails.
 
 ## 1.9.6+33
 

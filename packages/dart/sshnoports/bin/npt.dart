@@ -5,8 +5,7 @@ import 'dart:io';
 // other packages
 import 'package:args/args.dart';
 // atPlatform packages
-import 'package:at_cli_commons/at_cli_commons.dart';
-import 'package:at_commons/atsign.dart';
+import 'package:at_client_cli/at_client_cli.dart';
 import 'package:at_utils/at_utils.dart';
 import 'package:duration/duration.dart';
 import 'package:logging/logging.dart';
@@ -26,7 +25,7 @@ void main(List<String> args) async {
   const int neverTimeoutDays = 365;
 
   AtSignLogger.root_level = 'SHOUT';
-  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
+  AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
 
   Directory? storageDir;
 

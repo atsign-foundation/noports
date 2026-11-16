@@ -113,6 +113,36 @@ abstract class AppLocalizations {
     ),
   ];
 
+  /// No description provided for @abandonFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not abandon enrollment {enrollmentId}: its keys are still in the keychain. Choose Cancel to try again.'**
+  String abandonFailed(Object enrollmentId);
+
+  /// No description provided for @abandonRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Abandon'**
+  String get abandonRequest;
+
+  /// No description provided for @abandonRequestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This abandons enrollment {enrollmentId} of {atsign}. Trying again needs a new OTP from another enrollment of {atsign}.'**
+  String abandonRequestBody(Object atsign, Object enrollmentId);
+
+  /// No description provided for @abandonRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Abandon this request?'**
+  String get abandonRequestTitle;
+
+  /// No description provided for @abandoningRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Abandoning the request...'**
+  String get abandoningRequest;
+
   /// No description provided for @activate.
   ///
   /// In en, this message translates to:
@@ -503,12 +533,6 @@ abstract class AppLocalizations {
   /// **'Retrying connection (keep-alive)...'**
   String get connectionRetrying;
 
-  /// No description provided for @connectionTimedOut.
-  ///
-  /// In en, this message translates to:
-  /// **'Connection timed out, will retry...'**
-  String get connectionTimedOut;
-
   /// No description provided for @connections.
   ///
   /// In en, this message translates to:
@@ -878,7 +902,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorCramAuthFailed.
   ///
   /// In en, this message translates to:
-  /// **'The activation key was rejected by the atServer. This activation file may have already been used.'**
+  /// **'The activation key was rejected by the atServer. It may have already been used.'**
   String get errorCramAuthFailed;
 
   /// No description provided for @errorDuringStartupWithDetails.
@@ -971,6 +995,18 @@ abstract class AppLocalizations {
   /// **'Fastest'**
   String get fastest;
 
+  /// No description provided for @favoriteAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favorites'**
+  String get favoriteAdd;
+
+  /// No description provided for @favoriteRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favorites'**
+  String get favoriteRemove;
+
   /// No description provided for @feedback.
   ///
   /// In en, this message translates to:
@@ -1012,6 +1048,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The request will be displayed in the Authenticator under Requests in any app connected to your Atsign with manager keys.'**
   String get findOtp;
+
+  /// No description provided for @folderAddConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Add connection'**
+  String get folderAddConnection;
+
+  /// No description provided for @folderChooseStartAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose connections to start'**
+  String get folderChooseStartAll;
+
+  /// No description provided for @folderChooseStartAllDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start all starts the checked connections, one after another.'**
+  String get folderChooseStartAllDescription;
+
+  /// No description provided for @folderCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get folderCollapse;
+
+  /// No description provided for @folderDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete folder'**
+  String get folderDelete;
+
+  /// No description provided for @folderDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder will be deleted. The connections inside it will be kept.'**
+  String get folderDeleteMessage;
+
+  /// No description provided for @folderExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get folderExpand;
+
+  /// No description provided for @folderLoadFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders failed to load. Retry'**
+  String get folderLoadFailedRetry;
+
+  /// No description provided for @folderMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get folderMoveDown;
+
+  /// No description provided for @folderMoveTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to'**
+  String get folderMoveTo;
+
+  /// No description provided for @folderMoveToFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to folder'**
+  String get folderMoveToFolder;
+
+  /// No description provided for @folderMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get folderMoveUp;
+
+  /// No description provided for @folderName.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder name'**
+  String get folderName;
+
+  /// No description provided for @folderNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a folder name'**
+  String get folderNameRequired;
+
+  /// No description provided for @folderNameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'A folder with this name already exists'**
+  String get folderNameTaken;
+
+  /// No description provided for @folderNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New folder'**
+  String get folderNew;
+
+  /// No description provided for @folderNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No folder'**
+  String get folderNone;
+
+  /// No description provided for @folderRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get folderRename;
+
+  /// No description provided for @folderRenameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename folder'**
+  String get folderRenameTitle;
+
+  /// No description provided for @folderSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders failed to save'**
+  String get folderSaveFailed;
+
+  /// No description provided for @folderStartAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Start all'**
+  String get folderStartAll;
+
+  /// No description provided for @folderStartSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Start {count} of {total}'**
+  String folderStartSome(Object count, Object total);
+
+  /// No description provided for @folderStopAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop all'**
+  String get folderStopAll;
+
+  /// No description provided for @folderStopSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop {count} of {total}'**
+  String folderStopSome(Object count, Object total);
+
+  /// No description provided for @folderSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders can be changed once they have synced'**
+  String get folderSyncing;
 
   /// No description provided for @getStarted.
   ///
@@ -1072,6 +1258,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'JSON payload copied to clipboard'**
   String get jsonPayloadCopiedToClipboard;
+
+  /// No description provided for @keepWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep waiting'**
+  String get keepWaiting;
 
   /// No description provided for @keys.
   ///
@@ -1259,12 +1451,6 @@ abstract class AppLocalizations {
   /// **'NoPorts'**
   String get noPorts;
 
-  /// No description provided for @nptStartupTimedout.
-  ///
-  /// In en, this message translates to:
-  /// **'Npt startup timed out'**
-  String get nptStartupTimedout;
-
   /// No description provided for @ok.
   ///
   /// In en, this message translates to:
@@ -1445,6 +1631,18 @@ abstract class AppLocalizations {
   /// **'No reason provided'**
   String get profileFailedUnknownMessage;
 
+  /// No description provided for @profileFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get profileFolder;
+
+  /// No description provided for @profileFolderDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The folder this connection is listed in.'**
+  String get profileFolderDescription;
+
   /// No description provided for @profileImportDialogTitle.
   ///
   /// In en, this message translates to:
@@ -1511,6 +1709,72 @@ abstract class AppLocalizations {
   /// **'The following profile(s) are connected:'**
   String get profileRunningCloseMsgStart;
 
+  /// No description provided for @profileSearchClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get profileSearchClear;
+
+  /// No description provided for @profileSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search connections'**
+  String get profileSearchHint;
+
+  /// No description provided for @profileSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No connections match your search'**
+  String get profileSearchNoResults;
+
+  /// No description provided for @profileSortByNameMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The list is sorted by name, so items are placed by name'**
+  String get profileSortByNameMessage;
+
+  /// No description provided for @profileSortFavoritesFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites first'**
+  String get profileSortFavoritesFirst;
+
+  /// No description provided for @profileSortFavoritesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites stay on top while Favorites first is on'**
+  String get profileSortFavoritesMessage;
+
+  /// No description provided for @profileSortManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual order'**
+  String get profileSortManual;
+
+  /// No description provided for @profileSortNameAscending.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, A to Z'**
+  String get profileSortNameAscending;
+
+  /// No description provided for @profileSortNameDescending.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, Z to A'**
+  String get profileSortNameDescending;
+
+  /// No description provided for @profileSortReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to manual order'**
+  String get profileSortReset;
+
+  /// No description provided for @profileSortTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get profileSortTooltip;
+
   /// No description provided for @profileStatusFailedLoad.
   ///
   /// In en, this message translates to:
@@ -1546,6 +1810,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading'**
   String get profileStatusLoading;
+
+  /// No description provided for @profileStatusQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to start'**
+  String get profileStatusQueued;
+
+  /// No description provided for @profileStatusQueuedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Waits for the connections before it to start. Click to start it now.'**
+  String get profileStatusQueuedMessage;
 
   /// No description provided for @profileStatusStarted.
   ///
@@ -1643,6 +1919,12 @@ abstract class AppLocalizations {
   /// **'Remove Atsign'**
   String get removeAtsign;
 
+  /// No description provided for @requestAbandoned.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrollment {enrollmentId} abandoned. To try again, enter a new OTP from another enrollment, and deny {enrollmentId} under Requests in the Authenticator.'**
+  String requestAbandoned(Object enrollmentId);
+
   /// No description provided for @requestExpired.
   ///
   /// In en, this message translates to:
@@ -1660,12 +1942,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resend Pin'**
   String get resendPin;
-
-  /// No description provided for @retryFailedWithDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry failed: {errorMessage}, will retry...'**
-  String retryFailedWithDetails(Object errorMessage);
 
   /// No description provided for @roleAddNew.
   ///
@@ -2018,7 +2294,7 @@ abstract class AppLocalizations {
   /// No description provided for @validationErrorDeviceNameField.
   ///
   /// In en, this message translates to:
-  /// **'Field can only contain lowercase letters, digits, underscores.'**
+  /// **'Use 2-36 lowercase letters, digits, \"_\" or \"-\", not starting with \"-\".'**
   String get validationErrorDeviceNameField;
 
   /// No description provided for @validationErrorEmptyField.
@@ -2042,7 +2318,7 @@ abstract class AppLocalizations {
   /// No description provided for @validationErrorLongField.
   ///
   /// In en, this message translates to:
-  /// **'Field must be 1-36 characters long'**
+  /// **'Field must be 2-36 characters long'**
   String get validationErrorLongField;
 
   /// No description provided for @validationErrorRelayField.

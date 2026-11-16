@@ -9,6 +9,25 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return '无法放弃注册 $enrollmentId：其密钥仍在钥匙串中。请选择“取消”重试。';
+  }
+
+  @override
+  String get abandonRequest => '放弃';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return '这将放弃 $atsign 的注册 $enrollmentId。如需重试，需要从 $atsign 的另一个注册获取新的 OTP。';
+  }
+
+  @override
+  String get abandonRequestTitle => '放弃此请求？';
+
+  @override
+  String get abandoningRequest => '正在放弃请求...';
+
+  @override
   String get activate => '激活';
 
   @override
@@ -217,9 +236,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connectionRetrying => '正在重试连接 (keep-alive)...';
 
   @override
-  String get connectionTimedOut => '连接超时，将重试...';
-
-  @override
   String get connections => '连接';
 
   @override
@@ -413,7 +429,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorAuthenticationTimedOut => '身份验证超时。';
 
   @override
-  String get errorCramAuthFailed => '激活密钥被 atServer 拒绝。此激活文件可能已被使用。';
+  String get errorCramAuthFailed => '激活密钥被 atServer 拒绝。该密钥可能已被使用。';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
@@ -468,6 +484,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fastest => '最快';
 
   @override
+  String get favoriteAdd => '添加到收藏';
+
+  @override
+  String get favoriteRemove => '从收藏中移除';
+
+  @override
   String get feedback => '反馈';
 
   @override
@@ -488,6 +510,85 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get findOtp =>
       '请求将在 Authenticator 的“请求”中显示在任何通过管理员密钥连接到您的 Atsign 的应用中。';
+
+  @override
+  String get folderAddConnection => '添加连接';
+
+  @override
+  String get folderChooseStartAll => '选择要启动的连接';
+
+  @override
+  String get folderChooseStartAllDescription => '“全部启动”会依次启动已勾选的连接。';
+
+  @override
+  String get folderCollapse => '折叠';
+
+  @override
+  String get folderDelete => '删除文件夹';
+
+  @override
+  String get folderDeleteMessage => '此文件夹将被删除。其中的连接将被保留。';
+
+  @override
+  String get folderExpand => '展开';
+
+  @override
+  String get folderLoadFailedRetry => '文件夹加载失败。重试';
+
+  @override
+  String get folderMoveDown => '下移';
+
+  @override
+  String get folderMoveTo => '移动到';
+
+  @override
+  String get folderMoveToFolder => '移动到文件夹';
+
+  @override
+  String get folderMoveUp => '上移';
+
+  @override
+  String get folderName => '文件夹名称';
+
+  @override
+  String get folderNameRequired => '请输入文件夹名称';
+
+  @override
+  String get folderNameTaken => '已存在同名文件夹';
+
+  @override
+  String get folderNew => '新建文件夹';
+
+  @override
+  String get folderNone => '无文件夹';
+
+  @override
+  String get folderRename => '重命名';
+
+  @override
+  String get folderRenameTitle => '重命名文件夹';
+
+  @override
+  String get folderSaveFailed => '文件夹保存失败';
+
+  @override
+  String get folderStartAll => '全部启动';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return '启动 $count/$total 个';
+  }
+
+  @override
+  String get folderStopAll => '全部停止';
+
+  @override
+  String folderStopSome(Object count, Object total) {
+    return '停止 $count/$total 个';
+  }
+
+  @override
+  String get folderSyncing => '文件夹同步完成后即可修改';
 
   @override
   String get getStarted => '开始使用';
@@ -518,6 +619,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get jsonPayloadCopiedToClipboard => 'JSON 负载已复制到剪贴板';
+
+  @override
+  String get keepWaiting => '继续等待';
 
   @override
   String get keys => '上传 atKeys';
@@ -613,9 +717,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout => 'Npt 启动超时';
-
-  @override
   String get ok => '确定';
 
   @override
@@ -709,6 +810,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileFailedUnknownMessage => '未提供原因';
 
   @override
+  String get profileFolder => '文件夹';
+
+  @override
+  String get profileFolderDescription => '此连接所在的文件夹。';
+
+  @override
   String get profileImportDialogTitle => '选择导入方式';
 
   @override
@@ -744,6 +851,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileRunningCloseMsgStart => '以下配置文件已连接：';
 
   @override
+  String get profileSearchClear => '清除搜索';
+
+  @override
+  String get profileSearchHint => '搜索连接';
+
+  @override
+  String get profileSearchNoResults => '没有与搜索匹配的连接';
+
+  @override
+  String get profileSortByNameMessage => '列表按名称排序，项目按名称排列';
+
+  @override
+  String get profileSortFavoritesFirst => '收藏优先';
+
+  @override
+  String get profileSortFavoritesMessage => '开启收藏优先时，收藏项始终置顶';
+
+  @override
+  String get profileSortManual => '手动排序';
+
+  @override
+  String get profileSortNameAscending => '名称（A 到 Z）';
+
+  @override
+  String get profileSortNameDescending => '名称（Z 到 A）';
+
+  @override
+  String get profileSortReset => '恢复手动排序';
+
+  @override
+  String get profileSortTooltip => '排序';
+
+  @override
   String get profileStatusFailedLoad => '加载失败';
 
   @override
@@ -760,6 +900,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profileStatusLoading => '正在加载';
+
+  @override
+  String get profileStatusQueued => '等待启动';
+
+  @override
+  String get profileStatusQueuedMessage => '等待前面的连接启动。点击可立即启动。';
 
   @override
   String get profileStatusStarted => '已连接';
@@ -810,6 +956,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get removeAtsign => '删除 Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return '已放弃注册 $enrollmentId。如需重试，请输入来自另一个注册的新 OTP，并在 Authenticator 的“请求”中拒绝 $enrollmentId。';
+  }
+
+  @override
   String get requestExpired => '原始请求已过期。请再次提交';
 
   @override
@@ -817,11 +968,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resendPin => '重新发送 Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return '重试失败：$errorMessage，将重试...';
-  }
 
   @override
   String get roleAddNew => '添加新角色';
@@ -1012,7 +1158,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get validationErrorAtsignField => '字段必须是有效的 atsign';
 
   @override
-  String get validationErrorDeviceNameField => '字段只能包含小写字母、数字和下划线。';
+  String get validationErrorDeviceNameField =>
+      '请使用 2-36 个小写字母、数字、“_”或“-”，不能以“-”开头。';
 
   @override
   String get validationErrorEmptyField => '此字段不能为空';
@@ -1024,7 +1171,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get validationErrorLocalPortField => '数字必须介于 1024 和 65535 之间';
 
   @override
-  String get validationErrorLongField => '字段长度必须为 1-36 个字符';
+  String get validationErrorLongField => '字段长度必须为 2-36 个字符';
 
   @override
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
@@ -1062,6 +1209,25 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   AppLocalizationsZhHansCh() : super('zh_Hans_CH');
 
   @override
+  String abandonFailed(Object enrollmentId) {
+    return '无法放弃注册 $enrollmentId：其密钥仍在钥匙串中。请选择“取消”重试。';
+  }
+
+  @override
+  String get abandonRequest => '放弃';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return '这将放弃 $atsign 的注册 $enrollmentId。如需重试，需要从 $atsign 的另一个注册获取新的 OTP。';
+  }
+
+  @override
+  String get abandonRequestTitle => '放弃此请求？';
+
+  @override
+  String get abandoningRequest => '正在放弃请求...';
+
+  @override
   String get activate => '激活';
 
   @override
@@ -1270,9 +1436,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get connectionRetrying => '正在重试连接 (keep-alive)...';
 
   @override
-  String get connectionTimedOut => '连接超时，将重试...';
-
-  @override
   String get connections => '连接';
 
   @override
@@ -1466,7 +1629,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get errorAuthenticationTimedOut => '身份验证超时。';
 
   @override
-  String get errorCramAuthFailed => '激活密钥被 atServer 拒绝。此激活文件可能已被使用。';
+  String get errorCramAuthFailed => '激活密钥被 atServer 拒绝。该密钥可能已被使用。';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
@@ -1521,6 +1684,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get fastest => '最快';
 
   @override
+  String get favoriteAdd => '添加到收藏';
+
+  @override
+  String get favoriteRemove => '从收藏中移除';
+
+  @override
   String get feedback => '反馈';
 
   @override
@@ -1541,6 +1710,85 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   @override
   String get findOtp =>
       '请求将在 Authenticator 的“请求”中显示在任何通过管理员密钥连接到您的 Atsign 的应用中。';
+
+  @override
+  String get folderAddConnection => '添加连接';
+
+  @override
+  String get folderChooseStartAll => '选择要启动的连接';
+
+  @override
+  String get folderChooseStartAllDescription => '“全部启动”会依次启动已勾选的连接。';
+
+  @override
+  String get folderCollapse => '折叠';
+
+  @override
+  String get folderDelete => '删除文件夹';
+
+  @override
+  String get folderDeleteMessage => '此文件夹将被删除。其中的连接将被保留。';
+
+  @override
+  String get folderExpand => '展开';
+
+  @override
+  String get folderLoadFailedRetry => '文件夹加载失败。重试';
+
+  @override
+  String get folderMoveDown => '下移';
+
+  @override
+  String get folderMoveTo => '移动到';
+
+  @override
+  String get folderMoveToFolder => '移动到文件夹';
+
+  @override
+  String get folderMoveUp => '上移';
+
+  @override
+  String get folderName => '文件夹名称';
+
+  @override
+  String get folderNameRequired => '请输入文件夹名称';
+
+  @override
+  String get folderNameTaken => '已存在同名文件夹';
+
+  @override
+  String get folderNew => '新建文件夹';
+
+  @override
+  String get folderNone => '无文件夹';
+
+  @override
+  String get folderRename => '重命名';
+
+  @override
+  String get folderRenameTitle => '重命名文件夹';
+
+  @override
+  String get folderSaveFailed => '文件夹保存失败';
+
+  @override
+  String get folderStartAll => '全部启动';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return '启动 $count/$total 个';
+  }
+
+  @override
+  String get folderStopAll => '全部停止';
+
+  @override
+  String folderStopSome(Object count, Object total) {
+    return '停止 $count/$total 个';
+  }
+
+  @override
+  String get folderSyncing => '文件夹同步完成后即可修改';
 
   @override
   String get getStarted => '开始使用';
@@ -1571,6 +1819,9 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get jsonPayloadCopiedToClipboard => 'JSON 负载已复制到剪贴板';
+
+  @override
+  String get keepWaiting => '继续等待';
 
   @override
   String get keys => '上传 atKeys';
@@ -1666,9 +1917,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout => 'Npt 启动超时';
-
-  @override
   String get ok => '确定';
 
   @override
@@ -1762,6 +2010,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileFailedUnknownMessage => '未提供原因';
 
   @override
+  String get profileFolder => '文件夹';
+
+  @override
+  String get profileFolderDescription => '此连接所在的文件夹。';
+
+  @override
   String get profileImportDialogTitle => '选择导入方式';
 
   @override
@@ -1797,6 +2051,39 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get profileRunningCloseMsgStart => '以下配置文件已连接：';
 
   @override
+  String get profileSearchClear => '清除搜索';
+
+  @override
+  String get profileSearchHint => '搜索连接';
+
+  @override
+  String get profileSearchNoResults => '没有与搜索匹配的连接';
+
+  @override
+  String get profileSortByNameMessage => '列表按名称排序，项目按名称排列';
+
+  @override
+  String get profileSortFavoritesFirst => '收藏优先';
+
+  @override
+  String get profileSortFavoritesMessage => '开启收藏优先时，收藏项始终置顶';
+
+  @override
+  String get profileSortManual => '手动排序';
+
+  @override
+  String get profileSortNameAscending => '名称（A 到 Z）';
+
+  @override
+  String get profileSortNameDescending => '名称（Z 到 A）';
+
+  @override
+  String get profileSortReset => '恢复手动排序';
+
+  @override
+  String get profileSortTooltip => '排序';
+
+  @override
   String get profileStatusFailedLoad => '加载失败';
 
   @override
@@ -1813,6 +2100,12 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get profileStatusLoading => '正在加载';
+
+  @override
+  String get profileStatusQueued => '等待启动';
+
+  @override
+  String get profileStatusQueuedMessage => '等待前面的连接启动。点击可立即启动。';
 
   @override
   String get profileStatusStarted => '已连接';
@@ -1863,6 +2156,11 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get removeAtsign => '删除 Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return '已放弃注册 $enrollmentId。如需重试，请输入来自另一个注册的新 OTP，并在 Authenticator 的“请求”中拒绝 $enrollmentId。';
+  }
+
+  @override
   String get requestExpired => '原始请求已过期。请再次提交';
 
   @override
@@ -1870,11 +2168,6 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 
   @override
   String get resendPin => '重新发送 Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return '重试失败：$errorMessage，将重试...';
-  }
 
   @override
   String get roleAddNew => '添加新角色';
@@ -2065,7 +2358,8 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get validationErrorAtsignField => '字段必须是有效的 atsign';
 
   @override
-  String get validationErrorDeviceNameField => '字段只能包含小写字母、数字和下划线。';
+  String get validationErrorDeviceNameField =>
+      '请使用 2-36 个小写字母、数字、“_”或“-”，不能以“-”开头。';
 
   @override
   String get validationErrorEmptyField => '此字段不能为空';
@@ -2077,7 +2371,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get validationErrorLocalPortField => '数字必须介于 1024 和 65535 之间';
 
   @override
-  String get validationErrorLongField => '字段长度必须为 1-36 个字符';
+  String get validationErrorLongField => '字段长度必须为 2-36 个字符';
 
   @override
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
@@ -2113,6 +2407,25 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
 /// The translations for Chinese, as used in Hong Kong, using the Han script (`zh_Hant_HK`).
 class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   AppLocalizationsZhHantHk() : super('zh_Hant_HK');
+
+  @override
+  String abandonFailed(Object enrollmentId) {
+    return '無法放棄註冊 $enrollmentId：其金鑰仍在鑰匙圈中。請選擇「取消」重試。';
+  }
+
+  @override
+  String get abandonRequest => '放棄';
+
+  @override
+  String abandonRequestBody(Object atsign, Object enrollmentId) {
+    return '這將放棄 $atsign 的註冊 $enrollmentId。如需重試，需要從 $atsign 的另一個註冊取得新的 OTP。';
+  }
+
+  @override
+  String get abandonRequestTitle => '放棄此請求？';
+
+  @override
+  String get abandoningRequest => '正在放棄請求...';
 
   @override
   String get activate => '啟動';
@@ -2323,9 +2636,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get connectionRetrying => '正在重試連線 (保持運作)...';
 
   @override
-  String get connectionTimedOut => '連線逾時，將重試...';
-
-  @override
   String get connections => '連線';
 
   @override
@@ -2519,7 +2829,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get errorAuthenticationTimedOut => '身分驗證逾時。';
 
   @override
-  String get errorCramAuthFailed => '啟動金鑰被 atServer 拒絕。此啟動檔案可能已被使用。';
+  String get errorCramAuthFailed => '啟動金鑰被 atServer 拒絕。該金鑰可能已被使用。';
 
   @override
   String errorDuringStartupWithDetails(Object errorMessage) {
@@ -2574,6 +2884,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get fastest => '最快';
 
   @override
+  String get favoriteAdd => '加入最愛';
+
+  @override
+  String get favoriteRemove => '從最愛中移除';
+
+  @override
   String get feedback => '意見反應';
 
   @override
@@ -2594,6 +2910,85 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   @override
   String get findOtp =>
       '該請求將顯示在 Authenticator 的「請求」中，位於任何透過管理員金鑰連接至您 Atsign 的應用程式。';
+
+  @override
+  String get folderAddConnection => '新增連線';
+
+  @override
+  String get folderChooseStartAll => '選擇要啟動的連線';
+
+  @override
+  String get folderChooseStartAllDescription => '「全部啟動」會依次啟動已勾選的連線。';
+
+  @override
+  String get folderCollapse => '收合';
+
+  @override
+  String get folderDelete => '刪除資料夾';
+
+  @override
+  String get folderDeleteMessage => '此資料夾將被刪除。其中的連線將被保留。';
+
+  @override
+  String get folderExpand => '展開';
+
+  @override
+  String get folderLoadFailedRetry => '資料夾載入失敗。重試';
+
+  @override
+  String get folderMoveDown => '下移';
+
+  @override
+  String get folderMoveTo => '移至';
+
+  @override
+  String get folderMoveToFolder => '移至資料夾';
+
+  @override
+  String get folderMoveUp => '上移';
+
+  @override
+  String get folderName => '資料夾名稱';
+
+  @override
+  String get folderNameRequired => '請輸入資料夾名稱';
+
+  @override
+  String get folderNameTaken => '已有同名資料夾';
+
+  @override
+  String get folderNew => '新增資料夾';
+
+  @override
+  String get folderNone => '無資料夾';
+
+  @override
+  String get folderRename => '重新命名';
+
+  @override
+  String get folderRenameTitle => '重新命名資料夾';
+
+  @override
+  String get folderSaveFailed => '資料夾儲存失敗';
+
+  @override
+  String get folderStartAll => '全部啟動';
+
+  @override
+  String folderStartSome(Object count, Object total) {
+    return '啟動 $count/$total 個';
+  }
+
+  @override
+  String get folderStopAll => '全部停止';
+
+  @override
+  String folderStopSome(Object count, Object total) {
+    return '停止 $count/$total 個';
+  }
+
+  @override
+  String get folderSyncing => '資料夾同步完成後即可修改';
 
   @override
   String get getStarted => '開始使用';
@@ -2624,6 +3019,9 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get jsonPayloadCopiedToClipboard => 'JSON 承載已複製到剪貼簿';
+
+  @override
+  String get keepWaiting => '繼續等待';
 
   @override
   String get keys => '上傳 atKeys';
@@ -2719,9 +3117,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get noPorts => 'NoPorts';
 
   @override
-  String get nptStartupTimedout => 'Npt 啟動逾時';
-
-  @override
   String get ok => '確定';
 
   @override
@@ -2814,6 +3209,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get profileFailedUnknownMessage => '未提供原因';
 
   @override
+  String get profileFolder => '資料夾';
+
+  @override
+  String get profileFolderDescription => '此連線所在的資料夾。';
+
+  @override
   String get profileImportDialogTitle => '選擇匯入方法';
 
   @override
@@ -2849,6 +3250,39 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get profileRunningCloseMsgStart => '以下設定檔已連線：';
 
   @override
+  String get profileSearchClear => '清除搜尋';
+
+  @override
+  String get profileSearchHint => '搜尋連線';
+
+  @override
+  String get profileSearchNoResults => '沒有符合搜尋的連線';
+
+  @override
+  String get profileSortByNameMessage => '清單按名稱排序，項目會按名稱排列';
+
+  @override
+  String get profileSortFavoritesFirst => '最愛優先';
+
+  @override
+  String get profileSortFavoritesMessage => '開啟最愛優先時，最愛項目會保持在頂部';
+
+  @override
+  String get profileSortManual => '手動排序';
+
+  @override
+  String get profileSortNameAscending => '名稱（A 至 Z）';
+
+  @override
+  String get profileSortNameDescending => '名稱（Z 至 A）';
+
+  @override
+  String get profileSortReset => '恢復手動排序';
+
+  @override
+  String get profileSortTooltip => '排序';
+
+  @override
   String get profileStatusFailedLoad => '載入失敗';
 
   @override
@@ -2865,6 +3299,12 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get profileStatusLoading => '載入中';
+
+  @override
+  String get profileStatusQueued => '等待啟動';
+
+  @override
+  String get profileStatusQueuedMessage => '等待前面的連線啟動。按一下即可立即啟動。';
 
   @override
   String get profileStatusStarted => '已連線';
@@ -2915,6 +3355,11 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get removeAtsign => '移除 Atsign';
 
   @override
+  String requestAbandoned(Object enrollmentId) {
+    return '已放棄註冊 $enrollmentId。如需重試，請輸入來自另一個註冊的新 OTP，並在 Authenticator 的「請求」中拒絕 $enrollmentId。';
+  }
+
+  @override
   String get requestExpired => '原始請求已過期。請再次提交';
 
   @override
@@ -2922,11 +3367,6 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
 
   @override
   String get resendPin => '重新傳送 Pin';
-
-  @override
-  String retryFailedWithDetails(Object errorMessage) {
-    return '重試失敗：$errorMessage，將重試...';
-  }
 
   @override
   String get roleAddNew => '新增角色';
@@ -3117,7 +3557,8 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get validationErrorAtsignField => '欄位必須是有效的 atsign';
 
   @override
-  String get validationErrorDeviceNameField => '欄位只能包含小寫字母、數字和底線。';
+  String get validationErrorDeviceNameField =>
+      '請使用 2-36 個小寫字母、數字、「_」或「-」，不能以「-」開頭。';
 
   @override
   String get validationErrorEmptyField => '此欄位不得為空';
@@ -3129,7 +3570,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get validationErrorLocalPortField => '數字必須介於 1024 和 65535 之間';
 
   @override
-  String get validationErrorLongField => '欄位長度必須為 1-36 個字元';
+  String get validationErrorLongField => '欄位長度必須為 2-36 個字元';
 
   @override
   String get validationErrorRelayField => 'Relay 必須是有效的 atsign';

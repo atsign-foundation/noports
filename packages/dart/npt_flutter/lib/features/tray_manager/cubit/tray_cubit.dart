@@ -7,11 +7,13 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/onboarding.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/home_wrapper_widget.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/routes.dart';
 import 'package:npt_flutter/util/constants.dart';
+import 'package:npt_flutter/util/name_sort.dart';
 import 'package:npt_flutter/util/profile_status.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -32,6 +34,9 @@ enum TrayAction {
 
 class TrayCubit extends LoggingCubit<TrayState> {
   TrayCubit() : super(const TrayInitial());
+
+  /// Counts [reload] calls, so a reload that a later one overtook can tell.
+  int _reloads = 0;
 
   Future<void> initialize({AppLocalizations? localizations}) async {
     if (state is! TrayInitial || localizations == null) return;
@@ -101,7 +106,9 @@ class TrayCubit extends LoggingCubit<TrayState> {
     ProfilesRunningState? profilesRunningState,
     OnboardingState? onboardingState,
     ProfileState? profileState,
+    ProfileFolderState? profileFolderState,
   }) async {
+    final thisReload = ++_reloads;
     var context = App.navState.currentContext;
     if (context == null) return;
 
@@ -113,6 +120,8 @@ class TrayCubit extends LoggingCubit<TrayState> {
     favoriteState ??= context.read<FavoriteBloc>().state;
     profileListState ??= context.read<ProfileListBloc>().state;
     onboardingState ??= context.read<OnboardingCubit>().state;
+    profileFolderState ??= context.read<ProfileFolderBloc>().state;
+    profilesRunningState ??= context.read<ProfilesRunningCubit>().state;
     var showSettings = onboardingState.status == OnboardingStatus.onboarded;
 
     await init;
@@ -120,6 +129,33 @@ class TrayCubit extends LoggingCubit<TrayState> {
     // Guard against empty values
     if (favoriteState is! FavoritesLoaded) return;
     if (profileListState is! ProfileListLoaded) return;
+
+    var loadedProfiles = profileListState.profiles.toSet();
+    var running = profilesRunningState.socketConnectors;
+    var favoriteFolders = profileFolderState is ProfileFoldersLoaded
+        ? (profileFolderState.folders.where((folder) => folder.favorite).toList()
+            ..sort((a, b) => nameSortKey(a.name).compareTo(nameSortKey(b.name))))
+        : <ProfileFolder>[];
+    var folderMenuItems = favoriteFolders.map((folder) {
+      var uuids = folder.profileIds.where(loadedProfiles.contains).toList();
+      var startable = uuids.where(folder.startsWithAll).toList();
+      var startableRunning = startable.where(running.containsKey).length;
+      var anyRunning = uuids.any(running.containsKey);
+      var statusIcon = anyRunning ? ProfileStatus.on.emoji : ProfileStatus.off.emoji;
+      return MenuItem(
+        label: '$statusIcon ${folder.name} ($startableRunning/${startable.length})',
+        onClick: (_) {
+          var context = App.navState.currentContext;
+          if (context == null) return;
+          if (ProfileFolderActions.canStopAll(context, uuids)) {
+            ProfileFolderActions.stopAll(context, uuids);
+          } else {
+            ProfileFolderActions.startAll(context, startable);
+            if (Platform.isWindows) windowManager.show();
+          }
+        },
+      );
+    }).toList();
 
     /// Generate the new menu based on current state
     var favMenuItems = await Future.wait(
@@ -160,7 +196,7 @@ class TrayCubit extends LoggingCubit<TrayState> {
               statusIcon = ProfileStatus.off.emoji;
             }
             var label = '$statusIcon $displayName';
-            return MenuItem(
+            return (displayName ?? '', MenuItem(
               label: label,
               toolTip: status,
               onClick: (_) {
@@ -177,19 +213,25 @@ class TrayCubit extends LoggingCubit<TrayState> {
                   windowManager.show();
                 }
               },
-            );
+            ));
           }),
     );
+    favMenuItems.sort((a, b) => nameSortKey(a.$1).compareTo(nameSortKey(b.$1)));
 
     /// PERF: We should conditionally call setContextMenu if there was a state
     /// change which resulted in an actual change to the favorites list.
     /// Currently we just force call updates which is really inefficient
 
+    // NOTE: only the latest reload may set the menu; reloads overlap and can
+    // finish out of order.
+    if (thisReload != _reloads) return;
+
     /// Set the new menu
     await trayManager.setContextMenu(
       Menu(
         items: [
-          ...favMenuItems,
+          ...folderMenuItems,
+          ...favMenuItems.map((item) => item.$2),
           MenuItem.separator(),
           _getMenuItem(TrayAction.showDashboard, localizations),
           if (showSettings) _getMenuItem(TrayAction.showSettings, localizations),

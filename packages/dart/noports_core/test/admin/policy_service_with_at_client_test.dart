@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:at_client/at_client.dart';
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/admin.dart';
 import 'package:test/test.dart';
 
+import '../harness/noports_harness.dart';
 import '../sshnp/sshnp_mocks.dart';
 
 void main() {
@@ -235,6 +237,108 @@ void main() {
       expect(events.single['type'], 'DaemonHeartbeat');
       expect(events.single['daemon'], '@daemon');
       expect(uncaught, isEmpty);
+    });
+  });
+
+  group("Given the policy atSign's atServer holds a `cached:`, `public:` or"
+      " shared key in the admin policy service's groups namespace", () {
+    test('when PolicyServiceWithAtClient loads its groups, then it loads only'
+        ' keys the policy atSign owns, unshared, and skips the rest with a'
+        ' warning', () async {
+      const policy = '@policy';
+      const other = '@other';
+      final harness = NoPortsHarness.create(atSigns: {policy, other});
+      final policyClient = await harness.openClient(policy, namespace: 'sshnp');
+      final otherClient = await harness.openClient(other, namespace: 'sshnp');
+      String group(String id) => jsonEncode(UserGroup.empty(
+            id: id,
+            name: 'g$id',
+            description: '',
+          ));
+      final remote = PutRequestOptions()..useRemoteAtServer = true;
+
+      await policyClient.put(
+        AtKey()
+          ..key = '1'
+          ..namespace = 'groups.policy.sshnp'
+          ..sharedBy = policy,
+        group('1'),
+        putRequestOptions: remote,
+      );
+      final cached = await otherClient.notificationService.notify(
+        NotificationParams.forUpdate(
+          AtKey()
+            ..key = '7'
+            ..namespace = 'groups.policy.sshnp'
+            ..sharedWith = policy
+            ..sharedBy = other
+            ..metadata = (Metadata()..ttr = 3600),
+          value: group('7'),
+        ),
+        encryptValue: false,
+      );
+      expect(
+        cached.notificationStatusEnum,
+        NotificationStatusEnum.delivered,
+        reason: 'notifying 7',
+      );
+      expect(
+        await policyClient.put(
+          AtKey.public('8', namespace: 'groups.policy.sshnp', sharedBy: policy)
+              .build(),
+          group('8'),
+          putRequestOptions: remote,
+        ),
+        isTrue,
+        reason: 'saving a public key',
+      );
+      expect(
+        await policyClient.put(
+          AtKey()
+            ..key = '9'
+            ..namespace = 'groups.policy.sshnp'
+            ..sharedBy = policy
+            ..sharedWith = other,
+          group('9'),
+          putRequestOptions: PutRequestOptions()
+            ..shouldEncrypt = false
+            ..useRemoteAtServer = true,
+        ),
+        isTrue,
+        reason: 'saving a shared key',
+      );
+      harness.server[policy].storeAsIs(
+        '4.groups.policy.sshnp@other',
+        group('4'),
+      );
+
+      final store = PolicyServiceWithAtClient(atClient: policyClient);
+      final warnings = <String>[];
+      store.logger.logger.level = Level.ALL;
+      final subscription = store.logger.logger.onRecord
+          .where((r) => r.level == Level.WARNING)
+          .listen((r) => warnings.add(r.message));
+      try {
+        await store.init();
+      } finally {
+        await subscription.cancel();
+      }
+
+      expect(store.groups.keys, ['1']);
+      for (final skipped in [
+        'cached:@policy:7.groups.policy.sshnp@other',
+        'public:8.groups.policy.sshnp@policy',
+        '@other:9.groups.policy.sshnp@policy',
+        '4.groups.policy.sshnp@other',
+      ]) {
+        expect(
+          warnings.where(
+            (w) => w.contains(skipped) && w.contains('owns, unshared'),
+          ),
+          isNotEmpty,
+          reason: 'a warning naming $skipped',
+        );
+      }
     });
   });
 }

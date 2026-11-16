@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_client/at_client_mixins.dart';
-import 'package:at_utils/at_utils.dart';
 import 'package:meta/meta.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/src/common/default_args.dart';

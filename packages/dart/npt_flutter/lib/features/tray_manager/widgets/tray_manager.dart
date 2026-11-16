@@ -7,6 +7,7 @@ import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/features/favorite/favorite.dart';
 import 'package:npt_flutter/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:npt_flutter/features/profile/profile.dart';
+import 'package:npt_flutter/features/profile_folder/profile_folder.dart';
 import 'package:npt_flutter/features/profile_list/profile_list.dart';
 import 'package:npt_flutter/features/settings/settings.dart';
 import 'package:npt_flutter/features/tray_manager/tray_manager.dart';
@@ -46,6 +47,8 @@ class _TrayManagerState extends State<TrayManager>
         cubit.reload(localizations: localizations);
       case ProfileState _:
         cubit.reload(profileState: state);
+      case ProfileFolderState _:
+        cubit.reload(profileFolderState: state);
       default:
         cubit.reload(localizations: AppLocalizations.of(context));
     }
@@ -73,7 +76,13 @@ class _TrayManagerState extends State<TrayManager>
           /// still have to check
           BlocListener<FavoriteBloc, FavoritesState>(listener: reloadTray),
           BlocListener<ProfileListBloc, ProfileListState>(listener: reloadTray),
+          BlocListener<ProfileFolderBloc, ProfileFolderState>(
+            listener: reloadTray,
+          ),
           BlocListener<ProfilesRunningCubit, ProfilesRunningState>(
+            listener: reloadTray,
+          ),
+          BlocListener<ProfileStartQueueCubit, ProfileStartQueueState>(
             listener: reloadTray,
           ),
           BlocListener<SettingsBloc, SettingsState>(
@@ -98,13 +107,12 @@ class _TrayManagerState extends State<TrayManager>
           /// calls where we take the performance hit are:
           /// 1. In an asynchronous background task (who cares)
           /// 2. Worth it, compared to the potential maintenance costs
+          // NOTE: the profile cache owns these blocs; the tray only listens.
           ...profiles.map(
-            (uuid) => BlocProvider<ProfileBloc>(
+            (uuid) => BlocListener<ProfileBloc, ProfileState>(
               key: Key("TrayManager-$uuid"),
-              create: (context) => profileCacheCubit.getProfileBloc(uuid),
-              child: BlocListener<ProfileBloc, ProfileState>(
-                listener: reloadTray,
-              ),
+              bloc: profileCacheCubit.getProfileBloc(uuid),
+              listener: reloadTray,
             ),
           ),
         ],
@@ -135,7 +143,7 @@ class _TrayManagerState extends State<TrayManager>
 
   @override
   void dispose() {
-    windowManager.addListener(this);
+    windowManager.removeListener(this);
     trayManager.removeListener(this);
     super.dispose();
   }
