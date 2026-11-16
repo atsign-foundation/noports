@@ -1232,7 +1232,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get validationErrorDeviceNameField =>
-      'El campo solo puede contener letras minúsculas, dígitos, guiones bajos.';
+      'Usa de 2 a 36 minúsculas, dígitos, \"_\" o \"-\", sin empezar por \"-\".';
 
   @override
   String get validationErrorEmptyField => 'Este campo no puede quedar vacío';
@@ -1247,7 +1247,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get validationErrorLongField =>
-      'El campo debe tener entre 1 y 36 caracteres';
+      'El campo debe tener entre 2 y 36 caracteres';
 
   @override
   String get validationErrorRelayField => 'El relay debe ser un Atsign válido';

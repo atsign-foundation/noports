@@ -1229,7 +1229,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get validationErrorDeviceNameField =>
-      'O campo só pode conter letras minúsculas, dígitos e underscores.';
+      'Use de 2 a 36 minúsculas, dígitos, \"_\" ou \"-\", sem começar por \"-\".';
 
   @override
   String get validationErrorEmptyField =>
@@ -1245,7 +1245,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get validationErrorLongField =>
-      'O campo deve ter entre 1 e 36 caracteres';
+      'O campo deve ter entre 2 e 36 caracteres';
 
   @override
   String get validationErrorRelayField => 'O relay deve ser um Atsign válido';
@@ -2506,7 +2506,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get validationErrorDeviceNameField =>
-      'O campo só pode conter letras minúsculas, dígitos e underscores.';
+      'Use de 2 a 36 minúsculas, dígitos, \"_\" ou \"-\", sem começar com \"-\".';
 
   @override
   String get validationErrorEmptyField =>
@@ -2522,7 +2522,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get validationErrorLongField =>
-      'O campo deve ter entre 1 e 36 caracteres';
+      'O campo deve ter entre 2 e 36 caracteres';
 
   @override
   String get validationErrorRelayField => 'O relay deve ser um Atsign válido';
