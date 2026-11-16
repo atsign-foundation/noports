@@ -30,10 +30,24 @@ Desktop, never here.
 
 ## Platform notes
 
-* **Privileges.** The app runs as the ordinary user. Only operations that
-  need it go through `PrivilegedRunner`, which prompts each time; today
-  that is Linux config writes and systemctl. Keys the app writes are
+* **Privileges.** Installing NoPorts and this app needs root or
+  administrator rights and is the package manager's or the MSI's job, not
+  the app's. The app itself runs as the ordinary user. Only operations
+  that need it go through `PrivilegedRunner`, which prompts each time;
+  today that is Linux config writes and systemctl. Keys the app writes are
   always owned by the user.
+* **The daemon's account on Linux.** sshnpd runs as its unit's `User=`,
+  and that account is the one whose `~/.atsign/keys` it reads and whose
+  `~/.ssh/authorized_keys` it adds session keys to, so it has to be the
+  person who enrolled. The noports package ships
+  `/etc/systemd/system/sshnpd.service.d/override.conf` with `User=1000`
+  as a placeholder (the file `systemctl edit sshnpd` edits), and
+  universal.sh replaces it with the user who ran the install. The app does
+  the same for the user running it: when the unit's account differs, the
+  save-and-restart call also rewrites that `User=` line (or adds one) and
+  reloads systemd, and the result says so. `sudo systemctl edit sshnpd`
+  changes it afterwards; the Diagnostics tab reports keys the daemon's
+  account cannot read.
 * **Windows.** The linker's `/MANIFESTUAC` requests administrator so a UAC
   prompt appears on launch (Windows has no per-operation prompt); the user
   account is still the same, so keys go to `%USERPROFILE%\.atsign\keys`.

@@ -72,6 +72,10 @@ class DaemonPaths {
   /// Test hook.
   static set instance(DaemonPaths paths) => _instance = paths;
 
+  /// Forget the detected layout so the next read looks again, after a
+  /// change that moves it (the daemon's account on Linux).
+  static void refresh() => _instance = null;
+
   static DaemonPaths forTest({
     required Directory configDir,
     required Directory binDir,

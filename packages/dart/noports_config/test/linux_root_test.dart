@@ -84,10 +84,19 @@ void main() {
       final before = await manager_.status();
       expect(before.isRunning, isFalse);
 
+      // The package's unit says User=1000; the daemon must run as the
+      // person who enrolled (SUDO_USER here), like universal.sh arranges.
+      final me = LinuxServiceManager.currentUser();
       final script = manager_.privilegedRestartScript;
-      expect(script, 'systemctl restart sshnpd');
+      expect(script, endsWith('systemctl restart sshnpd'));
+      if (manager_.unitUid() != me.uid) {
+        expect(manager_.adoptedUser, me.name);
+        expect(script, contains('systemctl daemon-reload'));
+      }
       final ok = await cubit.save(andThen: script);
       expect(ok, isTrue, reason: cubit.state.error);
+      expect(manager_.unitUid(), me.uid, reason: 'unit now runs as $me');
+      expect(manager_.adoptedUser, isNull);
       expect(
         File('/etc/noports/sshnpd.yaml').readAsStringSync(),
         contains(device),

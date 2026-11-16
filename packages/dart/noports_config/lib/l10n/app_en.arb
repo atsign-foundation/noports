@@ -57,6 +57,14 @@
   "serviceStarted": "Service started",
   "serviceStopped": "Service stopped",
   "serviceRestarted": "Service restarted",
+  "serviceRunsAsNote": "The daemon now runs as {user}, the account whose ~/.atsign/keys it reads and that sessions sign in to. To change this later run: sudo systemctl edit sshnpd",
+  "@serviceRunsAsNote": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      }
+    }
+  },
   "deviceSummary": "Device {device} as {atsign}",
   "@deviceSummary": {"placeholders": {"device": {"type": "String"}, "atsign": {"type": "String"}}},
   "configuredManagers": "Managers: {managers}",

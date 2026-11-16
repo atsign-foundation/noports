@@ -290,6 +290,7 @@ class _ActionBar extends StatelessWidget {
     // Where both the write and the restart need an administrator prompt
     // (Linux), do them in one privileged call so there is a single prompt.
     final combined = restart ? service.manager.privilegedRestartScript : null;
+    final adopted = restart ? service.manager.adoptedUser : null;
     final ok = await cubit.save(andThen: combined);
     if (!context.mounted) return;
     if (!ok) {
@@ -312,7 +313,13 @@ class _ActionBar extends StatelessWidget {
     }
     if (!context.mounted) return;
     if (restarted) {
-      CustomSnackBar.success(context, strings.serviceRestarted);
+      CustomSnackBar.success(
+        context,
+        adopted == null
+            ? strings.serviceRestarted
+            : '${strings.serviceRestarted}. '
+                  '${strings.serviceRunsAsNote(adopted)}',
+      );
     } else {
       CustomSnackBar.error(
         context,

@@ -412,6 +412,12 @@ abstract class AppLocalizations {
   /// **'Service restarted'**
   String get serviceRestarted;
 
+  /// No description provided for @serviceRunsAsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The daemon now runs as {user}, the account whose ~/.atsign/keys it reads and that sessions sign in to. To change this later run: sudo systemctl edit sshnpd'**
+  String serviceRunsAsNote(String user);
+
   /// No description provided for @deviceSummary.
   ///
   /// In en, this message translates to:

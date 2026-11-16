@@ -86,6 +86,12 @@ abstract class ServiceManager {
   /// prompt, or where the two cannot be combined.
   String? get privilegedRestartScript => null;
 
+  /// The account the daemon will be switched to by the next start or
+  /// restart, where the platform ties the daemon to a login account that
+  /// is not yet this user (Linux systemd `User=`). Null when nothing will
+  /// change.
+  String? get adoptedUser => null;
+
   /// Most recent log lines, oldest first.
   Future<String> recentLogs({int lines = 200});
 

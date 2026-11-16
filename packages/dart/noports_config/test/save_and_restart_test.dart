@@ -112,6 +112,90 @@ void main() {
     },
   );
 
+  group('daemon account (systemd User=)', () {
+    LinuxServiceManager managerFor({
+      required int unitUid,
+      String name = 'alice',
+      int uid = 1234,
+    }) => LinuxServiceManager(
+      runner: runner,
+      dropInDir: '${tmp.path}/sshnpd.service.d',
+      appUser: (uid: uid, name: name),
+      unitUid: () => unitUid,
+    );
+
+    test('nothing is added when the unit already runs as this user', () {
+      final m = managerFor(unitUid: 1234);
+      expect(m.adoptedUser, isNull);
+      expect(m.adoptUserScript(), isEmpty);
+      expect(m.privilegedRestartScript, 'systemctl restart sshnpd');
+    });
+
+    test('nothing is added when systemd cannot be asked', () {
+      final m = LinuxServiceManager(
+        runner: runner,
+        appUser: (uid: 1234, name: 'alice'),
+        unitUid: () => null,
+      );
+      expect(m.adoptedUser, isNull);
+      expect(m.privilegedRestartScript, 'systemctl restart sshnpd');
+    });
+
+    test(
+      "the package's User=1000 is replaced in place, like universal.sh",
+      () async {
+        final m = managerFor(unitUid: 1000);
+        expect(m.adoptedUser, 'alice');
+        final dir = Directory(m.dropInDir)..createSync(recursive: true);
+        final override = File('${dir.path}/override.conf')
+          ..writeAsStringSync(
+            '# Configuration of sshnpd service\n[Unit]\n\n[Service]\n'
+            '# MANDATORY: User to run the daemon as\nUser=1000\n',
+          );
+        expect(
+          m.privilegedRestartScript,
+          endsWith('&& systemctl daemon-reload && systemctl restart sshnpd'),
+        );
+        await runner.runShell(m.adoptUserScript());
+        final text = override.readAsStringSync();
+        expect(text, contains('\nUser=alice\n'));
+        expect(text, isNot(contains('1000')));
+        expect(text, contains('# MANDATORY'), reason: 'edited, not replaced');
+      },
+    );
+
+    test('a missing override.conf is created', () async {
+      final m = managerFor(unitUid: 0);
+      await runner.runShell(m.adoptUserScript());
+      expect(
+        File('${m.dropInDir}/override.conf').readAsStringSync(),
+        '[Service]\nUser=alice\n',
+      );
+    });
+
+    test('a name the shell or systemd could misread falls back to the uid', () {
+      final m = managerFor(unitUid: 1000, name: 'Al Ice\$', uid: 4321);
+      expect(m.adoptUserScript(), contains('User=4321'));
+      expect(m.adoptUserScript(), isNot(contains('Al Ice')));
+    });
+
+    test('the combined save carries the adoption in the one call', () async {
+      final m = managerFor(unitUid: 1000);
+      final cubit = ConfigCubit(repo);
+      await cubit.load();
+      cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), '@dev');
+      cubit.setField(ConfigSchema.byOption(SshnpdOption.managers), ['@client']);
+      // Only the adoption half can run here; stand in for systemctl.
+      final ok = await cubit.save(andThen: '${m.adoptUserScript()} && true');
+      expect(ok, isTrue, reason: cubit.state.error);
+      expect(runner.scripts, hasLength(1), reason: 'still one prompt');
+      expect(
+        File('${m.dropInDir}/override.conf').readAsStringSync(),
+        contains('User=alice'),
+      );
+    });
+  });
+
   test('a plain save stays a single call with nothing appended', () async {
     final cubit = ConfigCubit(repo);
     await cubit.load();

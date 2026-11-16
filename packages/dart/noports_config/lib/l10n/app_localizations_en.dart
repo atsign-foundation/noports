@@ -176,6 +176,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serviceRestarted => 'Service restarted';
 
   @override
+  String serviceRunsAsNote(String user) {
+    return 'The daemon now runs as $user, the account whose ~/.atsign/keys it reads and that sessions sign in to. To change this later run: sudo systemctl edit sshnpd';
+  }
+
+  @override
   String deviceSummary(String device, String atsign) {
     return 'Device $device as $atsign';
   }

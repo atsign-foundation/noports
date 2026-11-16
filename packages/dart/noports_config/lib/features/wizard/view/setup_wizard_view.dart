@@ -34,6 +34,7 @@ class _SetupWizardViewState extends State<SetupWizardView> {
   _Phase _phase = _Phase.idle;
   String? _failure;
   bool _startedOk = false;
+  String? _adoptedUser;
   bool _prefilled = false;
 
   /// A fresh configuration starts with this computer's name as the device
@@ -113,6 +114,7 @@ class _SetupWizardViewState extends State<SetupWizardView> {
                       phase: _phase,
                       failure: _failure,
                       startedOk: _startedOk,
+                      adoptedUser: _adoptedUser,
                     ),
                   },
                 ),
@@ -174,6 +176,7 @@ class _SetupWizardViewState extends State<SetupWizardView> {
     final combined = installed && !legacy
         ? service.manager.privilegedRestartScript
         : null;
+    _adoptedUser = combined == null ? null : service.manager.adoptedUser;
     final saved = await config.save(andThen: combined);
     if (!saved) {
       setState(() {
@@ -463,10 +466,12 @@ class _FinishStep extends StatelessWidget {
     required this.phase,
     required this.failure,
     required this.startedOk,
+    this.adoptedUser,
   });
   final _Phase phase;
   final String? failure;
   final bool startedOk;
+  final String? adoptedUser;
 
   @override
   Widget build(BuildContext context) {
@@ -539,6 +544,14 @@ class _FinishStep extends StatelessWidget {
                 context,
               ).textTheme.bodyMedium?.copyWith(color: Colors.black87),
             ),
+            if (adoptedUser != null && startedOk) ...[
+              gapH8,
+              Text(
+                strings.serviceRunsAsNote(adoptedUser!),
+                key: const Key('wizard-runs-as'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
             gapH12,
             HealthResultsList(results: health.results),
           ],

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noports_config/platform/daemon_paths.dart';
 import 'package:noports_config/platform/service_manager.dart';
 
 enum ServiceAction { none, start, stop, restart, install }
@@ -110,6 +111,8 @@ class ServiceCubit extends Cubit<ServiceCubitState> {
   /// privileged call): wait for the unit to settle, refresh and reload the
   /// log. True when it is running.
   Future<bool> settleAfterRestart() => _run(ServiceAction.restart, () async {
+    // The restart may have changed the daemon's account (Linux User=).
+    DaemonPaths.refresh();
     final s = await _manager.waitFor((s) => !s.isTransitioning);
     if (!s.isRunning) {
       throw ServiceException(
