@@ -27,8 +27,11 @@ import 'package:noports_core/sshnpd.dart';
 ///   EE_DEVICE      the device atsign, bare or with @ (default cfgdev)
 ///   EE_MANAGER     the client atsign allowed to connect (default cfgmgr)
 ///   EE_RELAY       the relay atsign (default cfgrelay)
-/// and at_activate, sshnpd, sshnp and srvd on the PATH (~/.local/bin is
-/// added). Run with: flutter test --tags ee test/ee_enrollment_test.dart
+///   EE_BIN         directory holding sshnpd (default ~/.local/bin; the
+///                  Linux package puts it in /usr/bin)
+/// and at_activate, sshnpd, sshnp and srvd on the PATH (EE_BIN and
+/// ~/.local/bin are added). Run with:
+///   flutter test --tags ee test/ee_enrollment_test.dart
 class NoService extends ServiceManager {
   @override
   String get serviceName => 'none';
@@ -71,14 +74,12 @@ void main() {
   final device = '@${(env['EE_DEVICE'] ?? 'cfgdev').replaceFirst('@', '')}';
   final manager = '@${(env['EE_MANAGER'] ?? 'cfgmgr').replaceFirst('@', '')}';
   final relay = '@${(env['EE_RELAY'] ?? 'cfgrelay').replaceFirst('@', '')}';
-  final path = '${env['HOME']}/.local/bin:${env['PATH']}';
+  final bin = env['EE_BIN'] ?? '${env['HOME']}/.local/bin';
+  final path = '$bin:${env['HOME']}/.local/bin:${env['PATH']}';
   final procEnv = {'PATH': path};
 
-  Future<ProcessResult> atActivate(List<String> args) => Process.run(
-    'at_activate',
-    [...args, '-r', root],
-    environment: procEnv,
-  );
+  Future<ProcessResult> atActivate(List<String> args) =>
+      Process.run('at_activate', [...args, '-r', root], environment: procEnv);
 
   late Directory tmp;
   late DaemonPaths paths;
@@ -88,7 +89,7 @@ void main() {
     tmp = Directory.systemTemp.createTempSync('noports_config_ee');
     paths = DaemonPaths.forTest(
       configDir: Directory('${tmp.path}/etc/noports'),
-      binDir: Directory('${env['HOME']}/.local/bin'),
+      binDir: Directory(bin),
       userHomeDir: Directory('${tmp.path}/home'),
     );
     DaemonPaths.instance = paths;
@@ -110,7 +111,8 @@ void main() {
         '$keysDir/${device}_key.atKeys',
       ]);
       // The code is the last line; the rest is coloured progress text.
-      final otp = otpRes.stdout.toString()
+      final otp = otpRes.stdout
+          .toString()
           .replaceAll(RegExp(r'\x1B\[[0-9;]*[A-Za-z]'), '')
           .trim()
           .split('\n')
@@ -177,44 +179,48 @@ void main() {
 
   late File configFile;
 
-  test('the saved sshnpd.yaml passes the in-app checks and the doctor', () async {
-    final repo = ConfigRepository(
-      paths: paths,
-      template: () async => template,
-      runner: DirectRunner(),
-    );
-    final cubit = ConfigCubit(repo);
-    await cubit.load();
-    cubit.update((d) {
-      d.atsign = device.substring(1); // bare again; the setter normalizes
-      d.keysFile = deviceKeys.path;
-      d.managers = [manager.substring(1)];
-      d.deviceName = deviceName;
-    });
-    cubit.setField(ConfigSchema.byOption(SshnpdOption.rootServer), root);
-    cubit.setField(ConfigSchema.byOption(SshnpdOption.verbose), true);
-    expect(cubit.state.problems, isEmpty);
-    expect(await cubit.save(), isTrue);
-    configFile = repo.file;
-    final yaml = configFile.readAsStringSync();
-    expect(yaml, contains(device));
-    expect(yaml, contains(manager));
-    expect(yaml, contains(deviceName));
+  test(
+    'the saved sshnpd.yaml passes the in-app checks and the doctor',
+    () async {
+      final repo = ConfigRepository(
+        paths: paths,
+        template: () async => template,
+        runner: DirectRunner(),
+      );
+      final cubit = ConfigCubit(repo);
+      await cubit.load();
+      cubit.update((d) {
+        d.atsign = device.substring(1); // bare again; the setter normalizes
+        d.keysFile = deviceKeys.path;
+        d.managers = [manager.substring(1)];
+        d.deviceName = deviceName;
+      });
+      cubit.setField(ConfigSchema.byOption(SshnpdOption.rootServer), root);
+      cubit.setField(ConfigSchema.byOption(SshnpdOption.verbose), true);
+      expect(cubit.state.problems, isEmpty);
+      expect(await cubit.save(), isTrue);
+      configFile = repo.file;
+      final yaml = configFile.readAsStringSync();
+      expect(yaml, contains(device));
+      expect(yaml, contains(manager));
+      expect(yaml, contains(deviceName));
 
-    final health = HealthCubit(paths: paths, services: NoService());
-    final results = await health.run();
-    final failed = results.where((r) => r.level == CheckLevel.fail).toList();
-    // Only the service check may fail: there is no unit in a temp dir.
-    expect(failed.map((r) => r.title), ['Daemon service']);
-    expect(failed.single.message, contains('install'));
+      final health = HealthCubit(paths: paths, services: NoService());
+      final results = await health.run();
+      final failed = results.where((r) => r.level == CheckLevel.fail).toList();
+      // Only the service check may fail: there is no unit in a temp dir.
+      expect(failed.map((r) => r.title), ['Daemon service']);
+      expect(failed.single.message, contains('install'));
 
-    await health.runDoctor();
-    expect(health.state.error, isNull);
-    final out = health.state.doctorOutput!;
-    expect(out, isNot(contains('ProcessException')));
-    expect(out.toLowerCase(), contains('sshnpd'));
-    await health.close();
-  }, timeout: const Timeout(Duration(minutes: 2)));
+      await health.runDoctor();
+      expect(health.state.error, isNull);
+      final out = health.state.doctorOutput!;
+      expect(out, isNot(contains('ProcessException')));
+      expect(out.toLowerCase(), contains('sshnpd'));
+      await health.close();
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 
   test('sshnpd runs from that file and the manager sees the device', () async {
     final relayProc = await Process.start('srvd', [
@@ -259,7 +265,9 @@ void main() {
           '--daemon-ping-timeout',
           '5',
         ], environment: procEnv);
-        if ((ls.stdout.toString() + ls.stderr.toString()).contains(deviceName)) {
+        if ((ls.stdout.toString() + ls.stderr.toString()).contains(
+          deviceName,
+        )) {
           break;
         }
       }
@@ -267,7 +275,8 @@ void main() {
       expect(
         listing,
         contains(deviceName),
-        reason: 'listing:\n$listing\n\ndaemon:\n$daemonLog\n\nrelay:\n$relayLog',
+        reason:
+            'listing:\n$listing\n\ndaemon:\n$daemonLog\n\nrelay:\n$relayLog',
       );
     } finally {
       daemon.kill();

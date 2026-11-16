@@ -21,7 +21,10 @@ void main() {
   });
 
   test('hostname becomes a valid name', () {
-    expect(DeviceNames.fromHostname('Colins-MacBook-Pro.local'), 'colins-macbook-pro');
+    expect(
+      DeviceNames.fromHostname('Colins-MacBook-Pro.local'),
+      'colins-macbook-pro',
+    );
     expect(DeviceNames.fromHostname('srv01.example.com'), 'srv01');
     expect(DeviceNames.fromHostname('-weird'), 'weird');
     expect(DeviceNames.fromHostname('x'), 'default');

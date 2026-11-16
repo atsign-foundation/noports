@@ -85,7 +85,10 @@ void main() {
     // Not an atsign at all: kept as typed so validation can point at it.
     cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), 'bad name');
     expect(cubit.state.doc!.atsign, 'bad name');
-    expect(cubit.state.problems.map((p) => p.message).join(), contains('bad name'));
+    expect(
+      cubit.state.problems.map((p) => p.message).join(),
+      contains('bad name'),
+    );
   });
 
   test('device name follows the daemon rule', () async {

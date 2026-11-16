@@ -222,16 +222,17 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
       required rootDomain,
       required authenticator,
       secondaryAddressFinder,
-    }) => secureSocketLookUps(
-      onConnect: (connection) async {
-        await connection.sendSync('from:$atSign\n');
-      },
-    )(
-      atSign: atSign,
-      rootDomain: rootDomain,
-      authenticator: authenticator,
-      secondaryAddressFinder: secondaryAddressFinder,
-    );
+    }) =>
+        secureSocketLookUps(
+          onConnect: (connection) async {
+            await connection.sendSync('from:$atSign\n');
+          },
+        )(
+          atSign: atSign,
+          rootDomain: rootDomain,
+          authenticator: authenticator,
+          secondaryAddressFinder: secondaryAddressFinder,
+        );
   }
 
   static String describeError(Object e) => _describe(e);

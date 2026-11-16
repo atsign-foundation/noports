@@ -313,8 +313,9 @@ class _KeysStep extends StatelessWidget {
                   children: [
                     Text(
                       strings.wizardKeysDoneTitle(doc.atsign!),
-                      style: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(color: const Color(0xFF3E7D1F)),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: const Color(0xFF3E7D1F),
+                      ),
                     ),
                     gapH4,
                     Text(

@@ -57,9 +57,7 @@ void main() {
     cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), '@dev');
     cubit.setField(ConfigSchema.byOption(SshnpdOption.managers), ['@client']);
 
-    final restart = LinuxServiceManager(
-      runner: runner,
-    ).privilegedRestartScript;
+    final restart = LinuxServiceManager(runner: runner).privilegedRestartScript;
     expect(restart, 'systemctl restart sshnpd');
 
     // Stand in for systemctl: record that the restart ran after the write.

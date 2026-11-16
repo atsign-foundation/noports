@@ -127,7 +127,33 @@ flutter build windows --release
 
 On Windows, `flutter run` must itself be started from an elevated shell
 because of the `requireAdministrator` manifest. On macOS and Linux run it
-as yourself; the password prompt appears when you save or touch the service.
+as yourself; the password prompt appears when you save or touch the service
+(on Linux, "Save and restart" asks once: the restart rides in the same
+`pkexec` call as the write).
+
+### End-to-end tests against an ephemeral environment
+
+Two tagged suites exercise the real flows and are skipped unless they are
+pointed at an atsign ephemeral environment (EE, the `atsigncompany/ephemeral`
+image) with three atsigns onboarded by `at_activate onboard`: the device,
+the manager and a relay.
+
+```bash
+# enroll with a bare atsign (OTP issued and approved with at_activate),
+# save sshnpd.yaml, run the checks and the doctor, start sshnpd from that
+# file and list the device from the manager atsign
+EE_ROOT=vip.ve.atsign.zone:2500 EE_KEYS=/path/to/keys \
+  flutter test --tags ee test/ee_enrollment_test.dart
+
+# Linux only, as root, with the noports package installed: the real
+# /etc/noports, the packaged systemd unit and journald, one-call save and
+# restart, every in-app check and the doctor against the live unit
+sudo -E env PATH=$PATH EE_ROOT=... EE_DEVICE_KEYS=/path/@device_key.atKeys \
+  flutter test --tags linux-root test/linux_root_test.dart
+```
+
+`EE_BIN` points the first suite at the daemon binaries (`/usr/bin` for the
+Linux package; `~/.local/bin` by default).
 
 ## CI and test builds
 

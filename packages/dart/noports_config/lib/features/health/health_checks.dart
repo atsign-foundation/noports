@@ -108,9 +108,11 @@ class KeysFileCheck extends HealthCheck {
       return fail('Could not work out where the keys file should be.');
     }
     if (!file.existsSync()) {
+      final serviceHome = ctx.paths.serviceHomeDir?.path;
       final hint = doc.keysFile == null
-          ? ' The service does not run as you, so ~/.atsign/keys means the service '
-                'account\'s home. Set the keys path explicitly (enrolling on the Keys tab does this).'
+          ? ' No keys path is set, so the daemon looks in its own account\'s '
+                '~/.atsign/keys${serviceHome == null ? '' : ' ($serviceHome)'}. '
+                'Set the keys path explicitly (enrolling on the Keys tab does this).'
           : '';
       return fail('${file.path} not found.$hint', fix: HealthFix.keys);
     }
