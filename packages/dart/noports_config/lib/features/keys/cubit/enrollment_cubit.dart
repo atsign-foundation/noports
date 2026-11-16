@@ -1,10 +1,15 @@
 import 'dart:io';
 
-import 'package:at_client/at_client.dart'
-    show AtsignLifecycle, FileAtKeysIo, PendingEnrollment;
+import 'package:at_client/at_client_io.dart'
+    show
+        AtClientPreference,
+        AtsignLifecycle,
+        CacheableSecondaryAddressFinder,
+        FileAtKeysIo,
+        PendingEnrollment,
+        secureSocketLookUps;
 import 'package:at_commons/at_commons.dart' show AtRootDomain, Atsign;
-import 'package:at_onboarding_cli/at_onboarding_cli.dart'
-    show AtOnboardingPreference;
+import 'package:at_lookup/at_lookup_io.dart' show AtLookUpFactory;
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noports_config/features/keys/keys_repository.dart';
@@ -113,7 +118,7 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
     final code = passcode.trim();
     if (atsign == null) {
       emit(
-        state.copyWith(error: '"${rawAtsign.trim()}" is not a valid atSign.'),
+        state.copyWith(error: '"${rawAtsign.trim()}" is not a valid atsign.'),
       );
       return;
     }
@@ -135,13 +140,15 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
     try {
       await dest.parent.create(recursive: true);
       final root = AtRootDomain.parse(rootDomain);
-      final preference = AtOnboardingPreference()
+      final preference = AtClientPreference()
         ..rootDomain = root.rootDomain
-        ..rootPort = root.rootPort
-        ..atKeysFilePath = dest.path
-        ..appName = appName
-        ..deviceName = device;
+        ..rootPort = root.rootPort;
       final keys = FileAtKeysIo(filePath: (_) => dest.path);
+      final lookUps = lookUpsFor(rootDomain);
+      final finder = CacheableSecondaryAddressFinder(
+        root.rootDomain,
+        root.rootPort,
+      );
       final at = Atsign(atsign);
 
       // A keyfile holding a request submitted earlier for this app and
@@ -152,7 +159,8 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
         device: device,
         keys: keys,
         preference: preference,
-        lookUps: preference.lookUps,
+        lookUps: lookUps,
+        secondaryAddressFinder: finder,
       );
       if (pending == null && await dest.exists()) {
         throw StateError(
@@ -168,7 +176,8 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
         namespaces: namespaces,
         keys: keys,
         preference: preference,
-        lookUps: preference.lookUps,
+        lookUps: lookUps,
+        secondaryAddressFinder: finder,
       );
       if (_cancelled) return;
       emit(
@@ -203,11 +212,49 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
     _cancelled = true;
   }
 
+  /// Connections for [rootDomain]: through the proxy when it names one
+  /// (`proxy:host:port`, as sshnpd's --root-server accepts), TLS sockets
+  /// otherwise. Mirrors at_client_cli's lookUpsFor, which is not exported.
+  static AtLookUpFactory lookUpsFor(String rootDomain) {
+    if (!rootDomain.startsWith('proxy:')) return secureSocketLookUps();
+    return ({
+      required atSign,
+      required rootDomain,
+      required authenticator,
+      secondaryAddressFinder,
+    }) => secureSocketLookUps(
+      onConnect: (connection) async {
+        await connection.sendSync('from:$atSign\n');
+      },
+    )(
+      atSign: atSign,
+      rootDomain: rootDomain,
+      authenticator: authenticator,
+      secondaryAddressFinder: secondaryAddressFinder,
+    );
+  }
+
+  static String describeError(Object e) => _describe(e);
+
   static String _describe(Object e) {
     var s = e.toString().replaceFirst(
       RegExp(r'^(\w*Exception|Bad state): '),
       '',
     );
+    if (s.contains('CERTIFICATE_VERIFY_FAILED') ||
+        s.contains('HandshakeException')) {
+      return 'The secure connection to the atServer could not be verified '
+          '(CERTIFICATE_VERIFY_FAILED). This machine is missing the root '
+          'certificates that TLS needs: install the ca-certificates package '
+          '(Linux) or check the system trust store, then try again.';
+    }
+    if (s.contains('AT0032') || s.contains('Another enrollment with id')) {
+      final name = RegExp(r'device name: (\S+)').firstMatch(s)?.group(1);
+      return 'A device called ${name ?? 'this'} is already enrolled for this '
+          'atsign (for example from an earlier install). Use a different '
+          'device name, or revoke the old enrollment from NoPorts Desktop\'s '
+          'Authenticator tab and try again.';
+    }
     if (s.contains('denied')) {
       return 'The enrollment request was denied in NoPorts Desktop.';
     }

@@ -80,6 +80,12 @@ abstract class ServiceManager {
     await start();
   }
 
+  /// A shell line that restarts (or starts) the service, for platforms
+  /// where that needs the same administrator prompt as writing the config
+  /// so both can go in one privileged call. Null where [restart] needs no
+  /// prompt, or where the two cannot be combined.
+  String? get privilegedRestartScript => null;
+
   /// Most recent log lines, oldest first.
   Future<String> recentLogs({int lines = 200});
 

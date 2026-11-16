@@ -143,11 +143,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privilegePromptNote =>
-      'Saving the configuration and starting or stopping the service need administrator rights. You will be asked to authenticate each time; everything else runs as you.';
+      'Saving the configuration and starting or stopping the service need administrator rights, so you will be asked to authenticate for those. Save and restart asks once. Everything else runs as you.';
 
   @override
-  String get serviceNotInstalledBody =>
-      'No sshnpd service is registered on this machine. On Windows, reinstall NoPorts from the MSI with the daemon service feature selected. On Linux, install the noports package with apt or dnf (see apt.noports.com / rpm.noports.com); it provides the systemd unit.';
+  String get installationGuide => 'Installation guide';
 
   @override
   String get serviceNotInstalledInstallable =>
@@ -268,11 +267,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get keysTitle => 'Device atSign keys';
+  String get keysTitle => 'Device atsign keys';
 
   @override
   String get keysSubtitle =>
-      'The daemon needs the .atKeys file for the device atSign. Import one from another machine, or activate a brand new atSign here.';
+      'The daemon needs the .atKeys file for the device atsign. Import one from another machine, or activate a brand new atsign here.';
 
   @override
   String get keysCurrent => 'Keys file in use';
@@ -296,7 +295,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importKeysHint =>
-      'Only if you already have a keys file for the device atSign, for example from a fleet deployment. Normally you enroll instead.';
+      'Only if you already have a keys file for the device atsign, for example from a fleet deployment. Normally you enroll instead.';
 
   @override
   String keysImported(String atsign) {
@@ -310,14 +309,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String keysAtsignMismatch(String fileAtsign, String configAtsign) {
-    return 'This file is for $fileAtsign but the configured device atSign is $configAtsign. Use it anyway and change the device atSign?';
+    return 'This file is for $fileAtsign but the configured device atsign is $configAtsign. Use it anyway and change the device atsign?';
   }
 
   @override
   String get useAnyway => 'Use this file';
 
   @override
-  String get enterAtsign => 'Device atSign';
+  String get enterAtsign => 'Device atsign';
 
   @override
   String get enrollTitle => 'Enroll this device';
@@ -330,14 +329,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enrollCardBody =>
-      'Cuts a new set of keys for the device atSign using APKAM and saves them in your ~/.atsign/keys. The request is approved from the NoPorts Desktop app on your client, which holds the atSign\'s manager keys.';
+      'Cuts a new set of keys for the device atsign using APKAM and saves them in your ~/.atsign/keys. The request is approved from the NoPorts Desktop app on your client, which holds the atsign\'s manager keys.';
 
   @override
   String get enrollHowTitle => 'Before you start';
 
   @override
   String get enrollHowStep1 =>
-      '1. In NoPorts Desktop on your client, sign in with the device atSign and open the Authenticator tab.';
+      '1. In NoPorts Desktop on your client, sign in with the device atsign and open the Authenticator tab.';
 
   @override
   String get enrollHowStep2 =>
@@ -345,7 +344,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enrollHowStep3 =>
-      '3. After you press Enroll here, approve the request in the same Authenticator tab.';
+      '3. After you click Enroll this device below, approve the request in the Authenticator tab of NoPorts Desktop.';
 
   @override
   String get enrollDeviceName => 'Device name';
@@ -379,6 +378,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Keep a backup of the .atKeys file somewhere safe. If it is lost the device has to be enrolled again.';
 
   @override
+  String get backupKeys => 'Back up keys';
+
+  @override
+  String keysBackedUp(String path) {
+    return 'Keys copied to $path';
+  }
+
+  @override
+  String keysBackupFailed(String message) {
+    return 'Could not back up the keys: $message';
+  }
+
+  @override
   String get healthTitle => 'Diagnostics';
 
   @override
@@ -407,6 +419,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkFail => 'Fail';
+
+  @override
+  String get openConfigurationTab => 'Open the Configuration tab';
+
+  @override
+  String get openKeysTab => 'Open the Keys tab';
 
   @override
   String checksSummary(int passed, int warnings, int failed) {
@@ -442,12 +460,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String wizardKeysDoneTitle(String atsign) {
+    return '$atsign is enrolled and its keys are saved on this machine.';
+  }
+
+  @override
+  String get wizardKeysDoneBody =>
+      'This step is done. Click Next to choose who may connect.';
+
+  @override
   String get wizardAccessBody =>
-      'Which client atSigns may connect to this device? You can add more later on the Configuration tab.';
+      'Which client atsigns may connect to this device? You can add more later on the Configuration tab.';
 
   @override
   String get wizardDeviceBody =>
-      'Which atSign does this device run as, and what is it called? Clients use both to pick this machine. The device atSign is the one you activated in NoPorts Desktop for this device.';
+      'Which atsign does this device run as, and what is it called? Clients use both to pick this machine. The device atsign is the one you activated in NoPorts Desktop for this device. The name starts as this computer\'s name; change it if you like.';
 
   @override
   String get wizardFinishBody => 'Save the configuration and start the daemon.';
@@ -463,7 +490,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wizardComplete =>
-      'This device is ready. Connect to it from a NoPorts client using the device atSign and name above.';
+      'This device is ready. Connect to it from a NoPorts client using the device atsign and name above.';
 
   @override
   String get wizardCompleteWithIssues =>

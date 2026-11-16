@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noports_config/features/config/config_repository.dart';
 import 'package:noports_config/features/config/model/config_schema.dart';
 import 'package:noports_config/features/config/model/sshnpd_config_document.dart';
+import 'package:noports_config/platform/atsigns.dart';
 
 enum ConfigStatus { initial, loading, ready, error }
 
@@ -117,8 +118,28 @@ class ConfigCubit extends Cubit<ConfigState> {
   void setField(ConfigField field, Object? value) {
     final doc = state.doc;
     if (doc == null) return;
-    doc.set(field.path, value);
+    doc.set(field.path, normalizeForField(field, value));
     emit(state.copyWith(clearYamlError: true));
+  }
+
+  /// Atsign fields always store the "@name" form, whatever was typed, so
+  /// a bare "alice" becomes "@alice" rather than an invalid value in the
+  /// YAML (and a keys file the app then cannot find). Anything that is not
+  /// an atsign at all is kept as typed so validation can name it.
+  static Object? normalizeForField(ConfigField field, Object? value) {
+    switch (field.kind) {
+      case FieldKind.atsign:
+        if (value is! String) return value;
+        return Atsigns.normalize(value) ?? value.trim();
+      case FieldKind.atsignList:
+        if (value is! List) return value;
+        return [
+          for (final v in value)
+            Atsigns.normalize(v.toString()) ?? v.toString().trim(),
+        ];
+      default:
+        return value;
+    }
   }
 
   /// Convenience used by the wizard and keys import.
@@ -142,13 +163,17 @@ class ConfigCubit extends Cubit<ConfigState> {
 
   /// Returns true on success. Validation problems are exposed through
   /// [ConfigState.problems]; the caller decides whether to show them.
-  Future<bool> save({bool force = false}) async {
+  ///
+  /// [andThen] is a shell script run right after the file is written, in
+  /// the same privileged call where the write itself needs one, so the
+  /// user sees a single prompt for "save and restart" (Linux: pkexec).
+  Future<bool> save({bool force = false, String? andThen}) async {
     final doc = state.doc;
     if (doc == null) return false;
     if (!force && doc.validate().isNotEmpty) return false;
     emit(state.copyWith(saving: true, clearError: true));
     try {
-      await _repo.save(doc);
+      await _repo.save(doc, andThen: andThen);
       emit(
         state.copyWith(saving: false, savedSource: doc.source, existed: true),
       );

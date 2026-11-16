@@ -11,7 +11,7 @@ import 'package:noports_config/widgets/custom_snack_bar.dart';
 
 /// The ways of getting device keys onto this machine, shared by the Keys
 /// tab and the setup wizard. Both update the working configuration
-/// (atSign, device name and keys path); saving is left to the caller.
+/// (atsign, device name and keys path); saving is left to the caller.
 class KeysActions {
   KeysActions._();
 
@@ -36,6 +36,33 @@ class KeysActions {
     return outcome.atsign;
   }
 
+  /// Save a copy of the device's keys file where the user chooses, e.g. a
+  /// USB stick or a password manager's attachment folder.
+  static Future<bool> backupKeys(BuildContext context, File keysFile) async {
+    final strings = AppLocalizations.of(context);
+    final name = keysFile.uri.pathSegments.last;
+    final path = await FilePicker.saveFile(
+      dialogTitle: strings.backupKeys,
+      fileName: name,
+      type: FileType.custom,
+      allowedExtensions: ['atKeys'],
+    );
+    if (path == null || !context.mounted) return false;
+    try {
+      final dest = await keysFile.copy(path);
+      await KeysRepository.restrictPermissions(dest);
+      if (context.mounted) {
+        CustomSnackBar.success(context, strings.keysBackedUp(dest.path));
+      }
+      return true;
+    } catch (e) {
+      if (context.mounted) {
+        CustomSnackBar.error(context, strings.keysBackupFailed(e.toString()));
+      }
+      return false;
+    }
+  }
+
   /// Pick an existing .atKeys file, copy it into the managed directory and
   /// point the config at it. For fleet deployments and recovery.
   static Future<String?> importKeys(BuildContext context) async {
@@ -55,7 +82,7 @@ class KeysActions {
       CustomSnackBar.error(
         context,
         strings.keysImportFailed(
-          'Could not tell which atSign this file is for.',
+          'Could not tell which atsign this file is for.',
         ),
       );
       return null;

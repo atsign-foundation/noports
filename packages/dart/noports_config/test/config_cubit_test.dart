@@ -70,6 +70,42 @@ void main() {
     expect(File('${repo.file.path}.tmp').existsSync(), isFalse);
   });
 
+  test('atsign fields store @name whatever was typed', () async {
+    final cubit = ConfigCubit(repo);
+    await cubit.load();
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), 'CfgDev');
+    expect(cubit.state.doc!.atsign, '@cfgdev');
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.managers), [
+      'client',
+      '@Other',
+    ]);
+    expect(cubit.state.doc!.managers, ['@client', '@other']);
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.policyManager), 'pol');
+    expect(cubit.state.doc!.policyManager, '@pol');
+    // Not an atsign at all: kept as typed so validation can point at it.
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), 'bad name');
+    expect(cubit.state.doc!.atsign, 'bad name');
+    expect(cubit.state.problems.map((p) => p.message).join(), contains('bad name'));
+  });
+
+  test('device name follows the daemon rule', () async {
+    final cubit = ConfigCubit(repo);
+    await cubit.load();
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), '@dev');
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.managers), ['@c']);
+    final device = ConfigSchema.byOption(SshnpdOption.device);
+    for (final bad in ['My-PC', 'x', '-pc']) {
+      cubit.setField(device, bad);
+      expect(
+        cubit.state.problems.map((p) => p.option),
+        contains(SshnpdOption.device),
+        reason: bad,
+      );
+    }
+    cubit.setField(device, 'my-pc');
+    expect(cubit.state.problems, isEmpty);
+  });
+
   test('revert restores saved text, replaceYaml reports errors', () async {
     final cubit = ConfigCubit(repo);
     await cubit.load();

@@ -2,7 +2,7 @@ import 'package:noports_core/sshnpd.dart';
 
 /// Which part of the form a field belongs to. Order here is display order.
 enum ConfigSection {
-  atsign('Device atSign'),
+  atsign('Device atsign'),
   access('Access control'),
   device('Device'),
   ssh('SSH'),
@@ -85,14 +85,14 @@ class ConfigSchema {
   ConfigSchema._();
 
   static const List<ConfigField> fields = [
-    // Device atSign
+    // Device atsign
     ConfigField(
       option: SshnpdOption.atsign,
-      label: 'Device atSign',
+      label: 'Device atsign',
       kind: FieldKind.atsign,
       section: ConfigSection.atsign,
       description:
-          'The atSign this device runs as. Its keys must be present '
+          'The atsign this device runs as. Its keys must be present '
           'on this machine (see the Keys tab).',
       required: true,
       placeholder: '@mydevice_np',
@@ -103,7 +103,7 @@ class ConfigSchema {
       kind: FieldKind.filePath,
       section: ConfigSection.atsign,
       description:
-          'Path to the .atKeys file for the device atSign. Leave '
+          'Path to the .atKeys file for the device atsign. Leave '
           'empty to use the service account\'s ~/.atsign/keys directory. '
           'Importing keys on the Keys tab fills this in for you.',
     ),
@@ -122,7 +122,7 @@ class ConfigSchema {
       section: ConfigSection.atsign,
       description:
           'Leave as root.atsign.org unless you host your own '
-          'atSigns. Use proxy:host:port to go through a proxy.',
+          'atsigns. Use proxy:host:port to go through a proxy.',
       advanced: true,
       placeholder: 'root.atsign.org',
     ),
@@ -130,21 +130,21 @@ class ConfigSchema {
     // Access control
     ConfigField(
       option: SshnpdOption.managers,
-      label: 'Manager atSigns',
+      label: 'Manager atsigns',
       kind: FieldKind.atsignList,
       section: ConfigSection.access,
       description:
-          'Client atSigns allowed to connect to this device. At '
-          'least one manager or a policy atSign is required.',
+          'Client atsigns allowed to connect to this device. At '
+          'least one manager or a policy atsign is required.',
       placeholder: '@myclient',
     ),
     ConfigField(
       option: SshnpdOption.policyManager,
-      label: 'Policy atSign',
+      label: 'Policy atsign',
       kind: FieldKind.atsign,
       section: ConfigSection.access,
       description:
-          'Optional. An atSign running a NoPorts policy service '
+          'Optional. An atsign running a NoPorts policy service '
           'that decides who may connect. Managers above bypass policy.',
       placeholder: '@mypolicy',
     ),
@@ -156,7 +156,7 @@ class ConfigSchema {
       description:
           'host:port pairs clients may reach through this device. '
           'Empty means localhost:22 and localhost:3389, or *:* when a policy '
-          'atSign is set.',
+          'atsign is set.',
       placeholder: 'localhost:3389',
     ),
 
@@ -168,7 +168,8 @@ class ConfigSchema {
       section: ConfigSection.device,
       description:
           'Name clients use to pick this device when several share '
-          'one atSign. Letters, numbers, underscore and dash only.',
+          'one atsign. 2-36 lowercase letters, digits, "_" or "-", not '
+          'starting with "-".',
       placeholder: 'default',
     ),
     ConfigField(
@@ -188,7 +189,7 @@ class ConfigSchema {
       section: ConfigSection.device,
       description:
           'Do not advertise this device\'s details to manager '
-          'atSigns. It still answers pings.',
+          'atsigns. It still answers pings.',
       advanced: true,
     ),
 
@@ -281,7 +282,7 @@ class ConfigSchema {
       kind: FieldKind.boolean,
       section: ConfigSection.runtime,
       description:
-          'Set after resetting one of your atSigns so the daemon '
+          'Set after resetting one of your atsigns so the daemon '
           'picks up its new public key. Turn off again afterwards.',
       advanced: true,
     ),

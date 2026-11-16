@@ -19,13 +19,18 @@ class KeysRepository {
   final DaemonPaths? _paths;
   DaemonPaths get paths => _paths ?? DaemonPaths.instance;
 
-  /// The atSign a .atKeys file belongs to. Files written by the atPlatform
-  /// tooling carry it as the one JSON key that starts with '@'; otherwise
-  /// fall back to the conventional `@name_key.atKeys` file name.
+  /// The atsign a .atKeys file belongs to. Files written by at_auth 4
+  /// carry it in an `atsign` field; older files carry it as the one JSON
+  /// key that starts with '@'. Otherwise fall back to the conventional
+  /// `@name_key.atKeys` file name.
   static String? atsignOf(File file) {
     try {
       final json = jsonDecode(file.readAsStringSync());
       if (json is Map) {
+        final named = json['atsign'];
+        if (named is String && Atsigns.isValid(named)) {
+          return Atsigns.normalize(named);
+        }
         for (final k in json.keys) {
           if (k is String && k.startsWith('@')) return Atsigns.normalize(k);
         }
@@ -50,7 +55,7 @@ class KeysRepository {
   }
 
   /// Copies [source] to the user's keys directory. Returns the destination.
-  /// If a different file for the same atSign is already there it is left
+  /// If a different file for the same atsign is already there it is left
   /// alone and a [KeysException] is thrown; the user must move it first.
   Future<File> import(File source, String atsign) async {
     if (!await source.exists()) {

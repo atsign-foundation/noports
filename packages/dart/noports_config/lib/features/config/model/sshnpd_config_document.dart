@@ -1,4 +1,5 @@
 import 'package:noports_config/platform/atsigns.dart';
+import 'package:noports_config/platform/device_names.dart';
 import 'package:noports_config/features/config/model/config_schema.dart';
 import 'package:noports_core/sshnpd.dart';
 import 'package:yaml/yaml.dart';
@@ -163,7 +164,7 @@ class SshnpdConfigDocument {
     return [];
   }
 
-  /// Adds the '@' when the value is a plausible atSign; leaves anything
+  /// Adds the '@' when the value is a plausible atsign; leaves anything
   /// else untouched so validation can report it instead of throwing.
   static String? _formatAtsign(String? v) {
     if (v == null) return null;
@@ -179,17 +180,17 @@ class SshnpdConfigDocument {
     final a = atsign;
     if (a == null) {
       problems.add(
-        ConfigProblem(SshnpdOption.atsign, 'A device atSign is required.'),
+        ConfigProblem(SshnpdOption.atsign, 'A device atsign is required.'),
       );
     } else if (!isValidAtsign(a)) {
       problems.add(
-        ConfigProblem(SshnpdOption.atsign, '"$a" is not a valid atSign.'),
+        ConfigProblem(SshnpdOption.atsign, '"$a" is not a valid atsign.'),
       );
     }
     for (final m in managers) {
       if (!isValidAtsign(m)) {
         problems.add(
-          ConfigProblem(SshnpdOption.managers, '"$m" is not a valid atSign.'),
+          ConfigProblem(SshnpdOption.managers, '"$m" is not a valid atsign.'),
         );
       }
     }
@@ -198,7 +199,7 @@ class SshnpdConfigDocument {
       problems.add(
         ConfigProblem(
           SshnpdOption.policyManager,
-          '"$pm" is not a valid atSign.',
+          '"$pm" is not a valid atsign.',
         ),
       );
     }
@@ -206,7 +207,7 @@ class SshnpdConfigDocument {
       problems.add(
         ConfigProblem(
           SshnpdOption.managers,
-          'Add at least one manager atSign or a policy atSign, otherwise nobody can connect.',
+          'Add at least one manager atsign or a policy atsign, otherwise nobody can connect.',
         ),
       );
     }
@@ -233,13 +234,8 @@ class SshnpdConfigDocument {
       }
     }
     final dn = deviceName;
-    if (dn != null && !RegExp(r'^[a-zA-Z0-9_-]{1,36}$').hasMatch(dn)) {
-      problems.add(
-        ConfigProblem(
-          SshnpdOption.device,
-          'Device name may only contain letters, numbers, underscore and dash (max 36).',
-        ),
-      );
+    if (dn != null && !DeviceNames.isValid(dn)) {
+      problems.add(ConfigProblem(SshnpdOption.device, DeviceNames.rule));
     }
     return problems;
   }

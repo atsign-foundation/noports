@@ -355,14 +355,14 @@ abstract class AppLocalizations {
   /// No description provided for @privilegePromptNote.
   ///
   /// In en, this message translates to:
-  /// **'Saving the configuration and starting or stopping the service need administrator rights. You will be asked to authenticate each time; everything else runs as you.'**
+  /// **'Saving the configuration and starting or stopping the service need administrator rights, so you will be asked to authenticate for those. Save and restart asks once. Everything else runs as you.'**
   String get privilegePromptNote;
 
-  /// No description provided for @serviceNotInstalledBody.
+  /// No description provided for @installationGuide.
   ///
   /// In en, this message translates to:
-  /// **'No sshnpd service is registered on this machine. On Windows, reinstall NoPorts from the MSI with the daemon service feature selected. On Linux, install the noports package with apt or dnf (see apt.noports.com / rpm.noports.com); it provides the systemd unit.'**
-  String get serviceNotInstalledBody;
+  /// **'Installation guide'**
+  String get installationGuide;
 
   /// No description provided for @serviceNotInstalledInstallable.
   ///
@@ -565,13 +565,13 @@ abstract class AppLocalizations {
   /// No description provided for @keysTitle.
   ///
   /// In en, this message translates to:
-  /// **'Device atSign keys'**
+  /// **'Device atsign keys'**
   String get keysTitle;
 
   /// No description provided for @keysSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'The daemon needs the .atKeys file for the device atSign. Import one from another machine, or activate a brand new atSign here.'**
+  /// **'The daemon needs the .atKeys file for the device atsign. Import one from another machine, or activate a brand new atsign here.'**
   String get keysSubtitle;
 
   /// No description provided for @keysCurrent.
@@ -613,7 +613,7 @@ abstract class AppLocalizations {
   /// No description provided for @importKeysHint.
   ///
   /// In en, this message translates to:
-  /// **'Only if you already have a keys file for the device atSign, for example from a fleet deployment. Normally you enroll instead.'**
+  /// **'Only if you already have a keys file for the device atsign, for example from a fleet deployment. Normally you enroll instead.'**
   String get importKeysHint;
 
   /// No description provided for @keysImported.
@@ -631,7 +631,7 @@ abstract class AppLocalizations {
   /// No description provided for @keysAtsignMismatch.
   ///
   /// In en, this message translates to:
-  /// **'This file is for {fileAtsign} but the configured device atSign is {configAtsign}. Use it anyway and change the device atSign?'**
+  /// **'This file is for {fileAtsign} but the configured device atsign is {configAtsign}. Use it anyway and change the device atsign?'**
   String keysAtsignMismatch(String fileAtsign, String configAtsign);
 
   /// No description provided for @useAnyway.
@@ -643,7 +643,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterAtsign.
   ///
   /// In en, this message translates to:
-  /// **'Device atSign'**
+  /// **'Device atsign'**
   String get enterAtsign;
 
   /// No description provided for @enrollTitle.
@@ -667,7 +667,7 @@ abstract class AppLocalizations {
   /// No description provided for @enrollCardBody.
   ///
   /// In en, this message translates to:
-  /// **'Cuts a new set of keys for the device atSign using APKAM and saves them in your ~/.atsign/keys. The request is approved from the NoPorts Desktop app on your client, which holds the atSign\'s manager keys.'**
+  /// **'Cuts a new set of keys for the device atsign using APKAM and saves them in your ~/.atsign/keys. The request is approved from the NoPorts Desktop app on your client, which holds the atsign\'s manager keys.'**
   String get enrollCardBody;
 
   /// No description provided for @enrollHowTitle.
@@ -679,7 +679,7 @@ abstract class AppLocalizations {
   /// No description provided for @enrollHowStep1.
   ///
   /// In en, this message translates to:
-  /// **'1. In NoPorts Desktop on your client, sign in with the device atSign and open the Authenticator tab.'**
+  /// **'1. In NoPorts Desktop on your client, sign in with the device atsign and open the Authenticator tab.'**
   String get enrollHowStep1;
 
   /// No description provided for @enrollHowStep2.
@@ -691,7 +691,7 @@ abstract class AppLocalizations {
   /// No description provided for @enrollHowStep3.
   ///
   /// In en, this message translates to:
-  /// **'3. After you press Enroll here, approve the request in the same Authenticator tab.'**
+  /// **'3. After you click Enroll this device below, approve the request in the Authenticator tab of NoPorts Desktop.'**
   String get enrollHowStep3;
 
   /// No description provided for @enrollDeviceName.
@@ -748,6 +748,24 @@ abstract class AppLocalizations {
   /// **'Keep a backup of the .atKeys file somewhere safe. If it is lost the device has to be enrolled again.'**
   String get backupKeysReminder;
 
+  /// No description provided for @backupKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Back up keys'**
+  String get backupKeys;
+
+  /// No description provided for @keysBackedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Keys copied to {path}'**
+  String keysBackedUp(String path);
+
+  /// No description provided for @keysBackupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not back up the keys: {message}'**
+  String keysBackupFailed(String message);
+
   /// No description provided for @healthTitle.
   ///
   /// In en, this message translates to:
@@ -801,6 +819,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fail'**
   String get checkFail;
+
+  /// No description provided for @openConfigurationTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Configuration tab'**
+  String get openConfigurationTab;
+
+  /// No description provided for @openKeysTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Keys tab'**
+  String get openKeysTab;
 
   /// No description provided for @checksSummary.
   ///
@@ -856,16 +886,28 @@ abstract class AppLocalizations {
   /// **'Ready: keys for {atsign}'**
   String wizardKeysReady(String atsign);
 
+  /// No description provided for @wizardKeysDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{atsign} is enrolled and its keys are saved on this machine.'**
+  String wizardKeysDoneTitle(String atsign);
+
+  /// No description provided for @wizardKeysDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This step is done. Click Next to choose who may connect.'**
+  String get wizardKeysDoneBody;
+
   /// No description provided for @wizardAccessBody.
   ///
   /// In en, this message translates to:
-  /// **'Which client atSigns may connect to this device? You can add more later on the Configuration tab.'**
+  /// **'Which client atsigns may connect to this device? You can add more later on the Configuration tab.'**
   String get wizardAccessBody;
 
   /// No description provided for @wizardDeviceBody.
   ///
   /// In en, this message translates to:
-  /// **'Which atSign does this device run as, and what is it called? Clients use both to pick this machine. The device atSign is the one you activated in NoPorts Desktop for this device.'**
+  /// **'Which atsign does this device run as, and what is it called? Clients use both to pick this machine. The device atsign is the one you activated in NoPorts Desktop for this device. The name starts as this computer\'s name; change it if you like.'**
   String get wizardDeviceBody;
 
   /// No description provided for @wizardFinishBody.
@@ -895,7 +937,7 @@ abstract class AppLocalizations {
   /// No description provided for @wizardComplete.
   ///
   /// In en, this message translates to:
-  /// **'This device is ready. Connect to it from a NoPorts client using the device atSign and name above.'**
+  /// **'This device is ready. Connect to it from a NoPorts client using the device atsign and name above.'**
   String get wizardComplete;
 
   /// No description provided for @wizardCompleteWithIssues.

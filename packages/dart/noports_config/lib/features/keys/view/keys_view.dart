@@ -50,7 +50,7 @@ class KeysView extends StatelessWidget {
               child: InsetPanel(
                 child: Column(
                   children: [
-                    KeyValueRow(label: 'atSign', value: Text(atsign ?? '-')),
+                    KeyValueRow(label: 'atsign', value: Text(atsign ?? '-')),
                     KeyValueRow(
                       label: strings.enrollDeviceName,
                       value: Text(doc?.deviceName ?? 'default'),
@@ -118,6 +118,15 @@ class KeysView extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
+                FilledButton.tonalIcon(
+                  key: const Key('backup-keys'),
+                  onPressed: exists && file != null
+                      ? () => KeysActions.backupKeys(context, file)
+                      : null,
+                  icon: const Icon(Icons.save_alt_outlined, size: 16),
+                  label: Text(strings.backupKeys),
+                ),
+                gapW8,
                 TextButton.icon(
                   onPressed: () async {
                     final a = await KeysActions.importKeys(context);

@@ -7,6 +7,7 @@ import 'package:noports_config/features/keys/cubit/enrollment_cubit.dart';
 import 'package:noports_config/l10n/app_localizations.dart';
 import 'package:noports_config/styles/app_color.dart';
 import 'package:noports_config/styles/sizes.dart';
+import 'package:noports_config/widgets/atsign_text_field.dart';
 import 'package:noports_config/widgets/section_card.dart';
 
 class EnrollmentOutcome {
@@ -16,7 +17,7 @@ class EnrollmentOutcome {
   final File keysFile;
 }
 
-/// Modal APKAM enrollment: atSign + device name + passcode, then wait for
+/// Modal APKAM enrollment: atsign + device name + passcode, then wait for
 /// approval from NoPorts Desktop.
 class EnrollmentDialog extends StatelessWidget {
   const EnrollmentDialog({
@@ -128,13 +129,13 @@ class _BodyState extends State<_Body> {
                   ),
                 ),
                 gapH16,
-                TextField(
+                AtsignTextField(
+                  value: widget.initialAtsign,
                   controller: _atsign,
                   enabled: editing,
-                  decoration: InputDecoration(
-                    labelText: strings.enterAtsign,
-                    hintText: '@mydevice_np',
-                  ),
+                  label: strings.enterAtsign,
+                  hint: 'mydevice_np',
+                  onChanged: (_) {},
                 ),
                 gapH12,
                 TextField(

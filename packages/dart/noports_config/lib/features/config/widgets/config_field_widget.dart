@@ -2,8 +2,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:noports_config/features/config/model/config_schema.dart';
 import 'package:noports_config/l10n/app_localizations.dart';
+import 'package:noports_config/platform/atsigns.dart';
 import 'package:noports_config/styles/app_color.dart';
 import 'package:noports_config/styles/sizes.dart';
+import 'package:noports_config/widgets/atsign_text_field.dart';
 
 /// Renders one [ConfigField] as label, help text and the right control for
 /// its [FieldKind]. All edits are reported through [onChanged] with a value
@@ -15,12 +17,16 @@ class ConfigFieldWidget extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.problem,
+    this.action,
   });
 
   final ConfigField field;
   final Object? value;
   final ValueChanged<Object?> onChanged;
   final String? problem;
+
+  /// Shown under the control, e.g. a button that fills the field in.
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +92,10 @@ class ConfigFieldWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _control(context),
+                if (action != null) ...[
+                  gapH4,
+                  Align(alignment: Alignment.centerLeft, child: action),
+                ],
                 if (problem != null) ...[
                   gapH4,
                   Text(
@@ -106,8 +116,13 @@ class ConfigFieldWidget extends StatelessWidget {
   Widget _control(BuildContext context) {
     final strings = AppLocalizations.of(context);
     switch (field.kind) {
-      case FieldKind.text:
       case FieldKind.atsign:
+        return AtsignTextField(
+          value: value?.toString(),
+          hint: field.placeholder,
+          onChanged: onChanged,
+        );
+      case FieldKind.text:
         return SyncedTextField(
           value: value?.toString() ?? '',
           hint: field.placeholder,
@@ -213,6 +228,7 @@ class ConfigFieldWidget extends StatelessWidget {
         return StringListField(
           items: items,
           hint: field.placeholder,
+          atsigns: field.kind == FieldKind.atsignList,
           onChanged: onChanged,
         );
     }
@@ -288,11 +304,15 @@ class StringListField extends StatefulWidget {
     required this.items,
     required this.onChanged,
     this.hint,
+    this.atsigns = false,
   });
 
   final List<String> items;
   final ValueChanged<List<String>> onChanged;
   final String? hint;
+
+  /// Entries are atsigns: the box shows a fixed "@" and stores "@name".
+  final bool atsigns;
 
   @override
   State<StringListField> createState() => _StringListFieldState();
@@ -302,7 +322,9 @@ class _StringListFieldState extends State<StringListField> {
   final _c = TextEditingController();
 
   void _add() {
-    final v = _c.text.trim();
+    final v = widget.atsigns
+        ? (Atsigns.fromInput(_c.text) ?? '')
+        : _c.text.trim();
     if (v.isEmpty) return;
     if (!widget.items.contains(v)) widget.onChanged([...widget.items, v]);
     _c.clear();
@@ -355,11 +377,19 @@ class _StringListFieldState extends State<StringListField> {
         Row(
           children: [
             Expanded(
-              child: TextField(
-                controller: _c,
-                decoration: InputDecoration(hintText: widget.hint),
-                onSubmitted: (_) => _add(),
-              ),
+              child: widget.atsigns
+                  ? AtsignTextField(
+                      value: null,
+                      controller: _c,
+                      hint: widget.hint,
+                      onChanged: (_) {},
+                      onSubmitted: (_) => _add(),
+                    )
+                  : TextField(
+                      controller: _c,
+                      decoration: InputDecoration(hintText: widget.hint),
+                      onSubmitted: (_) => _add(),
+                    ),
             ),
             gapW8,
             OutlinedButton(onPressed: _add, child: Text(strings.add)),

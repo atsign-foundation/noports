@@ -39,6 +39,8 @@ overrides:
   deb:
     depends:
       - noports
+      # TLS to the atDirectory and atServers needs the system root store
+      - ca-certificates
       - libgtk-3-0
       - libglib2.0-0
       # file_picker shells out to one of these for the import dialog
@@ -48,6 +50,7 @@ overrides:
   rpm:
     depends:
       - noports
+      - ca-certificates
       - gtk3
       - glib2
       - zenity

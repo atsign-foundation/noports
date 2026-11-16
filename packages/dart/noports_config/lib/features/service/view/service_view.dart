@@ -7,11 +7,13 @@ import 'package:noports_config/features/config/cubit/config_cubit.dart';
 import 'package:noports_config/features/service/cubit/service_cubit.dart';
 import 'package:noports_config/l10n/app_localizations.dart';
 import 'package:noports_config/pages/nav_cubit.dart';
+import 'package:noports_config/platform/install_hints.dart';
 import 'package:noports_config/platform/service_manager.dart';
 import 'package:noports_config/styles/app_color.dart';
 import 'package:noports_config/styles/sizes.dart';
 import 'package:noports_config/widgets/custom_snack_bar.dart';
 import 'package:noports_config/widgets/section_card.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// The Status tab: live service state, controls and the recent log.
 class ServiceView extends StatelessWidget {
@@ -59,7 +61,7 @@ class ServiceView extends StatelessWidget {
                 color: AppColor.onSurfaceColor,
                 text: context.read<ServiceCubit>().manager.canInstall
                     ? strings.serviceNotInstalledInstallable
-                    : strings.serviceNotInstalledBody,
+                    : InstallHints.installService,
                 action: context.read<ServiceCubit>().manager.canInstall
                     ? FilledButton.icon(
                         onPressed: state.isBusy || state.elevated == false
@@ -70,7 +72,12 @@ class ServiceView extends StatelessWidget {
                             : const Icon(Icons.add_circle_outline),
                         label: Text(strings.installService),
                       )
-                    : null,
+                    : OutlinedButton.icon(
+                        onPressed: () =>
+                            launchUrl(Uri.parse(InstallHints.docsUrl)),
+                        icon: const Icon(Icons.open_in_new, size: 16),
+                        label: Text(strings.installationGuide),
+                      ),
               ),
               gapH16,
             ] else if (status?.warning != null) ...[

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noports_config/features/health/cubit/health_cubit.dart';
 import 'package:noports_config/features/health/health_checks.dart';
 import 'package:noports_config/l10n/app_localizations.dart';
+import 'package:noports_config/pages/nav_cubit.dart';
 import 'package:noports_config/styles/app_color.dart';
 import 'package:noports_config/styles/sizes.dart';
 import 'package:noports_config/widgets/custom_snack_bar.dart';
@@ -174,6 +175,23 @@ class _ResultRow extends StatelessWidget {
                   result.message,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+                if (result.level != CheckLevel.pass &&
+                    result.fix != HealthFix.none) ...[
+                  gapH4,
+                  TextButton.icon(
+                    onPressed: () => context.read<NavCubit>().dismissWizard(
+                      goTo: result.fix == HealthFix.keys
+                          ? HomeTab.keys
+                          : HomeTab.configuration,
+                    ),
+                    icon: const Icon(Icons.arrow_forward, size: 16),
+                    label: Text(
+                      result.fix == HealthFix.keys
+                          ? strings.openKeysTab
+                          : strings.openConfigurationTab,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

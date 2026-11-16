@@ -59,7 +59,12 @@ class ConfigRepository {
   /// Writes [doc], keeping one backup of the previous contents. The text is
   /// staged in a temp file the user owns and moved into place with admin
   /// rights.
-  Future<void> save(SshnpdConfigDocument doc) async {
+  ///
+  /// [andThen], when given, is a POSIX shell script run after the file is
+  /// in place. Where the write needs administrator rights it goes into the
+  /// same privileged call, so "save and restart" asks for the password
+  /// once; elsewhere it runs through the runner on its own.
+  Future<void> save(SshnpdConfigDocument doc, {String? andThen}) async {
     final staged = File(
       '${Directory.systemTemp.path}${Platform.pathSeparator}sshnpd-${DateTime.now().microsecondsSinceEpoch}.yaml',
     );
@@ -70,6 +75,7 @@ class ConfigRepository {
         await paths.configDir.create(recursive: true);
         if (await file.exists()) await file.copy('${file.path}.bak');
         await staged.copy(file.path);
+        if (andThen != null) await runner.runShell(andThen);
       } else {
         final q = PrivilegedRunner.q;
         final dir = q(paths.configDir.path);
@@ -78,7 +84,8 @@ class ConfigRepository {
         await runner.runShell(
           'mkdir -p $dir && '
           '( [ -f $dest ] && cp -p $dest $dest.bak || true ) && '
-          'install -m 644 $src $dest',
+          'install -m 644 $src $dest'
+          '${andThen == null ? '' : ' && $andThen'}',
         );
       }
     } finally {

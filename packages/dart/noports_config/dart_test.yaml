@@ -1,0 +1,3 @@
+tags:
+  ee:
+    description: needs a running ephemeral environment (EE_ROOT, EE_KEYS)

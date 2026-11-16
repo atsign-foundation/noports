@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noports_config/features/config/cubit/config_cubit.dart';
@@ -14,10 +12,13 @@ import 'package:noports_config/l10n/app_localizations.dart';
 import 'package:noports_config/pages/nav_cubit.dart';
 import 'package:noports_config/styles/app_color.dart';
 import 'package:noports_config/styles/sizes.dart';
+import 'package:noports_config/platform/device_names.dart';
+import 'package:noports_config/platform/install_hints.dart';
+import 'package:noports_config/widgets/hostname_button.dart';
 import 'package:noports_config/widgets/section_card.dart';
 import 'package:noports_core/sshnpd.dart';
 
-/// First-run flow shown when sshnpd.yaml has no device atSign yet.
+/// First-run flow shown when sshnpd.yaml has no device atsign yet.
 /// Keys -> Access -> Device -> Finish (save, start, check).
 class SetupWizardView extends StatefulWidget {
   const SetupWizardView({super.key});
@@ -33,6 +34,20 @@ class _SetupWizardViewState extends State<SetupWizardView> {
   _Phase _phase = _Phase.idle;
   String? _failure;
   bool _startedOk = false;
+  bool _prefilled = false;
+
+  /// A fresh configuration starts with this computer's name as the device
+  /// name; the field stays editable.
+  void _prefillDeviceName(ConfigCubit cubit) {
+    if (_prefilled) return;
+    _prefilled = true;
+    final doc = cubit.state.doc;
+    if (doc == null || doc.deviceName != null) return;
+    final field = ConfigSchema.byOption(SshnpdOption.device);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => cubit.setField(field, DeviceNames.fromHostname()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +57,7 @@ class _SetupWizardViewState extends State<SetupWizardView> {
     if (doc == null) {
       return const Center(child: CircularProgressIndicator.adaptive());
     }
+    _prefillDeviceName(context.read<ConfigCubit>());
 
     final keysFile = KeysRepository().resolve(doc.atsign, doc.keysFile);
     final keysReady = doc.atsign != null && (keysFile?.existsSync() ?? false);
@@ -147,12 +163,18 @@ class _SetupWizardViewState extends State<SetupWizardView> {
     final config = context.read<ConfigCubit>();
     final service = context.read<ServiceCubit>();
     final health = context.read<HealthCubit>();
-    final strings = AppLocalizations.of(context);
     setState(() {
       _failure = null;
       _phase = _Phase.saving;
     });
-    final saved = await config.save();
+    var installed = service.state.status?.isInstalled ?? false;
+    final legacy = service.state.status?.warning != null;
+    // One administrator prompt for the save and the start together, where
+    // the platform needs a prompt for each (Linux) and the unit exists.
+    final combined = installed && !legacy
+        ? service.manager.privilegedRestartScript
+        : null;
+    final saved = await config.save(andThen: combined);
     if (!saved) {
       setState(() {
         _failure = config.state.error ?? config.state.problems.join('\n');
@@ -162,19 +184,20 @@ class _SetupWizardViewState extends State<SetupWizardView> {
     }
     if (!mounted) return;
     setState(() => _phase = _Phase.starting);
-    var installed = service.state.status?.isInstalled ?? false;
-    final legacy = service.state.status?.warning != null;
     if ((!installed || legacy) && service.manager.canInstall) {
       installed = await service.install();
       if (!installed) _failure = service.state.error;
     }
-    if (installed) {
+    if (combined != null) {
+      _startedOk = await service.settleAfterRestart();
+      if (!_startedOk) _failure = service.state.error;
+    } else if (installed) {
       final running = service.state.status?.isRunning ?? false;
       _startedOk = running ? await service.restart() : await service.start();
       if (!_startedOk) _failure = service.state.error;
     } else {
       _startedOk = false;
-      _failure = strings.serviceNotInstalledBody;
+      _failure = InstallHints.installService;
     }
     if (!mounted) return;
     setState(() => _phase = _Phase.checking);
@@ -261,12 +284,54 @@ class _KeysStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
     final doc = context.watch<ConfigCubit>().state.doc!;
+    if (keysReady) {
+      return SectionCard(
+        title: strings.enrollCardTitle,
+        subtitle: strings.wizardKeysBody,
+        trailing: StatusPill.success(
+          label: strings.wizardKeysReady(doc.atsign!),
+        ),
+        child: Container(
+          key: const Key('wizard-keys-ready'),
+          width: double.infinity,
+          padding: const EdgeInsets.all(Sizes.p16),
+          decoration: BoxDecoration(
+            color: AppColor.successColorAlt,
+            borderRadius: BorderRadius.circular(Sizes.p10),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.check_circle,
+                color: Color(0xFF3E7D1F),
+                size: 32,
+              ),
+              gapW16,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.wizardKeysDoneTitle(doc.atsign!),
+                      style: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(color: const Color(0xFF3E7D1F)),
+                    ),
+                    gapH4,
+                    Text(
+                      strings.wizardKeysDoneBody,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return SectionCard(
       title: strings.enrollCardTitle,
       subtitle: strings.wizardKeysBody,
-      trailing: keysReady
-          ? StatusPill.success(label: strings.wizardKeysReady(doc.atsign!))
-          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -385,17 +450,7 @@ class _DeviceStep extends StatelessWidget {
                 .let((s) => s.isEmpty ? null : s),
             onChanged: (v) => cubit.setField(field, v),
           ),
-          TextButton.icon(
-            onPressed: () {
-              final host = Platform.localHostname
-                  .split('.')
-                  .first
-                  .replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
-              cubit.setField(field, host);
-            },
-            icon: const Icon(Icons.computer_outlined, size: 16),
-            label: Text(strings.hostname),
-          ),
+          HostnameButton(onPick: (name) => cubit.setField(field, name)),
         ],
       ),
     );

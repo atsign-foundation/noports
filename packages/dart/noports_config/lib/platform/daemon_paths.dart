@@ -72,12 +72,14 @@ class DaemonPaths {
     required Directory binDir,
     Directory? serviceHomeDir,
     Directory? userHomeDir,
+    bool configNeedsPrivileges = false,
   }) => DaemonPaths._(
     configDir: configDir,
     binDir: binDir,
     serviceHomeDir: serviceHomeDir,
     userHomeDir:
         userHomeDir ?? Directory(p.join(configDir.parent.path, 'home')),
+    configNeedsPrivileges: configNeedsPrivileges,
   );
 
   /// The real user's home, seeing through sudo.

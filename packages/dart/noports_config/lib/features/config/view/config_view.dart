@@ -8,7 +8,9 @@ import 'package:noports_config/l10n/app_localizations.dart';
 import 'package:noports_config/styles/app_color.dart';
 import 'package:noports_config/styles/sizes.dart';
 import 'package:noports_config/widgets/custom_snack_bar.dart';
+import 'package:noports_config/widgets/hostname_button.dart';
 import 'package:noports_config/widgets/section_card.dart';
+import 'package:noports_core/sshnpd.dart';
 
 /// The Configuration tab: a form generated from [ConfigSchema] and a raw
 /// YAML editor over the same document.
@@ -163,6 +165,11 @@ class _FormEditor extends StatelessWidget {
                             .join('\n')
                             .let((s) => s.isEmpty ? null : s),
                         onChanged: (v) => cubit.setField(field, v),
+                        action: field.option == SshnpdOption.device
+                            ? HostnameButton(
+                                onPick: (name) => cubit.setField(field, name),
+                              )
+                            : null,
                       ),
                 ],
               ),
@@ -279,7 +286,11 @@ class _ActionBar extends StatelessWidget {
       CustomSnackBar.error(context, strings.fixProblemsBeforeSaving);
       return;
     }
-    final ok = await cubit.save();
+    final service = context.read<ServiceCubit>();
+    // Where both the write and the restart need an administrator prompt
+    // (Linux), do them in one privileged call so there is a single prompt.
+    final combined = restart ? service.manager.privilegedRestartScript : null;
+    final ok = await cubit.save(andThen: combined);
     if (!context.mounted) return;
     if (!ok) {
       CustomSnackBar.error(
@@ -292,9 +303,13 @@ class _ActionBar extends StatelessWidget {
       CustomSnackBar.success(context, strings.configSaved);
       return;
     }
-    final service = context.read<ServiceCubit>();
-    final running = service.state.status?.isRunning ?? false;
-    final restarted = running ? await service.restart() : await service.start();
+    final bool restarted;
+    if (combined != null) {
+      restarted = await service.settleAfterRestart();
+    } else {
+      final running = service.state.status?.isRunning ?? false;
+      restarted = running ? await service.restart() : await service.start();
+    }
     if (!context.mounted) return;
     if (restarted) {
       CustomSnackBar.success(context, strings.serviceRestarted);

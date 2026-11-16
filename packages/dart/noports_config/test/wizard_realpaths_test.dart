@@ -92,7 +92,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('Set up this device for NoPorts'), findsOneWidget);
-      expect(find.text('A device atSign is required.'), findsOneWidget);
+      expect(find.text('A device atsign is required.'), findsOneWidget);
 
       // Type the way a person does: one key at a time, into each field.
       // (No pumpAndSettle after focusing a TextField: the caret blinks forever.)
@@ -106,7 +106,7 @@ void main() {
       }
 
       final fields = find.byType(TextField);
-      expect(fields, findsNWidgets(2), reason: 'atSign and device name only');
+      expect(fields, findsNWidgets(2), reason: 'atsign and device name only');
       await type(fields.at(1), 'tarial');
       await type(fields.at(0), '@ssh_1');
       await tester.pump(const Duration(milliseconds: 300));
@@ -117,7 +117,7 @@ void main() {
         findsOneWidget,
         reason: 'wizard must stay open while the user is in it',
       );
-      expect(find.text('A device atSign is required.'), findsNothing);
+      expect(find.text('A device atsign is required.'), findsNothing);
 
       final next = tester.widget<FilledButton>(
         find.widgetWithText(FilledButton, 'Next'),

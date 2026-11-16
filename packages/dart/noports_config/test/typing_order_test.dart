@@ -43,7 +43,7 @@ void main() {
         final msgs = doc.validate().map((p) => p.message).toList();
         expect(
           msgs,
-          isNot(contains('A device atSign is required.')),
+          isNot(contains('A device atsign is required.')),
           reason: 'order $order',
         );
         expect(msgs.where((m) => m.contains('Device name')), isEmpty);

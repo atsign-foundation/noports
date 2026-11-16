@@ -106,6 +106,19 @@ class ServiceCubit extends Cubit<ServiceCubitState> {
   /// Write the service definition (and load it). macOS only for now.
   Future<bool> install() => _run(ServiceAction.install, _manager.install);
 
+  /// After a restart issued outside this cubit (the config save's combined
+  /// privileged call): wait for the unit to settle, refresh and reload the
+  /// log. True when it is running.
+  Future<bool> settleAfterRestart() => _run(ServiceAction.restart, () async {
+    final s = await _manager.waitFor((s) => !s.isTransitioning);
+    if (!s.isRunning) {
+      throw ServiceException(
+        'The service did not come back up (${s.detail ?? s.state.name}). '
+        'Check the log.',
+      );
+    }
+  });
+
   Future<bool> _run(ServiceAction action, Future<void> Function() fn) async {
     if (state.isBusy) return false;
     emit(state.copyWith(busy: action, clearError: true));

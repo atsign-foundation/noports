@@ -3,7 +3,7 @@
 # NoPorts Configuration
 
 Desktop app for configuring the NoPorts daemon (`sshnpd`) on the machine it
-runs on. It edits `sshnpd.yaml`, gets the device atSign's keys in place,
+runs on. It edits `sshnpd.yaml`, gets the device atsign's keys in place,
 starts, stops and restarts the system service, shows its log, and runs
 diagnostics. On a fresh install it walks the user through setup.
 
@@ -21,11 +21,11 @@ this one on the machine you connect *to*.
 | Keys | Shows which `.atKeys` file the daemon will use and whether it exists. Enrolls the device through APKAM: the user pastes the OTP or PIN from the Authenticator tab of NoPorts Desktop on their client, the request is approved there, and the new keys land in the user's own `~/.atsign/keys` (where `at_activate` puts them); `sshnpd.yaml` gets the absolute path so the root / LocalSystem service can read the file. Existing key files are never overwritten. Importing an existing `.atKeys` file is kept as a secondary option for fleets and recovery. |
 | Diagnostics | In-app checks (config valid, keys present, access configured, binary present, atDirectory reachable, service state) and a button to run `sshnpd --doctor` for the full report. |
 
-When `sshnpd.yaml` has no device atSign the app opens on a four step
+When `sshnpd.yaml` has no device atsign the app opens on a four step
 wizard (Device, Keys, Access, Finish) that saves the config, starts the
 service and runs the checks. The Keys step is the APKAM enrollment above,
 mirroring `at_activate enroll -p noports -n "sshnp:rw,sshrvd:rw"` from the
-install docs; the device atSign itself is activated beforehand in NoPorts
+install docs; the device atsign itself is activated beforehand in NoPorts
 Desktop, never here.
 
 ## Platform notes

@@ -71,9 +71,14 @@ class LinuxServiceManager extends ServiceManager {
 
   @override
   Future<void> restart() async {
-    await runner.runShell('systemctl restart $serviceName');
+    await runner.runShell(privilegedRestartScript);
     await waitFor((s) => !s.isTransitioning);
   }
+
+  /// `systemctl restart` starts a stopped unit too, so one line covers
+  /// both the first start and later restarts.
+  @override
+  String get privilegedRestartScript => 'systemctl restart $serviceName';
 
   @override
   Future<String> recentLogs({int lines = 200}) async {

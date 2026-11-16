@@ -16,7 +16,7 @@ class NavState extends Equatable {
 
   /// Whether the "start in the wizard?" decision has been made for this
   /// session. It is made once, when the config first loads, so the wizard
-  /// does not disappear the moment the user types an atSign into it.
+  /// does not disappear the moment the user types an atsign into it.
   final bool decided;
 
   NavState copyWith({HomeTab? tab, bool? wizard, bool? decided}) => NavState(

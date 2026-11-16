@@ -6,6 +6,7 @@ import 'package:noports_config/features/config/model/sshnpd_config_document.dart
 import 'package:noports_config/features/health/health_checks.dart';
 import 'package:noports_config/features/keys/keys_repository.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
+import 'package:noports_config/platform/install_hints.dart';
 import 'package:noports_config/platform/service_manager.dart';
 
 class HealthState extends Equatable {
@@ -106,16 +107,30 @@ class HealthCubit extends Cubit<HealthState> {
     return results;
   }
 
-  /// Runs `sshnpd --doctor` and captures its report.
+  /// Runs `sshnpd --doctor --config <sshnpd.yaml>` and captures its report.
+  /// The path goes on the command line: the daemon does not read the
+  /// SSHNPD_CONFIG variable reliably (5.18.2 on macOS reads its default
+  /// file instead), but `--config` is always honoured.
   Future<void> runDoctor() async {
     emit(state.copyWith(doctorRunning: true, clearError: true));
+    final bin = paths.sshnpdBinary;
+    if (!bin.existsSync()) {
+      emit(
+        state.copyWith(
+          doctorRunning: false,
+          error:
+              'sshnpd is not installed (${bin.path} not found). '
+              '${InstallHints.installNoPorts}',
+        ),
+      );
+      return;
+    }
     try {
-      final bin = paths.sshnpdBinary;
-      final r = await Process.run(
-        bin.path,
-        ['--doctor'],
-        environment: {'SSHNPD_CONFIG': paths.configFile.path},
-      ).timeout(const Duration(minutes: 2));
+      final r = await Process.run(bin.path, [
+        '--doctor',
+        '--config',
+        paths.configFile.path,
+      ]).timeout(const Duration(minutes: 2));
       final out = (r.stdout.toString() + r.stderr.toString()).trim();
       emit(
         state.copyWith(
