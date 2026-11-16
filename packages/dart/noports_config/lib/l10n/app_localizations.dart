@@ -622,6 +622,18 @@ abstract class AppLocalizations {
   /// **'Imported keys for {atsign}'**
   String keysImported(String atsign);
 
+  /// No description provided for @keysImportedProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported passphrase-protected keys for {atsign}. Enter the passphrase under advanced settings on the Configuration tab.'**
+  String keysImportedProtected(String atsign);
+
+  /// No description provided for @keysNotSavedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Keys updated in the working configuration but not saved yet: {problems}'**
+  String keysNotSavedYet(String problems);
+
   /// No description provided for @keysImportFailed.
   ///
   /// In en, this message translates to:

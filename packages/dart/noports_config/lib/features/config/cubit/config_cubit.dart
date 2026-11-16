@@ -4,6 +4,8 @@ import 'package:noports_config/features/config/config_repository.dart';
 import 'package:noports_config/features/config/model/config_schema.dart';
 import 'package:noports_config/features/config/model/sshnpd_config_document.dart';
 import 'package:noports_config/platform/atsigns.dart';
+import 'package:noports_config/platform/device_names.dart';
+import 'package:noports_core/sshnpd.dart';
 
 enum ConfigStatus { initial, loading, ready, error }
 
@@ -138,6 +140,11 @@ class ConfigCubit extends Cubit<ConfigState> {
             Atsigns.normalize(v.toString()) ?? v.toString().trim(),
         ];
       default:
+        // The daemon snakifies the device name before checking it, so the
+        // file holds what clients will have to type.
+        if (field.option == SshnpdOption.device && value is String) {
+          return DeviceNames.snakify(value);
+        }
         return value;
     }
   }

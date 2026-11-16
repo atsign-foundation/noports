@@ -1,8 +1,26 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:at_auth/at_auth.dart' show AtKeysPassphraseEnvelopeCodec;
+import 'package:at_client/at_client_io.dart' show AtKeys, FileAtKeysIo;
 import 'package:noports_config/platform/atsigns.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
+
+enum KeysFileStatus {
+  absent,
+  invalid,
+  passphraseNeeded,
+  wrongPassphrase,
+  readable,
+}
+
+class KeysFileInfo {
+  const KeysFileInfo(this.status, {this.atsign});
+  final KeysFileStatus status;
+
+  /// The atsign the file names, when it could be read.
+  final String? atsign;
+}
 
 class KeysException implements Exception {
   KeysException(this.message);
@@ -19,38 +37,108 @@ class KeysRepository {
   final DaemonPaths? _paths;
   DaemonPaths get paths => _paths ?? DaemonPaths.instance;
 
-  /// The atsign a .atKeys file belongs to. Files written by at_auth 4
-  /// carry it in an `atsign` field; older files carry it as the one JSON
-  /// key that starts with '@'. Otherwise fall back to the conventional
-  /// `@name_key.atKeys` file name.
-  static String? atsignOf(File file) {
-    try {
-      final json = jsonDecode(file.readAsStringSync());
-      if (json is Map) {
-        final named = json['atsign'];
-        if (named is String && Atsigns.isValid(named)) {
-          return Atsigns.normalize(named);
-        }
-        for (final k in json.keys) {
-          if (k is String && k.startsWith('@')) return Atsigns.normalize(k);
-        }
-      }
-    } catch (_) {
-      // fall through to the file name
-    }
+  /// The atsign a .atKeys file belongs to: from the file itself when it
+  /// can be read, otherwise from the conventional `@name_key.atKeys` file
+  /// name (a passphrase-protected file says nothing without its
+  /// passphrase).
+  static String? atsignOf(File file, {String? passPhrase}) {
+    final seen = inspectSync(file, passPhrase: passPhrase);
+    if (seen.atsign != null) return seen.atsign;
     final name = file.uri.pathSegments.last;
-    final m = RegExp(r'^(@?[a-zA-Z0-9_]+)_key\.atKeys$').firstMatch(name);
+    final m = RegExp(r'^(@?.+)_key\.atKeys$').firstMatch(name);
     return m == null ? null : Atsigns.normalize(m.group(1)!);
   }
 
-  static bool looksLikeAtKeys(File file) {
+  /// Whether [file] is an .atKeys file at_auth can read, or a
+  /// passphrase-protected one it could read with the passphrase.
+  static bool looksLikeAtKeys(File file, {String? passPhrase}) {
+    final seen = inspectSync(file, passPhrase: passPhrase);
+    return seen.status == KeysFileStatus.readable ||
+        seen.status == KeysFileStatus.passphraseNeeded;
+  }
+
+  /// What at_auth makes of [file]: the same parse the daemon applies.
+  /// A passphrase envelope is recognised but not opened here (that is
+  /// asynchronous); [inspect] does that when a passphrase is given.
+  static KeysFileInfo inspectSync(File file, {String? passPhrase}) {
+    if (!file.existsSync()) return const KeysFileInfo(KeysFileStatus.absent);
+    final Map<String, dynamic> json;
     try {
-      final json = jsonDecode(file.readAsStringSync());
-      return json is Map &&
-          json.containsKey('aesPkamPrivateKey') &&
-          json.containsKey('selfEncryptionKey');
+      final decoded = jsonDecode(file.readAsStringSync());
+      if (decoded is! Map) return const KeysFileInfo(KeysFileStatus.invalid);
+      json = Map<String, dynamic>.from(decoded);
     } catch (_) {
-      return false;
+      return const KeysFileInfo(KeysFileStatus.invalid);
+    }
+    if (const AtKeysPassphraseEnvelopeCodec().isEnvelope(json)) {
+      return const KeysFileInfo(KeysFileStatus.passphraseNeeded);
+    }
+    try {
+      final keys = AtKeys.fromJson(json);
+      // An empty object parses as a legacy file; one the daemon could
+      // authenticate with is what counts.
+      if (!keys.holdsAuthenticationMaterial) {
+        return const KeysFileInfo(KeysFileStatus.invalid);
+      }
+      return KeysFileInfo(
+        KeysFileStatus.readable,
+        atsign: Atsigns.normalize(keys.atsign),
+      );
+    } catch (_) {
+      return const KeysFileInfo(KeysFileStatus.invalid);
+    }
+  }
+
+  /// [inspectSync], and a protected file is decrypted with [passPhrase]
+  /// when one is given, so a wrong passphrase is reported as such.
+  static Future<KeysFileInfo> inspect(File file, {String? passPhrase}) async {
+    final quick = inspectSync(file);
+    if (quick.status != KeysFileStatus.passphraseNeeded ||
+        passPhrase == null ||
+        passPhrase.isEmpty) {
+      return quick;
+    }
+    try {
+      final keys = await FileAtKeysIo(
+        filePath: (_) => file.path,
+        passPhrase: passPhrase,
+      ).read('');
+      if (!keys.holdsAuthenticationMaterial) {
+        return const KeysFileInfo(KeysFileStatus.invalid);
+      }
+      return KeysFileInfo(
+        KeysFileStatus.readable,
+        atsign: Atsigns.normalize(keys.atsign),
+      );
+    } catch (_) {
+      return const KeysFileInfo(KeysFileStatus.wrongPassphrase);
+    }
+  }
+
+  /// On Linux, the numeric owner of [file], or null elsewhere.
+  static int? ownerUid(File file) {
+    if (!Platform.isLinux) return null;
+    try {
+      final r = Process.runSync('stat', ['-c', '%u', file.path]);
+      return int.tryParse(r.stdout.toString().trim());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Whether the account with [uid] can read [file]: its owner, or a mode
+  /// that lets the group or everyone read. Linux only; null when unknown.
+  static bool? readableBy(File file, int uid) {
+    if (!Platform.isLinux) return null;
+    try {
+      final r = Process.runSync('stat', ['-c', '%u %a', file.path]);
+      final parts = r.stdout.toString().trim().split(' ');
+      final owner = int.parse(parts[0]);
+      final mode = int.parse(parts[1], radix: 8);
+      if (owner == uid) return true;
+      return (mode & 0x24) != 0;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -62,7 +150,9 @@ class KeysRepository {
       throw KeysException('File not found: ${source.path}');
     }
     if (!looksLikeAtKeys(source)) {
-      throw KeysException('${source.path} is not an .atKeys file.');
+      throw KeysException(
+        '${source.path} is not an .atKeys file at_auth can read.',
+      );
     }
     final dest = paths.keysFileFor(atsign);
     if (source.absolute.path == dest.absolute.path) {

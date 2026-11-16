@@ -50,7 +50,7 @@ packages:
     source: hosted
     version: "2.13.1"
   at_auth:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: at_auth
       sha256: cbbff946b361b553a77c038dc0be4456eeaf7babdce6a9fb9b789e172d3ad22a

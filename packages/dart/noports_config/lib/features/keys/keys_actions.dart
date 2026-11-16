@@ -77,12 +77,25 @@ class KeysActions {
     if (path == null || !context.mounted) return null;
     final source = File(path);
 
-    final atsign = KeysRepository.atsignOf(source);
+    final seen = KeysRepository.inspectSync(source);
+    if (seen.status == KeysFileStatus.invalid) {
+      CustomSnackBar.error(
+        context,
+        strings.keysImportFailed(
+          '${source.path} is not an .atKeys file at_auth can read.',
+        ),
+      );
+      return null;
+    }
+    // A protected file names no atsign until decrypted: take it from the
+    // file name, or the atsign already configured.
+    final atsign = KeysRepository.atsignOf(source) ?? config.state.doc?.atsign;
     if (atsign == null) {
       CustomSnackBar.error(
         context,
         strings.keysImportFailed(
-          'Could not tell which atsign this file is for.',
+          'Could not tell which atsign this file is for. Name it '
+          '@<atsign>_key.atKeys, or set the device atsign first.',
         ),
       );
       return null;
@@ -114,7 +127,12 @@ class KeysActions {
         doc.keysFile = dest.path;
       });
       if (context.mounted) {
-        CustomSnackBar.success(context, strings.keysImported(atsign));
+        CustomSnackBar.success(
+          context,
+          seen.status == KeysFileStatus.passphraseNeeded
+              ? strings.keysImportedProtected(atsign)
+              : strings.keysImported(atsign),
+        );
       }
       return atsign;
     } catch (e) {

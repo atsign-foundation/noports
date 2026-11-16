@@ -303,6 +303,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String keysImportedProtected(String atsign) {
+    return 'Imported passphrase-protected keys for $atsign. Enter the passphrase under advanced settings on the Configuration tab.';
+  }
+
+  @override
+  String keysNotSavedYet(String problems) {
+    return 'Keys updated in the working configuration but not saved yet: $problems';
+  }
+
+  @override
   String keysImportFailed(String message) {
     return 'Could not import keys: $message';
   }

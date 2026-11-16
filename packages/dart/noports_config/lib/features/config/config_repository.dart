@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:noports_config/features/config/model/sshnpd_config_document.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
 import 'package:noports_config/platform/privileged_runner.dart';
+import 'package:path/path.dart' as p;
 
 /// Reads and writes the daemon's sshnpd.yaml on disk.
 ///
@@ -65,32 +66,47 @@ class ConfigRepository {
   /// same privileged call, so "save and restart" asks for the password
   /// once; elsewhere it runs through the runner on its own.
   Future<void> save(SshnpdConfigDocument doc, {String? andThen}) async {
-    final staged = File(
-      '${Directory.systemTemp.path}${Platform.pathSeparator}sshnpd-${DateTime.now().microsecondsSinceEpoch}.yaml',
-    );
-    await staged.writeAsString(doc.source, flush: true);
+    // Staged in a directory only this user can enter, at 0600: the file can
+    // hold the keys passphrase, and on Linux root copies it after the
+    // prompt is answered, so nothing else may swap it in the meantime.
+    final stagingDir = await Directory.systemTemp.createTemp('noports-config-');
+    final staged = File(p.join(stagingDir.path, 'sshnpd.yaml'));
     try {
+      if (!Platform.isWindows) {
+        await Process.run('chmod', ['700', stagingDir.path]);
+      }
+      await staged.writeAsString(doc.source, flush: true);
+      if (!Platform.isWindows) await Process.run('chmod', ['600', staged.path]);
+
       if (!paths.configNeedsPrivileges) {
-        // User owned (macOS) or already elevated (Windows).
+        // User owned (macOS) or already elevated (Windows). Writing into
+        // the existing file keeps whatever mode it has; a new one is
+        // private to the user.
         await paths.configDir.create(recursive: true);
-        if (await file.exists()) await file.copy('${file.path}.bak');
-        await staged.copy(file.path);
+        final existed = await file.exists();
+        if (existed) await file.copy('${file.path}.bak');
+        await file.writeAsString(doc.source, flush: true);
+        if (!existed && !Platform.isWindows) {
+          await Process.run('chmod', ['600', file.path]);
+        }
         if (andThen != null) await runner.runShell(andThen);
       } else {
         final q = PrivilegedRunner.q;
         final dir = q(paths.configDir.path);
         final dest = q(file.path);
         final src = q(staged.path);
+        // An existing file keeps its owner and mode (an admin may have
+        // tightened it); a new one is root:root 0640 like the package's.
         await runner.runShell(
           'mkdir -p $dir && '
-          '( [ -f $dest ] && cp -p $dest $dest.bak || true ) && '
-          'install -m 644 $src $dest'
+          'if [ -f $dest ]; then cp -p $dest $dest.bak && cat $src > $dest; '
+          'else install -m 640 $src $dest; fi'
           '${andThen == null ? '' : ' && $andThen'}',
         );
       }
     } finally {
       try {
-        await staged.delete();
+        await stagingDir.delete(recursive: true);
       } catch (_) {}
     }
   }

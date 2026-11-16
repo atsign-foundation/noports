@@ -126,7 +126,8 @@ class SshnpdConfigDocument {
   set permitOpen(List<String> v) => setOption(SshnpdOption.permitOpen, v);
 
   String? get deviceName => _string(SshnpdOption.device);
-  set deviceName(String? v) => setOption(SshnpdOption.device, v);
+  set deviceName(String? v) =>
+      setOption(SshnpdOption.device, v == null ? null : DeviceNames.snakify(v));
 
   String? get deviceGroup => _string(SshnpdOption.deviceGroup);
   set deviceGroup(String? v) => setOption(SshnpdOption.deviceGroup, v);
@@ -184,13 +185,19 @@ class SshnpdConfigDocument {
       );
     } else if (!isValidAtsign(a)) {
       problems.add(
-        ConfigProblem(SshnpdOption.atsign, '"$a" is not a valid atsign.'),
+        ConfigProblem(
+          SshnpdOption.atsign,
+          '"$a" is not a valid atsign: ${Atsigns.problem(a)}',
+        ),
       );
     }
     for (final m in managers) {
       if (!isValidAtsign(m)) {
         problems.add(
-          ConfigProblem(SshnpdOption.managers, '"$m" is not a valid atsign.'),
+          ConfigProblem(
+            SshnpdOption.managers,
+            '"$m" is not a valid atsign: ${Atsigns.problem(m)}',
+          ),
         );
       }
     }
@@ -199,7 +206,7 @@ class SshnpdConfigDocument {
       problems.add(
         ConfigProblem(
           SshnpdOption.policyManager,
-          '"$pm" is not a valid atsign.',
+          '"$pm" is not a valid atsign: ${Atsigns.problem(pm)}',
         ),
       );
     }
@@ -234,7 +241,8 @@ class SshnpdConfigDocument {
       }
     }
     final dn = deviceName;
-    if (dn != null && !DeviceNames.isValid(dn)) {
+    // As the daemon does: snakify first, then the pattern.
+    if (dn != null && !DeviceNames.isValid(DeviceNames.snakify(dn))) {
       problems.add(ConfigProblem(SshnpdOption.device, DeviceNames.rule));
     }
     return problems;

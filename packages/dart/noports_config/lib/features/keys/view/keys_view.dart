@@ -19,11 +19,24 @@ class KeysView extends StatelessWidget {
     // Persist straight away when the config is otherwise complete, so the
     // keys on disk and the file that points at them never disagree.
     final config = context.read<ConfigCubit>();
-    if (config.state.problems.isEmpty) {
-      final ok = await config.save();
-      if (ok && context.mounted) {
-        CustomSnackBar.info(context, AppLocalizations.of(context).configSaved);
-      }
+    final strings = AppLocalizations.of(context);
+    final problems = config.state.problems;
+    if (problems.isNotEmpty) {
+      CustomSnackBar.error(
+        context,
+        strings.keysNotSavedYet(problems.map((p) => p.message).join(' ')),
+      );
+      return;
+    }
+    final ok = await config.save();
+    if (!context.mounted) return;
+    if (ok) {
+      CustomSnackBar.info(context, strings.configSaved);
+    } else {
+      CustomSnackBar.error(
+        context,
+        strings.configSaveFailed(config.state.error ?? ''),
+      );
     }
   }
 

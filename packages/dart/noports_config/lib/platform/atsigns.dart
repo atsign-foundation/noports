@@ -1,19 +1,40 @@
-/// Lenient atsign helpers. at_utils' `fixAtSign` throws on partial input
-/// such as a bare "@", which is exactly what a text field holds while the
-/// user is typing, so UI code must never call it directly.
+import 'package:at_commons/at_commons.dart'
+    show AtsignString, InvalidAtSignException;
+
+/// Lenient atsign helpers over at_commons' `toAtsign()`, which is what
+/// sshnpd itself applies: lower-cased, given its "@", dots dropped
+/// (@colin.constable is @colinconstable), at most 55 code points, and
+/// refused for reserved characters, white space or control characters.
+///
+/// `toAtsign()` throws on partial input such as a bare "@", which is
+/// exactly what a text field holds while the user is typing, so UI code
+/// goes through these and never calls it directly.
 class Atsigns {
   Atsigns._();
 
-  static final _valid = RegExp(r'^@?[a-zA-Z0-9_]{1,55}$');
+  static bool isValid(String? s) => s != null && problem(s) == null;
 
-  static bool isValid(String? s) => s != null && _valid.hasMatch(s.trim());
+  /// Why [s] is not an atsign, in at_commons' words, or null when it is.
+  static String? problem(String? s) {
+    if (s == null || s.trim().isEmpty) return 'An atsign is required.';
+    try {
+      s.trim().toAtsign();
+      return null;
+    } on InvalidAtSignException catch (e) {
+      return e.message;
+    }
+  }
 
-  /// "@name" for anything that looks like an atsign, otherwise null.
+  /// The canonical "@name" for anything that is an atsign, otherwise null.
   static String? normalize(String? s) {
     if (s == null) return null;
     final t = s.trim();
-    if (!_valid.hasMatch(t)) return null;
-    return t.startsWith('@') ? t.toLowerCase() : '@${t.toLowerCase()}';
+    if (t.isEmpty) return null;
+    try {
+      return t.toAtsign();
+    } on InvalidAtSignException {
+      return null;
+    }
   }
 
   /// The text with any leading "@" signs removed, for a field that shows
@@ -21,11 +42,13 @@ class Atsigns {
   static String bare(String s) =>
       s.replaceAll(RegExp(r'^\s*@+'), '').replaceAll(RegExp(r'\s'), '');
 
-  /// What to store for text typed into an atsign field: "@" plus the
-  /// typed name, lowercased, or null when nothing was typed. Never throws
-  /// and never drops characters, so validation can still point at a typo.
+  /// What to store for text typed into an atsign field: the canonical
+  /// form when the text is an atsign, otherwise "@" plus the text as typed
+  /// (lower-cased), so validation can name the problem rather than the
+  /// field silently dropping characters. Null when nothing was typed.
   static String? fromInput(String s) {
-    final b = bare(s).toLowerCase();
-    return b.isEmpty ? null : '@$b';
+    final b = bare(s);
+    if (b.isEmpty) return null;
+    return normalize(b) ?? '@${b.toLowerCase()}';
   }
 }

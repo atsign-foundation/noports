@@ -67,11 +67,50 @@ void main() {
     );
     expect(ok, isTrue);
     expect(runner.scripts, hasLength(1), reason: 'exactly one prompt');
-    expect(runner.scripts.single, contains('install -m 644'));
+    expect(runner.scripts.single, contains('install -m 640'));
     expect(runner.scripts.single, contains('&& echo restarted > '));
     expect(repo.file.existsSync(), isTrue);
     expect(marker.existsSync(), isTrue);
   });
+
+  test(
+    'paths with a space and a quote survive the shell; .bak is kept',
+    () async {
+      final odd = Directory("${tmp.path}/it's here/etc noports");
+      final repo2 = ConfigRepository(
+        paths: DaemonPaths.forTest(
+          configDir: odd,
+          binDir: Directory('${tmp.path}/bin'),
+          configNeedsPrivileges: true,
+        ),
+        template: () async => template,
+        runner: runner,
+      );
+      final cubit = ConfigCubit(repo2);
+      await cubit.load();
+      cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), '@dev');
+      cubit.setField(ConfigSchema.byOption(SshnpdOption.managers), ['@client']);
+      expect(await cubit.save(), isTrue, reason: cubit.state.error);
+      expect(repo2.file.existsSync(), isTrue);
+      expect(File('${repo2.file.path}.bak').existsSync(), isFalse);
+
+      cubit.setField(ConfigSchema.byOption(SshnpdOption.device), 'pc');
+      expect(await cubit.save(), isTrue, reason: cubit.state.error);
+      expect(File('${repo2.file.path}.bak').existsSync(), isTrue);
+      expect(
+        File('${repo2.file.path}.bak').readAsStringSync(),
+        isNot(contains('name: pc')),
+      );
+      expect(repo2.file.readAsStringSync(), contains('name: pc'));
+      // Nothing of the staging survives.
+      expect(
+        Directory.systemTemp.listSync().where(
+          (e) => e.path.contains('noports-config-'),
+        ),
+        isEmpty,
+      );
+    },
+  );
 
   test('a plain save stays a single call with nothing appended', () async {
     final cubit = ConfigCubit(repo);

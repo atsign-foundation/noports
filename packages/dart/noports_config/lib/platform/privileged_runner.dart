@@ -97,10 +97,20 @@ class _PkexecRunner extends PrivilegedRunner {
     if (await _isRoot()) return _sh(script);
     final r = await Process.run('pkexec', ['sh', '-c', script]);
     if (r.exitCode != 0) {
-      if (r.exitCode == 126 || r.exitCode == 127) {
+      final err = r.stderr.toString().trim();
+      // pkexec itself exits 126 when the prompt is dismissed and 127 when
+      // authorization fails; a command missing inside the script also exits
+      // 127, but then sh has said which one on stderr.
+      if (r.exitCode == 126) {
         throw ServiceException('Cancelled at the authentication prompt.');
       }
-      final err = r.stderr.toString().trim();
+      if (r.exitCode == 127 &&
+          (err.isEmpty || err.contains('Not authorized'))) {
+        throw ServiceException(
+          'Not authorized at the authentication prompt.'
+          '${err.isEmpty ? '' : ' ($err)'}',
+        );
+      }
       throw ServiceException(err.isEmpty ? 'exit ${r.exitCode}' : err);
     }
     return r.stdout.toString();

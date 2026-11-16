@@ -39,6 +39,7 @@ dependencies:
   path: ^1.9.0
   intl: any
   material_ui: ^1.11.1
+  at_auth: ^4.0.0
 
 dev_dependencies:
   flutter_test:

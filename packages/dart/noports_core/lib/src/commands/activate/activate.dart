@@ -8,7 +8,12 @@ import 'package:path/path.dart' as path;
 
 /// The lifecycle verbs [Activate] runs, as one object a test can stand in
 /// for: the verbs themselves are extension methods on `Atsign`, which no
-/// mock can intercept.
+/// mock can intercept. The NoPorts Configuration app enrolls through the
+/// same object, so a device is enrolled one way everywhere.
+///
+/// Connections follow the preference's root domain: through the proxy when
+/// it names one (`proxy:host:port`), TLS sockets otherwise, as every other
+/// NoPorts command does through [lookUpsFor].
 class ActivateFlows {
   const ActivateFlows();
 
@@ -24,7 +29,7 @@ class ActivateFlows {
           keys: keys,
           preference: preference,
           storage: storage,
-          lookUps: secureSocketLookUps(),
+          lookUps: lookUpsFor(preference.rootDomain),
           secondaryAddressFinder: CacheableSecondaryAddressFinder(
               preference.rootDomain, preference.rootPort));
 
@@ -42,7 +47,7 @@ class ActivateFlows {
           device: device,
           keys: keys,
           preference: preference,
-          lookUps: secureSocketLookUps(),
+          lookUps: lookUpsFor(preference.rootDomain),
           secondaryAddressFinder: CacheableSecondaryAddressFinder(
               preference.rootDomain, preference.rootPort));
 
@@ -65,7 +70,7 @@ class ActivateFlows {
           namespaces: namespaces,
           keys: keys,
           preference: preference,
-          lookUps: secureSocketLookUps(),
+          lookUps: lookUpsFor(preference.rootDomain),
           secondaryAddressFinder: CacheableSecondaryAddressFinder(
               preference.rootDomain, preference.rootPort));
 }

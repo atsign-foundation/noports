@@ -16,7 +16,12 @@ class DaemonPaths {
     required this.userHomeDir,
     this.configNeedsPrivileges = false,
     this.legacyConfigFiles = const [],
+    this.serviceUid,
   });
+
+  /// Numeric uid the daemon runs as on Linux (the unit's User=), or null
+  /// where that is unknown or not a POSIX account.
+  final int? serviceUid;
 
   /// Whether writing [configDir] needs administrator rights (Linux:
   /// /etc/noports). Windows is already elevated; macOS uses a per-user
@@ -73,6 +78,7 @@ class DaemonPaths {
     Directory? serviceHomeDir,
     Directory? userHomeDir,
     bool configNeedsPrivileges = false,
+    int? serviceUid,
   }) => DaemonPaths._(
     configDir: configDir,
     binDir: binDir,
@@ -80,6 +86,7 @@ class DaemonPaths {
     userHomeDir:
         userHomeDir ?? Directory(p.join(configDir.parent.path, 'home')),
     configNeedsPrivileges: configNeedsPrivileges,
+    serviceUid: serviceUid,
   );
 
   /// The real user's home, seeing through sudo.
@@ -157,17 +164,19 @@ class DaemonPaths {
       configDir: Directory('/etc/noports'),
       // The noports deb / rpm installs to /usr/bin.
       binDir: _firstWithBinary(['/usr/bin', '/usr/local/bin']),
-      serviceHomeDir: _linuxServiceHome(),
+      serviceHomeDir: _linuxServiceAccount().home,
       userHomeDir: _userHome(),
       configNeedsPrivileges: true,
+      serviceUid: _linuxServiceAccount().uid,
     );
   }
 
-  /// Home of the account the sshnpd unit runs as. The noports package's
-  /// unit sets `User=1000` (the first ordinary user, so the keys in that
-  /// user's ~/.atsign/keys are readable by the daemon); a unit with no
-  /// User= runs as root.
-  static Directory _linuxServiceHome() {
+  /// The account the sshnpd unit runs as. The noports package's unit sets
+  /// `User=1000` (the first ordinary user, so the keys in that user's
+  /// ~/.atsign/keys are readable by the daemon); a unit with no User= runs
+  /// as root.
+  static ({Directory home, int? uid}) _linuxServiceAccount() {
+    final root = (home: Directory('/root'), uid: 0);
     try {
       final r = Process.runSync('systemctl', [
         'show',
@@ -177,16 +186,16 @@ class DaemonPaths {
         '--value',
       ]);
       final user = r.stdout.toString().trim();
-      if (user.isEmpty || user == 'root' || user == '0') {
-        return Directory('/root');
-      }
+      if (user.isEmpty || user == 'root' || user == '0') return root;
       final pw = Process.runSync('getent', ['passwd', user]);
       final parts = pw.stdout.toString().trim().split(':');
-      if (parts.length > 5 && parts[5].isNotEmpty) return Directory(parts[5]);
+      if (parts.length > 5 && parts[5].isNotEmpty) {
+        return (home: Directory(parts[5]), uid: int.tryParse(parts[2]));
+      }
     } catch (_) {
       // systemctl missing: assume root.
     }
-    return Directory('/root');
+    return root;
   }
 
   /// The MSI installs this app in a sub-folder of the NoPorts install

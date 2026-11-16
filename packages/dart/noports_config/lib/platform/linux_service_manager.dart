@@ -72,7 +72,12 @@ class LinuxServiceManager extends ServiceManager {
   @override
   Future<void> restart() async {
     await runner.runShell(privilegedRestartScript);
-    await waitFor((s) => !s.isTransitioning);
+    final s = await waitFor((s) => !s.isTransitioning);
+    if (!s.isRunning) {
+      throw ServiceException(
+        'Unit did not come back up (${s.detail}). Check the log below.',
+      );
+    }
   }
 
   /// `systemctl restart` starts a stopped unit too, so one line covers

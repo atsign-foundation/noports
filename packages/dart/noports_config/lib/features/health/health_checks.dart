@@ -6,6 +6,7 @@ import 'package:noports_config/features/keys/keys_repository.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
 import 'package:noports_config/platform/install_hints.dart';
 import 'package:noports_config/platform/service_manager.dart';
+import 'package:noports_core/sshnpd.dart';
 
 enum CheckLevel { pass, warn, fail }
 
@@ -116,13 +117,46 @@ class KeysFileCheck extends HealthCheck {
           : '';
       return fail('${file.path} not found.$hint', fix: HealthFix.keys);
     }
-    if (!KeysRepository.looksLikeAtKeys(file)) {
-      return fail('${file.path} is not a valid .atKeys file.');
+    final passPhrase = doc.getOption(SshnpdOption.passPhrase)?.toString();
+    final seen = await KeysRepository.inspect(file, passPhrase: passPhrase);
+    switch (seen.status) {
+      case KeysFileStatus.invalid:
+        return fail(
+          '${file.path} is not an .atKeys file at_auth can read.',
+          fix: HealthFix.keys,
+        );
+      case KeysFileStatus.passphraseNeeded:
+        return fail(
+          '${file.path} is passphrase protected but no passphrase is set. '
+          '${HealthCheck.fixOnConfigTab}',
+          fix: HealthFix.configuration,
+        );
+      case KeysFileStatus.wrongPassphrase:
+        return fail(
+          '${file.path} could not be decrypted with the configured '
+          'passphrase. ${HealthCheck.fixOnConfigTab}',
+          fix: HealthFix.configuration,
+        );
+      case KeysFileStatus.absent:
+      case KeysFileStatus.readable:
+        break;
     }
-    final fileAtsign = KeysRepository.atsignOf(file);
-    if (fileAtsign != null && fileAtsign != doc.atsign) {
+    if (seen.atsign != null && seen.atsign != doc.atsign) {
       return warn(
-        '${file.path} belongs to $fileAtsign but the device atsign is ${doc.atsign}.',
+        '${file.path} belongs to ${seen.atsign} but the device atsign is ${doc.atsign}.',
+      );
+    }
+    // The daemon may run as another account (the Linux package's unit runs
+    // as uid 1000): a file this user can open is no use if that account
+    // cannot.
+    final uid = ctx.paths.serviceUid;
+    if (uid != null && KeysRepository.readableBy(file, uid) == false) {
+      return fail(
+        '${file.path} is owned by uid ${KeysRepository.ownerUid(file)} with '
+        'a private mode, but the daemon runs as uid $uid and cannot read '
+        'it. Enroll or import the keys as that user, or move the file into '
+        'that account\'s ~/.atsign/keys.',
+        fix: HealthFix.keys,
       );
     }
     return pass('Keys for ${doc.atsign} at ${file.path}');

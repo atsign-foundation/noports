@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:noports_core/utils.dart' show sshnpDeviceNameRegex;
+import 'package:noports_core/utils.dart'
+    show snakifyDeviceName, sshnpDeviceNameRegex;
 
 /// Device names as sshnpd accepts them: 2 to 36 lowercase letters, digits,
 /// "_" or "-", not starting with "-". The rule is noports_core's
@@ -15,6 +16,11 @@ class DeviceNames {
       'Use 2-36 lowercase letters, digits, "_" or "-", not starting with "-".';
 
   static bool isValid(String? s) => s != null && _valid.hasMatch(s);
+
+  /// What the daemon makes of a typed name before checking it: lower case,
+  /// runs of white space as one "_" (noports_core's snakifyDeviceName). So
+  /// "My Laptop" is stored and shown as "my_laptop", the name clients use.
+  static String snakify(String s) => snakifyDeviceName(s.trim());
 
   /// A valid device name derived from [hostname] (default: this machine's):
   /// the first label, lowercased, with anything else turned into "_",

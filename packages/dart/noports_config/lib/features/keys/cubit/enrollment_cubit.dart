@@ -1,20 +1,16 @@
 import 'dart:io';
 
 import 'package:at_client/at_client_io.dart'
-    show
-        AtClientPreference,
-        AtsignLifecycle,
-        CacheableSecondaryAddressFinder,
-        FileAtKeysIo,
-        PendingEnrollment,
-        secureSocketLookUps;
+    show AtClientPreference, FileAtKeysIo, PendingEnrollment;
 import 'package:at_commons/at_commons.dart' show AtRootDomain, Atsign;
-import 'package:at_lookup/at_lookup_io.dart' show AtLookUpFactory;
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noports_config/features/keys/keys_repository.dart';
 import 'package:noports_config/platform/atsigns.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
+import 'package:noports_config/platform/device_names.dart';
+import 'package:noports_core/commands.dart'
+    show ActivateFlows, defaultAppName, defaultEnrollmentNamespaces;
 
 enum EnrollmentStep {
   enterDetails,
@@ -74,26 +70,29 @@ class EnrollmentState extends Equatable {
   ];
 }
 
-/// APKAM enrollment of this device, the same thing as
-/// `at_activate enroll -a @x -s <passcode> -p noports -d <device> -n "sshnp:rw,sshrvd:rw"`.
+/// APKAM enrollment of this device: `noports activate` from the GUI.
 ///
-/// The passcode (OTP or PIN) comes from the NoPorts Desktop app's
-/// Authenticator tab on the client, which also approves the request. The
-/// resulting .atKeys file is written to the user's ~/.atsign/keys, and is
-/// never written over an existing file.
+/// Runs noports_core's [ActivateFlows], the same object the CLI runs, so
+/// a device asks for the same app name and grants wherever it enrolls. The
+/// passcode (OTP or PIN) comes from the NoPorts Desktop app's Authenticator
+/// tab on the client, which also approves the request. The resulting
+/// .atKeys file is written to the user's ~/.atsign/keys, and is never
+/// written over an existing file.
 class EnrollmentCubit extends Cubit<EnrollmentState> {
   EnrollmentCubit({
     required this.rootDomain,
     DaemonPaths? paths,
+    ActivateFlows flows = const ActivateFlows(),
     this.retryInterval = const Duration(seconds: 10),
     this.maxRetries = 180,
   }) : _paths = paths,
+       _flows = flows,
        super(const EnrollmentState());
 
-  /// Must match what `sshnpd` enrolls as; the approve command in the docs
-  /// filters on these.
-  static const appName = 'noports';
-  static const namespaces = {'sshnp': 'rw', 'sshrvd': 'rw'};
+  /// What `sshnpd` enrolls as; the approve command in the docs filters on
+  /// these.
+  static final appName = defaultAppName;
+  static final namespaces = defaultEnrollmentNamespaces;
 
   /// As written in sshnpd.yaml, e.g. `root.atsign.org` or
   /// `proxy:host:port`.
@@ -104,6 +103,10 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
   /// the wait for a person to approve has no bound of its own.
   final int maxRetries;
   final DaemonPaths? _paths;
+  final ActivateFlows _flows;
+
+  /// The request in flight, so [cancel] can end its wait.
+  PendingEnrollment? _pending;
   bool _cancelled = false;
 
   DaemonPaths get paths => _paths ?? DaemonPaths.instance;
@@ -114,16 +117,29 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
     required String passcode,
   }) async {
     final atsign = Atsigns.normalize(rawAtsign);
-    final device = deviceName.trim();
+    // As the daemon does with its own setting: snakify, then the pattern.
+    final device = DeviceNames.snakify(deviceName);
     final code = passcode.trim();
     if (atsign == null) {
       emit(
-        state.copyWith(error: '"${rawAtsign.trim()}" is not a valid atsign.'),
+        state.copyWith(
+          error:
+              '"${rawAtsign.trim()}" is not a valid atsign: '
+              '${Atsigns.problem(rawAtsign)}',
+        ),
       );
       return;
     }
-    if (device.isEmpty || code.isEmpty) {
-      emit(state.copyWith(error: 'Device name and passcode are required.'));
+    if (!DeviceNames.isValid(device)) {
+      emit(
+        state.copyWith(
+          error: 'Device name "$device" is not allowed. ${DeviceNames.rule}',
+        ),
+      );
+      return;
+    }
+    if (code.isEmpty) {
+      emit(state.copyWith(error: 'The passcode is required.'));
       return;
     }
     _cancelled = false;
@@ -144,23 +160,17 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
         ..rootDomain = root.rootDomain
         ..rootPort = root.rootPort;
       final keys = FileAtKeysIo(filePath: (_) => dest.path);
-      final lookUps = lookUpsFor(rootDomain);
-      final finder = CacheableSecondaryAddressFinder(
-        root.rootDomain,
-        root.rootPort,
-      );
       final at = Atsign(atsign);
 
       // A keyfile holding a request submitted earlier for this app and
       // device is resumed rather than repeated. Any other existing keyfile
       // is left alone: never overwrite a device's keys.
-      PendingEnrollment? pending = await at.resumeEnrollment(
+      var pending = await _flows.resumeEnrollment(
+        at,
         app: appName,
         device: device,
         keys: keys,
         preference: preference,
-        lookUps: lookUps,
-        secondaryAddressFinder: finder,
       );
       if (pending == null && await dest.exists()) {
         throw StateError(
@@ -169,17 +179,20 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
           'needs new keys.',
         );
       }
-      pending ??= await at.enroll(
+      pending ??= await _flows.enroll(
+        at,
         otp: code,
         app: appName,
         device: device,
         namespaces: namespaces,
         keys: keys,
         preference: preference,
-        lookUps: lookUps,
-        secondaryAddressFinder: finder,
       );
-      if (_cancelled) return;
+      _pending = pending;
+      if (_cancelled) {
+        await pending.cancel();
+        return;
+      }
       emit(
         state.copyWith(
           step: EnrollmentStep.awaitingApproval,
@@ -203,36 +216,25 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
       emit(
         state.copyWith(step: EnrollmentStep.enterDetails, error: _describe(e)),
       );
+    } finally {
+      _pending = null;
     }
   }
 
-  /// Stop waiting. The request stays pending on the atServer until it is
-  /// approved, denied or expires.
-  void cancel() {
+  /// Stop waiting and abandon the request: the wait ends, the pending keys
+  /// are dropped from the file, and a later approval in NoPorts Desktop
+  /// completes nothing here. The request itself stays on the atServer
+  /// until the manager denies it or it expires.
+  Future<void> cancel() async {
     _cancelled = true;
-  }
-
-  /// Connections for [rootDomain]: through the proxy when it names one
-  /// (`proxy:host:port`, as sshnpd's --root-server accepts), TLS sockets
-  /// otherwise. Mirrors at_client_cli's lookUpsFor, which is not exported.
-  static AtLookUpFactory lookUpsFor(String rootDomain) {
-    if (!rootDomain.startsWith('proxy:')) return secureSocketLookUps();
-    return ({
-      required atSign,
-      required rootDomain,
-      required authenticator,
-      secondaryAddressFinder,
-    }) =>
-        secureSocketLookUps(
-          onConnect: (connection) async {
-            await connection.sendSync('from:$atSign\n');
-          },
-        )(
-          atSign: atSign,
-          rootDomain: rootDomain,
-          authenticator: authenticator,
-          secondaryAddressFinder: secondaryAddressFinder,
-        );
+    final pending = _pending;
+    if (pending != null) {
+      try {
+        await pending.cancel();
+      } catch (_) {
+        // Already ended; nothing to withdraw.
+      }
+    }
   }
 
   static String describeError(Object e) => _describe(e);

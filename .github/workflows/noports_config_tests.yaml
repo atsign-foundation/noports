@@ -25,6 +25,11 @@ on:
       - "packages/dart/noports_config/**"
       - "packages/dart/noports_core/**"
 
+env:
+  # One Flutter for every job, so a stable-channel release cannot change a
+  # build under us (3.50 deprecated flutter/material; see material_ui).
+  FLUTTER_VERSION: "3.47.5"
+
 defaults:
   run:
     working-directory: packages/dart/noports_config
@@ -36,8 +41,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          channel: "stable"
-      - run: flutter pub get
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: flutter pub get --enforce-lockfile
       - run: flutter gen-l10n
       - name: Generated l10n is committed and up to date
         run: git diff --exit-code -- lib/l10n
@@ -54,6 +59,62 @@ jobs:
   # Proves the desktop targets compile and produces one archive per target
   # for hands-on testing. The MSI build in multibuild.yaml only runs on
   # release tags, so this is the day-to-day check.
+  # The end-to-end suite against an atsign ephemeral environment: enroll
+  # with a bare atsign (OTP issued and approved with at_activate), save
+  # sshnpd.yaml, run the checks and the doctor, start sshnpd from that file
+  # and list the device from the manager atsign. The daemon, client and
+  # relay come from the latest NoPorts release.
+  ee:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: flutter pub get --enforce-lockfile
+      - name: NoPorts binaries from the latest release
+        run: |
+          mkdir -p "$RUNNER_TEMP/np"
+          curl -fsSL https://github.com/atsign-foundation/noports/releases/latest/download/sshnp-linux-x64.tgz \
+            | tar -xz -C "$RUNNER_TEMP/np"
+          "$RUNNER_TEMP/np/sshnp/sshnpd" --version
+      - name: Start the ephemeral environment
+        run: |
+          echo "127.0.0.1 vip.ve.atsign.zone" | sudo tee -a /etc/hosts
+          mkdir -p "$RUNNER_TEMP/ee"
+          printf 'cfgdev\ncfgmgr\ncfgrelay\n' > "$RUNNER_TEMP/ee/atsigns"
+          docker run -d --name ee \
+            -p 127.0.0.1:2500-2599:2500-2599 \
+            --add-host vip.ve.atsign.zone:127.0.0.1 \
+            -e EPHEMERAL_BASE_PORT=2500 -e DNS_FQDN=vip.ve.atsign.zone \
+            -v "$RUNNER_TEMP/ee/atsigns:/tmp/setup/atsigns:ro" \
+            atsigncompany/ephemeral:latest
+          for i in $(seq 1 90); do
+            have=$(docker exec ee sh -c 'cat /tmp/CRAM_Keys 2>/dev/null' | grep -cE '^[a-z0-9]+\s+[0-9a-f]{64}' || true)
+            [ "$have" -ge 3 ] && break
+            sleep 2
+          done
+          [ "$have" -ge 3 ] || { docker logs ee | tail -50; exit 1; }
+          for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/2500) 2>/dev/null && break; sleep 1; done
+      - name: Onboard the test atsigns
+        run: |
+          mkdir -p "$RUNNER_TEMP/ee/keys"
+          while read -r name cram; do
+            "$RUNNER_TEMP/np/sshnp/at_activate" onboard -a "@$name" -c "$cram" \
+              -r vip.ve.atsign.zone:2500 -k "$RUNNER_TEMP/ee/keys/@${name}_key.atKeys" -y
+          done < <(docker exec ee cat /tmp/CRAM_Keys)
+          ls -l "$RUNNER_TEMP/ee/keys"
+      - name: flutter test --tags ee
+        env:
+          EE_ROOT: vip.ve.atsign.zone:2500
+          EE_KEYS: ${{ runner.temp }}/ee/keys
+          EE_BIN: ${{ runner.temp }}/np/sshnp
+        run: flutter test --tags ee test/ee_enrollment_test.dart -r expanded
+      - name: Environment logs on failure
+        if: failure()
+        run: docker logs ee | tail -100
+
   build:
     strategy:
       fail-fast: false
@@ -64,8 +125,8 @@ jobs:
             arch: x64
             bundle: build/windows/x64/runner/Release
           # Native Windows on ARM. Experimental: Flutter builds arm64 only
-          # on an arm64 host, and the NoPorts CLI binaries are not shipped
-          # for Windows arm64 yet, so the app would run but find no daemon.
+          # on an arm64 host, and the arm64 MSI (multibuild) is itself
+          # experimental.
           - os: windows-11-arm
             target: windows
             arch: arm64
@@ -95,17 +156,18 @@ jobs:
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         if: ${{ matrix.arch != 'arm64' }}
         with:
-          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: false
       # Flutter publishes SDK archives for x64 hosts only, so the action has
-      # nothing to download on ARM runners. A shallow clone of the stable
-      # branch bootstraps the matching arm64 Dart SDK and engine artifacts.
+      # nothing to download on ARM runners. A shallow clone of the pinned
+      # release tag bootstraps the matching arm64 Dart SDK and engine
+      # artifacts.
       - name: Install Flutter from git (arm64 hosts)
         if: ${{ matrix.arch == 'arm64' }}
         shell: bash
         working-directory: ${{ runner.temp }}
         run: |
-          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git
+          git clone --depth 1 --branch "$FLUTTER_VERSION" https://github.com/flutter/flutter.git
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
           "$RUNNER_TEMP/flutter/bin/flutter" --version
       - name: Linux desktop build dependencies
@@ -113,7 +175,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build libgtk-3-dev
-      - run: flutter pub get
+      - run: flutter pub get --enforce-lockfile
       - run: flutter build ${{ matrix.target }} --release
       - name: Bundle the Visual C++ runtime (Windows only)
         if: ${{ matrix.target == 'windows' }}

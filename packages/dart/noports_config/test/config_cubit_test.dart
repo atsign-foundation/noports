@@ -91,13 +91,62 @@ void main() {
     );
   });
 
+  test('invalid manager atsigns and port bounds are reported', () async {
+    final cubit = ConfigCubit(repo);
+    await cubit.load();
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), '@dev');
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.managers), ['al!ce']);
+    expect(
+      cubit.state.problems.map((p) => p.message).join(),
+      contains('"al!ce" is not a valid atsign: invalid @sign'),
+    );
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.managers), ['@c']);
+    expect(cubit.state.problems, isEmpty);
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.policyManager), 'a@b');
+    expect(cubit.state.problems.map((p) => p.option), [
+      SshnpdOption.policyManager,
+    ]);
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.policyManager), null);
+
+    final port = ConfigSchema.byOption(SshnpdOption.localSshdPort);
+    for (final (value, ok) in [
+      (0, false),
+      (1, true),
+      (65535, true),
+      (65536, false),
+      ('abc', false),
+    ]) {
+      cubit.setField(port, value);
+      expect(
+        cubit.state.problems.any((p) => p.option == SshnpdOption.localSshdPort),
+        !ok,
+        reason: '$value',
+      );
+    }
+  });
+
+  test('device name follows the daemon rule, snakified first', () async {
+    final cubit = ConfigCubit(repo);
+    await cubit.load();
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), '@dev');
+    cubit.setField(ConfigSchema.byOption(SshnpdOption.managers), ['@c']);
+    final device = ConfigSchema.byOption(SshnpdOption.device);
+    // What the daemon would accept after snakifying is accepted and stored
+    // snakified.
+    cubit.setField(device, 'My Laptop');
+    expect(cubit.state.doc!.deviceName, 'my_laptop');
+    expect(cubit.state.problems, isEmpty);
+    cubit.update((d) => d.deviceName = 'Other  PC');
+    expect(cubit.state.doc!.deviceName, 'other_pc');
+  });
+
   test('device name follows the daemon rule', () async {
     final cubit = ConfigCubit(repo);
     await cubit.load();
     cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), '@dev');
     cubit.setField(ConfigSchema.byOption(SshnpdOption.managers), ['@c']);
     final device = ConfigSchema.byOption(SshnpdOption.device);
-    for (final bad in ['My-PC', 'x', '-pc']) {
+    for (final bad in ['x', '-pc', 'a' * 37]) {
       cubit.setField(device, bad);
       expect(
         cubit.state.problems.map((p) => p.option),

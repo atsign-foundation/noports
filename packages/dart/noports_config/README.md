@@ -18,7 +18,7 @@ this one on the machine you connect *to*.
 | --- | --- |
 | Status | Live service state, Start / Stop / Restart, start mode, PID, last exit code, recent log lines from the platform log (Event Log, launchd, journald). |
 | Configuration | A form generated from the daemon's own option definitions, plus a raw YAML editor over the same document. Save, Revert, Save and restart. Comments in the file are preserved. |
-| Keys | Shows which `.atKeys` file the daemon will use and whether it exists. Enrolls the device through APKAM: the user pastes the OTP or PIN from the Authenticator tab of NoPorts Desktop on their client, the request is approved there, and the new keys land in the user's own `~/.atsign/keys` (where `at_activate` puts them); `sshnpd.yaml` gets the absolute path so the root / LocalSystem service can read the file. Existing key files are never overwritten. Importing an existing `.atKeys` file is kept as a secondary option for fleets and recovery. |
+| Keys | Shows which `.atKeys` file the daemon will use and whether it exists. Enrolls the device through APKAM: the user pastes the OTP or PIN from the Authenticator tab of NoPorts Desktop on their client, the request is approved there, and the new keys land in the user's own `~/.atsign/keys` (where `at_activate` puts them); `sshnpd.yaml` gets the absolute path so the daemon's account (LocalSystem on Windows, the unit's `User=` on Linux, the user themselves on macOS) can read the file. Existing key files are never overwritten. Importing an existing `.atKeys` file is kept as a secondary option for fleets and recovery. |
 | Diagnostics | In-app checks (config valid, keys present, access configured, binary present, atDirectory reachable, service state) and a button to run `sshnpd --doctor` for the full report. |
 
 When `sshnpd.yaml` has no device atsign the app opens on a four step
@@ -41,8 +41,8 @@ Desktop, never here.
   `msvcp140.dll`, `vcruntime140.dll` and `vcruntime140_1.dll` next to the
   exe with `tools/bundle_msvc_runtime.ps1` (app-local deployment, as the
   Flutter docs recommend for non-MSIX apps). The script picks the x64,
-  arm64 or x86 redist to match the build output; today everything NoPorts
-  ships for Windows is x64, which also runs under emulation on ARM PCs.
+  arm64 or x86 redist to match the build output: the MSI ships for x64
+  and, experimentally, native arm64.
   Run it yourself after a local `flutter build windows` if the target
   machine lacks the VC redist. Config lives at `%ProgramData%\NoPorts\sshnpd.yaml`,
   the service is `sshnpd` (controlled with `sc.exe`), logs come from the
@@ -159,7 +159,9 @@ Linux package; `~/.local/bin` by default).
 
 `.github/workflows/noports_config_tests.yaml` analyzes, tests and builds
 five targets (Windows x64 / arm64, Linux x64 / arm64, macOS universal) on
-every push, keeping one archive per target as a run artifact for 30 days.
+pushes to trunk and on pull requests, keeping one archive per target as a
+run artifact for 30 days. Every job installs the one Flutter release pinned
+in the workflow and resolves with `--enforce-lockfile`.
 Start it by hand from the Actions tab with **sign_artifacts** ticked and the
 Windows and macOS archives are signed (Azure Trusted Signing; Developer ID
 plus notarisation) and replace the unsigned artifacts on that run. Nothing

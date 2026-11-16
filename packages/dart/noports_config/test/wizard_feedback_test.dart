@@ -140,7 +140,7 @@ void main() {
     final config = await openWizard(tester);
     final fields = find.byType(TextField);
     await type(tester, fields.at(0), 'dev');
-    await tester.enterText(fields.at(1), 'My-PC');
+    await tester.enterText(fields.at(1), '-pc');
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text(DeviceNames.rule), findsOneWidget);
     final next = tester.widget<FilledButton>(
