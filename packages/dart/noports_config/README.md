@@ -88,6 +88,42 @@ Desktop, never here.
   builds for x64 and arm64 only, so there is no app for the daemon's armv7
   and riscv64 targets.
 
+## Uninstalling
+
+The app has no uninstall action of its own: removing the binaries is the
+package manager's or the MSI's job, and the app never touches the device
+keys. What each platform removes and what it deliberately leaves behind:
+
+* **Windows.** Settings > Apps > Installed apps > NoPorts > Uninstall, or
+  `msiexec /x NoPorts-x64.msi /qn`. The MSI stops and deletes the `sshnpd`
+  service, the CLI, this app, the Start Menu shortcut and the PATH entry.
+  It keeps `%ProgramData%\NoPorts\sshnpd.yaml` (so a reinstall keeps the
+  device's configuration) and never touches `%USERPROFILE%\.atsign`.
+* **Linux.** `sudo apt remove noports-config` (or `dnf remove`) removes the
+  app only. `sudo apt remove noports` stops and disables the `sshnpd` unit
+  (the package's preremove script), then removes the CLI and the unit.
+  The config files are package conffiles and stay until
+  `sudo apt purge noports`: `/etc/noports/sshnpd.yaml` and
+  `/etc/systemd/system/sshnpd.service.d/override.conf`, which holds the
+  `User=` the app set. rpm keeps modified config files as `.rpmsave`.
+* **macOS.** `brew uninstall noports` removes the CLI, unloads the cask's
+  launchd service and removes the config it placed; `brew uninstall --zap
+  noports` also trashes `~/.atsign/sshnp`. What this app installed is the
+  user's own and nothing removes it: the LaunchAgents
+  `~/Library/LaunchAgents/com.atsign.sshnpd.plist` and
+  `com.atsign.sshnpd.logrotate.plist` (unload with
+  `launchctl bootout gui/$(id -u)/com.atsign.sshnpd` and the same for the
+  logrotate label, then delete the files), the config under
+  `~/Library/Application Support/NoPorts`, and the log in `~/.sshnpd/logs`.
+  A universal.sh install has no uninstaller: remove `~/.local/bin/sshnpd`
+  and the same LaunchAgent by hand.
+
+Left on every platform, on purpose: the device keys in `~/.atsign/keys`,
+the daemon's local storage under `~/.atsign/storage/<atsign>/.npd/`, and
+the device's enrollment, which stays approved on the atServer until the
+manager revokes it (NoPorts Desktop, or `at_activate revoke` with the
+manager's keys). Delete the key file by hand only after revoking.
+
 ## Layout
 
 ```
