@@ -1,7 +1,102 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:noports_core/utils.dart' show invalidDeviceName;
+import 'package:npt_flutter/app.dart';
+import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/form_validator.dart';
 
+final _acceptedDeviceNames = ['ab', 'a-b', 'a-', 'my_device', 'x' * 36];
+
+Future<AppLocalizations> _pumpApp(WidgetTester tester) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      navigatorKey: App.navState,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const SizedBox(),
+    ),
+  );
+  return AppLocalizations.of(App.navState.currentContext!)!;
+}
+
+void _expectDeviceNameResult(Iterable<String?> names, String? expected) {
+  for (final name in names) {
+    expect(
+      FormValidator.validateDeviceNameField(name),
+      expected,
+      reason: '"$name"',
+    );
+  }
+}
+
 void main() {
+  group("Given the profile form's device name field", () {
+    testWidgets('when the name is empty, then it shows the empty-field error', (
+      tester,
+    ) async {
+      final strings = await _pumpApp(tester);
+      _expectDeviceNameResult(['', null], strings.validationErrorEmptyField);
+    });
+
+    testWidgets(
+      'when the name is 2 to 36 characters of a-z, 0-9, "_" or "-" and does'
+      ' not start with "-", then it is accepted',
+      (tester) async {
+        await _pumpApp(tester);
+        _expectDeviceNameResult(_acceptedDeviceNames, null);
+      },
+    );
+
+    testWidgets(
+      'when the name starts with "-", then it shows the device-name error',
+      (tester) async {
+        final strings = await _pumpApp(tester);
+        _expectDeviceNameResult([
+          '-ab',
+        ], strings.validationErrorDeviceNameField);
+      },
+    );
+
+    testWidgets(
+      'when the name is one character, then it shows the device-name error',
+      (tester) async {
+        final strings = await _pumpApp(tester);
+        _expectDeviceNameResult([
+          'a',
+          '_',
+        ], strings.validationErrorDeviceNameField);
+      },
+    );
+
+    testWidgets(
+      'when the name has any other character, then it shows the device-name'
+      ' error',
+      (tester) async {
+        final strings = await _pumpApp(tester);
+        _expectDeviceNameResult([
+          'A',
+          'a.b',
+          'a b',
+          'my.device',
+        ], strings.validationErrorDeviceNameField);
+      },
+    );
+
+    testWidgets(
+      'when the name is over 36 characters, then it shows the too-long error',
+      (tester) async {
+        final strings = await _pumpApp(tester);
+        _expectDeviceNameResult(['x' * 37], strings.validationErrorLongField);
+      },
+    );
+
+    test('when the field accepts a name, then noports_core accepts it too', () {
+      for (final name in _acceptedDeviceNames) {
+        expect(invalidDeviceName(name), isFalse, reason: name);
+      }
+    });
+  });
+
   group('validateHostPortField', () {
     test('should accept valid localhost with port', () {
       final result = FormValidator.validateHostPortField('localhost:8080');

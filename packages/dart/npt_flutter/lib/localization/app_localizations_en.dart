@@ -1212,7 +1212,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get validationErrorDeviceNameField =>
-      'Field can only contain lowercase letters, digits, underscores.';
+      'Use 2-36 lowercase letters, digits, \"_\" or \"-\", not starting with \"-\".';
 
   @override
   String get validationErrorEmptyField => 'This field cannot be left blank';
@@ -1226,7 +1226,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Number must be between 1024 and 65535';
 
   @override
-  String get validationErrorLongField => 'Field must be 1-36 characters long';
+  String get validationErrorLongField => 'Field must be 2-36 characters long';
 
   @override
   String get validationErrorRelayField => 'Relay must be a valid atsign';
