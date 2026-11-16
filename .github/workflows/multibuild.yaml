@@ -292,6 +292,11 @@ jobs:
         if: ${{ matrix.platform == 'windows' }}
         uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
         with:
+          # The action caches its PowerShell module under one key for every
+          # runner. A module cached by the arm64 job cannot be imported on
+          # x64 (run 43974007494), so only x64 uses the cache; arm64
+          # installs the module each time (seconds).
+          cache-dependencies: ${{ matrix.winarch == 'x64' }}
           endpoint: 'https://eus.codesigning.azure.net/'
           signing-account-name: 'atsign-github-signing'
           certificate-profile-name: 'Atsign-Software-Signing'
@@ -324,6 +329,11 @@ jobs:
         if: ${{ matrix.platform == 'windows' }}
         uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
         with:
+          # The action caches its PowerShell module under one key for every
+          # runner. A module cached by the arm64 job cannot be imported on
+          # x64 (run 43974007494), so only x64 uses the cache; arm64
+          # installs the module each time (seconds).
+          cache-dependencies: ${{ matrix.winarch == 'x64' }}
           endpoint: 'https://eus.codesigning.azure.net/'
           signing-account-name: 'atsign-github-signing'
           certificate-profile-name: 'Atsign-Software-Signing'
