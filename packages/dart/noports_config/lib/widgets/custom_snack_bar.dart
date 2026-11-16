@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:noports_config/l10n/app_localizations.dart';
 import 'package:noports_config/styles/app_color.dart';
 import 'package:noports_config/styles/sizes.dart';

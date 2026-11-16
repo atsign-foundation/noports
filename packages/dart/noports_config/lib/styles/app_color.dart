@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Palette lifted from npt_flutter (NoPorts Desktop) so the two apps look
 /// like siblings. Change a colour here and it changes everywhere.

@@ -38,6 +38,7 @@ dependencies:
   url_launcher: ^6.3.0
   path: ^1.9.0
   intl: any
+  material_ui: ^1.11.1
 
 dev_dependencies:
   flutter_test:

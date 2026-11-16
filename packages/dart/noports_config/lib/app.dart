@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noports_config/features/config/config_repository.dart';
 import 'package:noports_config/features/config/cubit/config_cubit.dart';

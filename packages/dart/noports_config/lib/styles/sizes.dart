@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Spacing scale shared with npt_flutter. Prefer these over literals.
 class Sizes {
