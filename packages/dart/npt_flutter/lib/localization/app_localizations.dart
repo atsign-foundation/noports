@@ -2294,7 +2294,7 @@ abstract class AppLocalizations {
   /// No description provided for @validationErrorDeviceNameField.
   ///
   /// In en, this message translates to:
-  /// **'Field can only contain lowercase letters, digits, underscores.'**
+  /// **'Use 2-36 lowercase letters, digits, \"_\" or \"-\", not starting with \"-\".'**
   String get validationErrorDeviceNameField;
 
   /// No description provided for @validationErrorEmptyField.
@@ -2318,7 +2318,7 @@ abstract class AppLocalizations {
   /// No description provided for @validationErrorLongField.
   ///
   /// In en, this message translates to:
-  /// **'Field must be 1-36 characters long'**
+  /// **'Field must be 2-36 characters long'**
   String get validationErrorLongField;
 
   /// No description provided for @validationErrorRelayField.
