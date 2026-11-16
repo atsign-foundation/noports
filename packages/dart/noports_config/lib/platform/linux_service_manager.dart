@@ -170,10 +170,16 @@ class LinuxServiceManager extends ServiceManager {
   }
 
   /// The unit's `User=` as a uid: root when unset, null when systemctl is
-  /// not there to ask.
+  /// not there to ask or the unit is not installed (nothing to adopt).
   static int? _unitUidOf(String unit) {
-    final user = _out('systemctl', ['show', unit, '-p', 'User', '--value']);
-    if (user == null) return null;
+    final out = _out('systemctl', ['show', unit, '-p', 'LoadState,User']);
+    if (out == null || out.contains('LoadState=not-found')) return null;
+    final user =
+        RegExp(
+          r'^User=(.*)$',
+          multiLine: true,
+        ).firstMatch(out)?.group(1)?.trim() ??
+        '';
     if (user.isEmpty || user == 'root') return 0;
     return int.tryParse(user) ?? _uidOf(user);
   }

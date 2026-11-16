@@ -57,7 +57,12 @@ void main() {
     cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), '@dev');
     cubit.setField(ConfigSchema.byOption(SshnpdOption.managers), ['@client']);
 
-    final restart = LinuxServiceManager(runner: runner).privilegedRestartScript;
+    // The unit already runs as this user here; adoption has its own tests.
+    final restart = LinuxServiceManager(
+      runner: runner,
+      appUser: (uid: 1234, name: 'alice'),
+      unitUid: () => 1234,
+    ).privilegedRestartScript;
     expect(restart, 'systemctl restart sshnpd');
 
     // Stand in for systemctl: record that the restart ran after the write.
