@@ -34,10 +34,18 @@ abstract class PrivilegedRunner {
   static String q(String s) => "'${s.replaceAll("'", "'\\''")}'";
 }
 
+/// Full path of a Windows system executable. The app runs elevated, so it
+/// must not pick up a same-named program from PATH or the working
+/// directory.
+String windowsSystemExe(String name) {
+  final root = Platform.environment['SystemRoot'] ?? r'C:\Windows';
+  return '$root\\System32\\$name';
+}
+
 class _DirectRunner extends PrivilegedRunner {
   @override
   Future<String> runShell(String script) async {
-    final r = await Process.run('cmd', ['/c', script]);
+    final r = await Process.run(windowsSystemExe('cmd.exe'), ['/c', script]);
     if (r.exitCode != 0) {
       throw ServiceException(
         (r.stderr.toString().trim().isNotEmpty ? r.stderr : r.stdout)
@@ -53,7 +61,7 @@ class _DirectRunner extends PrivilegedRunner {
 
   @override
   Future<bool> alreadyPrivileged() async {
-    final r = await Process.run('net', ['session']);
+    final r = await Process.run(windowsSystemExe('net.exe'), ['session']);
     return r.exitCode == 0;
   }
 }

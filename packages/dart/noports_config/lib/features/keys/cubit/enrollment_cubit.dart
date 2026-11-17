@@ -213,11 +213,34 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
       emit(state.copyWith(step: EnrollmentStep.done, keysFile: dest));
     } catch (e) {
       if (_cancelled) return;
+      await _dropStubAfter(e, dest);
       emit(
         state.copyWith(step: EnrollmentStep.enterDetails, error: _describe(e)),
       );
     } finally {
       _pending = null;
+    }
+  }
+
+  /// The SDK records a submitted request in the keys file so it can be
+  /// resumed. After a final outcome (denied, expired, rejected) that record
+  /// is only a dead end: the next attempt would resume it and fail again
+  /// at once. Remove it, unless the file holds real keys. A timeout while
+  /// the request is still pending keeps the record, so the wait can be
+  /// resumed.
+  static Future<void> _dropStubAfter(Object error, File dest) async {
+    final text = error.toString();
+    if (text.contains('timed out') || text.contains('TimeoutException')) {
+      return;
+    }
+    try {
+      if (!await dest.exists()) return;
+      if (KeysRepository.inspectSync(dest).status == KeysFileStatus.readable) {
+        return;
+      }
+      await dest.delete();
+    } catch (_) {
+      // Leave it; the keys tab reports what is there.
     }
   }
 
@@ -245,11 +268,14 @@ class EnrollmentCubit extends Cubit<EnrollmentState> {
       '',
     );
     if (s.contains('CERTIFICATE_VERIFY_FAILED') ||
-        s.contains('HandshakeException')) {
+        s.contains('unable to get local issuer')) {
       return 'The secure connection to the atServer could not be verified '
           '(CERTIFICATE_VERIFY_FAILED). This machine is missing the root '
           'certificates that TLS needs: install the ca-certificates package '
           '(Linux) or check the system trust store, then try again.';
+    }
+    if (s.contains('HandshakeException')) {
+      return 'The TLS handshake with the atServer failed: $s';
     }
     if (s.contains('AT0032') || s.contains('Another enrollment with id')) {
       final name = RegExp(r'device name: (\S+)').firstMatch(s)?.group(1);

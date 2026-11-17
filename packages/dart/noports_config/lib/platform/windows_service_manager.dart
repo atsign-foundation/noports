@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:noports_config/platform/privileged_runner.dart';
 import 'package:noports_config/platform/service_manager.dart';
 
 /// Drives the `sshnpd` Windows service installed by the MSI through sc.exe
@@ -31,7 +32,10 @@ class WindowsServiceManager extends ServiceManager {
 
   @override
   Future<ServiceStatus> status() async {
-    final result = await Process.run('sc', ['query', serviceName]);
+    final result = await Process.run(windowsSystemExe('sc.exe'), [
+      'query',
+      serviceName,
+    ]);
     final out = result.stdout.toString();
     if (result.exitCode == 1060 || out.contains('1060')) {
       return const ServiceStatus.notInstalled();
@@ -60,7 +64,10 @@ class WindowsServiceManager extends ServiceManager {
       );
     }
     String? startType;
-    final qc = await Process.run('sc', ['qc', serviceName]);
+    final qc = await Process.run(windowsSystemExe('sc.exe'), [
+      'qc',
+      serviceName,
+    ]);
     final st = RegExp(
       r'START_TYPE\s*:\s*\d+\s+(\w+)',
     ).firstMatch(qc.stdout.toString())?.group(1);
@@ -96,7 +103,10 @@ class WindowsServiceManager extends ServiceManager {
 
   @override
   Future<void> stop() async {
-    final result = await Process.run('sc', ['stop', serviceName]);
+    final result = await Process.run(windowsSystemExe('sc.exe'), [
+      'stop',
+      serviceName,
+    ]);
     // 1062: service not started. Not an error for our purposes.
     if (result.exitCode != 0 && !result.stdout.toString().contains('1062')) {
       throw ServiceException(result.stdout.toString().trim());
@@ -112,12 +122,10 @@ class WindowsServiceManager extends ServiceManager {
         "Get-WinEvent -FilterHashtable @{LogName='Application'; ProviderName=@($providers)} "
         "-MaxEvents $lines | Sort-Object TimeCreated | ForEach-Object { "
         "'{0:yyyy-MM-dd HH:mm:ss} [{1}] {2}' -f \$_.TimeCreated, \$_.LevelDisplayName, \$_.Message }";
-    final result = await Process.run('powershell', [
-      '-NoProfile',
-      '-NonInteractive',
-      '-Command',
-      script,
-    ]);
+    final result = await Process.run(
+      windowsSystemExe(r'WindowsPowerShell\\v1.0\\powershell.exe'),
+      ['-NoProfile', '-NonInteractive', '-Command', script],
+    );
     final out = result.stdout.toString().trim();
     if (out.isEmpty) {
       return 'No Event Log entries found for ${eventProviders.join(' / ')}.';
@@ -127,7 +135,7 @@ class WindowsServiceManager extends ServiceManager {
 
   @override
   Future<bool> isElevated() async {
-    final result = await Process.run('net', ['session']);
+    final result = await Process.run(windowsSystemExe('net.exe'), ['session']);
     return result.exitCode == 0;
   }
 }

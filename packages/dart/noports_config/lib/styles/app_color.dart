@@ -14,7 +14,7 @@ class AppColor {
   static const cardColorDark = Color(0xFFEAEAEA);
   static const successColor = Color(0xFFA4CC4F);
   static const successColorAlt = Color(0xFFE2EEE2);
-  static const warningColor = Color(0xFFE8A33D);
+  static const warningColor = Color(0xFFE5A100);
   static const warningColorAlt = Color(0xFFFFF4E0);
   static const loadingColorAlt = Color(0xFFFFF1EE);
   static const errorColor = Color(0xFFBF0813);

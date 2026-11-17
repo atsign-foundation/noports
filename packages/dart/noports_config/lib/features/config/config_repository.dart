@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:noports_config/features/config/model/sshnpd_config_document.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
+import 'package:noports_config/platform/linux_service_manager.dart';
 import 'package:noports_config/platform/privileged_runner.dart';
 import 'package:path/path.dart' as p;
 
@@ -16,13 +17,24 @@ class ConfigRepository {
     DaemonPaths? paths,
     Future<String> Function()? template,
     PrivilegedRunner? runner,
+    String? Function()? ownerGroup,
   }) : _paths = paths,
        _template = template ?? _bundledTemplate,
-       _runner = runner;
+       _runner = runner,
+       _ownerGroup = ownerGroup ?? _defaultOwnerGroup;
 
   final DaemonPaths? _paths;
   final Future<String> Function() _template;
   final PrivilegedRunner? _runner;
+  final String? Function() _ownerGroup;
+
+  /// Group that may read a privileged (Linux) config: the primary group of
+  /// the account the daemon runs as, which is the user of this app. Null
+  /// means leave owner and mode alone.
+  String? get ownerGroup => _ownerGroup();
+
+  static String? _defaultOwnerGroup() =>
+      Platform.isLinux ? LinuxServiceManager.currentUser().group : null;
 
   DaemonPaths get paths => _paths ?? DaemonPaths.instance;
   PrivilegedRunner get runner => _runner ?? PrivilegedRunner.instance;
@@ -95,12 +107,21 @@ class ConfigRepository {
         final dir = q(paths.configDir.path);
         final dest = q(file.path);
         final src = q(staged.path);
-        // An existing file keeps its owner and mode (an admin may have
-        // tightened it); a new one is root:root 0640 like the package's.
+        // The file can hold the keys passphrase, so it is root-owned, mode
+        // 640, readable through the group of the account the daemon runs
+        // as (the package ships it 0644; universal.sh sets the same
+        // root:<user> 640). The backup gets the same treatment.
+        final group = ownerGroup;
+        final own = group == null
+            ? ''
+            : ' && for f in $dest $dest.bak; do '
+                  'if [ -f "\$f" ]; then chown root:${q(group)} "\$f" && '
+                  'chmod 640 "\$f" || exit 1; fi; done';
         await runner.runShell(
           'mkdir -p $dir && '
           'if [ -f $dest ]; then cp -p $dest $dest.bak && cat $src > $dest; '
           'else install -m 640 $src $dest; fi'
+          '$own'
           '${andThen == null ? '' : ' && $andThen'}',
         );
       }

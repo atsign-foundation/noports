@@ -101,6 +101,13 @@ void main() {
         File('/etc/noports/sshnpd.yaml').readAsStringSync(),
         contains(device),
       );
+      // Root-owned, readable through the daemon user's group only.
+      final stat = Process.runSync('stat', [
+        '-c',
+        '%a %U %G',
+        '/etc/noports/sshnpd.yaml',
+      ]).stdout.toString().trim();
+      expect(stat, '640 root ${me.group}');
 
       final service = ServiceCubit(
         manager_,

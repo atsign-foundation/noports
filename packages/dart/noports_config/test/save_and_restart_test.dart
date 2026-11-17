@@ -46,6 +46,7 @@ void main() {
       ),
       template: () async => template,
       runner: runner,
+      ownerGroup: () => null,
     );
   });
 
@@ -60,7 +61,7 @@ void main() {
     // The unit already runs as this user here; adoption has its own tests.
     final restart = LinuxServiceManager(
       runner: runner,
-      appUser: (uid: 1234, name: 'alice'),
+      appUser: (uid: 1234, name: 'alice', group: 'alice'),
       unitUid: () => 1234,
     ).privilegedRestartScript;
     expect(restart, 'systemctl restart sshnpd');
@@ -90,6 +91,7 @@ void main() {
         ),
         template: () async => template,
         runner: runner,
+        ownerGroup: () => null,
       );
       final cubit = ConfigCubit(repo2);
       await cubit.load();
@@ -125,7 +127,7 @@ void main() {
     }) => LinuxServiceManager(
       runner: runner,
       dropInDir: '${tmp.path}/sshnpd.service.d',
-      appUser: (uid: uid, name: name),
+      appUser: (uid: uid, name: name, group: name),
       unitUid: () => unitUid,
     );
 
@@ -139,7 +141,7 @@ void main() {
     test('nothing is added when systemd cannot be asked', () {
       final m = LinuxServiceManager(
         runner: runner,
-        appUser: (uid: 1234, name: 'alice'),
+        appUser: (uid: 1234, name: 'alice', group: 'alice'),
         unitUid: () => null,
       );
       expect(m.adoptedUser, isNull);
@@ -200,6 +202,34 @@ void main() {
       );
     });
   });
+
+  test(
+    'with a group, the one call also sets root:<group> 640 on file and backup',
+    () async {
+      final recorder = RecordingRunner();
+      final repo3 = ConfigRepository(
+        paths: DaemonPaths.forTest(
+          configDir: Directory('${tmp.path}/etc/noports'),
+          binDir: Directory('${tmp.path}/bin'),
+          configNeedsPrivileges: true,
+        ),
+        template: () async => template,
+        runner: recorder,
+        ownerGroup: () => 'alice',
+      );
+      final cubit = ConfigCubit(repo3);
+      await cubit.load();
+      cubit.setField(ConfigSchema.byOption(SshnpdOption.atsign), '@dev');
+      cubit.setField(ConfigSchema.byOption(SshnpdOption.managers), ['@client']);
+      // chown to root fails for a non-root test, which is the point: the
+      // call must stop there rather than carry on.
+      expect(await cubit.save(), isFalse);
+      expect(recorder.scripts, hasLength(1));
+      expect(recorder.scripts.single, contains("chown root:'alice'"));
+      expect(recorder.scripts.single, contains('chmod 640'));
+      expect(recorder.scripts.single, contains(r'"$f" || exit 1'));
+    },
+  );
 
   test('a plain save stays a single call with nothing appended', () async {
     final cubit = ConfigCubit(repo);

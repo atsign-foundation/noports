@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:noports_config/features/config/model/sshnpd_config_document.dart';
 import 'package:noports_config/features/keys/keys_repository.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
+import 'package:noports_config/platform/privileged_runner.dart';
 import 'package:noports_config/platform/install_hints.dart';
 import 'package:noports_config/platform/service_manager.dart';
 import 'package:noports_core/sshnpd.dart';
@@ -262,9 +263,60 @@ class ServiceCheck extends HealthCheck {
   }
 }
 
+/// Windows runs this app elevated. When a standard user launches it and an
+/// administrator types their own password at the UAC prompt, the process
+/// runs as that administrator: keys enrolled here land in the
+/// administrator's profile, not the signed-in user's.
+class ElevatedUserCheck extends HealthCheck {
+  ElevatedUserCheck({this.consoleUser});
+
+  /// `DOMAIN\user` signed in at the console; looked up when null.
+  final Future<String?> Function()? consoleUser;
+
+  @override
+  String get title => 'Signed-in user';
+
+  static Future<String?> _lookupConsoleUser() async {
+    final r = await Process.run(
+      windowsSystemExe(r'WindowsPowerShell\v1.0\powershell.exe'),
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        '(Get-CimInstance Win32_ComputerSystem).UserName',
+      ],
+    );
+    final out = r.stdout.toString().trim();
+    return r.exitCode == 0 && out.isNotEmpty ? out : null;
+  }
+
+  @override
+  Future<HealthResult> run(HealthContext ctx) async {
+    final env = Platform.environment;
+    final me = env['USERNAME'];
+    if (me == null || me.isEmpty) return pass('Not applicable.');
+    final console = await (consoleUser ?? _lookupConsoleUser)();
+    if (console == null) return pass('Running as $me.');
+    final consoleName = console.split('\\').last;
+    if (consoleName.toLowerCase() == me.toLowerCase()) {
+      return pass('Running as $me, the signed-in user.');
+    }
+    return fail(
+      'This app is running as $me, but $consoleName is signed in. Someone '
+      'else\'s administrator credentials were used at the elevation '
+      'prompt, so keys enrolled here would be stored in $me\'s profile and '
+      'the daemon configured for the wrong account. Sign in as an '
+      'administrator and run the app from that account, or make '
+      '$consoleName an administrator.',
+      fix: HealthFix.keys,
+    );
+  }
+}
+
 class HealthChecks {
   HealthChecks._();
   static List<HealthCheck> all() => [
+    if (Platform.isWindows) ElevatedUserCheck(),
     ConfigFileCheck(),
     KeysFileCheck(),
     AccessCheck(),

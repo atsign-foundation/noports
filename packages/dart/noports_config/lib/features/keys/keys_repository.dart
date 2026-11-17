@@ -5,6 +5,7 @@ import 'package:at_auth/at_auth.dart' show AtKeysPassphraseEnvelopeCodec;
 import 'package:at_client/at_client_io.dart' show AtKeys, FileAtKeysIo;
 import 'package:noports_config/platform/atsigns.dart';
 import 'package:noports_config/platform/daemon_paths.dart';
+import 'package:noports_config/platform/privileged_runner.dart';
 
 enum KeysFileStatus {
   absent,
@@ -172,17 +173,19 @@ class KeysRepository {
     return dest;
   }
 
-  /// Best effort: the keys should be readable by the owner, the service
-  /// account and administrators only.
+  /// The keys should be readable by the owner, the service account and
+  /// administrators only. Throws a [StateError] naming the tool's output
+  /// when the permissions could not be set; callers decide whether that
+  /// is fatal (the daemon still starts with the profile's default ACLs).
   static Future<void> restrictPermissions(File file) async {
-    try {
+    {
       if (Platform.isWindows) {
         // The app runs elevated, but the user's ordinary processes carry a
         // UAC-filtered token where Administrators is deny-only, so the user
         // must be granted explicitly or they lose access to their own keys.
         final user = Platform.environment['USERNAME'];
         final domain = Platform.environment['USERDOMAIN'];
-        await Process.run('icacls', [
+        final r = await Process.run(windowsSystemExe('icacls.exe'), [
           file.path,
           '/inheritance:r',
           '/grant:r',
@@ -191,11 +194,18 @@ class KeysRepository {
           if (user != null && user.isNotEmpty)
             '${domain != null && domain.isNotEmpty ? '$domain\\' : ''}$user:(F)',
         ]);
+        if (r.exitCode != 0) {
+          throw StateError(
+            'icacls exit ${r.exitCode}: '
+            '${(r.stderr.toString().trim().isEmpty ? r.stdout : r.stderr).toString().trim()}',
+          );
+        }
       } else {
-        await Process.run('chmod', ['600', file.path]);
+        final r = await Process.run('chmod', ['600', file.path]);
+        if (r.exitCode != 0) {
+          throw StateError('chmod exit ${r.exitCode}: ${r.stderr}'.trim());
+        }
       }
-    } catch (_) {
-      // Not fatal; the daemon will still start.
     }
   }
 

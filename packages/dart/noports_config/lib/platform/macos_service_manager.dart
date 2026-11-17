@@ -43,12 +43,30 @@ class MacosServiceManager extends ServiceManager {
   );
 
   @override
-  String get logSourceDescription =>
-      plistFile.existsSync() &&
-          parseProgramArguments(plistFile.readAsStringSync()).isNotEmpty &&
-          _standardOutPath(plistFile.readAsStringSync()) != null
-      ? _standardOutPath(plistFile.readAsStringSync())!
-      : 'Unified log (process sshnpd)';
+  String get logSourceDescription {
+    if (plistFile.existsSync()) {
+      final plist = plistFile.readAsStringSync();
+      final out = _standardOutPath(plist);
+      if (parseProgramArguments(plist).isNotEmpty && out != null) return out;
+    }
+    return 'Unified log (process sshnpd)';
+  }
+
+  /// `launchctl bootstrap` right after `bootout` can fail with error 5
+  /// (Input/output error) while launchd is still tearing the old job
+  /// down. Try a few times before giving up.
+  Future<void> _bootstrap(String domain) async {
+    const attempts = 5;
+    for (var i = 1; ; i++) {
+      try {
+        await runChecked('launchctl', ['bootstrap', domain, plistFile.path]);
+        return;
+      } on ServiceException {
+        if (i == attempts) rethrow;
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+    }
+  }
 
   Future<String> _domain() async {
     _uid ??= (await Process.run('id', ['-u'])).stdout.toString().trim();
@@ -147,9 +165,7 @@ class MacosServiceManager extends ServiceManager {
     }
     await _rotateLogIfLarge();
     final domain = await _domain();
-    if (!await _loaded()) {
-      await runChecked('launchctl', ['bootstrap', domain, plistFile.path]);
-    }
+    if (!await _loaded()) await _bootstrap(domain);
     await runChecked('launchctl', ['kickstart', '-k', '$domain/$label']);
     final s = await waitFor(
       (s) => s.isRunning,
@@ -218,11 +234,7 @@ class MacosServiceManager extends ServiceManager {
       ),
       flush: true,
     );
-    await runChecked('launchctl', [
-      'bootstrap',
-      await _domain(),
-      plistFile.path,
-    ]);
+    await _bootstrap(await _domain());
     await _installLogRotation();
   }
 

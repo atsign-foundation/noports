@@ -71,9 +71,11 @@
     <SetProperty Id="WixShellExecTarget" Value="[CONFIGAPPFOLDER]noports_config.exe" After="CostFinalize" Sequence="both" />
     <CustomAction Id="LaunchConfigApp" DllEntry="WixShellExec" Impersonate="yes" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" />
     <UI>
-      <!-- Only when the app feature is actually being installed (action state 3 = local). -->
+      <!-- Only on a fresh install (NOT Installed is also true during a major
+           upgrade, hence WIX_UPGRADE_DETECTED) and when the app feature is
+           actually being installed (action state 3 = local). -->
       <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchConfigApp"
-               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed and &amp;ConfigAppFeature = 3" />
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed and NOT WIX_UPGRADE_DETECTED and &amp;ConfigAppFeature = 3" />
     </UI>
   </Package>
   <!-- Core product component group -->
@@ -143,7 +145,8 @@
                   Target="[CONFIGAPPFOLDER]noports_config.exe"
                   WorkingDirectory="CONFIGAPPFOLDER"
                   Icon="NoPortsIcon" />
-        <RegistryValue Root="HKCU" Key="Software\Atsign\NoPorts" Name="ConfigAppShortcut" Type="integer" Value="1" KeyPath="yes" />
+        <!-- Per-machine install: the key path lives under HKLM (ICE57). -->
+        <RegistryValue Root="HKLM" Key="Software\Atsign\NoPorts" Name="ConfigAppShortcut" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>

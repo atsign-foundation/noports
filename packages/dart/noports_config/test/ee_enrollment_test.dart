@@ -97,6 +97,101 @@ void main() {
 
   tearDownAll(() => tmp.deleteSync(recursive: true));
 
+  /// A fresh OTP for the device atsign, issued with its manager keys.
+  Future<String> freshOtp() async {
+    final otpRes = await atActivate([
+      'otp',
+      '-a',
+      device,
+      '-k',
+      '$keysDir/${device}_key.atKeys',
+    ]);
+    final otp = otpRes.stdout
+        .toString()
+        .replaceAll(RegExp(r'\x1B\[[0-9;]*[A-Za-z]'), '')
+        .trim()
+        .split('\n')
+        .last
+        .trim();
+    expect(otp, matches(r'^[A-Z0-9]{6}$'), reason: 'otp: ${otpRes.stdout}');
+    return otp;
+  }
+
+  /// Runs one enrollment of [device] as [name] into [into] and, once the
+  /// request id is known, answers it with at_activate [verb] (approve or
+  /// deny). Returns the final cubit state.
+  Future<EnrollmentState> enrollAnd(
+    String verb, {
+    required DaemonPaths into,
+    required String name,
+  }) async {
+    final otp = await freshOtp();
+    final cubit = EnrollmentCubit(
+      rootDomain: root,
+      paths: into,
+      retryInterval: const Duration(seconds: 2),
+    );
+    final answered = cubit.stream
+        .firstWhere((s) => s.step == EnrollmentStep.awaitingApproval)
+        .then(
+          (s) => atActivate([
+            verb,
+            '-a',
+            device,
+            '-k',
+            '$keysDir/${device}_key.atKeys',
+            '-i',
+            s.enrollmentId!,
+          ]),
+        );
+    // ignore: avoid_print
+    cubit.stream.listen((s) => print('[ee:$verb] ${s.step} ${s.error ?? ''}'));
+    final done = cubit.stream.firstWhere(
+      (s) => s.step == EnrollmentStep.done || s.error != null,
+    );
+    await cubit.enroll(rawAtsign: device, deviceName: name, passcode: otp);
+    final last = await done;
+    final r = await answered;
+    expect(r.exitCode, 0, reason: '$verb: ${r.stdout}${r.stderr}');
+    await cubit.close();
+    return last;
+  }
+
+  test(
+    'a denied enrollment leaves no usable keys behind and does not block a retry',
+    () async {
+      // Its own keys directory: the approve test above owns the main one.
+      final home = Directory('${tmp.path}/home-denied')..createSync();
+      final into = DaemonPaths.forTest(
+        configDir: Directory('${tmp.path}/etc/noports'),
+        binDir: Directory(bin),
+        userHomeDir: home,
+      );
+      final stamp = DateTime.now().millisecondsSinceEpoch % 100000;
+      final name = '${DeviceNames.fromHostname()}-deny$stamp';
+      final dest = into.keysFileFor(device);
+
+      final denied = await enrollAnd('deny', into: into, name: name);
+      expect(denied.step, isNot(EnrollmentStep.done));
+      expect(denied.error, contains('denied'), reason: denied.error);
+      // Whatever the SDK left in the file must not look like device keys.
+      if (dest.existsSync()) {
+        final seen = KeysRepository.inspectSync(dest);
+        // ignore: avoid_print
+        print('[ee:deny] leftover ${dest.path}: ${seen.status}');
+        expect(seen.status, isNot(KeysFileStatus.readable));
+      }
+
+      // The same device name again, approved this time. If this fails with
+      // "Not overwriting" or AT0032 the app has a dead end to fix.
+      final again = await enrollAnd('approve', into: into, name: name);
+      expect(again.error, isNull, reason: again.error);
+      expect(again.step, EnrollmentStep.done);
+      expect(KeysRepository.inspectSync(dest).status, KeysFileStatus.readable);
+    },
+    timeout: const Timeout(Duration(minutes: 4)),
+  );
+
   late File deviceKeys;
   late String deviceName;
 

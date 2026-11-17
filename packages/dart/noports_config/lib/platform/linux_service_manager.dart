@@ -4,7 +4,7 @@ import 'package:noports_config/platform/privileged_runner.dart';
 import 'package:noports_config/platform/service_manager.dart';
 
 /// A POSIX account: numeric uid and the name systemd's `User=` wants.
-typedef PosixUser = ({int uid, String name});
+typedef PosixUser = ({int uid, String name, String group});
 
 /// systemd control for the sshnpd unit installed by universal.sh or the
 /// deb/rpm packages.
@@ -162,11 +162,14 @@ class LinuxServiceManager extends ServiceManager {
     final sudo = env['SUDO_USER'];
     if (sudo != null && sudo.isNotEmpty && sudo != 'root') {
       final uid = int.tryParse(env['SUDO_UID'] ?? '') ?? _uidOf(sudo);
-      if (uid != null) return (uid: uid, name: sudo);
+      if (uid != null) {
+        return (uid: uid, name: sudo, group: _out('id', ['-gn', sudo]) ?? sudo);
+      }
     }
     final name = _out('id', ['-un']) ?? env['USER'] ?? 'root';
     final uid = int.tryParse(_out('id', ['-u']) ?? '') ?? 0;
-    return (uid: uid, name: name);
+    final group = _out('id', ['-gn']) ?? (uid == 0 ? 'root' : name);
+    return (uid: uid, name: name, group: group);
   }
 
   /// The unit's `User=` as a uid: root when unset, null when systemctl is
