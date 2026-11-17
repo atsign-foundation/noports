@@ -90,6 +90,12 @@ extern "C" {
 //   ESCR peak:                ~3180  → 8192 gives ~5012 bytes headroom
 #define RELAY_TASK_STACK_SIZE 8192
 
+// TCP connect timeouts. WiFiClient's default is 3 s, which a connect to the
+// relay across the internet can miss on a single lost SYN (one in eight
+// sessions did, in testing); the local service is a LAN hop away.
+#define RELAY_RVD_CONNECT_TIMEOUT_MS   10000
+#define RELAY_LOCAL_CONNECT_TIMEOUT_MS  5000
+
 // Maximum concurrent sub-connections per relay (multi mode).
 // Each sub uses 2 sockets (rvd + local) + optional AES state (~1KB).
 //
@@ -1043,7 +1049,7 @@ static int _handle_connect_msg(NoPortsRelay *relay, RelaySub *subs, int n_subs,
 
   // Connect to SRVD (new data socket)
   sub->rvd = WiFiClient();
-  if (!sub->rvd.connect(relay->config.rvd_host, relay->config.rvd_port)) {
+  if (!sub->rvd.connect(relay->config.rvd_host, relay->config.rvd_port, RELAY_RVD_CONNECT_TIMEOUT_MS)) {
     NOPORTS_LOGE(TAG, "Sub[%d] failed to connect to SRVD", slot);
     goto sub_fail;
   }
@@ -1066,7 +1072,7 @@ static int _handle_connect_msg(NoPortsRelay *relay, RelaySub *subs, int n_subs,
 
   // Connect to local service
   sub->local = WiFiClient();
-  if (!sub->local.connect(relay->config.local_host, relay->config.local_port)) {
+  if (!sub->local.connect(relay->config.local_host, relay->config.local_port, RELAY_LOCAL_CONNECT_TIMEOUT_MS)) {
     NOPORTS_LOGE(TAG, "Sub[%d] failed to connect local %s:%d",
                  slot, relay->config.local_host, relay->config.local_port);
     sub->rvd.stop();
@@ -1172,7 +1178,7 @@ static void _relay_task_inner(NoPortsRelay *relay) {
 
   NOPORTS_LOGI(TAG, "Connecting to RVD %s:%d (sockA)",
                relay->config.rvd_host, relay->config.rvd_port);
-  if (!sockA.connect(relay->config.rvd_host, relay->config.rvd_port)) {
+  if (!sockA.connect(relay->config.rvd_host, relay->config.rvd_port, RELAY_RVD_CONNECT_TIMEOUT_MS)) {
     NOPORTS_LOGE(TAG, "Failed to connect to RVD (sockA)");
     relay->state = RELAY_ERROR;
     goto cleanup;
@@ -1200,7 +1206,7 @@ static void _relay_task_inner(NoPortsRelay *relay) {
 
   NOPORTS_LOGI(TAG, "Connecting to RVD %s:%d (sockB)",
                relay->config.rvd_host, relay->config.rvd_port);
-  if (!relay->rvd_client.connect(relay->config.rvd_host, relay->config.rvd_port)) {
+  if (!relay->rvd_client.connect(relay->config.rvd_host, relay->config.rvd_port, RELAY_RVD_CONNECT_TIMEOUT_MS)) {
     NOPORTS_LOGE(TAG, "Failed to connect to RVD (sockB)");
     relay->state = RELAY_ERROR;
     goto cleanup;
@@ -1449,7 +1455,7 @@ static void _relay_task_inner(NoPortsRelay *relay) {
   // Connect to local service
   NOPORTS_LOGI(TAG, "Connecting to local service %s:%d",
                relay->config.local_host, relay->config.local_port);
-  if (!relay->local_client.connect(relay->config.local_host, relay->config.local_port)) {
+  if (!relay->local_client.connect(relay->config.local_host, relay->config.local_port, RELAY_LOCAL_CONNECT_TIMEOUT_MS)) {
     NOPORTS_LOGE(TAG, "Failed to connect to local service %s:%d",
                  relay->config.local_host, relay->config.local_port);
     relay->state = RELAY_ERROR;
@@ -1773,7 +1779,7 @@ static void _relay_task_inner_multi(NoPortsRelay *relay) {
 
   NOPORTS_LOGI(TAG, "Multi: connecting control to SRVD %s:%d",
                relay->config.rvd_host, relay->config.rvd_port);
-  if (!ctrl.connect(relay->config.rvd_host, relay->config.rvd_port)) {
+  if (!ctrl.connect(relay->config.rvd_host, relay->config.rvd_port, RELAY_RVD_CONNECT_TIMEOUT_MS)) {
     NOPORTS_LOGE(TAG, "Multi: failed to connect control channel");
     relay->state = RELAY_ERROR;
     goto cleanup;
