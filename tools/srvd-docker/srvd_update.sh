@@ -14,7 +14,7 @@ CID=$(docker ps  --no-trunc | grep $IMAGE | awk '{print $1}')
    docker pull $IMAGE
     if test -z "$CID"
         then
-        docker run -d --restart always  -v $ATKEYS_LOCATION:/atsign/.atsign/keys  --network host $IMAGE  -a $ATSIGN -i $IP
+        docker run -d --restart always --stop-timeout 15  -v $ATKEYS_LOCATION:/atsign/.atsign/keys  --network host $IMAGE  -a $ATSIGN -i $IP
     fi
 
     for im in $CID
@@ -26,9 +26,9 @@ CID=$(docker ps  --no-trunc | grep $IMAGE | awk '{print $1}')
         echo "Running:" $RUNNING
         if [ "$RUNNING" != "$LATEST" ];then
             echo "upgrading $NAME"
-            docker stop  $NAME
+            docker stop -t 15 $NAME
             docker rm -f $NAME
-            docker run -d --restart always -v $ATKEYS_LOCATION:/atsign/.atsign/keys  --network host $IMAGE  -a $ATSIGN -i $IP
+            docker run -d --restart always --stop-timeout 15 -v $ATKEYS_LOCATION:/atsign/.atsign/keys  --network host $IMAGE  -a $ATSIGN -i $IP
         else
             echo "$NAME up to date"
         fi

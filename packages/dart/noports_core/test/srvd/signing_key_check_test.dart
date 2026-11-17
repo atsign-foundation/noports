@@ -5,6 +5,8 @@ import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
+import 'package:at_utils/at_logger.dart';
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/sshnp_foundation.dart' show RelayAuthMode;
 import 'package:noports_core/src/srv/relay_authenticators.dart';
@@ -19,6 +21,8 @@ import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:test/test.dart';
 
 import '../sshnp/sshnp_mocks.dart';
+
+const sid = '51d00000-0000-4000-8000-000000000001';
 
 void main() {
   const aliceKey = 'public:_apsk.alice-enrollment.a.__e@alice';
@@ -120,7 +124,7 @@ void main() {
 
     test('stops the worker of a two-port session whose signing key was'
         ' revoked', () async {
-      final worker = twoPortSession('s', {aliceKey});
+      final worker = twoPortSession(sid, {aliceKey});
       withdraw(aliceKey);
 
       final messages = received(worker);
@@ -128,8 +132,24 @@ void main() {
 
       expect(
         (await messages).map((m) => (m as IIRequest).type),
-        ['stop'],
+        ['end'],
       );
+    });
+
+    test("says at srvd's default level that it ended a session for a"
+        ' withdrawn signing key', () async {
+      final LoggingHandler previousHandler = AtSignLogger.defaultLoggingHandler;
+      final logged = <String>[];
+      AtSignLogger.defaultLoggingHandler = _Capture(logged);
+      addTearDown(() => AtSignLogger.defaultLoggingHandler = previousHandler);
+      relay = newRelay(atClient);
+      twoPortSession(sid, {aliceKey});
+      withdraw(aliceKey);
+
+      await relay.checkSigningKeys();
+
+      expect(logged.where((m) => m.startsWith('Ending session $sid ')), hasLength(1),
+          reason: "srvd's main logger logs only SHOUT unless -v is given");
     });
 
     test('asks the port 443 worker to end a single-port session whose signing'
@@ -137,8 +157,8 @@ void main() {
       final isolate443 = ReceivePort();
       addTearDown(isolate443.close);
       relay.toIsolate443 = isolate443.sendPort;
-      relay.sessions['s'] = SessionInfo(
-        params: params('s', only443: true),
+      relay.sessions[sid] = SessionInfo(
+        params: params(sid, only443: true),
         connector: null,
       )..signingKeys.add(aliceKey);
       withdraw(aliceKey, to: 'd.__e');
@@ -148,7 +168,7 @@ void main() {
 
       expect(
         [for (final m in await messages) ((m as IIRequest).type, m.payload)],
-        [('endSession', 's')],
+        [('endSession', sid)],
       );
     });
 
@@ -168,7 +188,7 @@ void main() {
 
     test('keeps a session whose signing key is missing but was not withdrawn',
         () async {
-      final worker = twoPortSession('s', {aliceKey});
+      final worker = twoPortSession(sid, {aliceKey});
 
       final messages = received(worker);
       await relay.checkSigningKeys();
@@ -178,7 +198,7 @@ void main() {
 
     test('keeps a session when its signing key lookup fails another way',
         () async {
-      final worker = twoPortSession('s', {aliceKey});
+      final worker = twoPortSession(sid, {aliceKey});
       lookupOf(
         aliceKey,
         () async => throw SecondaryConnectException(
@@ -194,7 +214,7 @@ void main() {
 
     test('keeps a session when its signing key is missing and the lookup of'
         ' where it went fails', () async {
-      final worker = twoPortSession('s', {aliceKey});
+      final worker = twoPortSession(sid, {aliceKey});
       lookupOf(
         aliceKey.replaceFirst('.a.__e@', '.r.__e@'),
         () async => throw SecondaryConnectException(
@@ -226,7 +246,7 @@ void main() {
 
     test('ends a session once, however many passes find its key withdrawn',
         () async {
-      final worker = twoPortSession('s', {aliceKey});
+      final worker = twoPortSession(sid, {aliceKey});
       withdraw(aliceKey);
 
       final messages = received(worker);
@@ -271,7 +291,7 @@ void main() {
 
     test("doesn't re-check a key while its last re-check is running",
         () async {
-      twoPortSession('s', {aliceKey});
+      twoPortSession(sid, {aliceKey});
       final lookedUp = Completer<AtValue>();
       lookupOf(aliceKey, () => lookedUp.future);
 
@@ -289,29 +309,29 @@ void main() {
     });
 
     test('records one key for every spelling of a signing key', () async {
-      twoPortSession('s', {});
+      twoPortSession(sid, {});
 
       for (final spelling in [
         '_apsk.Alice-Enrollment.a.__e@Alice',
         'public:_apsk.alice-enrollment.a.__e@alice',
         'PUBLIC:_apsk.ALICE-ENROLLMENT.a.__e@ALICE',
       ]) {
-        relay.recordSigningKey('s', spelling);
+        relay.recordSigningKey(sid, spelling);
       }
 
-      expect(relay.sessions['s']!.signingKeys, {aliceKey});
+      expect(relay.sessions[sid]!.signingKeys, {aliceKey});
     });
 
     test('records at most ${SrvdImpl.maxSigningKeysPerSession} signing keys'
         ' for a session', () async {
-      twoPortSession('s', {});
+      twoPortSession(sid, {});
 
       for (var i = 0; i < SrvdImpl.maxSigningKeysPerSession + 2; i++) {
-        relay.recordSigningKey('s', 'public:_apsk.enrollment-$i.a.__e@alice');
+        relay.recordSigningKey(sid, 'public:_apsk.enrollment-$i.a.__e@alice');
       }
 
       expect(
-        relay.sessions['s']!.signingKeys,
+        relay.sessions[sid]!.signingKeys,
         hasLength(SrvdImpl.maxSigningKeysPerSession),
       );
     });
@@ -335,8 +355,8 @@ void main() {
         atClient,
         interval: const Duration(milliseconds: 50),
       );
-      running.sessions['s'] = SessionInfo(
-        params: params('s', only443: false),
+      running.sessions[sid] = SessionInfo(
+        params: params(sid, only443: false),
         connector: null,
       )..signingKeys.add(aliceKey);
       Future<int> lookupsDuring(Duration period) async {
@@ -352,8 +372,8 @@ void main() {
       expect(await lookupsDuring(const Duration(milliseconds: 300)),
           greaterThanOrEqualTo(2));
       await running.stop();
-      running.sessions['s'] = SessionInfo(
-        params: params('s', only443: false),
+      running.sessions[sid] = SessionInfo(
+        params: params(sid, only443: false),
         connector: null,
       )..signingKeys.add(aliceKey);
       expect(await lookupsDuring(const Duration(milliseconds: 300)), 0,
@@ -369,12 +389,12 @@ void main() {
       final relay443 = newRelay(atClient, bind443: true, localBindPort443: port);
       addTearDown(relay443.stop);
       await relay443.init();
-      relay443.sessions['s'] = SessionInfo(
-        params: params('s', only443: true),
+      relay443.sessions[sid] = SessionInfo(
+        params: params(sid, only443: true),
         connector: null,
       );
       relay443.toIsolate443!
-          .send(IIRequest.create('start', params('s', only443: true)));
+          .send(IIRequest.create('start', params(sid, only443: true)));
       return (relay443, port);
     }
 
@@ -398,7 +418,7 @@ void main() {
       }
       addTearDown(socket.destroy);
       final (authenticated, stream) = await RelayAuthenticatorESCR(
-        sessionId: 's',
+        sessionId: sid,
         relayAuthAesKey: relayAuthAesKey,
         publicSigningKeyUri: uri,
         publicSigningKey: keyPair.atPublicKey.publicKey,
@@ -413,7 +433,7 @@ void main() {
     /// Waits up to 5 seconds for [relay] to record a signing key for `s`.
     Future<void> anyKeyRecorded(SrvdImpl relay) async {
       final deadline = DateTime.now().add(const Duration(seconds: 5));
-      while (relay.sessions['s']!.signingKeys.isEmpty &&
+      while (relay.sessions[sid]!.signingKeys.isEmpty &&
           DateTime.now().isBefore(deadline)) {
         await Future.delayed(const Duration(milliseconds: 20));
       }
@@ -435,7 +455,7 @@ void main() {
       );
 
       await anyKeyRecorded(relay443);
-      expect(relay443.sessions['s']!.signingKeys, {aliceKey});
+      expect(relay443.sessions[sid]!.signingKeys, {aliceKey});
     });
 
     test('records no signing key for a port 443 socket refused for its side',
@@ -467,7 +487,7 @@ void main() {
 
       await anyKeyRecorded(relay443);
       expect(
-        relay443.sessions['s']!.signingKeys,
+        relay443.sessions[sid]!.signingKeys,
         {aliceKey},
         reason: "alice's other key signed for bob's side, so it was refused"
             ' before being recorded',
@@ -584,7 +604,7 @@ void main() {
           await startWorker(bindPort: port);
       unawaited(worker.run());
       await worker.startSession(
-        IIRequest.create('start', params('s', only443: true)),
+        IIRequest.create('start', params(sid, only443: true)),
       );
       final reported = requests
           .firstWhere((r) => r.type == 'signingKey')
@@ -602,7 +622,7 @@ void main() {
       }
       addTearDown(socket.destroy);
       final (authenticated, _) = await RelayAuthenticatorESCR(
-        sessionId: 's',
+        sessionId: sid,
         relayAuthAesKey: relayAuthAesKey,
         publicSigningKeyUri: aliceKey,
         publicSigningKey: signingKP.atPublicKey.publicKey,
@@ -614,8 +634,18 @@ void main() {
       expect(authenticated, isTrue);
       expect(
         (await reported).payload,
-        {'sessionId': 's', 'key': aliceKey},
+        {'sessionId': sid, 'key': aliceKey},
       );
     });
   });
+}
+
+/// Keeps the message of every log record it is given.
+class _Capture implements LoggingHandler {
+  _Capture(this.messages);
+
+  final List<String> messages;
+
+  @override
+  void call(LogRecord record) => messages.add(record.message);
 }

@@ -1158,7 +1158,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get validationErrorAtsignField => '字段必须是有效的 atsign';
 
   @override
-  String get validationErrorDeviceNameField => '字段只能包含小写字母、数字和下划线。';
+  String get validationErrorDeviceNameField =>
+      '请使用 2-36 个小写字母、数字、“_”或“-”，不能以“-”开头。';
 
   @override
   String get validationErrorEmptyField => '此字段不能为空';
@@ -1170,7 +1171,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get validationErrorLocalPortField => '数字必须介于 1024 和 65535 之间';
 
   @override
-  String get validationErrorLongField => '字段长度必须为 1-36 个字符';
+  String get validationErrorLongField => '字段长度必须为 2-36 个字符';
 
   @override
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
@@ -2357,7 +2358,8 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get validationErrorAtsignField => '字段必须是有效的 atsign';
 
   @override
-  String get validationErrorDeviceNameField => '字段只能包含小写字母、数字和下划线。';
+  String get validationErrorDeviceNameField =>
+      '请使用 2-36 个小写字母、数字、“_”或“-”，不能以“-”开头。';
 
   @override
   String get validationErrorEmptyField => '此字段不能为空';
@@ -2369,7 +2371,7 @@ class AppLocalizationsZhHansCh extends AppLocalizationsZh {
   String get validationErrorLocalPortField => '数字必须介于 1024 和 65535 之间';
 
   @override
-  String get validationErrorLongField => '字段长度必须为 1-36 个字符';
+  String get validationErrorLongField => '字段长度必须为 2-36 个字符';
 
   @override
   String get validationErrorRelayField => 'Relay 必须是有效的 atsign';
@@ -3555,7 +3557,8 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get validationErrorAtsignField => '欄位必須是有效的 atsign';
 
   @override
-  String get validationErrorDeviceNameField => '欄位只能包含小寫字母、數字和底線。';
+  String get validationErrorDeviceNameField =>
+      '請使用 2-36 個小寫字母、數字、「_」或「-」，不能以「-」開頭。';
 
   @override
   String get validationErrorEmptyField => '此欄位不得為空';
@@ -3567,7 +3570,7 @@ class AppLocalizationsZhHantHk extends AppLocalizationsZh {
   String get validationErrorLocalPortField => '數字必須介於 1024 和 65535 之間';
 
   @override
-  String get validationErrorLongField => '欄位長度必須為 1-36 個字元';
+  String get validationErrorLongField => '欄位長度必須為 2-36 個字元';
 
   @override
   String get validationErrorRelayField => 'Relay 必須是有效的 atsign';

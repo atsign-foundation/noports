@@ -7,4 +7,4 @@ fi
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
 
-sudo docker stop $(sudo docker ps --format '{{.Names}}' | grep --color=none '^e2e_all-' | xargs)
+sudo docker stop -t 15 $(sudo docker ps --format '{{.Names}}' | grep --color=none '^e2e_all-' | xargs)

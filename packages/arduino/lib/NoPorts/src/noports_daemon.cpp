@@ -53,6 +53,12 @@ extern "C" {
 
 #define TAG "noports"
 
+// Internal (DRAM) heap: the figure that matters for TLS and lwIP. On boards
+// with PSRAM, esp_get_free_heap_size() counts that too and hides a shrinking
+// DRAM behind megabytes of PSRAM.
+static inline unsigned _internal_free() { return (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL); }
+static inline unsigned _internal_largest() { return (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL); }
+
 // Policy-service RPC settings (used in loop(), _startMonitor(), and helpers)
 #define NOPORTS_POLICY_DOMAIN_NS   "auth_checks"
 // ATCLIENT_RPC_NS_RPCS ("__rpcs") is defined in atclient/rpc.h
@@ -107,8 +113,11 @@ NoPortsDaemon::NoPortsDaemon()
   , _via_proxy(false)
   , _relay_count(0)
   , _timeout_counter(0)
+  , _monitor_noop_sent(false)
+  , _worker_check_due(false)
+  , _last_monitor_msg_ms(0)
+  , _last_health_log_ms(0)
   , _reconnect_failures(0)
-  , _monitor_fail_streak(0)
   , _worker_keepalive_ms(NOPORTS_WORKER_KEEPALIVE_MS)
   , _worker_last_used_ms(0)
   , _max_relays(2)
@@ -137,13 +146,27 @@ NoPortsDaemon::NoPortsDaemon()
   memset(&_policy_decisions, 0, sizeof(_policy_decisions));
 }
 
+// Frees the TLS client and read buffer an atclient's atServer connection
+// holds, whatever state the connection is in. at_client before 1.0.2 freed a
+// connection only once a connect had fully succeeded, so every reconnect that
+// failed part-way (TCP, TLS handshake) leaked about 6 KB when the next
+// reconnect zeroed it: enough, over a few dozen network blips, to leave the
+// heap unable to carry a TLS handshake while the monitor already up kept the
+// daemon looking connected. Freeing by what the connection holds makes the
+// daemon safe with either SDK.
+static void _freeAtServerConnection(atclient *ctx) {
+  if (ctx) atclient_connection_free(&ctx->atserver_connection);
+}
+
 void NoPortsDaemon::_freeResources() {
   if (_monitor_ctx) {
+    _freeAtServerConnection((atclient *)_monitor_ctx);
     atclient_monitor_free((atclient *)_monitor_ctx);
     free(_monitor_ctx);
     _monitor_ctx = nullptr;
   }
   if (_worker_ctx) {
+    _freeAtServerConnection((atclient *)_worker_ctx);
     atclient_free((atclient *)_worker_ctx);
     free(_worker_ctx);
     _worker_ctx = nullptr;
@@ -536,6 +559,12 @@ bool NoPortsDaemon::begin(const NoPortsConfig &config) {
   _should_run = true;
   _state = DAEMON_MONITORING;
   _worker_last_used_ms = millis();  // start keepalive timer from now
+  _timeout_counter = 0;
+  _monitor_noop_sent = false;
+  _worker_check_due = false;
+  _reconnect_failures = 0;
+  _last_monitor_msg_ms = _now_ms();
+  _last_health_log_ms = _now_ms();
   NOPORTS_LOGI(TAG, "NoPorts daemon started for %s (device: %s)",
                _config.atsign, _config.device_name);
 
@@ -572,30 +601,17 @@ void NoPortsDaemon::loop() {
     _cleanupPolicyPending();
   }
 
-  // Worker TLS keep-alive: send a heartbeat if the worker connection has
-  // been idle for longer than the configured interval.  This prevents NAT/
-  // firewall tables from expiring the session between tunnel requests.
-  atclient *worker = (atclient *)_worker_ctx;
-  if (_worker_keepalive_ms > 0 &&
-      (millis() - _worker_last_used_ms) >= _worker_keepalive_ms) {
-    int hb = atclient_send_heartbeat(worker);
-    if (hb != 0) {
-      NOPORTS_LOGW(TAG, "Worker heartbeat failed (%d) — reconnecting worker", hb);
-      _reconnectWorker();
-    } else {
-      NOPORTS_LOGD(TAG, "Worker heartbeat OK (ka=%lums)", _worker_keepalive_ms);
-    }
-    _worker_last_used_ms = millis();
-  }
+  _logHealth();
 
   // Read next monitor message
   atclient_monitor_message message;
   atclient_monitor_message_init(&message);
 
   atclient *monitor = (atclient *)_monitor_ctx;
-  // (worker declared above for keepalive check)
+  atclient *worker = (atclient *)_worker_ctx;
 
-  // Check if we need to reconnect
+  // Reconnect the monitor once it has been silent too long, or its socket has
+  // died (which sets the counter past the limit at once)
   if (_timeout_counter * NOPORTS_MONITOR_READ_TIMEOUT_MS > NOPORTS_MONITOR_NOOP_TIMEOUT_MS) {
     if (!_reconnectMonitor()) {
       _timeout_counter = NOPORTS_MONITOR_NOOP_TIMEOUT_MS / NOPORTS_MONITOR_READ_TIMEOUT_MS + 1;
@@ -603,6 +619,56 @@ void NoPortsDaemon::loop() {
       return;
     }
     _timeout_counter = 0;
+    _monitor_noop_sent = false;
+    _last_monitor_msg_ms = _now_ms();
+    // One reconnect per pass: the worker check, if due, runs on the next
+    // pass, after the sketch has fed the task watchdog, so a monitor
+    // reconnect followed by a worker reconnect can't add up past it.
+    atclient_monitor_message_free(&message);
+    return;
+  }
+
+  // Worker TLS keep-alive: send a heartbeat if the worker connection has
+  // been idle for longer than the configured interval, or whatever took the
+  // monitor down may have taken the worker too.  The interval keeps NAT/
+  // firewall tables from expiring the session between tunnel requests.
+  if (_worker_check_due ||
+      (_worker_keepalive_ms > 0 && (millis() - _worker_last_used_ms) >= _worker_keepalive_ms)) {
+    bool was_due = _worker_check_due;
+    _worker_check_due = false;
+    int hb = atclient_send_heartbeat(worker);
+    if (hb != 0) {
+      NOPORTS_LOGW(TAG, "Worker heartbeat failed (%d%s) — reconnecting worker", hb,
+                   was_due ? ", after a monitor loss" : "");
+      if (!_reconnectWorker()) {
+        // Try again next pass, with backoff, each failure counting toward
+        // the reboot; otherwise the worker would stay down until the next
+        // keepalive, refusing every tunnel request in between.
+        _worker_check_due = true;
+      }
+    } else {
+      NOPORTS_LOGD(TAG, "Worker heartbeat OK (ka=%lums)", _worker_keepalive_ms);
+      _worker_last_used_ms = millis();
+    }
+  }
+
+  // Prove a silent monitor alive: a noop it answers with data:ok, which
+  // arrives below as a data response and resets the silence counter. A failed
+  // write means the socket is gone, so the monitor is reconnected at once.
+  if (!_monitor_noop_sent &&
+      _timeout_counter * NOPORTS_MONITOR_READ_TIMEOUT_MS >= NOPORTS_MONITOR_HEARTBEAT_MS) {
+    _monitor_noop_sent = true;
+    static const char noop[] = "noop:0\r\n";
+    if (atclient_connection_write(&monitor->atserver_connection, (const unsigned char *)noop,
+                                  sizeof(noop) - 1) != 0) {
+      NOPORTS_LOGW(TAG, "Monitor silent %lu ms and its heartbeat could not be sent — reconnecting",
+                   (unsigned long)(_timeout_counter * NOPORTS_MONITOR_READ_TIMEOUT_MS));
+      _timeout_counter = NOPORTS_MONITOR_NOOP_TIMEOUT_MS / NOPORTS_MONITOR_READ_TIMEOUT_MS + 1;
+      atclient_monitor_message_free(&message);
+      return;
+    }
+    NOPORTS_LOGD(TAG, "Monitor silent %lu ms — heartbeat sent",
+                 (unsigned long)(_timeout_counter * NOPORTS_MONITOR_READ_TIMEOUT_MS));
   }
 
   int ret = atclient_monitor_read(monitor, worker, &message, NULL);
@@ -629,15 +695,14 @@ void NoPortsDaemon::loop() {
     }
 
     // ATCLIENT_MONITOR_ERROR_READ (or unknown): could be either:
-    //   (a) OOM: atclient_tls_socket_read couldn't malloc its receive buffer
+    //   (a) OOM: atclient_tls_socket_read couldn't malloc the message copy
     //       because relay traffic exhausted the heap.  The TLS socket is fine.
-    //       Reconnecting the worker would waste ~30 s and achieve nothing.
-    //   (b) genuine TLS/network failure.  Worker reconnect is correct.
+    //       Reconnecting would waste seconds and achieve nothing.
+    //   (b) genuine TLS/network failure: the monitor's session has ended.
     //
     // Distinguish them by current heap: if total free is below the TLS
     // threshold, the malloc failure is the likely cause — wait briefly and
-    // retry without touching the worker.  Only do the worker-reconnect dance
-    // when heap is adequate (implies a true connection drop).
+    // retry.  Only reconnect when heap is adequate (a true connection drop).
     if (esp_get_free_heap_size() < NOPORTS_TLS_MIN_FREE_HEAP) {
       // Heap is depleted by relay traffic — the TLS socket is fine, the SDK's
       // malloc for its read buffer just failed.  Log at DEBUG (not WARN) since
@@ -652,33 +717,22 @@ void NoPortsDaemon::loop() {
       return;
     }
 
-    // Heap is adequate — this is a genuine read/TLS failure.
-    _monitor_fail_streak++;
-    NOPORTS_LOGW(TAG, "Monitor read error (ret: %d, type: %d, streak: %u, heap: %u)",
-                 ret, (int)message.type, (unsigned)_monitor_fail_streak,
-                 (unsigned)esp_get_free_heap_size());
-    if (_reconnectWorker()) {
-      if (_monitor_fail_streak >= 3) {
-        // Worker keeps reconnecting fine but monitor keeps failing —
-        // the monitor socket is dead (e.g. WiFi BEACON_TIMEOUT).
-        NOPORTS_LOGW(TAG, "Monitor fail streak %u — forcing full monitor reconnect",
-                     (unsigned)_monitor_fail_streak);
-        _timeout_counter = NOPORTS_MONITOR_NOOP_TIMEOUT_MS / NOPORTS_MONITOR_READ_TIMEOUT_MS + 1;
-        _monitor_fail_streak = 0;
-      } else {
-        NOPORTS_LOGI(TAG, "Worker reconnected, will retry monitor read");
-      }
-    } else {
-      NOPORTS_LOGW(TAG, "Worker reconnect also failed (TLS failures: %d/%d), will reconnect monitor",
-                   _reconnect_failures, NOPORTS_MAX_RECONNECT_FAILURES);
-      _timeout_counter = NOPORTS_MONITOR_NOOP_TIMEOUT_MS / NOPORTS_MONITOR_READ_TIMEOUT_MS + 1;
-    }
+    // Heap is adequate — the monitor's session is gone.  Reconnect it on the
+    // next pass rather than waiting out the silence timeout, and heartbeat
+    // the worker first thing after, since what took the monitor down (WiFi,
+    // NAT, the atServer) has usually taken the worker too.
+    NOPORTS_LOGW(TAG, "Monitor read error (ret: %d, type: %d, heap: %u) — reconnecting monitor",
+                 ret, (int)message.type, (unsigned)esp_get_free_heap_size());
+    _timeout_counter = NOPORTS_MONITOR_NOOP_TIMEOUT_MS / NOPORTS_MONITOR_READ_TIMEOUT_MS + 1;
+    _worker_check_due = true;
     atclient_monitor_message_free(&message);
     return;
   }
 
-  // Monitor read succeeded — clear the fail streak
-  _monitor_fail_streak = 0;
+  if (message.type != ATCLIENT_MONITOR_MESSAGE_TYPE_EMPTY) {
+    _last_monitor_msg_ms = _now_ms();
+    _monitor_noop_sent = false;
+  }
 
   switch (message.type) {
     case ATCLIENT_MONITOR_MESSAGE_TYPE_EMPTY:
@@ -739,6 +793,40 @@ void NoPortsDaemon::stop() {
   NOPORTS_LOGI(TAG, "NoPorts daemon stopped");
 }
 
+void NoPortsDaemon::notifyNetworkChanged() {
+  if (_state != DAEMON_MONITORING) return;
+  NOPORTS_LOGI(TAG, "Network changed — reconnecting monitor, checking worker");
+  _timeout_counter = NOPORTS_MONITOR_NOOP_TIMEOUT_MS / NOPORTS_MONITOR_READ_TIMEOUT_MS + 1;
+  _worker_check_due = true;
+}
+
+void NoPortsDaemon::_logHealth() {
+  int64_t now = _now_ms();
+  if (now - _last_health_log_ms < NOPORTS_HEALTH_LOG_MS) return;
+  _last_health_log_ms = now;
+  uint8_t relays = 0;
+  for (int i = 0; i < NOPORTS_MAX_RELAYS; i++) {
+    if (noports_relay_is_running(&_relays[i])) relays++;
+  }
+  NOPORTS_LOGI(TAG, "Health: heap=%u largest=%u monitor_silent=%lus worker_idle=%lus"
+                    " reconnect_failures=%u relays=%u pcbs=%d/%d",
+               _internal_free(), _internal_largest(),
+               (unsigned long)((now - _last_monitor_msg_ms) / 1000),
+               (unsigned long)((millis() - _worker_last_used_ms) / 1000),
+               (unsigned)_reconnect_failures, (unsigned)relays,
+               noports_relay_get_pcb_count(), noports_relay_get_pcb_max());
+#ifdef NOPORTS_HEAP_TRACE
+  // Block census: how many blocks are allocated and how many bytes they
+  // hold, so what a session keeps can be counted and sized. (Not
+  // heap_caps_dump: it prints every block while holding the heap lock,
+  // which trips the interrupt watchdog over USB serial.)
+  multi_heap_info_t info;
+  heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
+  NOPORTS_LOGI(TAG, "HeapCensus: allocated_blocks=%u free_blocks=%u allocated_bytes=%u",
+               (unsigned)info.allocated_blocks, (unsigned)info.free_blocks, (unsigned)info.total_allocated_bytes);
+#endif
+}
+
 bool NoPortsDaemon::isRunning() const {
   return _state == DAEMON_MONITORING && _should_run;
 }
@@ -768,6 +856,11 @@ const char* NoPortsDaemon::getLastError() const {
 
 uint8_t NoPortsDaemon::getReconnectFailures() const {
   return _reconnect_failures;
+}
+
+uint32_t NoPortsDaemon::getMonitorSilentSecs() const {
+  if (_state != DAEMON_MONITORING) return 0;
+  return (uint32_t)((_now_ms() - _last_monitor_msg_ms) / 1000);
 }
 
 int NoPortsDaemon::getRelayPcbCount() const {
@@ -1323,6 +1416,7 @@ bool NoPortsDaemon::_isManagerAtsign(const char *atsign) {
 
 void NoPortsDaemon::_handlePing(void *msg) {
   atclient_monitor_message *message = (atclient_monitor_message *)msg;
+  NOPORTS_HEAP_LOG(TAG, "ping received");
 
   if (!_ping_response) {
     NOPORTS_LOGE(TAG, "Ping response not built");
@@ -1387,6 +1481,7 @@ void NoPortsDaemon::_handleNptRequest(void *msg) {
   atclient *worker = (atclient *)_worker_ctx;
   atchops_rsa_key_private_key *skey = (atchops_rsa_key_private_key *)_signing_key;
   int res = 0;
+  NOPORTS_HEAP_LOG(TAG, "npt received");
 
   // Per-sender throttle BEFORE any expensive work.  _verifyEnvelopeSignature
   // below fetches the sender's public key over the worker (a network round
@@ -1432,6 +1527,7 @@ void NoPortsDaemon::_handleNptRequest(void *msg) {
     cJSON_Delete(envelope);
     return;
   }
+  NOPORTS_HEAP_LOG(TAG, "npt signature verified");
 
   // Authorise the requesting atSign.
   // Two modes: manager-list check (default) or policy-service RPC.
@@ -1844,6 +1940,13 @@ void NoPortsDaemon::_handlePingAuthorized(const char *from_atsign) {
   } else {
     NOPORTS_LOGI(TAG, "Ping: sent response to %s", from_atsign);
   }
+  // Neither was freed before: the notify's copies of the ping response and
+  // of the key, with the key's own strings, stayed behind on every ping,
+  // about 650 bytes each, until a CYD with a few hundred pings behind it
+  // could no longer open a TLS session (#3082)
+  atclient_notify_params_free(&notify_params);
+  atclient_atkey_free(&pingkey);
+  NOPORTS_HEAP_LOG(TAG, "ping answered");
 
   if (_config.on_ping) {
     _config.on_ping(from_atsign);
@@ -1889,6 +1992,7 @@ void NoPortsDaemon::_continueNptRequest(void *env,
     cJSON_Delete(envelope);
     return;
   }
+  NOPORTS_HEAP_LOG(TAG, "npt enrollment key checked");
 
   // Check permitopen — requestedHost and requestedPort are mandatory
   cJSON *requested_host = cJSON_GetObjectItem(payload, "requestedHost");
@@ -2353,11 +2457,21 @@ void NoPortsDaemon::_continueNptRequest(void *env,
         atclient_atkey_metadata_set_ttl(meta, 10000);
 
         // _verifyEnvelopeSignature used the worker to fetch the requester's
-        // public key.  A concurrent statsNotification push from the atServer
-        // can arrive in-band during that round-trip and leave garbage in the
-        // worker's read buffer, making the next atclient_notify fail with
-        // "no ':' token".  Reconnect here to guarantee a clean connection.
-        _reconnectWorker();
+        // public key, and anything left unread on the session after that
+        // round trip would make this notify's reply unreadable ("no ':'
+        // token"). This used to reconnect the worker unconditionally, a TLS
+        // and PKAM handshake per session whose long-lived buffers landed
+        // somewhere new in the heap each time (the largest free block fell
+        // 139 K -> 92 K -> 76 K over a run). A noop proves the session in
+        // sync in one round trip; only when it isn't is the worker rebuilt.
+        NOPORTS_HEAP_LOG(TAG, "npt keys made");
+        if (atclient_send_heartbeat(worker) != 0) {
+          NOPORTS_LOGW(TAG, "NPT: worker session out of sync or dead before the response — reconnecting");
+          _reconnectWorker();
+        } else {
+          _worker_last_used_ms = millis();
+        }
+        NOPORTS_HEAP_LOG(TAG, "npt worker checked");
 
         atclient_notify_params nparams;
         atclient_notify_params_init(&nparams);
@@ -2371,6 +2485,7 @@ void NoPortsDaemon::_continueNptRequest(void *env,
         } else {
           NOPORTS_LOGI(TAG, "NPT: sent success response to %s", requesting_atsign);
         }
+        NOPORTS_HEAP_LOG(TAG, "npt response sent");
 
         atclient_notify_params_free(&nparams);
         free(kname);
@@ -2445,6 +2560,7 @@ void NoPortsDaemon::_continueNptRequest(void *env,
   if (session_aes_key_d2c_b64) free(session_aes_key_d2c_b64);
   if (session_iv_d2c_b64) free(session_iv_d2c_b64);
   cJSON_Delete(envelope);
+  NOPORTS_HEAP_LOG(TAG, "npt relay started");
 }
 
 // ============================================================================
@@ -2487,10 +2603,32 @@ bool NoPortsDaemon::_verifyEnvelopeSignature(void *env, const char *from_atsign)
 
   char *pk_buffer = NULL;
   res = atclient_get_public_key(worker, &pubkey, &pk_buffer, NULL);
+  if (res != 0 || pk_buffer == NULL) {
+    // This runs before authorization, for any sender, and a sender's own
+    // atServer answers its publickey lookup: one that answers with an error
+    // fails the lookup on a perfectly good worker session. So prove the
+    // session dead with a heartbeat before tearing it down, as the monitor
+    // path does; otherwise any atSign could force a TLS and PKAM handshake
+    // per request. A lookup that fails on a live session is refused.
+    free(pk_buffer);
+    pk_buffer = NULL;
+    if (atclient_send_heartbeat(worker) != 0) {
+      NOPORTS_LOGW(TAG, "Public key lookup for %s failed (%d) on a dead worker session — reconnecting and retrying",
+                   from_atsign, res);
+      if (_reconnectWorker()) {
+        res = atclient_get_public_key(worker, &pubkey, &pk_buffer, NULL);
+      }
+    } else {
+      NOPORTS_LOGW(TAG, "Public key lookup for %s failed (%d) on a live worker session — refusing the request",
+                   from_atsign, res);
+      _worker_last_used_ms = millis();
+    }
+  }
   atclient_atkey_free(&pubkey);
 
   if (res != 0 || pk_buffer == NULL) {
     NOPORTS_LOGE(TAG, "Failed to get public key for %s", from_atsign);
+    free(pk_buffer);
     return false;
   }
 
@@ -2608,6 +2746,7 @@ void NoPortsDaemon::_cleanupFinishedRelays() {
         _relays[i].start_ms = 0;
         _relays[i].active_sessions = 0;
         memset(&_relays[i].config, 0, sizeof(NoPortsRelayConfig));
+        NOPORTS_HEAP_LOG(TAG, "relay cleaned up");
       }
     }
   }
@@ -2676,70 +2815,74 @@ bool NoPortsDaemon::_refreshAtServerCache() {
   return true;
 }
 
-bool NoPortsDaemon::_reconnectMonitor() {
-  // Too many consecutive failures — likely memory fragmentation preventing
-  // mbedTLS from allocating contiguous blocks for TLS handshake.
-  // A reboot is the only reliable fix on ESP32.
-  if (_reconnect_failures >= NOPORTS_MAX_RECONNECT_FAILURES) {
-    NOPORTS_LOGE(TAG, "Monitor reconnect failed %d times — rebooting (heap: %u, largest free: %u)",
-                 _reconnect_failures,
-                 (unsigned)esp_get_free_heap_size(),
-                 (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
-    delay(1000);  // brief pause for serial flush
-    esp_restart();
-  }
+void NoPortsDaemon::_rebootIfUnreachable(const char *which) {
+  // Too many consecutive failures: memory fragmentation that stops mbedTLS
+  // allocating for a handshake, or an atServer that can't be reached on the
+  // worker while the monitor still looks fine. Either way the daemon would
+  // otherwise sit here looking connected and answering nothing, and a reboot
+  // is the only reliable fix on ESP32.
+  if (_reconnect_failures < NOPORTS_MAX_RECONNECT_FAILURES) return;
+  NOPORTS_LOGE(TAG, "%s reconnect failed %d times — rebooting (heap: %u, largest free: %u)",
+               which, _reconnect_failures,
+               (unsigned)esp_get_free_heap_size(),
+               (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+  delay(1000);  // brief pause for serial flush
+  esp_restart();
+}
 
-  // Exponential backoff: 5s, 10s, 20s, 30s, 30s, ...
-  if (_reconnect_failures > 0) {
-    unsigned long backoff_ms = 5000UL << (_reconnect_failures - 1);
-    if (backoff_ms > 30000) backoff_ms = 30000;
-    NOPORTS_LOGI(TAG, "Reconnect backoff: %lu ms (attempt %d, free heap: %u)",
-                 backoff_ms, _reconnect_failures + 1,
+void NoPortsDaemon::_prepareReconnect(const char *which) {
+  // Exponential backoff: 2.5 s, 5 s, 10 s, 15 s, 15 s, ...  Bounded, with the
+  // heap wait below, so one reconnect attempt stays well inside the sketch's
+  // task watchdog.
+  uint32_t backoff_ms = noports_reconnect_backoff_ms(_reconnect_failures);
+  if (backoff_ms > 0) {
+    NOPORTS_LOGI(TAG, "%s reconnect backoff: %lu ms (attempt %d, free heap: %u)",
+                 which, (unsigned long)backoff_ms, _reconnect_failures + 1,
                  (unsigned)esp_get_free_heap_size());
     delay(backoff_ms);
   }
 
-  NOPORTS_LOGI(TAG, "Reconnecting monitor...");
+  NOPORTS_LOGI(TAG, "Reconnecting %s...", which);
 
   // Wait for heap only when the relay has just stopped (pcbs <= 1).
   // When pcbs > 1 the relay is actively running and holds pbufs that fragment
   // the heap — those pbufs will NOT be released until sessions close, so
-  // waiting here is pointless and blocks notification delivery for up to 30s,
-  // which freezes all active SSH sessions.  Skip the wait; TLS will either
-  // succeed (brief lull between relay bursts) or fail and be retried quickly.
-  if (noports_relay_get_pcb_count() <= 1) {
-    uint32_t ws = millis();
-    while ((millis() - ws) < 30000) {
-      uint32_t total   = esp_get_free_heap_size();
-      uint32_t largest = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-      int      pcbs    = noports_relay_get_pcb_count();
-      bool heap_ok = (total >= NOPORTS_TLS_MIN_FREE_HEAP) &&
-                     (largest >= NOPORTS_TLS_MIN_CONTIGUOUS_HEAP || pcbs <= 1);
-      if (heap_ok) break;
-      NOPORTS_LOGW(TAG, "Monitor reconnect: waiting for heap (total=%u, largest=%u, relay_pcbs=%d)",
-                   total, largest, pcbs);
-      delay(200);
-    }
-    {
-      uint32_t total   = esp_get_free_heap_size();
-      uint32_t largest = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-      int      pcbs    = noports_relay_get_pcb_count();
-      bool heap_ok = (total >= NOPORTS_TLS_MIN_FREE_HEAP) &&
-                     (largest >= NOPORTS_TLS_MIN_CONTIGUOUS_HEAP || pcbs <= 1);
-      if (!heap_ok) {
-        NOPORTS_LOGW(TAG, "Monitor reconnect: heap not ready after 30s (total=%u, largest=%u, relay_pcbs=%d) — proceeding anyway",
-                     total, largest, pcbs);
-      }
-    }
-  } else {
-    NOPORTS_LOGD(TAG, "Monitor reconnect: relay active (pcbs=%d), skipping heap wait",
-                 noports_relay_get_pcb_count());
+  // waiting here is pointless and blocks notification delivery, which freezes
+  // all active SSH sessions.  Skip the wait; TLS will either succeed (brief
+  // lull between relay bursts) or fail and be retried quickly.
+  if (noports_relay_get_pcb_count() > 1) {
+    NOPORTS_LOGD(TAG, "%s reconnect: relay active (pcbs=%d), skipping heap wait",
+                 which, noports_relay_get_pcb_count());
+    return;
   }
+  uint32_t ws = millis();
+  for (;;) {
+    uint32_t total   = esp_get_free_heap_size();
+    uint32_t largest = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+    int      pcbs    = noports_relay_get_pcb_count();
+    bool heap_ok = (total >= NOPORTS_TLS_MIN_FREE_HEAP) &&
+                   (largest >= NOPORTS_TLS_MIN_CONTIGUOUS_HEAP || pcbs <= 1);
+    if (heap_ok) return;
+    if ((millis() - ws) >= NOPORTS_RECONNECT_HEAP_WAIT_MS) {
+      NOPORTS_LOGW(TAG, "%s reconnect: heap not ready after %u ms (total=%u, largest=%u, relay_pcbs=%d) — proceeding anyway",
+                   which, (unsigned)NOPORTS_RECONNECT_HEAP_WAIT_MS, total, largest, pcbs);
+      return;
+    }
+    NOPORTS_LOGW(TAG, "%s reconnect: waiting for heap (total=%u, largest=%u, relay_pcbs=%d)",
+                 which, total, largest, pcbs);
+    delay(200);
+  }
+}
+
+bool NoPortsDaemon::_reconnectMonitor() {
+  _rebootIfUnreachable("Monitor");
+  _prepareReconnect("monitor");
 
   atclient *monitor = (atclient *)_monitor_ctx;
   atclient_atkeys *keys = (atclient_atkeys *)_atkeys;
 
   // Fully tear down the old monitor connection before re-auth
+  _freeAtServerConnection(monitor);
   atclient_monitor_free(monitor);
   atclient_monitor_init(monitor);
 
@@ -2753,6 +2896,7 @@ bool NoPortsDaemon::_reconnectMonitor() {
     // change).  If a new address is found, retry auth once before giving up.
     if (_refreshAtServerCache()) {
       NOPORTS_LOGI(TAG, "Retrying monitor auth with refreshed atServer address");
+      _freeAtServerConnection(monitor);
       atclient_monitor_free(monitor);
       atclient_monitor_init(monitor);
       res = atclient_monitor_pkam_authenticate(
@@ -2780,47 +2924,21 @@ bool NoPortsDaemon::_reconnectMonitor() {
   atclient_monitor_set_read_timeout(monitor, NOPORTS_MONITOR_READ_TIMEOUT_MS);
 
   _reconnect_failures = 0;
+  _monitor_noop_sent = false;
+  _last_monitor_msg_ms = _now_ms();
   NOPORTS_LOGI(TAG, "Monitor reconnected (TLS failure counter reset)");
   return true;
 }
 
 bool NoPortsDaemon::_reconnectWorker() {
-  NOPORTS_LOGI(TAG, "Reconnecting worker...");
-
-  // Same logic as monitor reconnect: skip heap wait when relay is active.
-  if (noports_relay_get_pcb_count() <= 1) {
-    uint32_t ws = millis();
-    while ((millis() - ws) < 30000) {
-      uint32_t total   = esp_get_free_heap_size();
-      uint32_t largest = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-      int      pcbs    = noports_relay_get_pcb_count();
-      bool heap_ok = (total >= NOPORTS_TLS_MIN_FREE_HEAP) &&
-                     (largest >= NOPORTS_TLS_MIN_CONTIGUOUS_HEAP || pcbs <= 1);
-      if (heap_ok) break;
-      NOPORTS_LOGW(TAG, "Worker reconnect: waiting for heap (total=%u, largest=%u, relay_pcbs=%d)",
-                   total, largest, pcbs);
-      delay(200);
-    }
-    {
-      uint32_t total   = esp_get_free_heap_size();
-      uint32_t largest = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-      int      pcbs    = noports_relay_get_pcb_count();
-      bool heap_ok = (total >= NOPORTS_TLS_MIN_FREE_HEAP) &&
-                     (largest >= NOPORTS_TLS_MIN_CONTIGUOUS_HEAP || pcbs <= 1);
-      if (!heap_ok) {
-        NOPORTS_LOGW(TAG, "Worker reconnect: heap not ready after 30s (total=%u, largest=%u, relay_pcbs=%d) — proceeding anyway",
-                     total, largest, pcbs);
-      }
-    }
-  } else {
-    NOPORTS_LOGD(TAG, "Worker reconnect: relay active (pcbs=%d), skipping heap wait",
-                 noports_relay_get_pcb_count());
-  }
+  _rebootIfUnreachable("Worker");
+  _prepareReconnect("worker");
 
   atclient *worker = (atclient *)_worker_ctx;
   atclient_atkeys *keys = (atclient_atkeys *)_atkeys;
 
   // Fully tear down the old worker connection
+  _freeAtServerConnection(worker);
   atclient_free(worker);
   atclient_init(worker);
 
@@ -2835,6 +2953,7 @@ bool NoPortsDaemon::_reconnectWorker() {
     // If a new address is found, retry auth once before giving up.
     if (_refreshAtServerCache()) {
       NOPORTS_LOGI(TAG, "Retrying worker auth with refreshed atServer address");
+      _freeAtServerConnection(worker);
       atclient_free(worker);
       atclient_init(worker);
       res = atclient_pkam_authenticate(
@@ -2846,6 +2965,8 @@ bool NoPortsDaemon::_reconnectWorker() {
     }
     if (res != 0) {
       if (_reconnect_failures < 255) _reconnect_failures++;
+      NOPORTS_LOGW(TAG, "Worker reconnect failed (%d/%d consecutive atServer connection failures)",
+                   _reconnect_failures, NOPORTS_MAX_RECONNECT_FAILURES);
       return false;
     }
     NOPORTS_LOGI(TAG, "Worker reconnect succeeded after atServer address refresh");
@@ -2853,6 +2974,12 @@ bool NoPortsDaemon::_reconnectWorker() {
 
   NOPORTS_LOGI(TAG, "Worker reconnected");
   _worker_last_used_ms = millis();
+  _worker_check_due = false;
+  // The counter is consecutive failures across both sessions, so a success on
+  // either clears it; left set, one failed attempt would make every later
+  // worker reconnect back off, show "retry" on the dashboard, and count
+  // toward the reboot for the life of the monitor session.
+  _reconnect_failures = 0;
   return true;
 }
 

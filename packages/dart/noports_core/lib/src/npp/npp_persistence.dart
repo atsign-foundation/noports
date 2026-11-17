@@ -42,13 +42,29 @@ bool _carriesId(
   return folded ? id.toLowerCase() == name.toLowerCase() : id == name;
 }
 
+/// The kind each rule kind [NppCache.removeRulesNamingMissing] can remove is
+/// stored as, in its key or file name.
+const Map<String, String> _storedKinds = {
+  'ClientGroupMember': 'client_group_member',
+  'Service': 'service',
+  'ServiceACL': 'service_acl',
+};
+
 /// Removes from [nppCache] each rule naming a rule it doesn't hold, with a
-/// warning for each.
-void _removeRulesNamingMissing(NppCache nppCache) {
+/// warning for each naming the [noun] (`key` or `file`) that [storedAs] gives
+/// for its stored kind and id: the one its pre-delete hook removes.
+void _removeRulesNamingMissing(
+  NppCache nppCache,
+  String noun,
+  String Function(String kind, String id) storedAs,
+) {
   for (final (kind, rule, missing) in nppCache.removeRulesNamingMissing()) {
+    final String place = storedAs(_storedKinds[kind]!, rule.id!);
     _logger.warning(
       'Not loading $kind with id ${rule.id}: it names '
-      '${missing.join(' and ')}, which is not loaded',
+      '${missing.join(' and ')}, which is not loaded. It is still stored, as '
+      "the $noun $place; delete it through npp's manager RPC, or delete that "
+      '$noun, to stop this warning.',
     );
   }
 }
@@ -75,7 +91,6 @@ Future<NppCache> nppCacheFromAtServer({
   }
 
   final NppCache nppCache = NppCache();
-
   // Fetch all policy-related AtKeys in a single call
   final String allPolicyRegex =
       r'.*\.'
@@ -192,7 +207,15 @@ Future<NppCache> nppCacheFromAtServer({
     }
   }
 
-  _removeRulesNamingMissing(nppCache);
+  _removeRulesNamingMissing(
+    nppCache,
+    'key',
+    (kind, id) => (AtKey()
+          ..key = id
+          ..namespace = '$kind.$domainNamespace.$baseNamespace'
+          ..sharedBy = atClient.getCurrentAtSign())
+        .toString(),
+  );
   _logger.info('Loaded ${nppCache.clients.length} Clients into cache');
   _logger.info(
     'Loaded ${nppCache.clientGroups.length} ClientGroups into cache',
@@ -322,7 +345,11 @@ Future<NppCache> nppCacheFromFiles({
       _logger.finer('Skipping non-file entity: ${file.path}');
     }
   }
-  _removeRulesNamingMissing(nppCache);
+  _removeRulesNamingMissing(
+    nppCache,
+    'file',
+    (kind, id) => '${policyDirectory.path}/${id}_$kind.json',
+  );
   _logger.info(
     'Finished populating NppCache from files in ${policyDirectory.path}',
   );
