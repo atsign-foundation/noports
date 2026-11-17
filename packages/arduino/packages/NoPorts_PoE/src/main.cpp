@@ -424,6 +424,9 @@ static void on_eth_event(arduino_event_id_t event, arduino_event_info_t) {
                     ETH.localIP().toString().c_str(),
                     ETH.linkSpeed(),
                     ETH.fullDuplex() ? "FD" : "HD");
+      // A new lease while the daemon runs (renewal to a different address)
+      // leaves its atServer sessions bound to the old one: reconnect now.
+      if (daemon_running && g_post_net_done) npDaemon.notifyNetworkChanged();
       break;
     case ARDUINO_EVENT_ETH_LOST_IP:
       // DHCP lease expired and renewal failed — IP is gone, link may still be up.

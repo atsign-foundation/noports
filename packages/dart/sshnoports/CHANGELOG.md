@@ -37,6 +37,8 @@
   template from `sshnp/systemd.nfpm` and `sshnp/config`, where the release
   archive keeps them
 
+* ci: the Windows release job signs in to Azure only when it is about to
+  sign, after every build step, instead of first
 ## v5.18.2
 
 * feat: sshnpd and srvd take their session locks with at_client's server

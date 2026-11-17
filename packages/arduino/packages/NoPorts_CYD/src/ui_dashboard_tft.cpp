@@ -148,6 +148,8 @@ static void _draw_stats_row1() {
   uint16_t state_color = COLOR_TEXT_GREY;
   if (strcmp(_daemon_state, "running") == 0) state_color = COLOR_SUCCESS;
   else if (strcmp(_daemon_state, "auth") == 0) state_color = COLOR_ACCENT;
+  else if (strncmp(_daemon_state, "quiet", 5) == 0) state_color = COLOR_ACCENT;   // monitor silent, heartbeat sent
+  else if (strncmp(_daemon_state, "retry", 5) == 0) state_color = COLOR_ACCENT;   // reconnecting to the atServer
   else if (strcmp(_daemon_state, "error") == 0) state_color = COLOR_ERROR;
   tft.fillCircle(HEADER_PADDING + 12, y + 11, 4, state_color);
   snprintf(buf, sizeof(buf), "%s", _daemon_state);

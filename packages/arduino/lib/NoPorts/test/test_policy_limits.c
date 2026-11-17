@@ -190,6 +190,20 @@ static void test_reconnect_after_decrypt_failure(void) {
         "reconnects again");
 }
 
+static void test_reconnect_backoff(void) {
+  check(noports_reconnect_backoff_ms(0) == 0,
+        "given no failed reconnect attempt, when the daemon reconnects, then it doesn't pause first");
+  check(noports_reconnect_backoff_ms(1) == 2500 && noports_reconnect_backoff_ms(2) == 5000 &&
+            noports_reconnect_backoff_ms(3) == 10000,
+        "given failed reconnect attempts in a row, when the daemon tries again, then it pauses twice as long as "
+        "after the last one");
+  check(noports_reconnect_backoff_ms(4) == NOPORTS_RECONNECT_BACKOFF_MAX_MS &&
+            noports_reconnect_backoff_ms(10) == NOPORTS_RECONNECT_BACKOFF_MAX_MS &&
+            noports_reconnect_backoff_ms(255) == NOPORTS_RECONNECT_BACKOFF_MAX_MS,
+        "given many failed attempts, when the daemon tries again, then the pause never passes the cap, however "
+        "long the atServer has been unreachable");
+}
+
 int main(void) {
   test_reuse_within_ttl();
   test_denial_reused();
@@ -202,6 +216,7 @@ int main(void) {
   test_size_cap();
   test_decrypt_failure();
   test_reconnect_after_decrypt_failure();
+  test_reconnect_backoff();
   if (failures > 0) {
     printf("%d check(s) failed\n", failures);
     return 1;

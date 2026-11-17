@@ -78,6 +78,23 @@ pio device monitor -b 115200
 3. **Enrollment** - enter atSign, device name, OTP, and manager atSign
 4. **Dashboard** - view live tunnel/ping events and system status
 
+### Reading the dashboard
+
+The state indicator at the top left tells you whether the device can
+actually be reached, not just whether the daemon is running:
+
+| Indicator | Meaning |
+|---|---|
+| `running` (green) | Both atServer sessions are up; the monitor heard from the atServer within the last 20 s |
+| `quiet 23s` (orange) | Nothing from the atServer for 20 s or more; the daemon has sent a heartbeat and reconnects at 40 s |
+| `retry 3/10` (orange) | Reconnecting to the atServer; the count is consecutive failures, the device reboots at 10 |
+| `auth` (orange) / `error` (red) | Authenticating / the daemon failed to start |
+
+The second row shows relay TCP sockets in use, relay CPU, and free heap. The
+same figures, plus how long the monitor has been silent and when the worker
+session last succeeded, are logged on serial once a minute as a `Health:`
+line.
+
 ## Project Structure
 
 ```
@@ -155,15 +172,43 @@ Custom partition table in `partitions.csv` allocates:
   it further if it persists; raise it back toward 16000000 if you see flicker.
 
 ### Memory Issues
-Monitor free heap in serial output:
-```
-Free heap: XXXXX bytes
+Watch the heap on the dashboard's second row, or on serial once a minute:
+
+<!-- pyml disable-num-lines 4 md013-->
+```text
+[mem] free=XXXXX min=XXXXX largest=XXXXX
+Health: heap=XXXXX largest=XXXXX monitor_silent=12s worker_idle=180s reconnect_failures=0 relays=0 pcbs=0/11
 ```
 
-Should remain >100 KB during operation. If lower:
-- Check for memory leaks
-- Reduce buffer sizes
-- Disable debug logging
+Free heap should settle back to roughly its post-boot value after every
+session. A value that only ever goes down is a leak: check that the build
+pulled at_client 1.0.2 or later (earlier versions leaked ~6 KB on every
+reconnect that failed part-way). The sketch reboots itself after 30 s under
+12 KB, and the daemon reboots after ten consecutive failed reconnects, so a
+device never stays unreachable; the serial banner on boot says why it
+restarted.
+
+### Finding a heap leak
+
+A build with `-DNOPORTS_HEAP_TRACE` logs the internal heap at each stage of a
+ping and a session (`Heap[stage]: internal=… largest=…`) and a block census
+on every `Health:` line. To find *which* allocation is kept, add the
+allocation tracer in `src/heap_trace_hook.cpp`, which wraps every libc
+allocation at link time:
+
+<!-- pyml disable-num-lines 6 md013-->
+```bash
+PLATFORMIO_BUILD_FLAGS="-DNOPORTS_HEAP_TRACE -Wl,--wrap=malloc -Wl,--wrap=free \
+  -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=_malloc_r -Wl,--wrap=_free_r \
+  -Wl,--wrap=_calloc_r -Wl,--wrap=_realloc_r" pio run -e cyd2usb_s3 -t upload
+```
+
+Whenever the device has been idle for two minutes, a `HeapTrace:` report lists
+the blocks allocated since the previous idle report that are still live,
+grouped by call stack, so a batch of sessions between two idle points leaves
+exactly its leaks on the list. Decode the addresses with the toolchain's
+`xtensa-esp32s3-elf-addr2line -pfiC -e .pio/build/cyd2usb_s3/firmware.elf`.
+The tracer costs about 30 KB of RAM and is never part of a normal build.
 
 ### WiFi Connection Fails
 - Verify SSID/password
@@ -250,6 +295,8 @@ for the threat model and mitigations.
 - **Flash Usage**: ~36% (901 KB / 2.5 MB)
 - **Relay Throughput**: Real-time bps display with color-coded RX (cyan) / TX (green)
 - **CPU Monitoring**: Per-core usage displayed on dashboard
+- **Liveness**: dashboard state reflects the atServer sessions; `Health:`
+  line on serial every minute
 
 ## License
 
