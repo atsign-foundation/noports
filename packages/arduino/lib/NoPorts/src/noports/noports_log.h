@@ -38,4 +38,17 @@
 #define NOPORTS_LOGI(tag, fmt, ...) NOPORTS_LOG(NOPORTS_LOG_INFO,  tag, fmt, ##__VA_ARGS__)
 #define NOPORTS_LOGD(tag, fmt, ...) NOPORTS_LOG(NOPORTS_LOG_DEBUG, tag, fmt, ##__VA_ARGS__)
 
+// Build with -DNOPORTS_HEAP_TRACE to log the internal (DRAM) heap at each
+// stage of handling a ping, a session request and a session's end, for
+// chasing a per-session leak. Compiles to nothing otherwise.
+#ifdef NOPORTS_HEAP_TRACE
+  #include <esp_heap_caps.h>
+  #define NOPORTS_HEAP_TRACE(tag, stage)                                     \
+    NOPORTS_LOGI(tag, "Heap[%s]: internal=%u largest=%u", stage,             \
+                 (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),      \
+                 (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL))
+#else
+  #define NOPORTS_HEAP_TRACE(tag, stage) do {} while (0)
+#endif
+
 #endif // NOPORTS_LOG_H

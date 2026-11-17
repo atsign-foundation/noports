@@ -371,6 +371,7 @@ void NoPortsDaemon::_checkClientKeys() {
     ClientSigningKey *key = &_client_keys[i];
     if (!key->due) continue;
     int found = _checkKey(key);
+    NOPORTS_HEAP_TRACE(TAG, "client key rechecked");
     for (int j = 0; j < NOPORTS_MAX_RELAYS; j++) {
       ClientSigningKey *other = &_client_keys[j];
       if (other->signing_key == NULL || strcmp(other->signing_key, key->signing_key) != 0) continue;
