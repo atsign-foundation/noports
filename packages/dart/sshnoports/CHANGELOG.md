@@ -32,6 +32,16 @@
   as a string, or a put or delete whose value isn't a JSON object, with an
   error saying what it must hold
 
+* build: releases carry a native Windows arm64 MSI (`NoPorts-<v>-arm64.msi`,
+  experimental: a failure there cannot fail a release); the SBOM, checksums
+  and attestation are produced on every multibuild (attestation and the
+  release upload stay tag-only), and a branch dispatch no longer fails on a
+  `/` in the artifact name
+* build: the release ships the NoPorts Configuration app: inside the Windows
+  MSIs (its Flutter engine and plugin DLLs signed with the rest), as
+  `noports-config` deb and rpm for x64 and arm64 picked up by
+  apt.noports.com and rpm.noports.com, and as a signed, notarised universal
+  macOS app (`noports-config-macos-universal.zip`) for a Homebrew cask
 ## v5.18.2
 
 * feat: sshnpd and srvd take their session locks with at_client's server
