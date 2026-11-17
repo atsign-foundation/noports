@@ -32,13 +32,17 @@ int main(void) {
         "a notification that can't be parsed reconnects");
   check(MONITOR_RECONNECT_COUNTER * MONITOR_READ_TIMEOUT_MS > MONITOR_NOOP_TIMEOUT_MS,
         "the reconnect count is past the main loop's threshold");
-  check(sshnpd_reconnect_delay_s(0) == 0, "with no failed reconnect attempt the daemon doesn't pause");
-  check(sshnpd_reconnect_delay_s(1) == 1 && sshnpd_reconnect_delay_s(2) == 2 && sshnpd_reconnect_delay_s(4) == 8,
-        "after each failed reconnect attempt the daemon pauses twice as long as after the last");
-  check(sshnpd_reconnect_delay_s(5) == MONITOR_RECONNECT_MAX_DELAY_S &&
+  check(sshnpd_reconnect_delay_s(0) == 0, "before any reconnect attempt the daemon doesn't pause");
+  check(sshnpd_reconnect_delay_s(1) == 1 && sshnpd_reconnect_delay_s(2) == 2 && sshnpd_reconnect_delay_s(4) == 8 &&
+            sshnpd_reconnect_delay_s(5) == 16,
+        "after each reconnect attempt the daemon pauses twice as long as after the last, whether the attempt's "
+        "handshake succeeded or not");
+  check(sshnpd_reconnect_delay_s(6) == MONITOR_RECONNECT_MAX_DELAY_S &&
             sshnpd_reconnect_delay_s(40) == MONITOR_RECONNECT_MAX_DELAY_S &&
             sshnpd_reconnect_delay_s(UINT_MAX) == MONITOR_RECONNECT_MAX_DELAY_S,
         "the pause never passes MONITOR_RECONNECT_MAX_DELAY_S, however long the atServer has been unreachable");
+  check(monitor_reconnect_due(0) && monitor_reconnect_due(123456789L),
+        "before any reconnect attempt the daemon may reconnect at once");
   if (failures > 0) {
     printf("%d check(s) failed\n", failures);
     return 1;
