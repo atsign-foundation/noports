@@ -145,7 +145,15 @@ static void on_tunnel_open(const char *host, uint16_t port, const char *session_
   ui_event_push(UI_EVT_TUNNEL_OPEN, buf);
 }
 
+#ifdef NOPORTS_HEAP_TRACE
+extern "C" void heap_trace_checkpoint(void);
+static uint32_t _last_tunnel_close_ms = 0;
+#endif
+
 static void on_tunnel_close(const char *session_id) {
+#ifdef NOPORTS_HEAP_TRACE
+  _last_tunnel_close_ms = millis();
+#endif
   char buf[EVENT_TEXT_LEN];
   snprintf(buf, sizeof(buf), "Closed [%.8s]", session_id ? session_id : "?");
   ui_event_push(UI_EVT_TUNNEL_CLOSE, buf);
@@ -1263,6 +1271,13 @@ void loop() {
         _heap_log_n = 0;
         Serial.printf("[mem] free=%u min=%u largest=%u\n",
                       free_h, ESP.getMinFreeHeap(), ESP.getMaxAllocHeap());
+#ifdef NOPORTS_HEAP_TRACE
+        // Idle: no relay for two minutes. Report what the last window kept.
+        if (daemon_running && npDaemon.getActiveRelayCount() == 0 &&
+            millis() - _last_tunnel_close_ms > 120000UL) {
+          heap_trace_checkpoint();
+        }
+#endif
       }
       if (free_h < HEAP_REBOOT_BYTES) {
         if (++_low_samples >= 3) reboot_with_reason("heap critically low");

@@ -188,6 +188,28 @@ reconnect that failed part-way). The sketch reboots itself after 30 s under
 device never stays unreachable; the serial banner on boot says why it
 restarted.
 
+### Finding a heap leak
+
+A build with `-DNOPORTS_HEAP_TRACE` logs the internal heap at each stage of a
+ping and a session (`Heap[stage]: internal=… largest=…`) and a block census
+on every `Health:` line. To find *which* allocation is kept, add the
+allocation tracer in `src/heap_trace_hook.cpp`, which wraps every libc
+allocation at link time:
+
+<!-- pyml disable-num-lines 6 md013-->
+```bash
+PLATFORMIO_BUILD_FLAGS="-DNOPORTS_HEAP_TRACE -Wl,--wrap=malloc -Wl,--wrap=free \
+  -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=_malloc_r -Wl,--wrap=_free_r \
+  -Wl,--wrap=_calloc_r -Wl,--wrap=_realloc_r" pio run -e cyd2usb_s3 -t upload
+```
+
+Whenever the device has been idle for two minutes, a `HeapTrace:` report lists
+the blocks allocated since the previous idle report that are still live,
+grouped by call stack, so a batch of sessions between two idle points leaves
+exactly its leaks on the list. Decode the addresses with the toolchain's
+`xtensa-esp32s3-elf-addr2line -pfiC -e .pio/build/cyd2usb_s3/firmware.elf`.
+The tracer costs about 30 KB of RAM and is never part of a normal build.
+
 ### WiFi Connection Fails
 - Verify SSID/password
 - Check signal strength

@@ -1940,6 +1940,12 @@ void NoPortsDaemon::_handlePingAuthorized(const char *from_atsign) {
   } else {
     NOPORTS_LOGI(TAG, "Ping: sent response to %s", from_atsign);
   }
+  // Neither was freed before: the notify's copies of the ping response and
+  // of the key, with the key's own strings, stayed behind on every ping,
+  // about 650 bytes each, until a CYD with a few hundred pings behind it
+  // could no longer open a TLS session (#3082)
+  atclient_notify_params_free(&notify_params);
+  atclient_atkey_free(&pingkey);
   NOPORTS_HEAP_LOG(TAG, "ping answered");
 
   if (_config.on_ping) {
