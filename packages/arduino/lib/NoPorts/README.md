@@ -235,8 +235,11 @@ daemon watches both and never lets either stay dead quietly:
   silence, or on any read error, the monitor is torn down and reconnected,
   and the worker is checked with a heartbeat.
 - **Worker.** A heartbeat every `setWorkerKeepaliveMs()` (default 4 min)
-  keeps NAT tables from expiring the session; a failed heartbeat, notify or
-  key lookup reconnects it.
+  keeps NAT tables from expiring the session; a failed heartbeat or notify
+  reconnects it, and so does a failed public key lookup once a heartbeat
+  has shown the session dead (a lookup that fails on a live session is a
+  bad answer from the sender's atServer, and is refused rather than used as
+  a reason to reconnect).
 - **Escalation.** Reconnects back off 2.5, 5, 10 then 15 s and wait at most
   10 s for heap, and `loop()` runs at most one reconnect per pass, so a pass
   stays inside the sketch's 60 s task watchdog. The failure count covers both

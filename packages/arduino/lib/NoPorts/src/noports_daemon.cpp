@@ -2566,15 +2566,24 @@ bool NoPortsDaemon::_verifyEnvelopeSignature(void *env, const char *from_atsign)
   char *pk_buffer = NULL;
   res = atclient_get_public_key(worker, &pubkey, &pk_buffer, NULL);
   if (res != 0 || pk_buffer == NULL) {
-    // A dead worker session is the usual cause, right after a network loss:
-    // reconnect it and ask once more, as the notify path does, rather than
-    // refusing the request.
-    NOPORTS_LOGW(TAG, "Public key lookup for %s failed (%d) — reconnecting worker and retrying",
-                 from_atsign, res);
+    // This runs before authorization, for any sender, and a sender's own
+    // atServer answers its publickey lookup: one that answers with an error
+    // fails the lookup on a perfectly good worker session. So prove the
+    // session dead with a heartbeat before tearing it down, as the monitor
+    // path does; otherwise any atSign could force a TLS and PKAM handshake
+    // per request. A lookup that fails on a live session is refused.
     free(pk_buffer);
     pk_buffer = NULL;
-    if (_reconnectWorker()) {
-      res = atclient_get_public_key(worker, &pubkey, &pk_buffer, NULL);
+    if (atclient_send_heartbeat(worker) != 0) {
+      NOPORTS_LOGW(TAG, "Public key lookup for %s failed (%d) on a dead worker session — reconnecting and retrying",
+                   from_atsign, res);
+      if (_reconnectWorker()) {
+        res = atclient_get_public_key(worker, &pubkey, &pk_buffer, NULL);
+      }
+    } else {
+      NOPORTS_LOGW(TAG, "Public key lookup for %s failed (%d) on a live worker session — refusing the request",
+                   from_atsign, res);
+      _worker_last_used_ms = millis();
     }
   }
   atclient_atkey_free(&pubkey);
