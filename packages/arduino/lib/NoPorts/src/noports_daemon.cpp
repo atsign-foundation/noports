@@ -816,19 +816,14 @@ void NoPortsDaemon::_logHealth() {
                (unsigned)_reconnect_failures, (unsigned)relays,
                noports_relay_get_pcb_count(), noports_relay_get_pcb_max());
 #ifdef NOPORTS_HEAP_TRACE
-  // Block census, and every third minute the internal heap's block list, so
-  // two idle dumps either side of a batch of sessions can be diffed by
-  // address and size to name whatever a session keeps.
+  // Block census: how many blocks are allocated and how many bytes they
+  // hold, so what a session keeps can be counted and sized. (Not
+  // heap_caps_dump: it prints every block while holding the heap lock,
+  // which trips the interrupt watchdog over USB serial.)
   multi_heap_info_t info;
   heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
-  static unsigned health_count = 0;
   NOPORTS_LOGI(TAG, "HeapCensus: allocated_blocks=%u free_blocks=%u allocated_bytes=%u",
                (unsigned)info.allocated_blocks, (unsigned)info.free_blocks, (unsigned)info.total_allocated_bytes);
-  if (++health_count % 3 == 0) {
-    NOPORTS_LOGI(TAG, "HeapDump: begin");
-    heap_caps_dump(MALLOC_CAP_INTERNAL);
-    NOPORTS_LOGI(TAG, "HeapDump: end");
-  }
 #endif
 }
 
