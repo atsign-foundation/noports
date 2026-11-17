@@ -841,19 +841,20 @@ device() {
       install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnpd)
       # Manually install the nfpm style systemd unit
       mkdir -p /lib/systemd/system
-      cp "$extract_path/sshnp/bundles/shell/systemd.nfpm/sshnpd.service" /lib/systemd/system/sshnpd.service
+      cp "$extract_path/sshnp/systemd.nfpm/sshnpd.service" /lib/systemd/system/sshnpd.service
       
       # Install the override file and customize the User
       mkdir -p /etc/systemd/system/sshnpd.service.d
-      cp "$extract_path/sshnp/bundles/shell/systemd.nfpm/sshnpd.service.d/override.conf" /etc/systemd/system/sshnpd.service.d/override.conf
+      cp "$extract_path/sshnp/systemd.nfpm/sshnpd.service.d/override.conf" /etc/systemd/system/sshnpd.service.d/override.conf
       customize_systemd_user
 
       # If we are root, we should also ensure /etc/noports exists and has the config
       mkdir -p /etc/noports
       if [ ! -f /etc/noports/sshnpd.yaml ]; then
-        cp "$extract_path/sshnp/bundles/core/config/sshnpd.yaml" /etc/noports/sshnpd.yaml
+        cp "$extract_path/sshnp/config/sshnpd.yaml" /etc/noports/sshnpd.yaml
       fi
       migrate_systemd_config_to_yaml
+      secure_config_file
     else
       install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
     fi
@@ -881,6 +882,7 @@ device() {
        if systemctl is-enabled sshnpd >/dev/null 2>&1; then
          echo "sshnpd systemd service is already enabled"
          if [ "$used_package_manager" = false ]; then
+           secure_config_file
            systemctl daemon-reload
            systemctl restart sshnpd
            print_systemd_summary restart
@@ -979,6 +981,7 @@ device() {
         sedi "s|^\([[:space:]]\{2\}policy:\)[[:space:]]*.*$|\1 '$(norm_atsign "$policy_atsign")'|" "$yaml_file"
       fi
       sedi "/^device:/,/^ssh:/s|^\([[:space:]]*name:\)[[:space:]]*.*$|\1 '$device_name'|" "$yaml_file"
+      secure_config_file
 
       systemctl daemon-reload
       systemctl enable sshnpd
@@ -1126,8 +1129,8 @@ migrate_systemd_config_to_yaml() {
   if [ ! -f "$yaml_file" ]; then
     echo "Warning: $yaml_file not found. Creating from template if available."
     mkdir -p /etc/noports
-    if [ -f "$extract_path/sshnp/bundles/core/config/sshnpd.yaml" ]; then
-      cp "$extract_path/sshnp/bundles/core/config/sshnpd.yaml" "$yaml_file"
+    if [ -f "$extract_path/sshnp/config/sshnpd.yaml" ]; then
+      cp "$extract_path/sshnp/config/sshnpd.yaml" "$yaml_file"
     else
       # Fallback to minimal if template not found in expected extract path
       cat <<EOF > "$yaml_file"
@@ -1224,6 +1227,19 @@ customize_systemd_user() {
       sedi "s/^User=1000$/User=$user/" "$override_file"
     fi
   done
+}
+
+# /etc/noports/sshnpd.yaml can hold the keys passphrase ("passphrase:"), so
+# it must not be world readable. root owns it and the account the unit runs
+# as (User= in the override, $user here) reads it through its primary group.
+# The template is copied with cp and the deb/rpm ships it 0644, so this runs
+# after every path that creates or updates the file.
+secure_config_file() {
+  yaml_file="/etc/noports/sshnpd.yaml"
+  [ -f "$yaml_file" ] || return 0
+  group=$(id -gn "$user" 2>/dev/null || echo root)
+  chown "root:$group" "$yaml_file"
+  chmod 640 "$yaml_file"
 }
 
 print_systemd_summary() {
