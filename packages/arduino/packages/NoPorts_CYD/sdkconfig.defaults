@@ -1,5 +1,11 @@
 # ESP32 (CYD / CYD2USB) sdkconfig overrides for NoPorts_CYD
 #
+# NOT APPLIED by the current Arduino-only PlatformIO build: the platform reads
+# board_build.sdkconfig_path only when framework = espidf, so the firmware runs
+# with the prebuilt framework's values (16 TCP PCBs, TCP_WND/SND_BUF 5744,
+# TCP_MSL 60 s). Kept for a future IDF-component build; the relay's socket
+# budget and buffer sizes in noports_relay.cpp are set for the prebuilt values.
+#
 # lwIP TCP buffer sizing: balance throughput vs heap consumption.
 # Each socket reserves 2x this for send+receive pbufs.
 # With up to 7 relay sockets (ctrl+3x2): 7 x 2 x 2x1460 = ~41KB peak.
