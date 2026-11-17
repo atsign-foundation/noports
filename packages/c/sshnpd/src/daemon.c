@@ -124,6 +124,14 @@ void main_loop() {
 
     int ret;
     if (timeout_counter * MONITOR_READ_TIMEOUT_MS > MONITOR_NOOP_TIMEOUT_MS) {
+      if (!monitor_reconnect_due(sshnpd_monotonic_ms())) {
+        // Backing off after a reconnect attempt: wait it out a second at a
+        // time so the duties above (children, session checks, the policy
+        // service) carry on, and a shutdown request is seen promptly
+        atclient_monitor_message_free(&message);
+        sleep(1);
+        continue;
+      }
       // Do noop & reconnect if needed
       ret = reconnect_monitor();
       if (ret != 0) {
@@ -137,6 +145,9 @@ void main_loop() {
 
     // Read the next monitor message
     ret = atclient_monitor_read(&monitor_ctx, &worker, &message, NULL);
+    if (ret == 0) {
+      monitor_connection_alive();
+    }
     timeout_counter = sshnpd_next_timeout_counter(ret, message.type, timeout_counter);
     if (ret != 0 && message.type != ATCLIENT_MONITOR_ERROR_DECRYPT_NOTIFICATION) {
       atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR,

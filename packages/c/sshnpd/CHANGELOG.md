@@ -1,5 +1,10 @@
 ## 1.1.2
 
+- fix: sshnpd backs off 1, 2, 4, 8, 16 then 30 s between monitor reconnect
+  attempts, counting one whose connection the atServer drops at once as
+  well as one it refuses, rather than retrying every second through an
+  outage; the main loop keeps reaping session children and answering the
+  policy service through the pause (#3082)
 - fix: refuse a session request whose session id isn't a UUID, as the Dart
   daemon does
 - fix: refuse a session request from a requester whose public key isn't
