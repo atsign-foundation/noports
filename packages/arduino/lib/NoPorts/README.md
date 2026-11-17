@@ -238,8 +238,10 @@ daemon watches both and never lets either stay dead quietly:
   keeps NAT tables from expiring the session; a failed heartbeat, notify or
   key lookup reconnects it.
 - **Escalation.** Reconnects back off 2.5, 5, 10 then 15 s and wait at most
-  10 s for heap, so one attempt stays inside the sketch's 60 s task watchdog.
-  Ten consecutive failures on either session restart the ESP32: on a
+  10 s for heap, and `loop()` runs at most one reconnect per pass, so a pass
+  stays inside the sketch's 60 s task watchdog. The failure count covers both
+  sessions and is cleared when either reconnects; ten failures in a row
+  restart the ESP32: on a
   microcontroller a reboot is the only reliable cure for heap fragmentation
   or a wedged network stack, and the Linux sshnpd gets the same from
   systemd.

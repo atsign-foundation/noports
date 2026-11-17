@@ -615,6 +615,11 @@ void NoPortsDaemon::loop() {
     _timeout_counter = 0;
     _monitor_noop_sent = false;
     _last_monitor_msg_ms = _now_ms();
+    // One reconnect per pass: the worker check, if due, runs on the next
+    // pass, after the sketch has fed the task watchdog, so a monitor
+    // reconnect followed by a worker reconnect can't add up past it.
+    atclient_monitor_message_free(&message);
+    return;
   }
 
   // Worker TLS keep-alive: send a heartbeat if the worker connection has
@@ -629,7 +634,12 @@ void NoPortsDaemon::loop() {
     if (hb != 0) {
       NOPORTS_LOGW(TAG, "Worker heartbeat failed (%d%s) — reconnecting worker", hb,
                    was_due ? ", after a monitor loss" : "");
-      _reconnectWorker();
+      if (!_reconnectWorker()) {
+        // Try again next pass, with backoff, each failure counting toward
+        // the reboot; otherwise the worker would stay down until the next
+        // keepalive, refusing every tunnel request in between.
+        _worker_check_due = true;
+      }
     } else {
       NOPORTS_LOGD(TAG, "Worker heartbeat OK (ka=%lums)", _worker_keepalive_ms);
       _worker_last_used_ms = millis();
@@ -2555,10 +2565,23 @@ bool NoPortsDaemon::_verifyEnvelopeSignature(void *env, const char *from_atsign)
 
   char *pk_buffer = NULL;
   res = atclient_get_public_key(worker, &pubkey, &pk_buffer, NULL);
+  if (res != 0 || pk_buffer == NULL) {
+    // A dead worker session is the usual cause, right after a network loss:
+    // reconnect it and ask once more, as the notify path does, rather than
+    // refusing the request.
+    NOPORTS_LOGW(TAG, "Public key lookup for %s failed (%d) — reconnecting worker and retrying",
+                 from_atsign, res);
+    free(pk_buffer);
+    pk_buffer = NULL;
+    if (_reconnectWorker()) {
+      res = atclient_get_public_key(worker, &pubkey, &pk_buffer, NULL);
+    }
+  }
   atclient_atkey_free(&pubkey);
 
   if (res != 0 || pk_buffer == NULL) {
     NOPORTS_LOGE(TAG, "Failed to get public key for %s", from_atsign);
+    free(pk_buffer);
     return false;
   }
 
@@ -2763,11 +2786,10 @@ void NoPortsDaemon::_prepareReconnect(const char *which) {
   // Exponential backoff: 2.5 s, 5 s, 10 s, 15 s, 15 s, ...  Bounded, with the
   // heap wait below, so one reconnect attempt stays well inside the sketch's
   // task watchdog.
-  if (_reconnect_failures > 0) {
-    unsigned long backoff_ms = 2500UL << (_reconnect_failures - 1);
-    if (backoff_ms > NOPORTS_RECONNECT_BACKOFF_MAX_MS) backoff_ms = NOPORTS_RECONNECT_BACKOFF_MAX_MS;
+  uint32_t backoff_ms = noports_reconnect_backoff_ms(_reconnect_failures);
+  if (backoff_ms > 0) {
     NOPORTS_LOGI(TAG, "%s reconnect backoff: %lu ms (attempt %d, free heap: %u)",
-                 which, backoff_ms, _reconnect_failures + 1,
+                 which, (unsigned long)backoff_ms, _reconnect_failures + 1,
                  (unsigned)esp_get_free_heap_size());
     delay(backoff_ms);
   }
@@ -2905,6 +2927,11 @@ bool NoPortsDaemon::_reconnectWorker() {
   NOPORTS_LOGI(TAG, "Worker reconnected");
   _worker_last_used_ms = millis();
   _worker_check_due = false;
+  // The counter is consecutive failures across both sessions, so a success on
+  // either clears it; left set, one failed attempt would make every later
+  // worker reconnect back off, show "retry" on the dashboard, and count
+  // toward the reboot for the life of the monitor session.
+  _reconnect_failures = 0;
   return true;
 }
 

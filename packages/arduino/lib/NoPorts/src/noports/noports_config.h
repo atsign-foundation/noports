@@ -36,10 +36,10 @@
 // is torn down and reconnected
 #define NOPORTS_MONITOR_NOOP_TIMEOUT_MS  40000
 
-// Longest pause between reconnect attempts, and longest wait for heap before
-// one. Both sit inside loop(), so together with a connect they must stay well
-// under the sketch's task watchdog (60 s).
-#define NOPORTS_RECONNECT_BACKOFF_MAX_MS 15000
+// Longest wait for heap before a reconnect attempt. It sits inside loop(),
+// so with the backoff (NOPORTS_RECONNECT_BACKOFF_MAX_MS, in
+// noports_policy_limits.h) and the connect it must stay well under the
+// sketch's task watchdog (60 s); loop() runs at most one reconnect per pass.
 #define NOPORTS_RECONNECT_HEAP_WAIT_MS   10000
 
 // How often the daemon logs one line of health: heap, how long the monitor has
