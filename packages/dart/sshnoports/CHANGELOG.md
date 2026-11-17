@@ -32,6 +32,11 @@
   as a string, or a put or delete whose value isn't a JSON object, with an
   error saying what it must hold
 
+* build: releases carry a native Windows arm64 MSI (`NoPorts-<v>-arm64.msi`,
+  experimental: a failure there cannot fail a release); the SBOM, checksums
+  and attestation are produced on every multibuild (attestation and the
+  release upload stay tag-only), and a branch dispatch no longer fails on a
+  `/` in the artifact name
 ## v5.18.2
 
 * feat: sshnpd and srvd take their session locks with at_client's server
