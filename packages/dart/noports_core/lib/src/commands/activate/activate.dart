@@ -23,15 +23,17 @@ class ActivateFlows {
     required WrittenAtKeysIo keys,
     required AtClientPreference preference,
     required AtClientStorage storage,
-  }) =>
-      atsign.activate(
-          cramSecret: cramSecret,
-          keys: keys,
-          preference: preference,
-          storage: storage,
-          lookUps: lookUpsFor(preference.rootDomain),
-          secondaryAddressFinder: CacheableSecondaryAddressFinder(
-              preference.rootDomain, preference.rootPort));
+  }) => atsign.activate(
+    cramSecret: cramSecret,
+    keys: keys,
+    preference: preference,
+    storage: storage,
+    lookUps: lookUpsFor(preference.rootDomain),
+    secondaryAddressFinder: CacheableSecondaryAddressFinder(
+      preference.rootDomain,
+      preference.rootPort,
+    ),
+  );
 
   /// The enrollment submitted earlier from [keys] for [app] on [device] and
   /// not yet decided, or null when there is none.
@@ -41,15 +43,17 @@ class ActivateFlows {
     required String device,
     required WrittenAtKeysIo keys,
     required AtClientPreference preference,
-  }) =>
-      atsign.resumeEnrollment(
-          app: app,
-          device: device,
-          keys: keys,
-          preference: preference,
-          lookUps: lookUpsFor(preference.rootDomain),
-          secondaryAddressFinder: CacheableSecondaryAddressFinder(
-              preference.rootDomain, preference.rootPort));
+  }) => atsign.resumeEnrollment(
+    app: app,
+    device: device,
+    keys: keys,
+    preference: preference,
+    lookUps: lookUpsFor(preference.rootDomain),
+    secondaryAddressFinder: CacheableSecondaryAddressFinder(
+      preference.rootDomain,
+      preference.rootPort,
+    ),
+  );
 
   /// Submits the enrollment, filing its keys in [keys] as pending; the
   /// request's `client` waits for the decision. A store that refuses a new
@@ -62,17 +66,19 @@ class ActivateFlows {
     required Map<String, String> namespaces,
     required WrittenAtKeysIo keys,
     required AtClientPreference preference,
-  }) =>
-      atsign.enroll(
-          otp: otp,
-          app: app,
-          device: device,
-          namespaces: namespaces,
-          keys: keys,
-          preference: preference,
-          lookUps: lookUpsFor(preference.rootDomain),
-          secondaryAddressFinder: CacheableSecondaryAddressFinder(
-              preference.rootDomain, preference.rootPort));
+  }) => atsign.enroll(
+    otp: otp,
+    app: app,
+    device: device,
+    namespaces: namespaces,
+    keys: keys,
+    preference: preference,
+    lookUps: lookUpsFor(preference.rootDomain),
+    secondaryAddressFinder: CacheableSecondaryAddressFinder(
+      preference.rootDomain,
+      preference.rootPort,
+    ),
+  );
 }
 
 class Activate {
@@ -117,10 +123,15 @@ class Activate {
   /// The keyfile the activation or enrollment writes: the one `-t` named, or
   /// the atSign's default under the user's home.
   FileAtKeysIo _keys() => FileAtKeysIo(
-      filePath: (_) =>
-          _params.atKeysFilePath ??
-          path.join(getHomeDirectory(throwIfNull: true)!, '.atsign', 'keys',
-              '${_params.atsign}_key.atKeys'));
+    filePath: (_) =>
+        _params.atKeysFilePath ??
+        path.join(
+          getHomeDirectory(throwIfNull: true)!,
+          '.atsign',
+          'keys',
+          '${_params.atsign}_key.atKeys',
+        ),
+  );
 
   AtClientPreference _preference() => AtClientPreference()
     ..rootDomain = _params.rootDomain
@@ -129,10 +140,17 @@ class Activate {
   /// The atSign's store under `~/.atsign/at_onboarding_cli/storage`, which
   /// the client closes when it stops.
   AtClientStorage _storage() => HiveAtClientStorage(
-      atSign: _params.atsign,
-      storagePath: path.join(getHomeDirectory(throwIfNull: true)!, '.atsign',
-          'at_onboarding_cli', 'storage', _params.atsign, 'hive'),
-      closedByClient: true);
+    atSign: _params.atsign,
+    storagePath: path.join(
+      getHomeDirectory(throwIfNull: true)!,
+      '.atsign',
+      'at_onboarding_cli',
+      'storage',
+      _params.atsign,
+      'hive',
+    ),
+    closedByClient: true,
+  );
 
   /// Activates a newly registered atSign with its CRAM secret, writing its
   /// keys to the keyfile. The client the activation opens is stopped at
@@ -149,11 +167,13 @@ class Activate {
     _validateAndPrepareKeysFile();
     final preference = _preference();
     try {
-      final client = await _flows.activate(_params.atsign,
-          cramSecret: _params.cramSecret!,
-          keys: _keys(),
-          preference: preference,
-          storage: _storage());
+      final client = await _flows.activate(
+        _params.atsign,
+        cramSecret: _params.cramSecret!,
+        keys: _keys(),
+        preference: preference,
+        storage: _storage(),
+      );
       await client.stop();
     } catch (e) {
       logger.shout('Activation Failed: $e');
@@ -180,27 +200,33 @@ class Activate {
       throw ArgumentError('Cannot create enrollment without otp');
     }
     final preference = _preference();
-    var pending = await _flows.resumeEnrollment(_params.atsign,
-        app: _params.appName,
-        device: _params.deviceName!,
-        keys: _keys(),
-        preference: preference);
+    var pending = await _flows.resumeEnrollment(
+      _params.atsign,
+      app: _params.appName,
+      device: _params.deviceName!,
+      keys: _keys(),
+      preference: preference,
+    );
     if (pending != null) {
-      logger.info('Resuming enrollment ${pending.enrollmentId}, submitted '
-          'earlier from this keyfile');
+      logger.info(
+        'Resuming enrollment ${pending.enrollmentId}, submitted '
+        'earlier from this keyfile',
+      );
     } else {
       logger.info(
         'Creating new enrollment with deviceName: ${_params.deviceName}',
       );
       _validateAndPrepareKeysFile();
       try {
-        pending = await _flows.enroll(_params.atsign,
-            otp: _params.otp!,
-            app: _params.appName,
-            device: _params.deviceName!,
-            namespaces: _params.namespaces,
-            keys: _keys(),
-            preference: preference);
+        pending = await _flows.enroll(
+          _params.atsign,
+          otp: _params.otp!,
+          app: _params.appName,
+          device: _params.deviceName!,
+          namespaces: _params.namespaces,
+          keys: _keys(),
+          preference: preference,
+        );
       } on AtEnrollmentException catch (e) {
         logger.shout('Enrollment not submitted: ${e.message}');
         return 1;

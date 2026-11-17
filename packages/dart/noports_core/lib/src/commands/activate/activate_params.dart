@@ -1,7 +1,6 @@
 import 'package:args/args.dart';
 import 'package:at_commons/atsign.dart';
 import 'package:noports_core/commands.dart';
-import 'package:noports_core/src/commands/utils/constants.dart';
 
 enum ActivateType {
   cram,

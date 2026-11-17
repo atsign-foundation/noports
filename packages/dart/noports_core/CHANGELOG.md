@@ -1,5 +1,10 @@
 # 7.0.0
 
+- feat: `ActivateFlows` resolves its `lookUps` with `lookUpsFor` from
+  at_client_cli, so a `proxy:` root domain works for enrollment and
+  activation; `commands.dart` exports the enrollment constants
+  (`defaultAppName`, `defaultEnrollmentNamespaces`) so other front ends
+  request the same grants as `noports activate`
 - feat: `SrvdParams.telemetryCollectorAtsign` (`--telemetry-collector-atsign`)
   sends srvd's session telemetry to a collector Atsign
 - feat: `SrvdParams.reportedSigningKeyCheckSecs`

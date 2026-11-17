@@ -90,13 +90,13 @@ jobs:
             -e EPHEMERAL_BASE_PORT=2500 -e DNS_FQDN=vip.ve.atsign.zone \
             -v "$RUNNER_TEMP/ee/atsigns:/tmp/setup/atsigns:ro" \
             atsigncompany/ephemeral:latest
-          for i in $(seq 1 90); do
+          for _ in $(seq 1 90); do
             have=$(docker exec ee sh -c 'cat /tmp/CRAM_Keys 2>/dev/null' | grep -cE '^[a-z0-9]+\s+[0-9a-f]{64}' || true)
             [ "$have" -ge 3 ] && break
             sleep 2
           done
           [ "$have" -ge 3 ] || { docker logs ee | tail -50; exit 1; }
-          for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/2500) 2>/dev/null && break; sleep 1; done
+          for _ in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/2500) 2>/dev/null && break; sleep 1; done
       - name: Onboard the test atsigns
         run: |
           mkdir -p "$RUNNER_TEMP/ee/keys"
@@ -202,8 +202,9 @@ jobs:
           tar -C "${{ matrix.bundle }}" -czf "dist/$ARCHIVE_BASE.tar.gz" .
           # Unsigned deb and rpm for install testing; the release ones come
           # from multibuild.yaml with the real version and signature.
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@$NFPM_REF
-          export PATH="$PATH:$(go env GOPATH)/bin"
+          go install "github.com/goreleaser/nfpm/v2/cmd/nfpm@$NFPM_REF"
+          gobin="$(go env GOPATH)/bin"
+          export PATH="$PATH:$gobin"
           rm -rf build/pkg && mkdir -p build/pkg && cp -r "build/linux/${FLUTTER_ARCH}/release/bundle" build/pkg/bundle
           nfpm pkg --packager deb -t dist
           nfpm pkg --packager rpm -t dist

@@ -31,12 +31,22 @@
 * fix: npp answers a manager RPC delete whose value doesn't name its rule's id
   as a string, or a put or delete whose value isn't a JSON object, with an
   error saying what it must hold
-
 * build: releases carry a native Windows arm64 MSI (`NoPorts-<v>-arm64.msi`,
   experimental: a failure there cannot fail a release); the SBOM, checksums
   and attestation are produced on every multibuild (attestation and the
   release upload stay tag-only), and a branch dispatch no longer fails on a
   `/` in the artifact name
+* feat: NoPorts Configuration, a desktop app for the device side: edit
+  `sshnpd.yaml` with the daemon's own options and checks, start, stop and
+  watch the sshnpd service, enroll the device's keys through APKAM (approved
+  from NoPorts Desktop) or import a key file, and run diagnostics. Windows
+  (inside the MSI, with a Start Menu shortcut and an offer to open it when
+  the install finishes), Linux (`noports-config` deb and rpm from
+  apt.noports.com and rpm.noports.com) and macOS (universal app, signed and
+  notarised, for a Homebrew cask)
+* chore: on Linux the app makes the sshnpd unit run as the user who enrolled,
+  as universal.sh does, and saves `/etc/noports/sshnpd.yaml` root-owned and
+  readable through that user's group only
 ## v5.18.2
 
 * feat: sshnpd and srvd take their session locks with at_client's server
