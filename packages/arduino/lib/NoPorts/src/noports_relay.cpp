@@ -125,20 +125,16 @@ extern "C" {
 // opens/closes.  New subs are refused if they would exceed the relay
 // budget, guaranteeing the atServer TLS connections can never be
 // starved by relay traffic.
-#ifdef ESP32S3_2432S028R
-// S3 (Freenove FNK0104): 512KB SRAM + 8MB PSRAM; CONFIG_LWIP_MAX_ACTIVE_TCP=24
-// ctrl(1) + 9×2(subs) = 19 = MAX_RELAY_PCBS — supports up to 9 subs, UI caps at 6
-#define LWIP_TOTAL_PCBS        24
-#define RESERVED_ATSERVER_PCBS  5   // monitor(1) + worker(1) + root_transient(1) + margin(2)
-#define MAX_RELAY_PCBS         (LWIP_TOTAL_PCBS - RESERVED_ATSERVER_PCBS)  // 19
-#define MAX_RELAY_SUBS          9   // ctrl(1) + 9×2(subs) = 19 = MAX_RELAY_PCBS
-#else
-// ESP32 CYD: 16 TCP PCBs total
+// Every board: 16 TCP PCBs (CONFIG_LWIP_MAX_ACTIVE_TCP in the prebuilt
+// Arduino framework). The S3 build used to assume 24, from a
+// sdkconfig.defaults.s3 that asked for it; an Arduino-only PlatformIO build
+// never applies a project sdkconfig, so the pool was 16 all along and a
+// budget of 19 let one busy session take every PCB, after which the monitor
+// and worker could not reconnect (the cascade this budget exists to prevent).
 #define LWIP_TOTAL_PCBS        16
 #define RESERVED_ATSERVER_PCBS  5   // monitor(1) + worker(1) + root_transient(1) + margin(2)
 #define MAX_RELAY_PCBS         (LWIP_TOTAL_PCBS - RESERVED_ATSERVER_PCBS)  // 11
 #define MAX_RELAY_SUBS          5   // ctrl(1) + 5×2(subs) = 11 = MAX_RELAY_PCBS
-#endif
 
 // Runtime counter for relay-owned TCP PCBs (ctrl + sub sockets).
 // Incremented on every successful connect(), decremented on every stop().

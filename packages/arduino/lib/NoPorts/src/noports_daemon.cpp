@@ -815,6 +815,21 @@ void NoPortsDaemon::_logHealth() {
                (unsigned long)((millis() - _worker_last_used_ms) / 1000),
                (unsigned)_reconnect_failures, (unsigned)relays,
                noports_relay_get_pcb_count(), noports_relay_get_pcb_max());
+#ifdef NOPORTS_HEAP_TRACE
+  // Block census, and every third minute the internal heap's block list, so
+  // two idle dumps either side of a batch of sessions can be diffed by
+  // address and size to name whatever a session keeps.
+  multi_heap_info_t info;
+  heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
+  static unsigned health_count = 0;
+  NOPORTS_LOGI(TAG, "HeapCensus: allocated_blocks=%u free_blocks=%u allocated_bytes=%u",
+               (unsigned)info.allocated_blocks, (unsigned)info.free_blocks, (unsigned)info.total_allocated_bytes);
+  if (++health_count % 3 == 0) {
+    NOPORTS_LOGI(TAG, "HeapDump: begin");
+    heap_caps_dump(MALLOC_CAP_INTERNAL);
+    NOPORTS_LOGI(TAG, "HeapDump: end");
+  }
+#endif
 }
 
 bool NoPortsDaemon::isRunning() const {
@@ -2441,13 +2456,21 @@ void NoPortsDaemon::_continueNptRequest(void *env,
         atclient_atkey_metadata_set_ttl(meta, 10000);
 
         // _verifyEnvelopeSignature used the worker to fetch the requester's
-        // public key.  A concurrent statsNotification push from the atServer
-        // can arrive in-band during that round-trip and leave garbage in the
-        // worker's read buffer, making the next atclient_notify fail with
-        // "no ':' token".  Reconnect here to guarantee a clean connection.
+        // public key, and anything left unread on the session after that
+        // round trip would make this notify's reply unreadable ("no ':'
+        // token"). This used to reconnect the worker unconditionally, a TLS
+        // and PKAM handshake per session whose long-lived buffers landed
+        // somewhere new in the heap each time (the largest free block fell
+        // 139 K -> 92 K -> 76 K over a run). A noop proves the session in
+        // sync in one round trip; only when it isn't is the worker rebuilt.
         NOPORTS_HEAP_LOG(TAG, "npt keys made");
-        _reconnectWorker();
-        NOPORTS_HEAP_LOG(TAG, "npt worker reconnected");
+        if (atclient_send_heartbeat(worker) != 0) {
+          NOPORTS_LOGW(TAG, "NPT: worker session out of sync or dead before the response — reconnecting");
+          _reconnectWorker();
+        } else {
+          _worker_last_used_ms = millis();
+        }
+        NOPORTS_HEAP_LOG(TAG, "npt worker checked");
 
         atclient_notify_params nparams;
         atclient_notify_params_init(&nparams);
