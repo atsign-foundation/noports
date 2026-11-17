@@ -1,4 +1,10 @@
 # ESP32-S3 sdkconfig overrides for NoPorts_CYD
+#
+# NOT APPLIED by the current Arduino-only PlatformIO build: the platform reads
+# board_build.sdkconfig_path only when framework = espidf, so the firmware runs
+# with the prebuilt framework's values (16 TCP PCBs, TCP_WND/SND_BUF 5744,
+# TCP_MSL 60 s). Kept for a future IDF-component build; the relay's socket
+# budget and buffer sizes in noports_relay.cpp are set for the prebuilt values.
 # Referenced by [env:cyd2usb_s3] board_build.sdkconfig_path in platformio.ini
 #
 # The S3 variant (Freenove FNK0104) has 512KB SRAM + 8MB OPI PSRAM which
