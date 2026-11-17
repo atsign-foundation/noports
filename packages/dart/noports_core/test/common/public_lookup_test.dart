@@ -25,6 +25,27 @@ class _LoopbackFinder implements SecondaryAddressFinder {
   }
 }
 
+/// Takes [takes] to find each address [found] holds.
+class _SlowFinder implements SecondaryAddressFinder {
+  _SlowFinder(this.found, this.takes);
+
+  final SecondaryAddressFinder found;
+  final Duration takes;
+
+  @override
+  Future<SecondaryAddress> findSecondary(
+    String atSign, {
+    Duration? timeout,
+  }) async {
+    await Future<void>.delayed(takes);
+    return found.findSecondary(atSign, timeout: timeout);
+  }
+}
+
+class _MockHttpClient extends Mock implements HttpClient {}
+
+class _MockHttpClientRequest extends Mock implements HttpClientRequest {}
+
 void main() {
   late MockAtClient atClient;
   late Map<String, int> ports;
@@ -164,6 +185,16 @@ void main() {
       await expectLater(lookupWith().lookupDirect(aliceKey), throwsA(anything));
     });
 
+    test("lookup asks the client's own atServer when the record's atSign is"
+        ' not an atSign, and lookupDirect does not', () async {
+      const notAnAtSign = 'public:_apsk.x.a.__e@al!ce';
+      ownAtServerHolds(notAnAtSign, 'from my own atServer');
+
+      expect(await lookupWith().lookup(notAnAtSign), 'from my own atServer');
+      await expectLater(
+          lookupWith().lookupDirect(notAnAtSign), throwsA(anything));
+    });
+
     test('give up on a silent atServer at the deadline, without asking the'
         " client's own atServer", () async {
       await serveSilently('@mallory');
@@ -180,6 +211,160 @@ void main() {
       );
       verifyNever(() => atClient.get(any(),
           getRequestOptions: any(named: 'getRequestOptions')));
+    });
+
+    test('Given a timeout that covers finding the address, when finding it'
+        ' and the answer together outlast the timeout, then the lookup gives'
+        ' up at the timeout', () async {
+      await serve('@alice', (_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 700));
+        return (200, 'a public key');
+      });
+      DirectPublicLookup lookupThat({required bool coversAddress}) {
+        final lookup = DirectPublicLookup(
+          atClient,
+          addressFinder: _SlowFinder(
+            _LoopbackFinder(ports),
+            const Duration(milliseconds: 700),
+          ),
+          timeout: const Duration(seconds: 1),
+          timeoutCoversAddress: coversAddress,
+          scheme: 'http',
+        );
+        addTearDown(lookup.close);
+        return lookup;
+      }
+
+      expect(
+        await lookupThat(coversAddress: false).lookupDirect(aliceKey),
+        'a public key',
+        reason: 'each takes 700 ms, inside a timeout of its own',
+      );
+      final Stopwatch waited = Stopwatch()..start();
+      await expectLater(
+        lookupThat(coversAddress: true).lookupDirect(aliceKey),
+        throwsA(isA<TimeoutException>()),
+      );
+      expect(waited.elapsed, lessThan(const Duration(milliseconds: 1300)));
+    });
+
+    group('Given a timeout that covers finding the address', () {
+      late _MockHttpClient client;
+      late _MockHttpClientRequest request;
+
+      /// A lookup with 400 ms for everything, whose finder takes [finding]
+      /// and whose connections take 300 ms to make.
+      DirectPublicLookup lookupFinding(Duration finding) {
+        registerFallbackValue(Uri());
+        client = _MockHttpClient();
+        request = _MockHttpClientRequest();
+        when(() => client.getUrl(any())).thenAnswer((_) async {
+          await Future<void>.delayed(const Duration(milliseconds: 300));
+          return request;
+        });
+        ports['@alice'] = 1;
+        return DirectPublicLookup(
+          atClient,
+          addressFinder: _SlowFinder(_LoopbackFinder(ports), finding),
+          timeout: const Duration(milliseconds: 400),
+          timeoutCoversAddress: true,
+          scheme: 'http',
+        );
+      }
+
+      test(
+          'when a connection is made only after the timeout, then it is'
+          ' closed unused', () async {
+        await HttpOverrides.runZoned(() async {
+          final lookup = lookupFinding(const Duration(milliseconds: 250));
+
+          await expectLater(
+            lookup.lookupDirect(aliceKey),
+            throwsA(isA<TimeoutException>()),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 300));
+        }, createHttpClient: (_) => client);
+
+        verify(() => request.abort()).called(1);
+      });
+
+      test(
+          'when finding the address takes the whole timeout, then no'
+          ' connection is made', () async {
+        await HttpOverrides.runZoned(() async {
+          final lookup = lookupFinding(const Duration(milliseconds: 500));
+
+          await expectLater(
+            lookup.lookupDirect(aliceKey),
+            throwsA(isA<TimeoutException>()),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }, createHttpClient: (_) => client);
+
+        verifyNever(() => client.getUrl(any()));
+      });
+    });
+
+    test(
+        "Given a lookup sharing another's addresses, then it reaches"
+        ' atServers as the other does, with a deadline and limits of its'
+        ' own', () async {
+      await serve('@alice', (_) => (200, 'a public key'));
+      await serveSilently('@silent');
+      final first = lookupWith(timeout: const Duration(seconds: 5));
+
+      final second = first.sharingAddresses(
+        timeout: const Duration(milliseconds: 300),
+        maxConcurrent: 64,
+      );
+      addTearDown(second.close);
+
+      expect(await second.lookupDirect(aliceKey), 'a public key');
+      expect(
+        [second.maxConcurrent, second.maxPerAtSign],
+        [64, first.maxPerAtSign],
+      );
+      final Stopwatch waited = Stopwatch()..start();
+      await expectLater(
+        second.lookupDirect('public:_apsk.s.a.__e@silent'),
+        throwsA(isA<TimeoutException>()),
+      );
+      expect(waited.elapsed, lessThan(const Duration(seconds: 2)),
+          reason: 'its own 300 ms, not the 5 seconds of the lookup it shares'
+              ' with');
+    });
+
+    test(
+        'tell onAnswered how long each answer took, the wait for a turn'
+        ' left out', () async {
+      await serve('@alice', (_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        return (200, 'a public key');
+      });
+      final took = <Duration>[];
+      final lookup = DirectPublicLookup(
+        atClient,
+        addressFinder: _LoopbackFinder(ports),
+        maxPerAtSign: 1,
+        scheme: 'http',
+        onAnswered: (uri, answeredIn) {
+          expect(uri, aliceKey);
+          took.add(answeredIn);
+        },
+      );
+      addTearDown(lookup.close);
+
+      final Stopwatch waited = Stopwatch()..start();
+      await Future.wait([
+        lookup.lookupDirect(aliceKey),
+        lookup.lookupDirect(aliceKey),
+      ]);
+
+      expect(waited.elapsed, greaterThan(const Duration(milliseconds: 550)),
+          reason: 'the second waited its turn behind the first');
+      expect(took, hasLength(2));
+      expect(took.every((t) => t < const Duration(milliseconds: 500)), isTrue,
+          reason: 'each atServer answer took about 300 ms: $took');
     });
 
     test("a silent atServer doesn't delay a lookup on another atServer",
@@ -214,6 +399,42 @@ void main() {
 
       await Future.delayed(const Duration(milliseconds: 500));
       expect(taken(), 2);
+    });
+
+    test('ask one atServer at most maxPerAtSign at a time, however its atSign'
+        ' is spelt', () async {
+      final taken = await serveSilently('@alice');
+      ports['@a.lice'] = ports['@alice']!;
+      final lookup = lookupWith(
+        timeout: const Duration(seconds: 2),
+        maxPerAtSign: 1,
+      );
+      for (final atSign in ['@alice', '@a.lice']) {
+        unawaited(lookup
+            .lookupDirect('public:_apsk.m.a.__e$atSign')
+            .then((_) => null, onError: (_) => null));
+      }
+
+      await Future.delayed(const Duration(milliseconds: 500));
+      expect(taken(), 1);
+    });
+
+    test(
+        'Given a lookup of an atSign however it is spelt, when it is answered,'
+        ' then it gives back its turns for the next lookup', () async {
+      await serve('@alice', (_) => (200, 'a public key'));
+      ports['@A.lice'] = ports['@alice']!;
+      final lookup = lookupWith(maxConcurrent: 1, maxPerAtSign: 1);
+
+      expect(await lookup.lookupDirect('public:_apsk.m.a.__e@A.lice'),
+          'a public key');
+      expect(
+        await lookup
+            .lookupDirect(aliceKey)
+            .timeout(const Duration(seconds: 2), onTimeout: () => 'no turn'),
+        'a public key',
+        reason: 'the only global and per-Atsign turns were given back',
+      );
     });
 
     test('ask at most maxConcurrent atServers at a time', () async {
