@@ -1406,7 +1406,7 @@ bool NoPortsDaemon::_isManagerAtsign(const char *atsign) {
 
 void NoPortsDaemon::_handlePing(void *msg) {
   atclient_monitor_message *message = (atclient_monitor_message *)msg;
-  NOPORTS_HEAP_TRACE(TAG, "ping received");
+  NOPORTS_HEAP_LOG(TAG, "ping received");
 
   if (!_ping_response) {
     NOPORTS_LOGE(TAG, "Ping response not built");
@@ -1471,7 +1471,7 @@ void NoPortsDaemon::_handleNptRequest(void *msg) {
   atclient *worker = (atclient *)_worker_ctx;
   atchops_rsa_key_private_key *skey = (atchops_rsa_key_private_key *)_signing_key;
   int res = 0;
-  NOPORTS_HEAP_TRACE(TAG, "npt received");
+  NOPORTS_HEAP_LOG(TAG, "npt received");
 
   // Per-sender throttle BEFORE any expensive work.  _verifyEnvelopeSignature
   // below fetches the sender's public key over the worker (a network round
@@ -1517,7 +1517,7 @@ void NoPortsDaemon::_handleNptRequest(void *msg) {
     cJSON_Delete(envelope);
     return;
   }
-  NOPORTS_HEAP_TRACE(TAG, "npt signature verified");
+  NOPORTS_HEAP_LOG(TAG, "npt signature verified");
 
   // Authorise the requesting atSign.
   // Two modes: manager-list check (default) or policy-service RPC.
@@ -1930,7 +1930,7 @@ void NoPortsDaemon::_handlePingAuthorized(const char *from_atsign) {
   } else {
     NOPORTS_LOGI(TAG, "Ping: sent response to %s", from_atsign);
   }
-  NOPORTS_HEAP_TRACE(TAG, "ping answered");
+  NOPORTS_HEAP_LOG(TAG, "ping answered");
 
   if (_config.on_ping) {
     _config.on_ping(from_atsign);
@@ -1976,7 +1976,7 @@ void NoPortsDaemon::_continueNptRequest(void *env,
     cJSON_Delete(envelope);
     return;
   }
-  NOPORTS_HEAP_TRACE(TAG, "npt enrollment key checked");
+  NOPORTS_HEAP_LOG(TAG, "npt enrollment key checked");
 
   // Check permitopen — requestedHost and requestedPort are mandatory
   cJSON *requested_host = cJSON_GetObjectItem(payload, "requestedHost");
@@ -2445,9 +2445,9 @@ void NoPortsDaemon::_continueNptRequest(void *env,
         // can arrive in-band during that round-trip and leave garbage in the
         // worker's read buffer, making the next atclient_notify fail with
         // "no ':' token".  Reconnect here to guarantee a clean connection.
-        NOPORTS_HEAP_TRACE(TAG, "npt keys made");
+        NOPORTS_HEAP_LOG(TAG, "npt keys made");
         _reconnectWorker();
-        NOPORTS_HEAP_TRACE(TAG, "npt worker reconnected");
+        NOPORTS_HEAP_LOG(TAG, "npt worker reconnected");
 
         atclient_notify_params nparams;
         atclient_notify_params_init(&nparams);
@@ -2461,7 +2461,7 @@ void NoPortsDaemon::_continueNptRequest(void *env,
         } else {
           NOPORTS_LOGI(TAG, "NPT: sent success response to %s", requesting_atsign);
         }
-        NOPORTS_HEAP_TRACE(TAG, "npt response sent");
+        NOPORTS_HEAP_LOG(TAG, "npt response sent");
 
         atclient_notify_params_free(&nparams);
         free(kname);
@@ -2536,7 +2536,7 @@ void NoPortsDaemon::_continueNptRequest(void *env,
   if (session_aes_key_d2c_b64) free(session_aes_key_d2c_b64);
   if (session_iv_d2c_b64) free(session_iv_d2c_b64);
   cJSON_Delete(envelope);
-  NOPORTS_HEAP_TRACE(TAG, "npt relay started");
+  NOPORTS_HEAP_LOG(TAG, "npt relay started");
 }
 
 // ============================================================================
@@ -2722,7 +2722,7 @@ void NoPortsDaemon::_cleanupFinishedRelays() {
         _relays[i].start_ms = 0;
         _relays[i].active_sessions = 0;
         memset(&_relays[i].config, 0, sizeof(NoPortsRelayConfig));
-        NOPORTS_HEAP_TRACE(TAG, "relay cleaned up");
+        NOPORTS_HEAP_LOG(TAG, "relay cleaned up");
       }
     }
   }
