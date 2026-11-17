@@ -24,6 +24,9 @@
   of asking, however often it acknowledges
 - fix: keep the monitor connection when a notification can't be decrypted
 - fix: log a notification's key, not its content, at debug
+- build(deps): bump atsdk to at_c v0.4.2, so a connect that fails part-way
+  releases its TLS socket and fd instead of leaking them on every retry
+  (at_c#735, #3082)
 
 ## 1.1.1
 
