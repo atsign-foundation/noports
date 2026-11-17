@@ -6,6 +6,7 @@ import 'package:noports_core/srvd.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/create_at_client_cli.dart';
 import 'package:sshnoports/src/print_version.dart';
+import 'package:sshnoports/src/signal_stopper.dart';
 
 const String _description =
     'NoPorts relay daemon: the rendezvous service via which NoPorts clients'
@@ -14,7 +15,7 @@ const String _description =
 void main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
-  late final Srvd srvd;
+  Srvd? srvd;
 
   Directory storageDir;
 
@@ -97,13 +98,13 @@ void main(List<String> args) async {
     exit(exitCode);
   }
 
-  ProcessSignal.sigint.watch().listen((signal) {
-    exitProgram(exitCode: 1);
-  });
+  final SignalStopper stopper = SignalStopper(
+    exit: (int code) => exitProgram(exitCode: code),
+    log: (String message) => stderr.writeln('${DateTime.now()} : $message'),
+  );
+  ProcessSignal.sigint.watch().listen(stopper.handle);
   if (!Platform.isWindows) {
-    ProcessSignal.sigterm.watch().listen((signal) {
-      exitProgram(exitCode: 1);
-    });
+    ProcessSignal.sigterm.watch().listen(stopper.handle);
   }
 
   try {
@@ -123,6 +124,7 @@ void main(List<String> args) async {
             description: _description, optionsUsage: SrvdParams.parser.usage));
         stderr.writeln('\n$e');
       },
+      version: versionString,
     );
   } on ArgumentError catch (_) {
     exit(1);
@@ -134,9 +136,11 @@ void main(List<String> args) async {
     exit(1);
   }
 
+  final relay = srvd;
+  stopper.stop = relay.stop;
   await runZonedGuarded(() async {
-    await srvd.init();
-    await srvd.run();
+    await relay.init();
+    await relay.run();
   }, (Object error, StackTrace stackTrace) async {
     stderr.writeln('Error: ${error.toString()}');
     stderr.writeln('Stack Trace: ${stackTrace.toString()}');

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
 import 'package:noports_core/src/common/types.dart';
+import 'package:noports_core/src/srvd/isolates/connection_tracker.dart';
 import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:socket_connector/socket_connector.dart';
@@ -19,6 +20,20 @@ class PortPairWorker extends RelayWorker {
 
   /// Set when we start the session
   SocketConnector? connector;
+
+  /// Reports the session's connections to main; set when we start the session
+  ConnectionTracker? tracker;
+
+  /// How long a side's close waits for its pending data before the side is
+  /// destroyed.
+  final Duration closeFlushTimeout;
+
+  /// How often the session's progress is reported to main.
+  final Duration progressInterval;
+
+  /// The connector's grace period: how long from its creation it waits for
+  /// connections before closing itself once none is established.
+  final Duration connectorTimeout;
 
   /// Set when we start the session
   int? portA;
@@ -37,9 +52,13 @@ class PortPairWorker extends RelayWorker {
     required super.verbose,
     required super.loggingTag,
     required super.relayAuthDetectWindowMs,
+    this.closeFlushTimeout = SocketConnector.defaultCloseFlushTimeout,
+    this.progressInterval = defaultProgressInterval,
+    this.connectorTimeout = SocketConnector.defaultTimeout,
   }) {
     reqHandlers['start'] = startSession;
     reqHandlers['stop'] = stop;
+    reqHandlers['end'] = end;
     reqHandlers['auth_modes'] = handleAuthModes;
   }
 
@@ -68,12 +87,7 @@ class PortPairWorker extends RelayWorker {
     await connector!.done;
 
     logger.info('Sending sessionComplete to main isolate');
-    toMain.send(
-      IIRequest.create('sessionComplete', {
-        'sessionId': srvdSessionParams.sessionId,
-        'stats': connector!.stats,
-      }),
-    );
+    await tracker!.complete();
 
     logger.shout(
       'Finished session ${srvdSessionParams.sessionId}'
@@ -87,11 +101,20 @@ class PortPairWorker extends RelayWorker {
   @override
   Future<void> stop([IIRequest? req]) async {
     if (connector != null) {
+      tracker?.stopping();
       connector!.close();
     } else {
       logger.shout('Connector not yet started - killing this isolate');
       Isolate.current.kill();
     }
+  }
+
+  /// Ends the session at once: as [stop], with its sockets destroyed first,
+  /// so that no side is given time to take its pending data.
+  Future<void> end([IIRequest? req]) async {
+    final SocketConnector? started = connector;
+    if (started != null) destroySockets(started, tracker);
+    await stop(req);
   }
 
   Future<void> startSession(IIRequest req) async {
@@ -117,15 +140,18 @@ class PortPairWorker extends RelayWorker {
       logTraffic: logTraffic,
       socketAuthVerifierA: _authVerifierA?.verifySocketAuth,
       socketAuthVerifierB: _authVerifierB?.verifySocketAuth,
+      timeout: connectorTimeout,
+      closeFlushTimeout: closeFlushTimeout,
     );
 
-    connector!.connectionStream.listen(
-      (Connection c) => toMain.send(
-        IIRequest.create('newConnection', {
-          'sessionId': srvdSessionParams.sessionId,
-          'stats': connector!.stats,
-        }),
-      ),
+    tracker = ConnectionTracker(
+      sessionId: srvdSessionParams.sessionId,
+      toMain: toMain,
+      opened: connector!.connectionStream,
+      closed: connector!.connectionClosedStream,
+      stats: () => connector!.stats,
+      closeFlushTimeout: closeFlushTimeout,
+      progressInterval: progressInterval,
     );
 
     /// Connector created, so complete the sessionStarted future

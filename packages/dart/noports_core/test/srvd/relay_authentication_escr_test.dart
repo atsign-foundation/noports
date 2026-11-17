@@ -55,8 +55,8 @@ void main() {
     /// any key URI, so the only thing that can refuse is the check under test.
     MockRelayAuthVerifyHelper sessionHelper({bool active = true}) {
       final h = MockRelayAuthVerifyHelper();
-      when(() => h.isSessionActive(relaySessionId))
-          .thenAnswer((_) async => active);
+      when(() => h.isSessionActive(any()))
+          .thenAnswer((i) async => active && i.positionalArguments.first == relaySessionId);
       when(() => h.getRelayAuthAesKey(relaySessionId))
           .thenAnswer((_) async => relayAuthAesKey);
       when(() => h.lookup(relaySessionId, any()))
@@ -70,6 +70,7 @@ void main() {
       Object? payload, {
       String signingAlgo = 'rsa2048',
       String? signingKeyUri,
+      String? named,
     }) async {
       final envelope = {
         'p': payload,
@@ -87,7 +88,7 @@ void main() {
         key: relayAuthAesKey,
         iv: iv,
       );
-      return '$relaySessionId:'
+      return '${named ?? relaySessionId}:'
           '${base64Encode(jsonEncode({'iv': base64Encode(iv.ivBytes), 'e': encrypted}).codeUnits)}';
     }
 
@@ -473,6 +474,46 @@ void main() {
       verify(() => h.lookup(relaySessionId, uri)).called(1);
     });
 
+    test('A socket naming a session whose id is not a UUID is refused',
+        () async {
+      const notAUuid = 'no-uuid-zz';
+      final h = sessionHelper();
+      final verifier = RelayAuthVerifierESCR('test session id shape', h);
+      final response = await escrResponse(
+        {'sid': notAUuid, 'c': verifier.challenge, 'side': 'a'},
+        named: notAUuid,
+      );
+
+      await expectLater(
+        verifier.verifyChallengeResponse(response),
+        throwsA(isA<RAVE>()
+            .having((e) => e.reason, 'reason',
+                RAVEReason.malformedChallengeResponse)
+            .having((e) => e.message, 'message', contains('not a UUID'))
+            .having((e) => e.message, 'message', isNot(contains(notAUuid)))),
+      );
+      verifyNever(() => h.isSessionActive(any()));
+    });
+
+    test(
+        'Given a session held under a lower-case id, when a socket names it'
+        ' in upper case, then the socket is verified for that session',
+        () async {
+      final String upper = relaySessionId.toUpperCase();
+      final h = sessionHelper();
+      final verifier = RelayAuthVerifierESCR('test folded session id', h);
+      final response = await escrResponse(
+        {'sid': upper, 'c': verifier.challenge, 'side': 'a'},
+        named: upper,
+      );
+
+      await verifier.verifyChallengeResponse(response);
+
+      expect(upper, isNot(relaySessionId),
+          reason: 'the id has letters to fold');
+      expect(verifier.sessionId, relaySessionId);
+    });
+
     test('a response for a session that is not active is refused', () async {
       final h = sessionHelper(active: false);
       final verifier = RelayAuthVerifierESCR('test inactive session', h);
@@ -824,6 +865,168 @@ void main() {
         );
       },
     );
+  });
+
+  group(
+      'RelayAuthenticatorESCR when the relay connection ends before'
+      ' authentication completes', () {
+    late RsaKeyPair signingKP;
+    ServerSocket? relay;
+    Socket? client;
+
+    setUpAll(() {
+      signingKP = RsaKeyPair.generate(keySize: 2048);
+    });
+
+    tearDown(() async {
+      client?.destroy();
+      await relay?.close();
+      client = null;
+      relay = null;
+    });
+
+    /// Connects to a loopback relay which runs [relaySide] on the accepted
+    /// socket, and authenticates to it.
+    Future<(bool, Stream<Uint8List>?)> authenticateTo(
+      Future<void> Function(Socket socket, StreamIterator<String> lines)
+          relaySide,
+    ) async {
+      final server = relay = await ServerSocket.bind(
+        InternetAddress.loopbackIPv4,
+        0,
+      );
+      // Errors here surface as uncaught errors in the test's zone, failing it.
+      unawaited(server.first.then(
+        (socket) => relaySide(
+          socket,
+          StreamIterator(
+            utf8.decoder.bind(socket).transform(const LineSplitter()),
+          ),
+        ),
+      ));
+      final socket = client = await Socket.connect(
+        InternetAddress.loopbackIPv4,
+        server.port,
+      );
+      return RelayAuthenticatorESCR(
+        sessionId: Uuid().v4(),
+        relayAuthAesKey: AESKey.generate(32).key,
+        publicSigningKeyUri: '_apsk.my_enrollment_id.a.__e@alice',
+        publicSigningKey: signingKP.atPublicKey.publicKey,
+        privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
+        isSideA: false,
+      ).authenticate(socket);
+    }
+
+    test('before sending a challenge, authentication fails', () async {
+      await expectLater(
+        authenticateTo((socket, _) async => socket.destroy()),
+        throwsA(contains('closed the connection')),
+      );
+    });
+
+    test('after reading the response but before "ok", authentication fails',
+        () async {
+      await expectLater(
+        authenticateTo((socket, lines) async {
+          socket.writeln('somechallenge');
+          await socket.flush();
+          expect(await lines.moveNext(), isTrue);
+          socket.destroy();
+        }),
+        throwsA(contains('closed the connection')),
+      );
+    });
+
+    /// Authenticates over a mock socket whose stream callbacks the test
+    /// drives directly, so it controls which events land in the same turn.
+    /// Returns the authenticator's callbacks, a future of its outcome, and a
+    /// future which completes once it has written its challenge response.
+    ({
+      void Function(Uint8List) onData,
+      void Function(Object, StackTrace) onError,
+      void Function() onDone,
+      Future<(bool, Stream<Uint8List>?)> result,
+      Future<void> responded,
+    }) authenticateOverMock() {
+      final socket = MockSocket();
+      final responded = Completer<void>();
+      when(() => socket.writeln(any())).thenAnswer((_) {
+        responded.complete();
+      });
+      when(() => socket.flush()).thenAnswer((_) async {});
+      late void Function(Uint8List) onData;
+      late void Function(Object, StackTrace) onError;
+      late void Function() onDone;
+      when(
+        () => socket.listen(
+          any(),
+          onError: any(named: 'onError'),
+          onDone: any(named: 'onDone'),
+        ),
+      ).thenAnswer((invocation) {
+        onData = invocation.positionalArguments[0] as void Function(Uint8List);
+        onError = invocation.namedArguments[#onError] as void Function(
+            Object, StackTrace);
+        onDone = invocation.namedArguments[#onDone] as void Function();
+        return MockStreamSubscription<Uint8List>();
+      });
+      final result = RelayAuthenticatorESCR(
+        sessionId: Uuid().v4(),
+        relayAuthAesKey: AESKey.generate(32).key,
+        publicSigningKeyUri: '_apsk.my_enrollment_id.a.__e@alice',
+        publicSigningKey: signingKP.atPublicKey.publicKey,
+        privateSigningKey: signingKP.atPrivateKey.privateKey,
+        signingAlgo: SigningAlgoType.rsa2048,
+        isSideA: false,
+      ).authenticate(socket);
+      return (
+        onData: onData,
+        onError: onError,
+        onDone: onDone,
+        result: result,
+        responded: responded.future,
+      );
+    }
+
+    test(
+        'when "ok" and the close arrive in the same turn, authentication'
+        ' still succeeds', () async {
+      final auth = authenticateOverMock();
+      auth.onData(Uint8List.fromList('somechallenge\n'.codeUnits));
+      await auth.responded;
+
+      // The "ok" handler is now queued on the authenticator's mutex when the
+      // close arrives, so the close must wait for it rather than fail first.
+      auth.onData(Uint8List.fromList('ok\n'.codeUnits));
+      auth.onDone();
+
+      final (ok, stream) = await auth.result;
+      expect(ok, isTrue);
+      expect(stream, isNotNull);
+    });
+
+    test(
+        'when the connection errors after the response but before "ok",'
+        ' authentication fails at once with that error', () async {
+      final auth = authenticateOverMock();
+      Object? error;
+      unawaited(auth.result.then((_) {}, onError: (Object e) {
+        error = e;
+      }));
+      auth.onData(Uint8List.fromList('somechallenge\n'.codeUnits));
+      await auth.responded;
+
+      auth.onError(
+        const SocketException('Connection reset by peer'),
+        StackTrace.current,
+      );
+      // No further relay events will come; the outcome must already be set.
+      await pumpEventQueue();
+
+      expect('$error', contains('Connection reset by peer'));
+    });
   });
 
   group('Relay authentication signed with a post-quantum key', () {

@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:noports_core/utils.dart' show sshnpDeviceNameRegex;
 import 'package:npt_flutter/app.dart';
 import 'package:npt_flutter/localization/app_localizations.dart';
 import 'package:npt_flutter/util/atsign_text.dart';
@@ -55,15 +56,17 @@ class FormValidator {
     return null;
   }
 
+  static final RegExp _deviceName = RegExp('^$sshnpDeviceNameRegex\$');
+
+  /// Validates a device name against noports_core's [sshnpDeviceNameRegex].
   static String? validateDeviceNameField(String? value) {
     final strings = AppLocalizations.of(App.navState.currentContext!)!;
-    String invalid = r'[^a-z0-9_]{1,36}';
     if (value?.isEmpty ?? true) {
       return strings.validationErrorEmptyField;
-    } else if (value!.contains(RegExp(invalid))) {
-      return strings.validationErrorDeviceNameField;
-    } else if (value.length > 36) {
+    } else if (value!.length > 36) {
       return strings.validationErrorLongField;
+    } else if (!_deviceName.hasMatch(value)) {
+      return strings.validationErrorDeviceNameField;
     }
     return null;
   }

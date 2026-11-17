@@ -412,101 +412,11 @@ void main() {
 
   group("Given each persistence method and a stored membership naming a client"
       " that isn't stored", () {
+    final cases = _missingReferenceCases();
+    const rule = _rule;
+
     test('when npp loads its rules, then that membership is not loaded and a'
         ' warning names it', () async {
-      const rule = 'rule-under-test';
-      const missing = 'missing-id';
-      const group = {'id': 'g1', 'name': 'g1'};
-      const client = {'id': 'c1', 'name': 'Alice', 'atSign': '@alice'};
-      const daemon = {'id': 'd1', 'atSign': '@daemon'};
-      const service = {
-        'id': 's1',
-        'daemonId': 'd1',
-        'deviceName': 'dev',
-        'deviceGroupName': 'grp',
-      };
-      final cases = <
-        String,
-        ({
-          List<(String, Map<String, dynamic>)> stored,
-          List<String> loads,
-          String named,
-        })
-      >{
-        'membership naming a missing client': (
-          stored: [
-            ('client_group', group),
-            ('client_group_member', {
-              'id': rule,
-              'clientId': missing,
-              'clientGroupId': 'g1',
-            }),
-          ],
-          loads: ['g1'],
-          named: 'Client with id $missing',
-        ),
-        'membership naming a missing group': (
-          stored: [
-            ('client', client),
-            ('client_group_member', {
-              'id': rule,
-              'clientId': 'c1',
-              'clientGroupId': missing,
-            }),
-          ],
-          loads: ['c1'],
-          named: 'ClientGroup with id $missing',
-        ),
-        'service naming a missing daemon': (
-          stored: [
-            ('service', {...service, 'id': rule, 'daemonId': missing}),
-          ],
-          loads: [],
-          named: 'Daemon with id $missing',
-        ),
-        'service ACL naming a missing service': (
-          stored: [
-            ('client_group', group),
-            ('service_acl', {
-              'id': rule,
-              'serviceId': missing,
-              'clientGroupId': 'g1',
-              'permitOpen': 'localhost:22',
-            }),
-          ],
-          loads: ['g1'],
-          named: 'Service with id $missing',
-        ),
-        'service ACL naming a missing group': (
-          stored: [
-            ('daemon', daemon),
-            ('service', service),
-            ('service_acl', {
-              'id': rule,
-              'serviceId': 's1',
-              'clientGroupId': missing,
-              'permitOpen': 'localhost:22',
-            }),
-          ],
-          loads: ['d1', 's1'],
-          named: 'ClientGroup with id $missing',
-        ),
-        'service ACL naming a service that names a missing daemon': (
-          stored: [
-            ('client_group', group),
-            ('service', {...service, 'daemonId': missing}),
-            ('service_acl', {
-              'id': rule,
-              'serviceId': 's1',
-              'clientGroupId': 'g1',
-              'permitOpen': 'localhost:22',
-            }),
-          ],
-          loads: ['g1'],
-          named: 'Service with id s1',
-        ),
-      };
-
       for (final MapEntry(
             key: what,
             value: (stored: rules, :loads, :named),
@@ -530,6 +440,297 @@ void main() {
             reason: reason,
           );
         }
+      }
+    });
+  });
+
+  /// The targets of the kinds of rule npp can leave unloaded for naming a
+  /// rule that isn't stored.
+  const droppableTargets = {
+    'client_group_member': 'ClientGroupMember',
+    'service': 'Service',
+    'service_acl': 'ServiceACL',
+  };
+
+  /// Whether [warning] is the load warning for the rule with id [id].
+  bool warnsAbout(String warning, String id) =>
+      warning.startsWith('Not loading ') && warning.contains('with id $id:');
+
+  group("Given each persistence method and a stored rule naming a rule that"
+      " isn't stored", () {
+    test('when npp loads its rules, then that rule is not loaded and it is'
+        ' still stored afterwards', () async {
+      for (final MapEntry(key: what, value: (:stored, loads: _, named: _))
+          in _missingReferenceCases().entries) {
+        for (final store in await newStores()) {
+          final reason = '${store.name}: $what';
+          for (final (kind, json) in stored) {
+            await store.save(kind, json['id'] as String, json);
+          }
+          final (kind, _) = stored.last;
+
+          final loaded = await store.load();
+
+          expect(ruleIds(loaded), isNot(contains(_rule)), reason: reason);
+          expect(await store.savedNames(kind), contains(_rule),
+              reason: reason);
+        }
+      }
+    });
+
+    test('when npp loads its rules, then the warning names where that rule is'
+        ' stored and says deleting it there stops the warning', () async {
+      for (final MapEntry(key: what, value: (:stored, loads: _, named: _))
+          in _missingReferenceCases().entries) {
+        for (final store in await newStores()) {
+          final reason = '${store.name}: $what';
+          for (final (kind, json) in stored) {
+            await store.save(kind, json['id'] as String, json);
+          }
+          final (kind, _) = stored.last;
+
+          final warnings = await warningsDuring(store.load);
+
+          expect(
+            warnings.where((w) => warnsAbout(w, _rule)),
+            [store.storedAt(kind, _rule)],
+            reason: reason,
+          );
+        }
+      }
+    });
+  });
+
+  group('Given each persistence method and a stored client group member or'
+      ' service ACL that npp did not load because it names a rule that isn\'t'
+      ' stored', () {
+    test('when a manager deletes it by id, then the delete succeeds, its key'
+        ' or file is gone, and the next load gives no warning for it',
+        () async {
+      final cases = _missingReferenceCases().entries.where(
+        (c) => const {'client_group_member', 'service_acl'}
+            .contains(c.value.stored.last.$1),
+      );
+      expect(cases, hasLength(5), reason: 'every member and ACL case');
+      for (final MapEntry(key: what, value: (:stored, loads: _, named: _))
+          in cases) {
+        for (final store in await newStores()) {
+          final reason = '${store.name}: $what';
+          for (final (kind, json) in stored) {
+            await store.save(kind, json['id'] as String, json);
+          }
+          final (kind, _) = stored.last;
+          final c = await start(store);
+
+          final response = await deleteRule(c, droppableTargets[kind]!, _rule);
+
+          expect(response.respType, AtRpcRespType.success,
+              reason: '$reason: ${response.message}');
+          expect(await store.savedNames(kind), isNot(contains(_rule)),
+              reason: reason);
+          final again = await deleteRule(c, droppableTargets[kind]!, _rule);
+          expect(again.message,
+              'No ${droppableTargets[kind]} with id $_rule, so nothing is'
+              ' deleted.',
+              reason: '$reason: a second delete');
+          final warnings = await warningsDuring(store.load);
+          expect(warnings.where((w) => warnsAbout(w, _rule)), isEmpty,
+              reason: reason);
+        }
+      }
+    });
+  });
+
+  group('Given each persistence method and a stored service that npp did not'
+      ' load because it names a daemon that isn\'t stored, with a service ACL'
+      ' naming that service', () {
+    test('when a manager deletes the service, then both are deleted from'
+        ' storage and the answer lists the service ACL', () async {
+      for (final store in await newStores()) {
+        await store.save('client_group', 'g1', {'id': 'g1', 'name': 'g1'});
+        await store.save('service', 's1', {
+          'id': 's1',
+          'daemonId': _missing,
+          'deviceName': 'dev',
+          'deviceGroupName': 'grp',
+        });
+        await store.save('service_acl', 'a1', {
+          'id': 'a1',
+          'serviceId': 's1',
+          'clientGroupId': 'g1',
+          'permitOpen': 'localhost:22',
+        });
+        final c = await start(store);
+
+        final response = await deleteRule(c, 'Service', 's1');
+
+        expect(response.respType, AtRpcRespType.success,
+            reason: '${store.name}: ${response.message}');
+        expect(await store.savedNames('service'), isEmpty, reason: store.name);
+        expect(await store.savedNames('service_acl'), isEmpty,
+            reason: store.name);
+        expect(await store.savedNames('client_group'), ['g1'],
+            reason: store.name);
+        expect(
+          response.payload['removed'],
+          [
+            {'target': 'ServiceACL', 'id': 'a1'},
+          ],
+          reason: store.name,
+        );
+        final again = await deleteRule(c, 'Service', 's1');
+        expect(again.message, 'No Service with id s1, so nothing is deleted.',
+            reason: '${store.name}: a second delete');
+      }
+    });
+  });
+
+  group('Given each persistence method and a stored client group member or'
+      ' service ACL that npp did not load, naming a client or client group'
+      ' that it did load', () {
+    test('when that client or client group is deleted, then the member or'
+        ' service ACL is deleted from storage with it, and the answer lists'
+        ' it', () async {
+      final cases = <(String, String, String, List<(String, Map<String, dynamic>)>)>[
+        (
+          'Client',
+          'c1',
+          'client_group_member',
+          [
+            ('client', {'id': 'c1', 'name': 'Alice', 'atSign': '@alice'}),
+            ('client_group_member', {
+              'id': _rule,
+              'clientId': 'c1',
+              'clientGroupId': _missing,
+            }),
+          ],
+        ),
+        (
+          'ClientGroup',
+          'g1',
+          'client_group_member',
+          [
+            ('client_group', {'id': 'g1', 'name': 'g1'}),
+            ('client_group_member', {
+              'id': _rule,
+              'clientId': _missing,
+              'clientGroupId': 'g1',
+            }),
+          ],
+        ),
+        (
+          'ClientGroup',
+          'g1',
+          'service_acl',
+          [
+            ('client_group', {'id': 'g1', 'name': 'g1'}),
+            ('service_acl', {
+              'id': _rule,
+              'serviceId': _missing,
+              'clientGroupId': 'g1',
+              'permitOpen': 'localhost:22',
+            }),
+          ],
+        ),
+      ];
+      for (final (target, id, kind, stored) in cases) {
+        for (final store in await newStores()) {
+          final reason = '${store.name}: $target $id, $kind';
+          for (final (k, json) in stored) {
+            await store.save(k, json['id'] as String, json);
+          }
+          final c = await start(store);
+
+          final response = await deleteRule(c, target, id);
+
+          expect(response.respType, AtRpcRespType.success,
+              reason: '$reason: ${response.message}');
+          expect(await store.savedNames(kind), isEmpty, reason: reason);
+          expect(
+            response.payload['removed'],
+            [
+              {'target': droppableTargets[kind], 'id': _rule},
+            ],
+            reason: reason,
+          );
+        }
+      }
+    });
+  });
+
+  group('Given no rule of a kind has a given id, loaded or not', () {
+    test('when a manager deletes that id, then the delete is answered "No'
+        ' <Kind> with id <id>, so nothing is deleted." and nothing changes',
+        () async {
+      for (final store in await newStores()) {
+        for (final (kind, json) in _missingReferenceCases()
+            .values
+            .expand((c) => c.stored)) {
+          await store.save(kind, json['id'] as String, json);
+        }
+        Future<Map<String, List<String>>> saved() async => {
+          for (final kind in _fileKindsInTest) kind: await store.savedNames(kind),
+        };
+        final before = await saved();
+        final c = await start(store);
+
+        for (final target in idKeys.keys) {
+          final response = await deleteRule(c, target, 'nope');
+
+          expect(response.respType, AtRpcRespType.error,
+              reason: '${store.name}: $target');
+          expect(response.message, 'No $target with id nope, so nothing is'
+              ' deleted.', reason: '${store.name}: $target');
+        }
+        expect(await saved(), before, reason: store.name);
+      }
+    });
+  });
+
+  group('Given a rule npp did not load whose pre-delete hook fails', () {
+    test('when a manager deletes it, then the answer is an error, the rule'
+        ' stays stored and still deletable, and deleting it again removes it',
+        () async {
+      for (final store in await newStores()) {
+        await store.save('client_group', 'g1', {'id': 'g1', 'name': 'g1'});
+        await store.save('client_group_member', _rule, {
+          'id': _rule,
+          'clientId': _missing,
+          'clientGroupId': 'g1',
+        });
+        final cache = await store.load();
+        final hooks = store.hooks();
+        final delete = hooks.preDeleteClientGroupMember!;
+        var fail = true;
+        hooks.preDeleteClientGroupMember = (member) async {
+          if (fail) {
+            fail = false;
+            throw Exception('hook failed');
+          }
+          await delete(member);
+        };
+        final c = ManagerRpcCallbacks(
+          atClient: store.atClient,
+          nppCache: cache,
+          binariesVersion: '1.2.3',
+          handler: NppRequestHandler(nppCache: cache),
+          nppOperationHooks: hooks,
+          policyAtsign: policy.toAtsign(),
+          onEvent: (_) async {},
+        );
+
+        final failed = await deleteRule(c, 'ClientGroupMember', _rule);
+
+        expect(failed.respType, AtRpcRespType.error, reason: store.name);
+        expect(await store.savedNames('client_group_member'), [_rule],
+            reason: store.name);
+
+        final retried = await deleteRule(c, 'ClientGroupMember', _rule);
+
+        expect(retried.respType, AtRpcRespType.success,
+            reason: '${store.name}: ${retried.message}');
+        expect(await store.savedNames('client_group_member'), isEmpty,
+            reason: store.name);
       }
     });
   });
@@ -781,6 +982,9 @@ abstract class _Store {
   /// The names of the [kind] rules the store holds, read from the store
   /// itself rather than through npp's loader.
   Future<List<String>> savedNames(String kind);
+  /// The end of npp's load warning for the [kind] rule stored under [name]:
+  /// where it is stored and how to remove it.
+  Matcher storedAt(String kind, String name);
 }
 
 class _FileStore implements _Store {
@@ -808,6 +1012,13 @@ class _FileStore implements _Store {
       File('${directory.path}/${name}_$kind.json').writeAsString(
         jsonEncode(json),
       );
+
+  @override
+  Matcher storedAt(String kind, String name) => endsWith(
+    'It is still stored, as the file ${directory.path}/${name}_$kind.json;'
+    " delete it through npp's manager RPC, or delete that file, to stop this"
+    ' warning.',
+  );
 
   @override
   Future<List<String>> savedNames(String kind) async => directory
@@ -860,12 +1071,24 @@ class _AtServerStore implements _Store {
   }
 
   @override
+  Matcher storedAt(String kind, String name) => allOf(
+    contains(
+      'It is still stored, as the key'
+      ' $name.$kind.npp.sshnp${atClient.getCurrentAtSign()};',
+    ),
+    endsWith(
+      "; delete it through npp's manager RPC, or delete that key, to stop"
+      ' this warning.',
+    ),
+  );
+
+  @override
   Future<List<String>> savedNames(String kind) async => [
     for (final AtKey key in await atClient.getAtKeys(
       regex: '.*\\.$kind\\.npp\\.sshnp',
       useRemoteAtServer: true,
     ))
-      key.key,
+      key.key.substring(0, key.key.length - '.$kind.npp'.length),
   ];
 }
 
@@ -948,3 +1171,113 @@ class _PolicyAtClient implements AtClient {
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnimplementedError('$invocation');
 }
+
+/// Stored rules naming a rule that isn't stored, each with the ids that
+/// load and the missing rule its warning names. In each, the rule under
+/// test, [_rule], is the last one stored.
+Map<String, _MissingReferenceCase> _missingReferenceCases() {
+  const rule = _rule;
+  const missing = _missing;
+  const group = {'id': 'g1', 'name': 'g1'};
+  const client = {'id': 'c1', 'name': 'Alice', 'atSign': '@alice'};
+  const daemon = {'id': 'd1', 'atSign': '@daemon'};
+  const service = {
+    'id': 's1',
+    'daemonId': 'd1',
+    'deviceName': 'dev',
+    'deviceGroupName': 'grp',
+  };
+  return <String, _MissingReferenceCase>{
+    'membership naming a missing client': (
+      stored: [
+        ('client_group', group),
+        ('client_group_member', {
+          'id': rule,
+          'clientId': missing,
+          'clientGroupId': 'g1',
+        }),
+      ],
+      loads: ['g1'],
+      named: 'Client with id $missing',
+    ),
+    'membership naming a missing group': (
+      stored: [
+        ('client', client),
+        ('client_group_member', {
+          'id': rule,
+          'clientId': 'c1',
+          'clientGroupId': missing,
+        }),
+      ],
+      loads: ['c1'],
+      named: 'ClientGroup with id $missing',
+    ),
+    'service naming a missing daemon': (
+      stored: [
+        ('service', {...service, 'id': rule, 'daemonId': missing}),
+      ],
+      loads: [],
+      named: 'Daemon with id $missing',
+    ),
+    'service ACL naming a missing service': (
+      stored: [
+        ('client_group', group),
+        ('service_acl', {
+          'id': rule,
+          'serviceId': missing,
+          'clientGroupId': 'g1',
+          'permitOpen': 'localhost:22',
+        }),
+      ],
+      loads: ['g1'],
+      named: 'Service with id $missing',
+    ),
+    'service ACL naming a missing group': (
+      stored: [
+        ('daemon', daemon),
+        ('service', service),
+        ('service_acl', {
+          'id': rule,
+          'serviceId': 's1',
+          'clientGroupId': missing,
+          'permitOpen': 'localhost:22',
+        }),
+      ],
+      loads: ['d1', 's1'],
+      named: 'ClientGroup with id $missing',
+    ),
+    'service ACL naming a service that names a missing daemon': (
+      stored: [
+        ('client_group', group),
+        ('service', {...service, 'daemonId': missing}),
+        ('service_acl', {
+          'id': rule,
+          'serviceId': 's1',
+          'clientGroupId': 'g1',
+          'permitOpen': 'localhost:22',
+        }),
+      ],
+      loads: ['g1'],
+      named: 'Service with id s1',
+    ),
+  };
+}
+
+const _rule = 'rule-under-test';
+const _missing = 'missing-id';
+
+typedef _MissingReferenceCase = ({
+  List<(String, Map<String, dynamic>)> stored,
+  List<String> loads,
+  String named,
+});
+
+/// The kinds of rule npp stores, as their keys and file names end.
+const _fileKindsInTest = [
+  'client',
+  'client_group',
+  'client_group_member',
+  'daemon',
+  'service',
+  'service_acl',
+];

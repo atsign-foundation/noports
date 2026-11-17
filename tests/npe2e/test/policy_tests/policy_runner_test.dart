@@ -14,7 +14,7 @@ void main() {
       ' one batch both administer @policy and run with a batch size of 2,'
       ' then the second starts only once the first has finished',
       () async {
-        final List<String> events = await _runCases([
+        final (events, _) = await _runCases([
           ('@policy', _longRun),
           ('@policy', _longRun),
         ]);
@@ -33,7 +33,7 @@ void main() {
       ' cases in one batch administer @policy and @other and run with a batch'
       ' size of 2, then the second starts while the first is running',
       () async {
-        final List<String> events = await _runCases([
+        final (events, _) = await _runCases([
           ('@policy', _longRun),
           ('@other', _longRun),
         ]);
@@ -50,7 +50,7 @@ void main() {
     test('Concurrent policy cases do not share a policy atSign: when the first'
         ' case times out and is retried, then neither its retry nor the second'
         ' case starts until the timed-out run has ended', () async {
-      final List<String> events = await _runCases(
+      final (events, results) = await _runCases(
         [
           ('@policy', const Duration(seconds: 2)),
           ('@policy', const Duration(milliseconds: 100)),
@@ -67,6 +67,15 @@ void main() {
         'b#1 started',
         'b#1 finished',
       ], reason: 'a timed-out run keeps the policy atSign until it has ended');
+      expect(
+        results.firstWhere((result) => result.tag == 'a').status,
+        TestStatus.failed,
+        reason: 'a case that times out on every attempt is reported as failed',
+      );
+      expect(
+        results.firstWhere((result) => result.tag == 'b').status,
+        TestStatus.passed,
+      );
     });
   });
 }
@@ -77,8 +86,8 @@ const Duration _longRun = Duration(seconds: 3);
 /// Runs one case per entry in [cases], named a, b, ... in order, each
 /// administering its policy atSign and running for its duration, with a
 /// batch size of 2, and returns when each attempt of each started and
-/// finished, as `a#1 started`.
-Future<List<String>> _runCases(
+/// finished, as `a#1 started`, along with each case's result.
+Future<(List<String>, List<PolicyTestResult>)> _runCases(
   List<(String, Duration)> cases, {
   Duration testTimeout = const Duration(seconds: 30),
   int maxRetries = 0,
@@ -116,12 +125,12 @@ Future<List<String>> _runCases(
         },
       ),
   ];
-  await runPolicyTestCases(
+  final List<PolicyTestResult> results = await runPolicyTestCases(
     testCases,
     transcript: Transcript(tag: 'runner'),
     batchSize: 2,
     maxRetries: maxRetries,
     testTimeout: testTimeout,
   );
-  return events;
+  return (events, results);
 }
