@@ -32,6 +32,8 @@
   as a string, or a put or delete whose value isn't a JSON object, with an
   error saying what it must hold
 
+* ci: the Windows release job signs in to Azure only when it is about to
+  sign, after every build step, instead of first
 ## v5.18.2
 
 * feat: sshnpd and srvd take their session locks with at_client's server
