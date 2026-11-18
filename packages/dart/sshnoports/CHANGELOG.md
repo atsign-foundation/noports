@@ -35,7 +35,14 @@
 * fix: npp answers a manager RPC delete whose value doesn't name its rule's id
   as a string, or a put or delete whose value isn't a JSON object, with an
   error saying what it must hold
+* fix: universal.sh installs `/etc/noports/sshnpd.yaml` owned by root, mode
+  640, readable by the service user's group, since it can hold the keys
+  passphrase. A `--local` systemd install takes the unit and the config
+  template from `sshnp/systemd.nfpm` and `sshnp/config`, where the release
+  archive keeps them
 
+* ci: the Windows release job signs in to Azure only when it is about to
+  sign, after every build step, instead of first
 ## v5.18.2
 
 * feat: sshnpd and srvd take their session locks with at_client's server

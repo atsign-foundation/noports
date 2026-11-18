@@ -210,3 +210,14 @@ bool noports_policy_resend_after_decrypt_failure(bool pending, const char *from,
 bool noports_reconnect_after_decrypt_failure(int64_t last_ms, int64_t now_ms) {
   return last_ms < 0 || now_ms - last_ms >= NOPORTS_DECRYPT_RECONNECT_MS;
 }
+
+uint32_t noports_reconnect_backoff_ms(uint8_t failures) {
+  if (failures == 0) {
+    return 0;
+  }
+  uint32_t ms = 2500;
+  for (uint8_t i = 1; i < failures && ms < NOPORTS_RECONNECT_BACKOFF_MAX_MS; i++) {
+    ms *= 2;
+  }
+  return ms > NOPORTS_RECONNECT_BACKOFF_MAX_MS ? NOPORTS_RECONNECT_BACKOFF_MAX_MS : ms;
+}

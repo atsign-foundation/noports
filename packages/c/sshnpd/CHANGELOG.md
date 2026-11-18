@@ -1,5 +1,10 @@
 ## 1.1.2
 
+- fix: sshnpd backs off 1, 2, 4, 8, 16 then 30 s between monitor reconnect
+  attempts, counting one whose connection the atServer drops at once as
+  well as one it refuses, rather than retrying every second through an
+  outage; the main loop keeps reaping session children and answering the
+  policy service through the pause (#3082)
 - fix: refuse a session request whose session id isn't a UUID, as the Dart
   daemon does
 - fix: refuse a session request from a requester whose public key isn't
@@ -24,6 +29,9 @@
   of asking, however often it acknowledges
 - fix: keep the monitor connection when a notification can't be decrypted
 - fix: log a notification's key, not its content, at debug
+- build(deps): bump atsdk to at_c v0.4.2, so a connect that fails part-way
+  releases its TLS socket and fd instead of leaking them on every retry
+  (at_c#735, #3082)
 
 ## 1.1.1
 

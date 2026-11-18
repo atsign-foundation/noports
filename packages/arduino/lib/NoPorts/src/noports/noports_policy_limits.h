@@ -154,6 +154,19 @@ bool noports_policy_resend_after_decrypt_failure(bool pending, const char *from,
  */
 bool noports_reconnect_after_decrypt_failure(int64_t last_ms, int64_t now_ms);
 
+// Longest pause before a reconnect attempt. It sits inside loop(), so with
+// the heap wait and the connect it must stay well under the sketch's task
+// watchdog (60 s)
+#define NOPORTS_RECONNECT_BACKOFF_MAX_MS 15000
+
+/**
+ * @brief Milliseconds to pause before the next reconnect attempt, the last
+ * `failures` attempts (monitor or worker, in a row, until either succeeds)
+ * having failed: none after none, else 2.5 s doubling with each failure up
+ * to NOPORTS_RECONNECT_BACKOFF_MAX_MS.
+ */
+uint32_t noports_reconnect_backoff_ms(uint8_t failures);
+
 #ifdef __cplusplus
 }
 #endif
