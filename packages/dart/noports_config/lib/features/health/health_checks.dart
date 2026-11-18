@@ -55,9 +55,13 @@ class HealthContext {
     required this.services,
     required this.keys,
     required this.configExists,
+    this.configUnreadable = false,
   });
   final SshnpdConfigDocument? doc;
   final bool configExists;
+
+  /// The file is there but this user's account cannot open it.
+  final bool configUnreadable;
   final DaemonPaths paths;
   final ServiceManager services;
   final KeysRepository keys;
@@ -66,6 +70,22 @@ class HealthContext {
 class ConfigFileCheck extends HealthCheck {
   @override
   String get title => 'Configuration file';
+
+  static const String _resave =
+      'Use "Save and restart" on the Configuration tab: saving sets the '
+      'file to mode 640 with the group of the account the daemon runs as.';
+
+  /// " (root:root, mode 640)", or nothing where stat cannot say.
+  static String _owner(String path) {
+    try {
+      final r = Process.runSync('stat', ['-c', '%U:%G, mode %a', path]);
+      final out = r.stdout.toString().trim();
+      return r.exitCode == 0 && out.isNotEmpty ? ' ($out)' : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
   @override
   Future<HealthResult> run(HealthContext ctx) async {
     final path = ctx.paths.configFile.path;
@@ -75,9 +95,25 @@ class ConfigFileCheck extends HealthCheck {
         fix: HealthFix.configuration,
       );
     }
+    if (ctx.configUnreadable) {
+      return fail(
+        'Your account cannot read $path${_owner(path)}. $_resave',
+        fix: HealthFix.configuration,
+      );
+    }
     if (ctx.doc == null) {
       return fail(
         '$path could not be parsed as YAML. ${HealthCheck.fixOnConfigTab}',
+        fix: HealthFix.configuration,
+      );
+    }
+    // A file this user can open is no use if the daemon's account cannot.
+    final uid = ctx.paths.serviceUid;
+    if (uid != null &&
+        DaemonPaths.accountCanRead(ctx.paths.configFile, uid) == false) {
+      return fail(
+        'The daemon runs as uid $uid and cannot read $path'
+        '${_owner(path)}. $_resave',
         fix: HealthFix.configuration,
       );
     }

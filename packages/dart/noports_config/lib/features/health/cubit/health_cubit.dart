@@ -77,10 +77,13 @@ class HealthCubit extends Cubit<HealthState> {
   Future<List<HealthResult>> run() async {
     emit(state.copyWith(running: true, clearError: true, results: const []));
     SshnpdConfigDocument? doc;
+    var unreadable = false;
     final exists = await paths.configFile.exists();
     if (exists) {
       try {
         doc = SshnpdConfigDocument.parse(await paths.configFile.readAsString());
+      } on FileSystemException {
+        unreadable = true;
       } catch (_) {
         doc = null;
       }
@@ -88,6 +91,7 @@ class HealthCubit extends Cubit<HealthState> {
     final ctx = HealthContext(
       doc: doc,
       configExists: exists,
+      configUnreadable: unreadable,
       paths: paths,
       services: services,
       keys: _keys,

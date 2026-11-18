@@ -93,6 +93,29 @@ class DaemonPaths {
     serviceUid: serviceUid,
   );
 
+  /// Whether the account [uid] can read [file], going by the file's
+  /// owner, group and mode and the account's groups (no ACLs). Linux
+  /// only; null when it cannot be worked out.
+  static bool? accountCanRead(File file, int uid) {
+    if (!Platform.isLinux) return null;
+    if (uid == 0) return true;
+    try {
+      final st = Process.runSync('stat', ['-c', '%u %g %a', file.path]);
+      final parts = st.stdout.toString().trim().split(' ');
+      final owner = int.parse(parts[0]);
+      final group = int.parse(parts[1]);
+      final mode = int.parse(parts[2], radix: 8);
+      if (owner == uid) return mode & 0x100 != 0;
+      final id = Process.runSync('id', ['-G', '$uid']);
+      if (id.exitCode != 0) return null;
+      final groups = id.stdout.toString().trim().split(RegExp(r'\s+'));
+      if (groups.contains('$group')) return mode & 0x20 != 0;
+      return mode & 0x4 != 0;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// The real user's home, seeing through sudo.
   static Directory _userHome() {
     final env = Platform.environment;

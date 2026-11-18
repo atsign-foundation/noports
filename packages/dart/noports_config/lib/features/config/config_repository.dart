@@ -49,7 +49,7 @@ class ConfigRepository {
   /// creates the real file.
   Future<({SshnpdConfigDocument doc, bool existed})> load() async {
     if (await file.exists()) {
-      final text = await file.readAsString();
+      final text = await _read();
       if (text.trim().isNotEmpty) {
         return (doc: SshnpdConfigDocument.parse(text), existed: true);
       }
@@ -67,6 +67,19 @@ class ConfigRepository {
       }
     }
     return (doc: SshnpdConfigDocument.parse(await _template()), existed: false);
+  }
+
+  /// The file's text. A root-owned config this user cannot open (a new
+  /// file used to be written root:root 640, and an administrator may have
+  /// tightened it) is read with administrator rights instead, so the app
+  /// can still show it and the next save puts owner and mode right.
+  Future<String> _read() async {
+    try {
+      return await file.readAsString();
+    } on FileSystemException {
+      if (!paths.configNeedsPrivileges) rethrow;
+      return runner.runShell('cat ${PrivilegedRunner.q(file.path)}');
+    }
   }
 
   /// Writes [doc], keeping one backup of the previous contents. The text is
