@@ -416,6 +416,50 @@ void main() {
     }
   });
 
+  test('a ping answer that arrives while the record is being read outranks '
+      'the record', () async {
+    final w = newWorld()..readGate = Completer<void>();
+    w.records[pingRecordKeyOf()] = pingRecord(escr: true);
+    final channel = channelIn(w);
+
+    final Future<DaemonRelayAuthSupport?> known = channel
+        .knownRelayAuthSupport();
+    await pingAnswered(w, channel, pingResponse(escr: false));
+    w.readGate!.complete();
+
+    expect(
+      (await known)?.supportsRamEscr,
+      isFalse,
+      reason: 'the live answer outranks the record',
+    );
+  });
+
+  test('with a live answer held, the record is rewritten from a read still '
+      'outstanding when the client comes to rewrite it', () async {
+    final w = newWorld();
+    w.records[pingRecordKeyOf()] = pingRecord(escr: true);
+    final channel = channelIn(w);
+    await pingAnswered(w, channel, pingResponse(escr: false));
+
+    final Future<DaemonRelayAuthSupport?> known = channel
+        .knownRelayAuthSupport();
+    final Future<void> refreshed = channel.refreshPingRecord();
+
+    expect(
+      (await known)?.supportsRamEscr,
+      isFalse,
+      reason: 'the live answer decides at once',
+    );
+    await refreshed;
+    expect(
+      w.writes,
+      hasLength(1),
+      reason:
+          'the client waits for its record read before deciding whether '
+          'to rewrite the record',
+    );
+  });
+
   test(
     'a record write that never answers is given up once its wait is over',
     () async {

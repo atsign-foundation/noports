@@ -95,6 +95,9 @@ class ClientWorld {
   /// Whether reads of a ping record never answer.
   bool readHangs = false;
 
+  /// When set, reads of a ping record answer only once it completes.
+  Completer<void>? readGate;
+
   /// Whether writes of a ping record never answer.
   bool writeHangs = false;
 
@@ -477,6 +480,7 @@ class _FakeAtClient implements AtClient {
       ));
       return Completer<AtValue>().future;
     }
+    await world.readGate?.future;
     try {
       if (world.readFailure != null) throw world.readFailure!;
       final String? value = world.records[name];
