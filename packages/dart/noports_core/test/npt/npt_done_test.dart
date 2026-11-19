@@ -6,8 +6,7 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/srvd.dart';
-import 'package:noports_core/sshnp_foundation.dart'
-    show DaemonPingRecord, DaemonRelayAuthSupport;
+import 'package:noports_core/src/sshnp/util/sshnpd_channel/daemon_ping_record.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:test/test.dart';
 

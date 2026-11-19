@@ -7,6 +7,7 @@ import 'package:at_client/at_client.dart'
     show AtKey, GetRequestOptions, PqPosture;
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/src/sshnp/util/sshnpd_channel/daemon_ping_record.dart';
 import 'package:test/test.dart';
 
 import 'noports_harness.dart';

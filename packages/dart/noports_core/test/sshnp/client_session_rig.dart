@@ -7,6 +7,7 @@ import 'package:at_client/at_client.dart' hide StringBuffer;
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/session_crypto.dart' show rsaSignString;
+import 'package:noports_core/src/sshnp/util/sshnpd_channel/daemon_ping_record.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';

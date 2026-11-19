@@ -5,6 +5,7 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:noports_core/src/common/features.dart';
+import 'package:noports_core/src/sshnp/util/sshnpd_channel/daemon_ping_record.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
