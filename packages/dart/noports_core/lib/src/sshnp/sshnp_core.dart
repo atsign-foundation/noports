@@ -137,9 +137,9 @@ abstract class SshnpCore
       requiredFeatures,
       timeout: params.daemonPingTimeout,
     );
-    // NOTE: may be awaited only after the relay step. A failure before then,
-    // or one never awaited because an earlier step threw, must not go
-    // unhandled; the await below still sees it.
+    // NOTE: it can fail before the first await below reaches it, or never be
+    // awaited when an earlier step throws, so its error must not go
+    // unhandled; the awaits below still see it.
     featureCheckFuture.ignore();
     final Future<DaemonRelayAuthSupport?> knownFuture =
         sshnpdChannel.knownRelayAuthSupport();
@@ -173,18 +173,21 @@ abstract class SshnpCore
     await srvdChannel.callInitialization();
     sendProgress('Received host and port from srvd');
 
-    sendProgress('Waiting for daemon feature check response');
+    if (known != null) {
+      sendProgress('Waiting for daemon feature check response');
+    }
     List<(DaemonFeature, bool, String)> features = await featureCheckFuture;
     sendProgress('Received daemon feature check response');
 
     await sshnpdChannel.refreshPingRecord();
-    srvdChannel.checkDaemonAnswer(sshnpdChannel.liveRelayAuthSupport);
 
     await Future.delayed(Duration(milliseconds: 1));
     for (final (DaemonFeature _, bool supported, String reason) in features) {
       if (!supported) throw SshnpError(reason);
     }
     sendProgress('Required daemon features are supported');
+
+    srvdChannel.checkDaemonAnswer(sshnpdChannel.liveRelayAuthSupport);
 
     if (SrvdChannel.escrRequestedButUnreconcilable(
       explicitEscr: params.relayAuthModeExplicit &&

@@ -64,6 +64,9 @@ class _ChannelSession implements ClientDriver {
   String get daemonRequestKey => 'no daemon request';
 
   @override
+  List<String> get progress => const [];
+
+  @override
   Future<Object?> start() => throw UnimplementedError();
 }
 
@@ -581,6 +584,58 @@ void main() {
             'sending no legacy envelope',
       );
       unawaited(outcome);
+    }
+  });
+
+  test('a daemon that lost both ESCR and a required feature is refused for the '
+      'feature', () async {
+    for (final make in clients) {
+      final w = newWorld();
+      w.records[pingRecordKeyOf()] = pingRecord(escr: true);
+      final c = make(w);
+      final outcome = c.start();
+
+      await w.answerRelay(c, applied: true);
+      await w.answerPing(c, pingResponse(escr: false, features: false));
+      final Object? thrown = await outcome.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => fail('${c.name} did not end the attempt'),
+      );
+
+      expect(
+        '$thrown',
+        contains('This device daemon does not'),
+        reason:
+            '${c.name} names the missing feature, not the relay auth '
+            'change',
+      );
+    }
+  });
+
+  group('The client says once that it is waiting for the daemon', () {
+    for (final (String how, bool recorded) in [
+      ('with no record', false),
+      ('with a record', true),
+    ]) {
+      test(how, () async {
+        for (final make in clients) {
+          final w = newWorld();
+          if (recorded) w.records[pingRecordKeyOf()] = pingRecord(escr: true);
+          final c = make(w);
+          final outcome = c.start();
+
+          await w.answerPing(c, pingResponse(escr: true));
+          await w.finish(c, outcome);
+
+          expect(
+            c.progress.where(
+              (m) => m == 'Waiting for daemon feature check response',
+            ),
+            hasLength(1),
+            reason: '${c.name} reports the wait for the ping once',
+          );
+        }
+      });
     }
   });
 

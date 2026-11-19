@@ -241,10 +241,9 @@ class _NptImpl extends NptBase
       requiredFeatures,
       timeout: params.daemonPingTimeout,
     );
-    // NOTE: this may be awaited only once the relay has answered. A failure
-    // before then - or the relay step throwing, so it is never awaited at all -
-    // would otherwise be an unhandled error, which kills the npt binary. The
-    // await below still sees the error.
+    // NOTE: it can fail before the first await below reaches it, or never be
+    // awaited when an earlier step throws; an unhandled error kills the npt
+    // binary, and the awaits below still see it.
     featureCheckFuture.ignore();
 
     final DaemonRelayAuthSupport? known =
@@ -261,12 +260,13 @@ class _NptImpl extends NptBase
     await _srvdChannel.callInitialization();
     sendProgress('Received host and port from srvd');
 
-    sendProgress('Waiting for daemon feature check response');
+    if (known != null) {
+      sendProgress('Waiting for daemon feature check response');
+    }
     List<(DaemonFeature, bool, String)> features = await featureCheckFuture;
     sendProgress('Received daemon feature check response');
 
     await sshnpdChannel.refreshPingRecord();
-    _srvdChannel.checkDaemonAnswer(sshnpdChannel.liveRelayAuthSupport);
 
     await Future.delayed(Duration(milliseconds: 1));
     for (final (DaemonFeature feature, bool supported, String reason)
@@ -291,6 +291,8 @@ class _NptImpl extends NptBase
     }
 
     sendProgress('Required daemon features are supported');
+
+    _srvdChannel.checkDaemonAnswer(sshnpdChannel.liveRelayAuthSupport);
 
     if (SrvdChannel.escrRequestedButUnreconcilable(
       explicitEscr: params.relayAuthModeExplicit &&

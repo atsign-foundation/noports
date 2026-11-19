@@ -533,6 +533,9 @@ abstract class ClientDriver {
   /// The key part of the session request the client sends the daemon.
   String get daemonRequestKey;
 
+  /// Every progress message the client has sent, oldest first.
+  List<String> get progress;
+
   /// Starts the session; completes with what it threw, or null.
   Future<Object?> start();
 }
@@ -552,9 +555,14 @@ typedef ClientFactory =
     });
 
 class _NptDriver implements ClientDriver {
-  _NptDriver(this.npt);
+  _NptDriver(this.npt) {
+    npt.progressStream?.listen(progress.add);
+  }
 
   final Npt npt;
+
+  @override
+  final List<String> progress = [];
 
   @override
   String get name => 'npt';
@@ -586,9 +594,14 @@ class _NptDriver implements ClientDriver {
 }
 
 class _SshnpDriver implements ClientDriver {
-  _SshnpDriver(this.sshnp);
+  _SshnpDriver(this.sshnp) {
+    sshnp.progressStream?.listen(progress.add);
+  }
 
   final SshnpDartPureImpl sshnp;
+
+  @override
+  final List<String> progress = [];
 
   @override
   String get name => 'sshnp';
