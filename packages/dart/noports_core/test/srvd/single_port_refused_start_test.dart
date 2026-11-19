@@ -44,6 +44,7 @@ SrvdSessionParams params443({
       authenticateSocketB: authenticateSocketB,
       rvdNonce: 'rvd nonce',
       relayAuthMode: relayAuthMode,
+      relayAuthModes: null,
       only443: only443,
       multipleAcksOk: true,
       preFetch: const [],
@@ -246,6 +247,8 @@ void main() {
             'authenticateSocketA': true,
             'authenticateSocketB': authenticateSocketB,
             'relayAuthMode': relayAuthMode.name,
+            if (relayAuthMode == RelayAuthMode.escr)
+              'relayAuthAesKey': 'relay auth key',
             'only443': true,
             'multipleAcksOk': multipleAcksOk,
           }),

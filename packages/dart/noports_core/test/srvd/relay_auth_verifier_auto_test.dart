@@ -99,7 +99,6 @@ void main() {
         isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
-        detectWindow: const Duration(seconds: 5), // must not fire in this test
         publicKey: legacyPublicKey,
       );
 
@@ -142,7 +141,6 @@ void main() {
         isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
-        detectWindow: const Duration(seconds: 5),
         // no publicKey -> must be looked up
       );
 
@@ -153,79 +151,6 @@ void main() {
       expect(authenticated, true);
       expect(written, isEmpty);
       verify(() => helper.lookup(sessionId, 'public:publickey@alice')).called(1);
-    });
-
-    test('auto-detects ESCR after silence, then challenges & verifies', () async {
-      final sessionId = Uuid().v4();
-      final relayAuthAesKey = AESKey.generate(32).key;
-      final signingKP = RsaKeyPair.generate(keySize: 2048);
-      const publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
-
-      final helper = MockRelayAuthVerifyHelper();
-      when(
-        () => helper.isSessionActive(sessionId),
-      ).thenAnswer((_) async => true);
-      when(
-        () => helper.getRelayAuthAesKey(sessionId),
-      ).thenAnswer((_) async => relayAuthAesKey);
-      when(
-        () => helper.lookup(sessionId, publicSigningKeyUri),
-      ).thenAnswer((_) async => signingKP.atPublicKey.publicKey);
-
-      // The connecting (client) side which will answer the relay's challenge.
-      final authenticator = RelayAuthenticatorESCR(
-        sessionId: sessionId,
-        relayAuthAesKey: relayAuthAesKey,
-        publicSigningKeyUri: publicSigningKeyUri,
-        publicSigningKey: signingKP.atPublicKey.publicKey,
-        privateSigningKey: signingKP.atPrivateKey.privateKey,
-        signingAlgo: SigningAlgoType.rsa2048,
-        isSideA: true,
-      );
-
-      final written = <String>[];
-      late void Function(Uint8List) feed;
-      final mockSocket = makeMockSocket(
-        written: written,
-        onData: (fn) => feed = fn,
-      );
-
-      final reported = <String>[];
-      final verifier = RelayAuthVerifierAuto(
-        'auto sideA',
-        helper,
-        onEscrVerified: reported.add,
-        atSign: '@alice',
-        sessionId: sessionId,
-        isSideA: true,
-        dataToVerify: 'unused for escr',
-        rvdNonce: 'unused for escr',
-        detectWindow: const Duration(milliseconds: 50),
-      );
-
-      final resultFuture = verifier.verifySocketAuth(mockSocket);
-
-      // Stay silent past the detection window: the relay should conclude ESCR
-      // and write the challenge.
-      await Future.delayed(const Duration(milliseconds: 250));
-      expect(
-        written,
-        hasLength(1),
-        reason: 'relay should have written exactly the challenge',
-      );
-      final challenge = written.first;
-
-      // Client answers the challenge; relay verifies and replies "ok".
-      final response = await authenticator.responseToChallenge(challenge);
-      feed(Uint8List.fromList(utf8.encode('$response\n')));
-
-      final (authenticated, stream) = await resultFuture;
-      expect(authenticated, true);
-      expect(stream, isNotNull);
-      expect(written, [challenge, 'ok']);
-      expect(verifier.sessionId, sessionId);
-      expect(verifier.atSign, '@alice');
-      expect(reported, [publicSigningKeyUri]);
     });
 
     test('rejects an unexpected first byte (neither "{" nor silence)', () async {
@@ -245,7 +170,6 @@ void main() {
         isSideA: true,
         dataToVerify: 'x',
         rvdNonce: 'x',
-        detectWindow: const Duration(seconds: 5),
       );
 
       final resultFuture = verifier.verifySocketAuth(mockSocket);
@@ -279,7 +203,6 @@ void main() {
         isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
-        detectWindow: const Duration(seconds: 5),
         publicKey: otherKey,
       );
 
@@ -313,7 +236,6 @@ void main() {
         isSideA: true,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
-        detectWindow: const Duration(seconds: 5),
         knownMode: RelayAuthMode.escr,
       );
 
@@ -363,7 +285,6 @@ void main() {
         isSideA: true,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
-        detectWindow: const Duration(seconds: 5),
         knownMode: RelayAuthMode.escr,
         onEscrVerified: reported.add,
       );
@@ -388,7 +309,6 @@ void main() {
         isSideA: false,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
-        detectWindow: const Duration(seconds: 5),
         knownMode: RelayAuthMode.escr,
         onEscrVerified: reported.add,
       );
@@ -414,7 +334,6 @@ void main() {
         isSideA: true,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
-        detectWindow: const Duration(seconds: 5),
         knownMode: RelayAuthMode.escr,
         onEscrVerified: reported.add,
       );
@@ -445,7 +364,6 @@ void main() {
         isSideA: true,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
-        detectWindow: const Duration(seconds: 5),
         knownMode: RelayAuthMode.escr,
       );
 
@@ -459,8 +377,7 @@ void main() {
       expect(written, [written.first, 'ok']);
     });
 
-    test('known-ESCR side is challenged immediately, not after the window',
-        () async {
+    test('known-ESCR side is challenged immediately, then verified', () async {
       final fx = escrFixture();
       final written = <String>[];
       late void Function(Uint8List) feed;
@@ -469,21 +386,21 @@ void main() {
         onData: (fn) => feed = fn,
       );
 
+      final reported = <String>[];
       final verifier = RelayAuthVerifierAuto(
         'auto sideA',
         fx.helper,
+        onEscrVerified: reported.add,
         atSign: '@alice',
         sessionId: fx.sessionId,
         isSideA: true,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
-        detectWindow: const Duration(seconds: 5), // must NOT be waited out
         knownMode: RelayAuthMode.escr,
       );
 
       final resultFuture = verifier.verifySocketAuth(mockSocket);
-      // Well under the 5s window: the challenge must already be out.
-      await Future.delayed(const Duration(milliseconds: 100));
+      await pumpEventQueue();
       expect(
         written,
         hasLength(1),
@@ -493,12 +410,16 @@ void main() {
       final response = await fx.authenticator.responseToChallenge(written.first);
       feed(Uint8List.fromList(utf8.encode('$response\n')));
 
-      final (authenticated, _) = await resultFuture;
+      final (authenticated, stream) = await resultFuture;
       expect(authenticated, true);
+      expect(stream, isNotNull);
       expect(written, [written.first, 'ok']);
+      expect(verifier.sessionId, fx.sessionId);
+      expect(verifier.atSign, '@alice');
+      expect(reported, ['_apsk.my_enrollment_id.a.__e@alice']);
     });
 
-    test('known-LEGACY side is never challenged, even past the window',
+    test('known-LEGACY side is never challenged while it stays silent',
         () async {
       final rvdNonce = DateTime.now().toIso8601String();
       final sessionId = Uuid().v4();
@@ -521,14 +442,11 @@ void main() {
         isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
-        detectWindow: const Duration(milliseconds: 50), // short on purpose
         publicKey: legacyPublicKey,
         knownMode: RelayAuthMode.payload,
       );
 
       final resultFuture = verifier.verifySocketAuth(mockSocket);
-      // Wait well past the (short) window: a known-legacy side must not be
-      // challenged (the timer must have been cancelled).
       await Future.delayed(const Duration(milliseconds: 200));
       expect(written, isEmpty, reason: 'known-legacy side must not be challenged');
 
@@ -538,7 +456,7 @@ void main() {
       expect(written, isEmpty);
     });
 
-    test('setKnownMode(escr) resolves an in-flight detection immediately',
+    test('setKnownMode(escr) challenges a socket waiting for its mode',
         () async {
       final fx = escrFixture(isSideA: false);
       final written = <String>[];
@@ -556,22 +474,19 @@ void main() {
         isSideA: false,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
-        detectWindow: const Duration(seconds: 5),
         // no knownMode: it arrives later, as the notification would
       );
 
       final resultFuture = verifier.verifySocketAuth(mockSocket);
-      // Let the detection window timer start, then deliver the hint (as the
-      // client's definitive auth-modes notification would).
       await Future.delayed(const Duration(milliseconds: 50));
-      expect(written, isEmpty);
+      expect(written, isEmpty, reason: 'a waiting socket is sent nothing');
       verifier.setKnownMode(RelayAuthMode.escr);
 
-      await Future.delayed(const Duration(milliseconds: 100));
+      await pumpEventQueue();
       expect(
         written,
         hasLength(1),
-        reason: 'setKnownMode(escr) should challenge without waiting the window',
+        reason: 'setKnownMode(escr) should challenge the waiting socket',
       );
 
       final response = await fx.authenticator.responseToChallenge(written.first);
@@ -603,7 +518,6 @@ void main() {
         isSideA: false,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
-        detectWindow: const Duration(seconds: 5),
         publicKey: legacyPublicKey,
       );
 
@@ -623,7 +537,7 @@ void main() {
       );
     });
 
-    test('memoises the mode: a later connection on the same side skips the window',
+    test('setKnownMode reaches every socket still waiting for its mode',
         () async {
       final fx = escrFixture(isSideA: false);
       final verifier = RelayAuthVerifierAuto(
@@ -634,56 +548,81 @@ void main() {
         isSideA: false,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
-        detectWindow: const Duration(milliseconds: 300),
       );
-
-      // Connection 1: mode unknown -> auto-detect via silence -> ESCR, which
-      // only challenges after the window elapses.
       final written1 = <String>[];
-      late void Function(Uint8List) feed1;
-      final sock1 = makeMockSocket(
-        written: written1,
-        onData: (fn) => feed1 = fn,
-      );
-      final f1 = verifier.verifySocketAuth(sock1);
-      await Future.delayed(const Duration(milliseconds: 380)); // past the window
-      expect(
-        written1,
-        hasLength(1),
-        reason: 'first connection is challenged only after the window',
-      );
-      feed1(
-        Uint8List.fromList(
-          utf8.encode(
-            '${await fx.authenticator.responseToChallenge(written1.first)}\n',
-          ),
-        ),
-      );
-      expect((await f1).$1, true);
-
-      // Connection 2: SAME verifier, new socket. The mode is now memoised, so
-      // the challenge must appear well before the 300ms window would elapse.
       final written2 = <String>[];
-      late void Function(Uint8List) feed2;
-      final sock2 = makeMockSocket(
-        written: written2,
-        onData: (fn) => feed2 = fn,
+      unawaited(verifier
+          .verifySocketAuth(makeMockSocket(written: written1, onData: (_) {}))
+          .then((_) {}, onError: (_) {}));
+      unawaited(verifier
+          .verifySocketAuth(makeMockSocket(written: written2, onData: (_) {}))
+          .then((_) {}, onError: (_) {}));
+      await pumpEventQueue();
+      expect(verifier.waitingSockets, 2,
+          reason: 'the control: both sockets are waiting');
+
+      verifier.setKnownMode(RelayAuthMode.escr);
+      await pumpEventQueue();
+
+      expect((written1.length, written2.length), (1, 1),
+          reason: 'each waiting socket is challenged, the first included');
+      expect(verifier.waitingSockets, 0);
+    });
+
+    test('a socket that connects after setKnownMode gets the mode at once',
+        () async {
+      final fx = escrFixture(isSideA: false);
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideB',
+        fx.helper,
+        atSign: '@alice',
+        sessionId: fx.sessionId,
+        isSideA: false,
+        dataToVerify: 'unused for escr',
+        rvdNonce: 'unused for escr',
       );
-      final f2 = verifier.verifySocketAuth(sock2);
-      await Future.delayed(const Duration(milliseconds: 30)); // << 300ms window
-      expect(
-        written2,
-        hasLength(1),
-        reason: 'later connection is challenged immediately (memoised ESCR)',
+      verifier.setKnownMode(RelayAuthMode.escr);
+
+      final written = <String>[];
+      unawaited(verifier
+          .verifySocketAuth(makeMockSocket(written: written, onData: (_) {}))
+          .then((_) {}, onError: (_) {}));
+      await pumpEventQueue();
+
+      expect(written, hasLength(1), reason: 'it is challenged at once');
+      expect(verifier.waitingSockets, 0, reason: 'it never waits');
+    });
+
+    test('a waiting socket that closes stops waiting for a mode', () async {
+      final verifier = RelayAuthVerifierAuto(
+        'auto sideB',
+        MockRelayAuthVerifyHelper(),
+        atSign: '@alice',
+        sessionId: Uuid().v4(),
+        isSideA: false,
+        dataToVerify: 'x',
+        rvdNonce: 'x',
       );
-      feed2(
-        Uint8List.fromList(
-          utf8.encode(
-            '${await fx.authenticator.responseToChallenge(written2.first)}\n',
-          ),
-        ),
+      late void Function() eof;
+      final written = <String>[];
+      final socket = makeMockSocket(
+        written: written,
+        onData: (_) {},
+        onDone: (fn) => eof = fn,
       );
-      expect((await f2).$1, true);
+      unawaited(verifier
+          .verifySocketAuth(socket)
+          .then((_) {}, onError: (_) {}));
+      await pumpEventQueue();
+      expect(verifier.waitingSockets, 1, reason: 'the control: it waits');
+
+      eof();
+      await pumpEventQueue();
+      expect(verifier.waitingSockets, 0);
+
+      verifier.setKnownMode(RelayAuthMode.escr);
+      await pumpEventQueue();
+      expect(written, isEmpty, reason: 'a closed socket is sent nothing');
     });
 
     test('forwards pause and resume of the verified stream to the socket',
@@ -709,7 +648,6 @@ void main() {
         isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
-        detectWindow: const Duration(seconds: 5),
         publicKey: legacyPublicKey,
       );
 
@@ -747,7 +685,6 @@ void main() {
         isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
-        detectWindow: const Duration(seconds: 5),
         publicKey: legacyPublicKey,
       );
 
@@ -781,7 +718,6 @@ void main() {
         isSideA: true,
         dataToVerify: 'unused for escr',
         rvdNonce: 'unused for escr',
-        detectWindow: const Duration(seconds: 5),
         knownMode: RelayAuthMode.escr,
       );
 
@@ -826,7 +762,6 @@ void main() {
         isSideA: true,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
-        detectWindow: const Duration(seconds: 5),
       );
 
       final resultFuture = verifier.verifySocketAuth(mockSocket);
@@ -878,7 +813,6 @@ void main() {
         isSideA: false,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
-        detectWindow: const Duration(seconds: 5),
       );
 
       final resultFuture = verifier.verifySocketAuth(mockSocket);
@@ -927,7 +861,6 @@ void main() {
         isSideA: false,
         dataToVerify: jsonEncode(payload),
         rvdNonce: rvdNonce,
-        detectWindow: const Duration(seconds: 5),
       );
 
       final resultFuture = verifier.verifySocketAuth(mockSocket);

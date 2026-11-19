@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
+import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
 
 import '../../utils.dart';
@@ -758,51 +759,21 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
 /// Default detection window for [RelayAuthVerifierAuto] (see that class).
 const int defaultRelayAuthDetectWindowMs = 500;
 
-/// A [RelayAuthVerifier] which auto-detects, per socket, whether the connecting
-/// side is using ESCR ([RelayAuthVerifierESCR]) or legacy ([RelayAuthVerifierLegacy])
-/// auth, without being told in advance. This lets the client and daemon each
-/// use the strongest auth they support, independently, and frees the client from
-/// having to learn the daemon's capabilities (via the daemon ping) before it can
-/// commit to a session-wide auth mode.
+/// A [RelayAuthVerifier] for one side of a two-port session, which verifies
+/// each socket by the relay auth mode the session's client gave that side:
+/// ESCR ([RelayAuthVerifierESCR]) or legacy ([RelayAuthVerifierLegacy]).
 ///
-/// Detection relies on the opposite "who speaks first" semantics of the two
-/// schemes, both of which are left byte-for-byte unchanged on the wire:
-/// - A **legacy** connecting side writes its JSON signature envelope (starting
-///   with `{`) immediately on connect and never reads first.
-/// - An **ESCR** connecting side stays silent until the relay sends it a
-///   challenge, then replies `${sessionId}:${payload}`.
+/// When the side's mode is known ([knownMode], or [setKnownMode] before the
+/// socket connects), a socket is verified by it from the moment it connects:
+/// an ESCR socket is challenged at once, and a legacy socket is sent nothing
+/// and must send its signed envelope. Otherwise the socket waits, sent
+/// nothing, until the client names the side's mode ([setKnownMode]) or the
+/// socket's first byte is `{`, which is legacy; any other first byte is
+/// refused. How long a socket stays silent never decides its mode: one that
+/// nobody speaks for is closed by the connector's authentication limit.
 ///
-/// So this verifier:
-/// 1. Begins listening and starts a one-shot [detectWindow] timer.
-/// 2. If inbound data arrives first, it must be legacy — the first byte is `{` —
-///    so we run legacy verification (looking up the connecting atSign's public
-///    key lazily, only on this branch, unless one was pre-supplied).
-/// 3. If the window elapses with no data, we assume ESCR: send the challenge and
-///    run ESCR verification.
-///
-/// Trade-off: because the ESCR wire is unchanged (the peer waits to be
-/// challenged), every ESCR socket waits out [detectWindow] before the challenge
-/// is sent. [detectWindow] must exceed a legacy peer's first-packet arrival
-/// (≈ one RTT after connect); if it is too short, a slow legacy peer is misread
-/// as ESCR and, having been sent a challenge it does not read, its onward stream
-/// is corrupted. Raise it for high-latency legacy peers; lower it to speed ESCR.
-///
-/// The window is only the *fallback*. When the mode for a side is known ahead
-/// of the socket connecting — via the [knownMode] constructor argument (side A,
-/// whose mode the requesting client set in its own request) or via
-/// [setKnownMode] (side B, once the client has learnt the daemon's mode and
-/// sent the relay a definitive auth-modes notification) — detection is skipped:
-/// a known ESCR side is challenged immediately, and a known legacy side simply
-/// waits for its envelope with the timer cancelled (so it is never misread).
-/// A known mode is applied only while the socket is still being detected, never
-/// after it has committed by sending bytes, so a stale/incorrect ESCR hint can
-/// never challenge a socket that has already spoken legacy.
-///
-/// The same verifier instance authenticates every connection on its side of the
-/// session (a session typically carries many), so once one connection's mode is
-/// verified it is remembered and every later connection skips detection too:
-/// only the very first connection on a side — and only if its mode was not
-/// already known — ever pays the window.
+/// A socket keeps the mode it has once it has one; [setKnownMode] reaches
+/// every socket still waiting.
 ///
 /// An ESCR response is accepted only when it is for this verifier's session
 /// and side, and is signed by [expectedAtSign].
@@ -833,24 +804,17 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
   /// is looked up lazily (and only if the socket turns out to be legacy).
   final String? publicKey;
 
-  /// How long to wait for the connecting side to speak (legacy) before assuming
-  /// ESCR and sending a challenge.
-  final Duration detectWindow;
-
   /// Called with the `_apsk` record an ESCR socket on this side was signed
   /// with, once the socket has been accepted.
   final void Function(String signingKeyUri)? onEscrVerified;
 
   late final AtSignLogger logger;
 
-  /// The mode this side will use, if known. Set from the constructor (side A),
-  /// [setKnownMode] (side B), or memoised after the first connection on this
-  /// side authenticates successfully. Null means "detect".
+  /// The mode this side's sockets use, or null until the client names it.
   RelayAuthMode? _knownMode;
 
-  /// Set by [verifySocketAuth] while it is running so [setKnownMode] can apply a
-  /// mode to the in-flight detection. Null before the socket has connected.
-  Future<void> Function(RelayAuthMode)? _resolveKnownMode;
+  /// Gives each socket of this side still waiting for a mode its mode.
+  final Set<Future<void> Function(RelayAuthMode)> _waiting = {};
 
   RelayAuthVerifierAuto(
     this.tag,
@@ -860,7 +824,6 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     required this.isSideA,
     required this.dataToVerify,
     required this.rvdNonce,
-    required this.detectWindow,
     this.publicKey,
     this.onEscrVerified,
     RelayAuthMode? knownMode,
@@ -870,15 +833,20 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     _knownMode = knownMode;
   }
 
-  /// Tell this verifier which mode the connecting side will use, so it can skip
-  /// the [detectWindow] heuristic. Safe to call at any time and more than once:
-  /// the mode is applied only while the socket is still being detected (never
-  /// after it has committed by sending bytes), so an ESCR hint can never
-  /// challenge a socket that has already spoken legacy.
+  /// The mode this side's sockets use, or null until the client names it.
+  @visibleForTesting
+  RelayAuthMode? get knownMode => _knownMode;
+
+  /// How many of this side's sockets are waiting for a mode.
+  @visibleForTesting
+  int get waitingSockets => _waiting.length;
+
+  /// Gives this side [mode]: every socket still waiting for a mode takes it,
+  /// and so does every socket that connects afterwards. A socket that already
+  /// has a mode keeps it.
   void setKnownMode(RelayAuthMode mode) {
     _knownMode = mode;
-    final resolve = _resolveKnownMode;
-    if (resolve != null) {
+    for (final resolve in _waiting.toList()) {
       unawaited(resolve(mode));
     }
   }
@@ -910,18 +878,20 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     final buffer = <int>[];
     bool authenticated = false;
 
-    // 'detecting' -> 'legacy' | 'escr'. Guarded by [mutex] so the detection
-    // timer and inbound-data events cannot race to pick different modes.
-    String mode = 'detecting';
+    // 'waiting' -> 'legacy' | 'escr'. Guarded by [mutex] so the client's word
+    // and inbound data cannot race to pick different modes.
+    String mode = 'waiting';
     final mutex = Mutex();
-    Timer? detectTimer;
+    Future<void> Function(RelayAuthMode)? waitingFor;
 
-    logger.info(
-      'starting auto-detect listen'
-      ' (window ${detectWindow.inMilliseconds}ms)',
-    );
+    void stopWaiting() {
+      final Future<void> Function(RelayAuthMode)? w = waitingFor;
+      if (w != null) _waiting.remove(w);
+      waitingFor = null;
+    }
 
     Future<void> failAuth(Object e) async {
+      stopWaiting();
       logger.shout('auto verification FAILED with exception : $e');
       if (!completer.isCompleted) {
         try {
@@ -941,13 +911,6 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
 
     void completeSuccess() {
       authenticated = true;
-      // Every connection on this side of the session uses the same
-      // authenticator, so remember the mode we just verified: subsequent
-      // connections skip detection and go straight to it (see [_knownMode]).
-      // Cached only on success, so a failed or hostile probe cannot poison it.
-      _knownMode ??= (mode == 'escr')
-          ? RelayAuthMode.escr
-          : RelayAuthMode.payload;
       if (!completer.isCompleted) {
         completer.complete((true, sc.stream));
       } else if (!sc.isClosed) {
@@ -1025,15 +988,12 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
       await socket.flush();
     }
 
-    // Resolve this side to a concrete mode, skipping detection. The caller of
-    // [resolveLocked] must already hold [mutex]; [resolve] acquires it. A known
-    // ESCR side is challenged immediately; a known legacy side just waits for
-    // its signed envelope (timer cancelled). Both are no-ops once the socket
-    // has already committed to a mode, so a stale ESCR hint can never challenge
-    // a socket that has already sent bytes.
+    // Gives this socket mode [m] while it is still waiting; the caller holds
+    // [mutex]. An ESCR socket is challenged at once; a legacy one is sent
+    // nothing and waits for its signed envelope.
     Future<void> resolveLocked(RelayAuthMode m) async {
-      if (mode != 'detecting' || authenticated) return;
-      detectTimer?.cancel();
+      if (mode != 'waiting' || authenticated) return;
+      stopWaiting();
       if (m == RelayAuthMode.escr) {
         mode = 'escr';
         logger.info('resolving to ESCR; sending challenge');
@@ -1056,9 +1016,16 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
       }
     }
 
-    // Let setKnownMode() (called when the client's definitive auth-modes
-    // notification arrives) steer this in-flight detection.
-    _resolveKnownMode = resolve;
+    final RelayAuthMode? known = _knownMode;
+    if (known == null) {
+      final Future<void> Function(RelayAuthMode) resolver = resolve;
+      waitingFor = resolver;
+      _waiting.add(resolver);
+      logger.info(
+        'waiting for the client to name this side\'s mode,'
+        ' or for a legacy envelope',
+      );
+    }
 
     subscription = socket.listen(
       (Uint8List data) async {
@@ -1087,10 +1054,11 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
             return;
           }
 
-          // The first unsolicited bytes can only be legacy (a JSON object);
-          // an ESCR peer sends nothing until we challenge it.
-          if (mode == 'detecting') {
-            detectTimer?.cancel();
+          // Unsolicited bytes on a socket still waiting for a mode can only be
+          // legacy (a JSON object); an ESCR peer sends nothing until we
+          // challenge it.
+          if (mode == 'waiting') {
+            stopWaiting();
             final int? firstByte = data.isNotEmpty ? data.first : null;
             if (firstByte == 0x7B /* '{' */ ) {
               mode = 'legacy';
@@ -1134,6 +1102,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
       // NOTE: close through the mutex, behind any chunks still queued on it,
       // or their bytes are dropped.
       onError: (Object error, StackTrace stackTrace) async {
+        stopWaiting();
         await mutex.acquire();
         try {
           if (!sc.isClosed) {
@@ -1145,6 +1114,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
         }
       },
       onDone: () async {
+        stopWaiting();
         await mutex.acquire();
         try {
           if (!sc.isClosed) {
@@ -1156,27 +1126,15 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
       },
     );
 
-    // If the mode is already known (side A from the request, or a side B hint
-    // that arrived before the socket connected) apply it now and skip the
-    // window; otherwise fall back to the timing heuristic.
-    await mutex.acquire();
-    try {
-      if (mode == 'detecting' && !authenticated) {
-        if (_knownMode != null) {
-          await resolveLocked(_knownMode!);
-        } else {
-          detectTimer = Timer(detectWindow, () {
-            logger.info(
-              'no data within ${detectWindow.inMilliseconds}ms; assuming ESCR',
-            );
-            resolve(RelayAuthMode.escr);
-          });
-        }
+    if (known != null) {
+      await mutex.acquire();
+      try {
+        await resolveLocked(known);
+      } catch (e) {
+        await failAuth(e);
+      } finally {
+        mutex.release();
       }
-    } catch (e) {
-      await failAuth(e);
-    } finally {
-      mutex.release();
     }
 
     return completer.future;

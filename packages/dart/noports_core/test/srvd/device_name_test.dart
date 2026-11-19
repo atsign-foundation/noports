@@ -87,6 +87,7 @@ void main() {
           'authenticateSocketA': false,
           'authenticateSocketB': false,
           'relayAuthMode': RelayAuthMode.escr.name,
+          'relayAuthAesKey': 'relay auth key',
           'only443': false,
           'multipleAcksOk': true,
         }),

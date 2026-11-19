@@ -104,7 +104,7 @@ void main() {
   AtNotification requestPorts(
     String sessionId, {
     required bool multipleAcksOk,
-    String? relayAuthAesKey,
+    String? relayAuthAesKey = 'relay auth key',
   }) => AtNotification(
     'notif-id',
     '@relay:device.request_ports.sshrvd@alice',

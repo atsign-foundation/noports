@@ -80,6 +80,7 @@ void main() {
         atSignA: '@alice',
         atSignB: '@bob',
         rvdNonce: 'rvd nonce',
+        relayAuthModes: null,
         only443: false,
         multipleAcksOk: true,
         preFetch: const [],

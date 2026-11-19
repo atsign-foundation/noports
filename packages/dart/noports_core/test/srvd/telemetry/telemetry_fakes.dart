@@ -84,6 +84,7 @@ SrvdSessionParams sessionParams({
       authenticateSocketA: clientVerified,
       authenticateSocketB: deviceVerified,
       rvdNonce: 'rvd nonce',
+      relayAuthModes: null,
       only443: only443,
       multipleAcksOk: true,
       preFetch: const [],

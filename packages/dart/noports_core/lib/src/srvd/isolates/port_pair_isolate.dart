@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
+import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/connection_tracker.dart';
 import 'package:noports_core/src/srvd/isolates/relay_worker.dart';
@@ -35,16 +36,23 @@ class PortPairWorker extends RelayWorker {
   /// connections before closing itself once none is established.
   final Duration connectorTimeout;
 
+  /// How long a socket has to authenticate before the connector closes it.
+  final Duration authTimeout;
+
   /// Set when we start the session
   int? portA;
 
   /// Set when we start the session
   int? portB;
 
-  /// The per-side auto-detecting verifiers, kept so that a definitive
-  /// auth-modes notification (see [handleAuthModes]) can steer their detection.
+  /// The per-side verifiers; side B's is kept so that the client's auth_modes
+  /// notification (see [handleAuthModes]) can give it its mode.
   RelayAuthVerifierAuto? _authVerifierA;
   RelayAuthVerifierAuto? _authVerifierB;
+
+  /// Side B's verifier, once the session has started.
+  @visibleForTesting
+  RelayAuthVerifierAuto? get authVerifierB => _authVerifierB;
 
   PortPairWorker({
     required super.toMain,
@@ -55,6 +63,7 @@ class PortPairWorker extends RelayWorker {
     this.closeFlushTimeout = SocketConnector.defaultCloseFlushTimeout,
     this.progressInterval = defaultProgressInterval,
     this.connectorTimeout = SocketConnector.defaultTimeout,
+    this.authTimeout = SocketConnector.defaultTimeout,
   }) {
     reqHandlers['start'] = startSession;
     reqHandlers['stop'] = stop;
@@ -62,20 +71,13 @@ class PortPairWorker extends RelayWorker {
     reqHandlers['auth_modes'] = handleAuthModes;
   }
 
-  /// Handle a definitive auth-modes message forwarded from the main isolate:
-  /// the requesting client has learnt which mode each side will use and told
-  /// the relay, so we can skip the detection window (see [RelayAuthVerifierAuto]).
+  /// Gives side B the mode the requesting client named for it, which the main
+  /// isolate forwards only for a session whose request left side B's mode to
+  /// the client.
   Future<void> handleAuthModes(IIRequest req) async {
-    final payload = req.payload;
-    final String? sideA = payload['sideA'];
-    final String? sideB = payload['sideB'];
-    logger.info('Definitive auth modes received: sideA=$sideA sideB=$sideB');
-    if (sideA != null) {
-      _authVerifierA?.setKnownMode(RelayAuthMode.values.byName(sideA));
-    }
-    if (sideB != null) {
-      _authVerifierB?.setKnownMode(RelayAuthMode.values.byName(sideB));
-    }
+    final String sideB = req.payload['sideB'];
+    logger.info('Side B auth mode received: $sideB');
+    _authVerifierB?.setKnownMode(RelayAuthMode.values.byName(sideB));
   }
 
   @override
@@ -141,6 +143,7 @@ class PortPairWorker extends RelayWorker {
       socketAuthVerifierA: _authVerifierA?.verifySocketAuth,
       socketAuthVerifierB: _authVerifierB?.verifySocketAuth,
       timeout: connectorTimeout,
+      authTimeout: authTimeout,
       closeFlushTimeout: closeFlushTimeout,
     );
 

@@ -72,6 +72,7 @@ void main() {
           rvdNonce: 'rvd nonce',
           relayAuthMode: RelayAuthMode.escr,
           relayAuthAesKey: relayAuthAesKey,
+          relayAuthModes: null,
           only443: true,
           multipleAcksOk: true,
           preFetch: [],
