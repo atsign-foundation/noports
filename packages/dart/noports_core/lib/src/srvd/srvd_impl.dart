@@ -59,10 +59,6 @@ class SrvdImpl
   @override
   final int localBindPort443;
 
-  /// Window (ms) the auto-detecting relay auth verifiers wait for a connecting
-  /// side to speak (legacy) before assuming ESCR and issuing a challenge.
-  final int relayAuthDetectWindowMs;
-
   /// How often to re-check that the signing keys each live session's ESCR
   /// sockets were accepted with haven't been withdrawn; [Duration.zero] turns
   /// the check off, [reportedSigningKeyCheckInterval]'s included.
@@ -186,7 +182,6 @@ class SrvdImpl
     required this.verbose,
     required this.bind443,
     required this.localBindPort443,
-    required this.relayAuthDetectWindowMs,
     required this.signingKeyCheckInterval,
     this.reportedSigningKeyCheckInterval =
         defaultReportedSigningKeyCheckInterval,
@@ -256,7 +251,6 @@ class SrvdImpl
         verbose: p.verbose,
         bind443: p.bind443,
         localBindPort443: p.localBindPort443,
-        relayAuthDetectWindowMs: p.relayAuthDetectWindowMs,
         signingKeyCheckInterval: Duration(seconds: p.signingKeyCheckSecs),
         reportedSigningKeyCheckInterval:
             Duration(seconds: p.reportedSigningKeyCheckSecs),
@@ -1392,7 +1386,6 @@ class SrvdImpl
       BuildEnv.enableSnoop && logTraffic,
       verbose,
       sessionParams.sessionId,
-      relayAuthDetectWindowMs,
     );
 
     logger.info(
@@ -1411,7 +1404,6 @@ class SrvdImpl
         logTraffic: connectorParams.$2,
         verbose: connectorParams.$3,
         loggingTag: connectorParams.$4,
-        relayAuthDetectWindowMs: connectorParams.$5,
       );
 
       await worker.run();

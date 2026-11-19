@@ -20,7 +20,6 @@ void main() {
       logTraffic: false,
       verbose: false,
       loggingTag: 'relay worker test',
-      relayAuthDetectWindowMs: 500,
     );
     addTearDown(() {
       worker.fromMain.close();
@@ -58,7 +57,6 @@ void main() {
       logTraffic: false,
       verbose: false,
       loggingTag: 'relay worker test',
-      relayAuthDetectWindowMs: 500,
     );
     addTearDown(() {
       worker.fromMain.close();

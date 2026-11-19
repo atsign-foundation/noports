@@ -4,8 +4,6 @@ import 'package:args/args.dart';
 import 'package:at_client_cli/at_client_cli.dart';
 import 'package:noports_core/src/srvd/build_env.dart';
 import 'package:noports_core/src/srvd/loop_lag.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 
 /// How often srvd re-checks, by default, that the signing keys a live session
 /// was authenticated with haven't been withdrawn.
@@ -34,10 +32,6 @@ class SrvdParams {
   /// The actual port to bind to - for example in a docker env you may wish
   /// to forward port 443 on the host to some local port in the container
   final int localBindPort443;
-
-  /// How long (ms) the auto-detecting relay auth verifiers wait for a
-  /// connecting side to speak (legacy) before assuming ESCR and challenging it.
-  final int relayAuthDetectWindowMs;
 
   /// How often (seconds) to re-check that each live session's ESCR signing
   /// keys haven't been withdrawn, ending a session one of them has been
@@ -77,7 +71,6 @@ class SrvdParams {
     required this.perSessionStorage,
     required this.bind443,
     required this.localBindPort443,
-    required this.relayAuthDetectWindowMs,
     required this.signingKeyCheckSecs,
     required this.debug,
     this.telemetryCollectorAtsign,
@@ -114,7 +107,6 @@ class SrvdParams {
       localBindPort443: r['443-bind-port'] == null
           ? 443
           : int.parse(r['443-bind-port']),
-      relayAuthDetectWindowMs: int.parse(r['relay-auth-detect-window-ms']),
       signingKeyCheckSecs: _nonNegative(
         'signing-key-check-secs',
         int.parse(r['signing-key-check-secs']),
@@ -257,13 +249,12 @@ class SrvdParams {
     parser.addOption(
       'relay-auth-detect-window-ms',
       mandatory: false,
-      defaultsTo: '$defaultRelayAuthDetectWindowMs',
       help:
-          'How long (ms) to wait for a connecting side to send its legacy auth'
-          ' before assuming it is using ESCR and issuing a challenge. Must'
-          ' exceed a legacy peer\'s first-packet arrival (~one RTT after'
-          ' connect); larger is safer for legacy peers, smaller speeds up ESCR'
-          ' handshakes.',
+          'Has no effect, and is accepted so that existing command lines keep'
+          ' working. srvd takes each side\'s relay auth mode from the session'
+          ' request, or from the client\'s auth_modes notification for a side'
+          ' the request leaves to it; it never decides one from how long a'
+          ' socket stays silent.',
     );
     parser.addOption(
       'signing-key-check-secs',

@@ -756,9 +756,6 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
   }
 }
 
-/// Default detection window for [RelayAuthVerifierAuto] (see that class).
-const int defaultRelayAuthDetectWindowMs = 500;
-
 /// A [RelayAuthVerifier] for one side of a two-port session, which verifies
 /// each socket by the relay auth mode the session's client gave that side:
 /// ESCR ([RelayAuthVerifierESCR]) or legacy ([RelayAuthVerifierLegacy]).

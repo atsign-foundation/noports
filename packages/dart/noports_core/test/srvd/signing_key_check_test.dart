@@ -12,8 +12,6 @@ import 'package:noports_core/sshnp_foundation.dart' show RelayAuthMode;
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
@@ -73,7 +71,6 @@ void main() {
         verbose: false,
         bind443: bind443,
         localBindPort443: localBindPort443,
-        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         signingKeyCheckInterval: interval,
         publicLookup: ClientPublicLookup(atClient),
       );

@@ -5,7 +5,6 @@ typedef PortPairIsolateParams = (
   bool, // logTraffic
   bool, // verbose
   String, // loggingTag
-  int, // relayAuthDetectWindowMs
 );
 typedef SinglePortIsolateParams = (
   SendPort,

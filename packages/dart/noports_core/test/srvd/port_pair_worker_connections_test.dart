@@ -48,7 +48,6 @@ void main() {
       logTraffic: false,
       verbose: false,
       loggingTag: 'port pair connections test',
-      relayAuthDetectWindowMs: 500,
       closeFlushTimeout: closeFlushTimeout,
       connectorTimeout: connectorTimeout,
     );
@@ -376,7 +375,6 @@ void main() {
         logTraffic: false,
         verbose: false,
         loggingTag: 'default bound',
-        relayAuthDetectWindowMs: 500,
       ).closeFlushTimeout,
       SocketConnector.defaultCloseFlushTimeout,
       reason: "a port-pair worker keeps socket_connector's close flush bound",

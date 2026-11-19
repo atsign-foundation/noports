@@ -5,8 +5,6 @@ import 'dart:isolate';
 
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
@@ -39,7 +37,6 @@ void main() {
       verbose: false,
       bind443: false,
       localBindPort443: 443,
-      relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
       signingKeyCheckInterval: Duration.zero,
     );
 

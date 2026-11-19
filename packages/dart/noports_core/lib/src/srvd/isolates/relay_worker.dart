@@ -19,10 +19,6 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
   final bool verbose;
   final String loggingTag;
 
-  /// Window used by [RelayAuthVerifierAuto] to distinguish a legacy connecting
-  /// side (which speaks first) from an ESCR one (which waits to be challenged).
-  final int relayAuthDetectWindowMs;
-
   late final ReceivePort fromMain;
   late final AtSignLogger logger;
   final Map<String, RelayWorkerRequestHandler> reqHandlers = {};
@@ -49,7 +45,6 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     required this.logTraffic,
     required this.verbose,
     required this.loggingTag,
-    this.relayAuthDetectWindowMs = defaultRelayAuthDetectWindowMs,
   }) {
     AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
     AtSignLogger.root_level = verbose ? 'INFO' : 'WARNING';

@@ -12,8 +12,6 @@ import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/connection_tracker.dart'
     show stopReportBound;
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
@@ -51,7 +49,6 @@ class _RecordingSrvd extends SrvdImpl {
     required super.verbose,
     required super.bind443,
     required super.localBindPort443,
-    required super.relayAuthDetectWindowMs,
     required super.signingKeyCheckInterval,
   });
 
@@ -140,7 +137,6 @@ void main() {
         verbose: false,
         bind443: bind443,
         localBindPort443: 0,
-        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         signingKeyCheckInterval: defaultSigningKeyCheckInterval,
       );
 

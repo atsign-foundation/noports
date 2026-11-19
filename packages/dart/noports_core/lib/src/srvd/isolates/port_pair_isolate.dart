@@ -59,7 +59,6 @@ class PortPairWorker extends RelayWorker {
     required super.logTraffic,
     required super.verbose,
     required super.loggingTag,
-    required super.relayAuthDetectWindowMs,
     this.closeFlushTimeout = SocketConnector.defaultCloseFlushTimeout,
     this.progressInterval = defaultProgressInterval,
     this.connectorTimeout = SocketConnector.defaultTimeout,

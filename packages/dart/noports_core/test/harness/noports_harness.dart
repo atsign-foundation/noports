@@ -6,8 +6,6 @@ import 'package:at_client/memory.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:noports_core/srvd.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/sshnpd/sshnpd_impl.dart';
 import 'package:noports_core/sshnp_foundation.dart';
@@ -138,7 +136,6 @@ class NoPortsHarness {
       verbose: false,
       bind443: false,
       localBindPort443: 443,
-      relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
       signingKeyCheckInterval: signingKeyCheckInterval,
       publicLookup: lookupOn(relayHttp, atClient, timeout: lookupTimeout),
     );
