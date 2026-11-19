@@ -177,7 +177,9 @@ Future<void> until(
 }) async {
   final DateTime giveUp = DateTime.now().add(within);
   while (!condition()) {
-    if (DateTime.now().isAfter(giveUp)) fail('no $what within $within');
+    if (DateTime.now().isAfter(giveUp)) {
+      fail('timed out waiting for $what ($within)');
+    }
     await Future<void>.delayed(const Duration(milliseconds: 5));
   }
 }
@@ -1051,7 +1053,7 @@ void main() {
       first.line(),
       second.line(),
     ]);
-    expect(c1, isNot(c2));
+    expect(c1, isNot(c2), reason: 'each socket is sent its own challenge');
   });
 
   Future<String> request443(Map<String, String> relayAuthModes) async {

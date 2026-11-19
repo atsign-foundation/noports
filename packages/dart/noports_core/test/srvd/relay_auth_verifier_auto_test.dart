@@ -566,7 +566,8 @@ void main() {
 
       expect((written1.length, written2.length), (1, 1),
           reason: 'each waiting socket is challenged, the first included');
-      expect(verifier.waitingSockets, 0);
+      expect(verifier.waitingSockets, 0,
+          reason: 'no socket is left waiting once its mode is known');
     });
 
     test('a socket that connects after setKnownMode gets the mode at once',
@@ -618,7 +619,8 @@ void main() {
 
       eof();
       await pumpEventQueue();
-      expect(verifier.waitingSockets, 0);
+      expect(verifier.waitingSockets, 0,
+          reason: 'a closed socket stops waiting');
 
       verifier.setKnownMode(RelayAuthMode.escr);
       await pumpEventQueue();
