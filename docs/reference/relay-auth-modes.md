@@ -123,8 +123,11 @@ From v5.18.3 every request also names both sides' modes in `relayAuthModes`.
 
 `npt`, `sshnp` and NoPorts Desktop name both sides' modes in `request_ports`,
 so they need the daemon's ESCR support before they ask the relay for ports.
-The client sends the daemon its ping on every session, and takes the daemon's
-ESCR support, in this order, from:
+`npt` and NoPorts Desktop send the daemon a ping on every session, and so
+does `sshnp` whenever the session needs a daemon feature: the device
+authenticating to the relay or the relay traffic being encrypted, both on by
+default, or the ssh public key being sent. The client takes the daemon's ESCR
+support, in this order, from:
 
 1. the live ping answer this process last had from that daemon device, kept
    in memory for the life of the process, by client Atsign, daemon Atsign and
@@ -135,6 +138,10 @@ ESCR support, in this order, from:
 3. the live ping, which it then waits for before asking the relay. With no
    ping response the session fails with the ping timeout, and the relay is
    never asked.
+
+An `sshnp` session that needs no daemon feature sends no ping and waits for
+none: the first two steps decide, the daemon is taken not to support ESCR
+when neither has an answer, and the client writes no record.
 
 A ping answer counts only when it comes from the daemon Atsign under that
 device's own key, `heartbeat.<device>.sshnp@<daemon>`, matched in full.
