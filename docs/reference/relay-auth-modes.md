@@ -128,7 +128,8 @@ ESCR support, in this order, from:
 
 1. the live ping answer this process last had from that daemon device, kept
    in memory for the life of the process, by client Atsign, daemon Atsign and
-   device together;
+   device together. The client uses it at once, and reads the record
+   alongside only to decide whether to rewrite it;
 2. its own record of the daemon device's last ping response, a self record
    on the client's atServer;
 3. the live ping, which it then waits for before asking the relay. With no

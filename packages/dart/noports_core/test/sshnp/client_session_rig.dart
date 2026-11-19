@@ -131,8 +131,11 @@ class ClientWorld {
   }
 
   /// What [probe] finds, once something the client sends or reads makes it
-  /// find something, or null after five seconds.
-  Future<T?> _until<T extends Object>(T? Function() probe) {
+  /// find something, or null after [within].
+  Future<T?> _until<T extends Object>(
+    T? Function() probe, {
+    Duration within = const Duration(seconds: 5),
+  }) {
     final T? now = probe();
     if (now != null) return Future.value(now);
     final completer = Completer<T?>();
@@ -146,7 +149,7 @@ class ClientWorld {
 
     _onChange.add(check);
     return completer.future.timeout(
-      const Duration(seconds: 5),
+      within,
       onTimeout: () {
         _onChange.remove(check);
         return null;
@@ -169,13 +172,17 @@ class ClientWorld {
   ];
 
   /// The first notification [client] sent whose key holds [part], or null
-  /// when it has sent none within five seconds.
-  Future<NotificationParams?> _sentBy(ClientDriver client, String part) =>
-      _until(
-        () => sentTo(
-          part,
-        ).where((p) => p.value!.contains(client.sessionId)).firstOrNull,
-      );
+  /// when it has sent none within [within].
+  Future<NotificationParams?> _sentBy(
+    ClientDriver client,
+    String part, {
+    Duration within = const Duration(seconds: 5),
+  }) => _until(
+    within: within,
+    () => sentTo(
+      part,
+    ).where((p) => p.value!.contains(client.sessionId)).firstOrNull,
+  );
 
   Future<Map<String, dynamic>> _valueSentBy(
     ClientDriver client,
@@ -346,8 +353,12 @@ class ClientWorld {
   /// Answers whatever [client] is still waiting for, as a daemon that
   /// supports ESCR and a relay that applied the request's modes, until the
   /// daemon refuses the session or the client gives up first; returns what
-  /// [outcome] threw.
-  Future<Object?> finish(ClientDriver client, Future<Object?> outcome) async {
+  /// [outcome] threw. Waits up to [within] for the session request.
+  Future<Object?> finish(
+    ClientDriver client,
+    Future<Object?> outcome, {
+    Duration within = const Duration(seconds: 5),
+  }) async {
     final settled = Completer<Object?>();
     unawaited(outcome.then(settled.complete));
     final int answered = _pingsAnswered[(client.daemon, client.device)] ?? 0;
@@ -356,7 +367,7 @@ class ClientWorld {
     }
     if (!_relayAnswered.contains(client.sessionId)) await answerRelay(client);
     await Future.any([
-      _sentBy(client, client.daemonRequestKey),
+      _sentBy(client, client.daemonRequestKey, within: within),
       settled.future,
     ]);
     if (!settled.isCompleted) await refuseSession(client);

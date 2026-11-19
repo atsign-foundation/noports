@@ -385,6 +385,34 @@ void main() {
     expect(w.writes, isEmpty, reason: 'nothing is written after a failed read');
   });
 
+  test('with a live answer held, the client asks the relay while its record '
+      'read is still outstanding', () async {
+    for (final make in clients) {
+      final w = newWorld();
+      await pingAnswered(w, channelIn(w), pingResponse(escr: true));
+      w.readHangs = true;
+      final c = make(w);
+      final watch = Stopwatch()..start();
+      final outcome = c.start();
+
+      await w.relayRequest(c);
+
+      expect(
+        watch.elapsed,
+        lessThan(const Duration(seconds: 1)),
+        reason:
+            '${c.name} asks the relay without waiting for its record '
+            'read',
+      );
+      expect(
+        w.reads.where((r) => r.key == pingRecordKeyOf()),
+        isNotEmpty,
+        reason: '${c.name} still reads the record',
+      );
+      await w.finish(c, outcome, within: const Duration(seconds: 10));
+    }
+  });
+
   test(
     'a record write that never answers is given up once its wait is over',
     () async {

@@ -101,6 +101,11 @@ abstract class SshnpdChannel
   /// Whether the ping record was read, absent or not, so may be rewritten.
   bool _pingRecordReadable = false;
 
+  Future<void>? _pingRecordRead;
+
+  /// The one read of the ping record, started on first use.
+  Future<void> get _recordRead => _pingRecordRead ??= _readPingRecord();
+
   DaemonPingRecord? _pingRecord;
 
   Completer acked = Completer();
@@ -148,11 +153,15 @@ abstract class SshnpdChannel
   /// its ping record on the client's own atServer says; null when neither is
   /// known.
   ///
-  /// Reads the record, which [refreshPingRecord] needs, waiting at most
-  /// [pingRecordTimeout]; a record that cannot be read or decoded counts as
+  /// Starts reading the record, which [refreshPingRecord] needs, and waits
+  /// for that read, at most [pingRecordTimeout], only when this process has
+  /// no live answer. A record that cannot be read or decoded counts as
   /// absent.
   Future<DaemonRelayAuthSupport?> knownRelayAuthSupport() async {
-    await _readPingRecord();
+    final Future<void> read = _recordRead;
+    final DaemonRelayAuthSupport? live = _liveAnswers[_daemonDevice];
+    if (live != null) return live;
+    await read;
     return _liveAnswers[_daemonDevice] ?? _pingRecord?.support;
   }
 
@@ -191,13 +200,15 @@ abstract class SshnpdChannel
   /// client's own atServer, when the record is absent or undecodable, says
   /// something else, or is older than [pingRecordRefreshAge].
   ///
-  /// Writes nothing when the daemon has not answered a ping, or when
-  /// [knownRelayAuthSupport] could not read the record. Waits at most
-  /// [pingRecordTimeout]; a write that fails is logged, and the session
-  /// carries on.
+  /// Writes nothing when the daemon has not answered a ping, or when the
+  /// record could not be read. Waits for the record's read and then its
+  /// write, each at most [pingRecordTimeout]; a write that fails is logged,
+  /// and the session carries on.
   Future<void> refreshPingRecord() async {
     final DaemonRelayAuthSupport? live = liveRelayAuthSupport;
-    if (live == null || !_pingRecordReadable) return;
+    if (live == null) return;
+    await _recordRead;
+    if (!_pingRecordReadable) return;
     final DaemonPingRecord? stored = _pingRecord;
     if (stored != null &&
         stored.support == live &&
