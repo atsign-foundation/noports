@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:at_chops/at_chops.dart';
-import 'package:at_client/at_client.dart' show PqPosture;
+import 'package:at_client/at_client.dart'
+    show AtKey, GetRequestOptions, PqPosture;
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:test/test.dart';
@@ -123,6 +124,50 @@ void main() {
       escrVerifiedSides(harness),
       {NoPortsHarness.clientAtSign, NoPortsHarness.daemonAtSign},
       reason: 'the relay verifies an ESCR side with its signing key',
+    );
+    expect(harness.server.unhandled, isEmpty);
+  });
+
+  test("a session records the daemon's ping answer on the client's atServer",
+      () async {
+    final harness = NoPortsHarness.create();
+    final echo = await startEchoServer();
+    await harness.startRelay();
+    final daemon =
+        await harness.startDaemon(permitOpen: ['127.0.0.1:${echo.port}']);
+    final npt = await nptTo(harness, echo.port);
+
+    expect(await roundTrip(await npt.run(), 'recorded'), 'recorded');
+
+    final record = harness.server[NoPortsHarness.clientAtSign].recordAt(
+        'cached.ping.bob.${NoPortsHarness.device}.sshnp'
+        '${NoPortsHarness.clientAtSign}');
+    expect(record, isNotNull, reason: 'the client wrote the record');
+    expect(
+      record!.metadata['ttl'],
+      const Duration(days: 30).inMilliseconds,
+      reason: 'the record lives 30 days',
+    );
+    final reader = await harness.openClient(
+      NoPortsHarness.clientAtSign,
+      namespace: DefaultArgs.namespace,
+      enrollment: harness.server[NoPortsHarness.clientAtSign].enroll(
+        appName: 'noports',
+        deviceName: 'reader',
+        namespaces: const {'sshnp': 'r'},
+      ),
+    );
+    final stored = await reader.get(
+      AtKey()
+        ..key = 'cached.ping.bob.${NoPortsHarness.device}'
+        ..namespace = DefaultArgs.namespace
+        ..sharedBy = NoPortsHarness.clientAtSign,
+      getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+    );
+    expect(
+      DaemonPingRecord.decode(stored.value).support,
+      DaemonRelayAuthSupport.fromPingResponse(daemon.pingResponse),
+      reason: "the record holds the daemon's answer",
     );
     expect(harness.server.unhandled, isEmpty);
   });
