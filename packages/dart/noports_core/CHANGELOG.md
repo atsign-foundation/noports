@@ -35,6 +35,13 @@
   throwing it.
 - fix: an sshnp session whose daemon feature check fails no longer raises an
   unhandled error.
+- fix: `LocalSshKeyUtil.authorizePublicKey` creates `~/.ssh/authorized_keys`,
+  readable only by its owner, when it is missing, so sshnpd no longer fails
+  direct ssh sessions with `PathNotFoundException` on a device without one
+- feat: `LocalSshKeyUtil.addPublicKey` appends a public key to
+  `authorized_keys` unless it is already there, creating the file the same
+  way when it is missing; sshnpd's `addSshPublicKeys` uses it, so a key a
+  client sends to a device without `authorized_keys` is no longer dropped
 - **BREAKING CHANGE** build: depends on the at_client 4.0.0 set: at_client
   4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli and
   at_cli_commons, at_auth 4.0.0, at_lookup 4.0.0 and at_utils 4.0.0, so the

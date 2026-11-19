@@ -75,7 +75,6 @@ class SshnpdImpl
 
   @override
   final String sshPublicKeyPermissions;
-  final String _sshPublicKeySeparator; // ' ' if there are permissions else ''
 
   @override
   final String ephemeralPermissions;
@@ -184,8 +183,7 @@ class SshnpdImpl
     required this.clientKeyCheckInterval,
     required this.requireEnrollmentSignature,
     PublicLookup? publicLookup,
-  })  : _sshPublicKeySeparator = (sshPublicKeyPermissions.isEmpty ? "" : " "),
-        publicLookup = publicLookup ?? DirectPublicLookup(atClient) {
+  }) : publicLookup = publicLookup ?? DirectPublicLookup(atClient) {
     this.inline = inline ?? Platform.environment['SRV_INLINE'] == 'true';
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
@@ -807,22 +805,13 @@ class SshnpdImpl
         throw ('$sshPublicKey does not look like a public key');
       }
 
-      // Check to see if the ssh Publickey is already in the file if not append to the ~/.ssh/authorized_keys file
-      var authKeysFilePath = [
-        homeDirectory,
-        '.ssh',
-        'authorized_keys',
-      ].join(Platform.pathSeparator);
-      var authKeys = File(authKeysFilePath);
-
-      var authKeysContent = await authKeys.readAsString();
-
-      if (!authKeysContent.contains(sshPublicKey)) {
-        authKeys.writeAsStringSync(
-          '$sshPublicKeyPermissions$_sshPublicKeySeparator$sshPublicKey',
-          mode: FileMode.append,
-        );
-      }
+      final LocalSshKeyUtil keyUtil = LocalSshKeyUtil(
+        homeDirectory: homeDirectory,
+      );
+      await keyUtil.addPublicKey(
+        sshPublicKey: sshPublicKey,
+        permissions: sshPublicKeyPermissions,
+      );
     } catch (e) {
       logger.severe(
         "Error writing to"
