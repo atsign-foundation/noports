@@ -44,7 +44,9 @@ abstract class SrvdChannel<T>
   final String clientNonce = DateTime.now().toIso8601String();
 
   /// What the daemon is taken to support when the relay is asked for ports,
-  /// set before [initialize]; when null, the request names legacy for side B.
+  /// set before [initialize]. When null the daemon is taken not to support
+  /// ESCR, so the request names legacy for side B, except on port 443, where
+  /// it names ESCR for both sides.
   DaemonRelayAuthSupport? daemonRelayAuthSupport;
 
   late RelayAuthModes _requestedRelayAuthModes;
@@ -159,12 +161,15 @@ abstract class SrvdChannel<T>
     return only443 || (explicitEscr && !autoDetect);
   }
 
-  /// Each side's mode, as a relay that authenticates each side by its own
-  /// mode applies it, when the daemon [daemonSupportsEscr].
-  RelayAuthModes relayAuthModesFor({required bool daemonSupportsEscr}) {
+  /// Each side's mode when the daemon [daemonSupportsEscr], at a relay that
+  /// [autoDetect]s or applies the request's modes when true.
+  RelayAuthModes _modes({
+    required bool autoDetect,
+    required bool daemonSupportsEscr,
+  }) {
     RelayAuthMode mode(bool peerSupportsEscr) => effectiveRelayAuthMode(
           preference: params.relayAuthMode,
-          autoDetect: true,
+          autoDetect: autoDetect,
           peerSupportsEscr: peerSupportsEscr,
           only443: params.only443,
           prescribed: params.relayAuthModeExplicit,
@@ -172,29 +177,20 @@ abstract class SrvdChannel<T>
     return (sideA: mode(true), sideB: mode(daemonSupportsEscr));
   }
 
-  /// Each side's mode at the relay we were assigned, when the daemon
-  /// [daemonSupportsEscr]: the modes the request named, when the relay
-  /// applied them, and otherwise what the relay can reconcile.
-  RelayAuthModes sessionRelayAuthModes({required bool daemonSupportsEscr}) {
-    if (relayResponse.appliedRelayAuthModes) return _requestedRelayAuthModes;
-    RelayAuthMode mode(bool peerSupportsEscr) => effectiveRelayAuthMode(
-          preference: params.relayAuthMode,
-          autoDetect: autoDetectsRelayAuth,
-          peerSupportsEscr: peerSupportsEscr,
-          only443: params.only443,
-          prescribed: params.relayAuthModeExplicit,
-        );
-    return (sideA: mode(true), sideB: mode(daemonSupportsEscr));
-  }
-
-  /// The relay-auth mode this client's own socket (side A) authenticates by.
-  RelayAuthMode get clientRelayAuthMode =>
-      sessionRelayAuthModes(daemonSupportsEscr: true).sideA;
+  /// Each side's mode at the relay we were assigned: the modes the request
+  /// named, when the relay applied them, and otherwise what it can reconcile.
+  RelayAuthModes _sessionModes({required bool daemonSupportsEscr}) =>
+      relayResponse.appliedRelayAuthModes
+          ? _requestedRelayAuthModes
+          : _modes(
+              autoDetect: autoDetectsRelayAuth,
+              daemonSupportsEscr: daemonSupportsEscr,
+            );
 
   /// The relay-auth mode the daemon (side B) should use for this session, told
-  /// to it in the session request. See [sessionRelayAuthModes].
+  /// to it in the session request.
   RelayAuthMode daemonRelayAuthMode({required bool daemonSupportsEscr}) =>
-      sessionRelayAuthModes(daemonSupportsEscr: daemonSupportsEscr).sideB;
+      _sessionModes(daemonSupportsEscr: daemonSupportsEscr).sideB;
 
   /// Throws [SshnpError] when the daemon's [live] ping answer means this
   /// attempt must end before the daemon is asked for anything.
@@ -204,8 +200,10 @@ abstract class SrvdChannel<T>
   /// explicit relay-auth mode, differs at all from what the request named.
   void checkDaemonAnswer(DaemonRelayAuthSupport? live) {
     if (live == null || !relayResponse.appliedRelayAuthModes) return;
-    final RelayAuthModes now =
-        relayAuthModesFor(daemonSupportsEscr: live.supportsRamEscr);
+    final RelayAuthModes now = _modes(
+      autoDetect: true,
+      daemonSupportsEscr: live.supportsRamEscr,
+    );
     final bool ends = params.relayAuthModeExplicit
         ? now != _requestedRelayAuthModes
         : _requestedRelayAuthModes.sideB == RelayAuthMode.escr &&
@@ -286,7 +284,7 @@ abstract class SrvdChannel<T>
 
     RelayAuthenticator? relayAuthenticator;
     if (params.authenticateClientToRvd) {
-      switch (clientRelayAuthMode) {
+      switch (_sessionModes(daemonSupportsEscr: true).sideA) {
         case RelayAuthMode.payload:
           relayAuthenticator = RelayAuthenticatorLegacy(
             await signAndWrapAndJsonEncode(atClient, {
@@ -360,7 +358,7 @@ abstract class SrvdChannel<T>
     if (!autoDetectsRelayAuth || relayResponse.appliedRelayAuthModes) return;
 
     final RelayAuthModes modes =
-        sessionRelayAuthModes(daemonSupportsEscr: daemonSupportsEscr);
+        _sessionModes(daemonSupportsEscr: daemonSupportsEscr);
 
     final AtKey authModesKey = AtKey()
       ..key = '${params.device}.auth_modes.${Srvd.namespace}'
@@ -397,7 +395,8 @@ abstract class SrvdChannel<T>
     Duration timeout = DefaultArgs.relayResponseTimeoutDuration,
   }) async {
     srvdAck = SrvdAck.notAcknowledged;
-    _requestedRelayAuthModes = relayAuthModesFor(
+    _requestedRelayAuthModes = _modes(
+      autoDetect: true,
       daemonSupportsEscr: daemonRelayAuthSupport?.supportsRamEscr ?? false,
     );
     track(

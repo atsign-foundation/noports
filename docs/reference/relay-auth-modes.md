@@ -7,8 +7,7 @@ connection uses.
 
 > Reference for `RelayAuthMode`, `SrvdSessionParams.sideAMode` and
 > `sideBMode`, `SrvdChannel.effectiveRelayAuthMode`,
-> `SrvdChannel.relayAuthModesFor`, `SrvdChannel.sessionRelayAuthModes`,
-> `SrvdChannel.checkDaemonAnswer`,
+> `SrvdChannel.daemonRelayAuthMode`, `SrvdChannel.checkDaemonAnswer`,
 > `SrvdChannel.escrRequestedButUnreconcilable` and
 > `SshnpdChannel.knownRelayAuthSupport`. It describes behaviour, not a
 > protocol spec.
@@ -146,8 +145,9 @@ when the record is more than 7 days old, and never when the read failed. A
 record that cannot be read or decoded counts as absent; a write that fails is
 logged, and the session carries on.
 
-**The request** names `relayAuthModes` as `relayAuthModesFor` gives them for
-that answer: side A as the client's own mode, side B as the daemon's. It
+**The request** names `relayAuthModes` for that answer as a relay that
+authenticates each side by its own mode applies them: side A as the client's
+own mode, side B as the daemon's. It
 still names `relayAuthMode` and `relayAuthAesKey` as before, for a relay that
 does not read `relayAuthModes`, and its `preFetch` holds the daemon's
 `publicSigningKeyUri` from that answer.
@@ -170,8 +170,8 @@ the attempt: the session runs with legacy on side B, and the record is
 corrected.
 
 **When the relay did not apply them**, the client acts as a v5.18.0 client
-does: each side's mode comes from `sessionRelayAuthModes`, which reads the
-response's `autoDetectsRelayAuth` and the live ping, and the client sends its
+does: each side's mode comes from the response's `autoDetectsRelayAuth` and
+the live ping, and the client sends its
 auth-modes notification when the relay auto-detects. A contradicted record
 ends no attempt here; the record is corrected.
 
