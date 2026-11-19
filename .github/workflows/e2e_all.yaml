@@ -58,6 +58,8 @@ jobs:
           mkdir -p /tmp/e2e_all
 
       - name: Execute tests/e2e_all/scripts/main.sh
+        env:
+          relayLogFile: /tmp/ve_srvd/srvd.log
         run: |
           echo "Test started at: $(date)"
           start_time=$(date +%s)
@@ -80,6 +82,7 @@ jobs:
         if: always()
         run: |
           tests/tools/ve/stop_srvd.sh
+          cp /tmp/ve_srvd/srvd.log /tmp/e2e_all/srvd.log || true
 
       - name: Teardown VE
         if: always()
