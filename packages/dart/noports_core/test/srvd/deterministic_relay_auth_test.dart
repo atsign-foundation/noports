@@ -628,6 +628,33 @@ void main() {
     expect(srvd.allocations, 1, reason: 'the control: with a key it is served');
   });
 
+  test('A request whose relayAuthModes names ESCR for side A only, with no'
+      ' relayAuthAesKey, is refused before any port is allocated', () async {
+    await startRelay();
+    final String id = Uuid().v4();
+    await send(
+      fields(
+        id: id,
+        relayAuthMode: RelayAuthMode.payload,
+        relayAuthModes: {'sideA': 'escr', 'sideB': 'payload'},
+      ),
+    );
+
+    expect(srvd.allocations, 0, reason: 'no ports are allocated');
+    expect(
+      nackFor(id)?.value,
+      contains('relayAuthAesKey is required when a side authenticates'),
+      reason: 'the NACK says why',
+    );
+
+    await request(
+      relayAuthMode: RelayAuthMode.payload,
+      withKey: true,
+      relayAuthModes: {'sideA': 'escr', 'sideB': 'payload'},
+    );
+    expect(srvd.allocations, 1, reason: 'the control: with a key it is served');
+  });
+
   group('A request without relayAuthModes is applied to both sides', () {
     for (final (String relayAuthMode, String key, String mode) in [
       ('payload', 'no relayAuthAesKey', 'legacy'),
@@ -857,6 +884,46 @@ void main() {
       await expectRelayed(client, daemon);
     },
   );
+
+  test('A daemon socket that has begun a legacy envelope keeps legacy when the'
+      ' client then says ESCR', () async {
+    await startRelay();
+    final s = await request(
+      relayAuthMode: RelayAuthMode.payload,
+      withKey: true,
+    );
+    final client = await connect(s, sideA: true);
+    await answerChallenge(s, client, sideA: true);
+    final daemon = await connect(s, sideA: false);
+    await until(
+      () => s.verifierB.waitingSockets == 1,
+      what: 'the daemon socket waiting',
+    );
+    final String signed = envelope(s, sideA: false);
+    final int half = signed.length ~/ 2;
+    daemon.socket.write(signed.substring(0, half));
+    await settle();
+
+    await authModes(session: s, sideB: 'escr');
+    await until(
+      () => s.verifierB.knownMode == RelayAuthMode.escr,
+      what: "the client's word reaching side B",
+    );
+    await settle();
+    expect(
+      daemon.received,
+      isEmpty,
+      reason: 'a socket that has begun its envelope is sent no challenge',
+    );
+
+    daemon.send(signed.substring(half));
+    await expectRelayed(client, daemon);
+    expect(
+      daemon.text,
+      startsWith('relayed '),
+      reason: 'the socket is verified as legacy',
+    );
+  });
 
   test('A daemon socket whose first byte is neither silence nor an envelope is'
       ' refused', () async {
@@ -1110,5 +1177,22 @@ void main() {
     );
     await pumpEventQueue();
     expect(startSent(id), isFalse, reason: 'no session starts on 443');
+  });
+
+  test('A 443 request that names legacy for side A is refused', () async {
+    await startRelay(bind443: true);
+    final String id = await request443({'sideA': 'payload', 'sideB': 'escr'});
+
+    expect(
+      nackFor(id)?.value,
+      contains('relayAuthModes may not name "payload" on port 443'),
+      reason: 'the NACK says why',
+    );
+    expect(responseTo(id), isNull, reason: 'the client is sent no ports');
+    expect(
+      srvd.sessions.containsKey(id),
+      isFalse,
+      reason: 'no session is recorded',
+    );
   });
 }

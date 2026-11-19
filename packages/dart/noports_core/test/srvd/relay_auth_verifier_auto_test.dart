@@ -180,6 +180,59 @@ void main() {
       verify(() => mockSocket.destroy()).called(1);
     });
 
+    test('refuses a socket that sends more than maxAuthBufferLength bytes'
+        ' before a line', () async {
+      final int cap = RelayAuthVerifier.maxAuthBufferLength;
+      RelayAuthVerifierAuto verifier() => RelayAuthVerifierAuto(
+            'auto sideB',
+            MockRelayAuthVerifyHelper(),
+            atSign: '@alice',
+            sessionId: Uuid().v4(),
+            isSideA: false,
+            dataToVerify: 'x',
+            rvdNonce: 'x',
+            publicKey: legacyPublicKey,
+          );
+      Uint8List bytes(int n) => Uint8List(n)..fillRange(0, n, 0x61);
+      final written = <String>[];
+
+      late void Function(Uint8List) feedAtCap;
+      final atCap = makeMockSocket(
+        written: written,
+        onData: (fn) => feedAtCap = fn,
+      );
+      unawaited(verifier()
+          .verifySocketAuth(atCap)
+          .then((_) {}, onError: (_) {}));
+      feedAtCap(Uint8List.fromList(utf8.encode('{')));
+      feedAtCap(bytes(cap - 1));
+      await pumpEventQueue();
+      verifyNever(() => atCap.destroy());
+
+      late void Function(Uint8List) feedOver;
+      final over = makeMockSocket(
+        written: written,
+        onData: (fn) => feedOver = fn,
+      );
+      final Future<Object> outcome = verifier()
+          .verifySocketAuth(over)
+          .then<Object>((_) => 'verified', onError: (Object e) => e);
+      feedOver(Uint8List.fromList(utf8.encode('{')));
+      feedOver(bytes(cap));
+
+      final Object result = await outcome.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => 'still waiting',
+      );
+      expect(
+        result.toString(),
+        contains('Too much data from client (more than $cap bytes)'),
+        reason: 'a socket past the cap is refused',
+      );
+      verify(() => over.destroy()).called(1);
+      expect(written, isEmpty, reason: 'an unchallenged peer reads nothing');
+    });
+
     test('a failed LEGACY envelope is refused without writing to the peer',
         () async {
       final rvdNonce = DateTime.now().toIso8601String();
