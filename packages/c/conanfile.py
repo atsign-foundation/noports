@@ -8,7 +8,7 @@ from conan.tools.files import get
 
 class at_cRecipe(ConanFile):
     name = "noports"
-    version = "1.1.2"
+    version = "1.2.0"
     package_type = "application"
 
     # Optional metadata
@@ -45,3 +45,11 @@ class at_cRecipe(ConanFile):
 
     def requirements(self):
         self.requires("at_c/0.4.2")
+        self.requires("mbedtls/3.6.7", override=True)
+        self.requires("libcurl/8.23.0")
+
+    def configure(self):
+        # Select mbedtls backend and disable openssl
+        self.options["libcurl"].with_ssl = "mbedtls"
+        # Disable zlib / compression support
+        self.options["libcurl"].with_zlib = False

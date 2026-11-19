@@ -1,4 +1,4 @@
-## 1.1.2
+## 1.2.0
 
 - fix: sshnpd backs off 1, 2, 4, 8, 16 then 30 s between monitor reconnect
   attempts, counting one whose connection the atServer drops at once as
@@ -32,6 +32,7 @@
 - build(deps): bump atsdk to at_c v0.4.2, so a connect that fails part-way
   releases its TLS socket and fd instead of leaking them on every retry
   (at_c#735, #3082)
+- build(deps): Bump libcurl to 8.23.0
 
 ## 1.1.1
 
