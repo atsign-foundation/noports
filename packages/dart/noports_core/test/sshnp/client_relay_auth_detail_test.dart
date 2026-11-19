@@ -292,7 +292,11 @@ void main() {
     final watch = Stopwatch()..start();
 
     expect(
-      await channel.knownRelayAuthSupport().timeout(const Duration(seconds: 5)),
+      await channel.knownRelayAuthSupport().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () =>
+            fail('the client was still reading after five seconds'),
+      ),
       isNull,
       reason: 'a read that never answers gives no answer',
     );
@@ -315,10 +319,10 @@ void main() {
       await channel.knownRelayAuthSupport();
       await pingAnswered(w, channel, pingResponse(escr: true));
 
-      await expectLater(
-        channel.refreshPingRecord().timeout(const Duration(seconds: 2)),
-        completes,
-        reason: 'the client waits for the write no longer than its bound',
+      await channel.refreshPingRecord().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () =>
+            fail('the client waits for the write no longer than its bound'),
       );
       expect(w.writes, hasLength(1), reason: 'the client tried to write');
     },
@@ -339,6 +343,11 @@ void main() {
       await pingAnswered(w, channel, pingResponse(escr: true));
       await channel.refreshPingRecord();
 
+      expect(
+        w.writes,
+        hasLength(1),
+        reason: 'the client rewrites a record that cannot be decoded',
+      );
       expect(
         DaemonPingRecord.decode(w.records[pingRecordKeyOf()]).support,
         escrWithKey,

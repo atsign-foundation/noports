@@ -712,6 +712,10 @@ void main() {
             await w.answerPing(c, pingResponse(escr: liveEscr));
             final Object? thrown = await outcome.timeout(
               const Duration(seconds: 10),
+              onTimeout: () => fail(
+                '${c.name} did not end the attempt, and sent the daemon'
+                ' ${w.sentTo(c.daemonRequestKey).length} session requests',
+              ),
             );
 
             expect(
