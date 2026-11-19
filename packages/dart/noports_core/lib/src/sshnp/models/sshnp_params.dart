@@ -149,7 +149,7 @@ abstract class ClientParamsBase implements ClientParams {
     // The 443 single-port relay multiplexes both sides onto one port and
     // identifies each from its authenticated payload, so both sides must
     // authenticate. General ESCR sessions do NOT require this: the relay
-    // auto-detects and verifies each socket independently, so one side may
+    // verifies each socket independently, so one side may
     // authenticate with ESCR while the other does not authenticate at all.
     if (only443 && (!authenticateClientToRvd || !authenticateDeviceToRvd)) {
       throw ArgumentError(
