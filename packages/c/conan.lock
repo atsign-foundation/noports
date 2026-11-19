@@ -1,11 +1,20 @@
 {
-    "version": "0.5",
-    "requires": [
-        "mbedtls/3.6.7#22f77b8f8a238f8f519183cc1a6d9a20%1784897548.9733994",
-        "cjson/1.7.19#0f1d9770c2c7898029ef69e0df621838%1757507235.3264372",
-        "at_c/0.4.2#8f33a205bf0da128decaa712fadf9225%1794881581.431485"
+  "version": "0.5",
+  "requires": [
+    "mbedtls/3.6.7#22f77b8f8a238f8f519183cc1a6d9a20%1784897548.9733994",
+    "libcurl/8.23.0#5a41dd743c6e91c90947d09d9b4cde99%1794898064.129",
+    "cjson/1.7.19#0f1d9770c2c7898029ef69e0df621838%1757507235.3264372",
+    "at_c/0.4.2#8f33a205bf0da128decaa712fadf9225%1795008359.8260994"
+  ],
+  "build_requires": [],
+  "python_requires": [],
+  "overrides": {
+    "mbedtls/3.6.7": [
+      "mbedtls/3.6.7"
     ],
-    "build_requires": [],
-    "python_requires": [],
-    "config_requires": []
+    "mbedtls/3.5.0": [
+      "mbedtls/3.6.7"
+    ]
+  },
+  "config_requires": []
 }

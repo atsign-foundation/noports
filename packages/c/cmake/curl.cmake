@@ -15,8 +15,8 @@ if(NOT TARGET CURL::libcurl)
   else()
     FetchContent_Declare(
       curl
-      URL https://github.com/curl/curl/releases/download/curl-8_22_0/curl-8.22.0.tar.xz
-      URL_HASH SHA256=f7ef3ae8a22e521f289803fe93543eb64c329b58aa73a9e224dfd915a2a5f4f7
+      URL https://github.com/curl/curl/releases/download/curl-8_23_0/curl-8.23.0.tar.xz
+      URL_HASH SHA256=8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5
     )
   endif()
 
@@ -52,7 +52,20 @@ if(NOT TARGET CURL::libcurl)
     set(CURL_DISABLE_INSTALL ON)
     set(CURL_ENABLE_EXPORT_TARGET OFF)
     set(PICKY_COMPILER OFF)
-    set(HTTP_ONLY ON)
+    set(CURL_DISABLE_DICT ON)
+    set(CURL_DISABLE_FILE ON)
+    set(CURL_DISABLE_FTP ON)
+    set(CURL_DISABLE_GOPHER ON)
+    set(CURL_DISABLE_IMAP ON)
+    set(CURL_DISABLE_IPFS ON)
+    set(CURL_DISABLE_LDAP ON)
+    set(CURL_DISABLE_LDAPS ON)
+    set(CURL_DISABLE_MQTT ON)
+    set(CURL_DISABLE_POP3 ON)
+    set(CURL_DISABLE_RTSP ON)
+    set(CURL_DISABLE_SMTP ON)
+    set(CURL_DISABLE_TELNET ON)
+    set(CURL_DISABLE_TFTP ON)
     set(CURL_DISABLE_ALTSVC ON)
     set(CURL_DISABLE_COOKIES ON)
     set(CURL_DISABLE_HSTS ON)
