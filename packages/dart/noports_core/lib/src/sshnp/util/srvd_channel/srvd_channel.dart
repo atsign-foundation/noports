@@ -86,9 +86,11 @@ abstract class SrvdChannel<T>
   ///   and is ESCR-only on every relay version (it rejects a legacy payload), so
   ///   the 443 path always uses ESCR regardless of the rest.
   /// - [prescribed]: the caller explicitly chose [preference] (CLI/config/API),
-  ///   so honor it verbatim on both sides — overriding the progressive gate.
-  ///   ESCR here is validated up front by requiring the daemon feature, so an
-  ///   incapable daemon is a hard error rather than a silent fallback.
+  ///   which overrides the progressive gate, except that a peer that cannot do
+  ///   ESCR is given legacy. A relay that applies the request's ESCR to both
+  ///   sides refuses that peer's socket at connect; the sessions a relay that
+  ///   does not auto-detect can never reconcile are rejected up front by
+  ///   [escrRequestedButUnreconcilable].
   /// - [autoDetect]: a relay that does NOT auto-detect applies one session-wide
   ///   mode to both sockets — we declared the universally-safe legacy mode in
   ///   request_ports, so both sides use it (ESCR would break a peer that can't

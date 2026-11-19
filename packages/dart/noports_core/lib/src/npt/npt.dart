@@ -288,9 +288,11 @@ class _NptImpl extends NptBase
 
     sendProgress('Required daemon features are supported');
 
-    // Reject an explicit --relay-auth-mode escr this session cannot honour (a
-    // non-auto-detecting relay + a non-ESCR daemon can never agree). Every other
-    // explicit-ESCR case degrades gracefully. See sshnp_core.initialize.
+    // Reject up front a session whose daemon must do ESCR but cannot: the 443
+    // path, or an explicit --relay-auth-mode escr through a relay that does not
+    // auto-detect. With any other explicit ESCR such a daemon is told to use
+    // legacy, and a relay that applies the request's ESCR to both sides refuses
+    // its socket at connect. See sshnp_core.initialize.
     if (SrvdChannel.escrRequestedButUnreconcilable(
       explicitEscr: params.relayAuthModeExplicit &&
           params.relayAuthMode == RelayAuthMode.escr,
