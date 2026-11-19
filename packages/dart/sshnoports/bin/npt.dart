@@ -299,8 +299,8 @@ void main(List<String> args) async {
             ' so there both use legacy. Passing "escr" explicitly uses ESCR on'
             " the client's side with every relay, and errors with a relay"
             ' before v5.18.0 when the daemon cannot do ESCR. "payload" is the'
-            ' legacy mode, on both sides. With --443 both sides use ESCR'
-            ' whatever this says. Alias: --ram',
+            ' legacy mode, on both sides. With --443 both sides use ESCR, and'
+            ' "payload" is refused. Alias: --ram',
         allowed: RelayAuthMode.values.map((c) => c.name).toList(),
         defaultsTo: RelayAuthMode.escr.name,
       );
