@@ -13,6 +13,7 @@ import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
 
 import '../../../common/features.dart';
+import 'daemon_ping_record.dart';
 
 /// enum for sshnpd acknowledgement state
 enum SshnpdAck {
@@ -59,14 +60,48 @@ abstract class SshnpdChannel
   /// [SshnpdAck.acknowledgedWithErrors].
   String? errorReceived;
 
-  /// The keystore key we are going to use to cache ping responses in local
-  /// storage.
-  /// local:cached.ping.bob.device_name.sshnp@alice
-  String get locallyCachedPingResponseKey =>
-      'local:'
-      'cached.ping.${params.sshnpdAtSign.substring(1)}.${params.device}.${DefaultArgs.namespace}'
-      '${params.clientAtSign}';
-  Map<String, dynamic>? cachedPingResponse;
+  /// The default [pingRecordTimeout].
+  static const Duration defaultPingRecordTimeout = Duration(seconds: 5);
+
+  /// How long the client's atServer keeps a ping record.
+  static const Duration pingRecordTtl = Duration(days: 30);
+
+  /// How old a ping record grows before a live ping rewrites it unchanged.
+  static const Duration pingRecordRefreshAge = Duration(days: 7);
+
+  /// How long the client waits for its own atServer to read or write the
+  /// ping record.
+  @visibleForTesting
+  Duration pingRecordTimeout = defaultPingRecordTimeout;
+
+  /// The latest live ping answer this process has had from each daemon
+  /// device, by client Atsign, daemon Atsign and device.
+  static final Map<(Atsign, Atsign, String), DaemonRelayAuthSupport>
+      _liveAnswers = {};
+
+  /// Forgets every live ping answer this process has had.
+  @visibleForTesting
+  static void forgetLiveAnswers() => _liveAnswers.clear();
+
+  (Atsign, Atsign, String) get _daemonDevice => (
+        params.clientAtSign.toAtsign(),
+        params.sshnpdAtSign.toAtsign(),
+        params.device,
+      );
+
+  /// The client's own record of this daemon device's last ping response:
+  /// `cached.ping.<daemon>.<device>.sshnp@<client>`.
+  AtKey get pingRecordKey => AtKey()
+    ..key = 'cached.ping.${params.sshnpdAtSign.toAtsign().withoutAt()}'
+        '.${params.device}'
+    ..namespace = DefaultArgs.namespace
+    ..sharedBy = params.clientAtSign.toAtsign()
+    ..metadata = (Metadata()..ttl = pingRecordTtl.inMilliseconds);
+
+  /// Whether the ping record was read, absent or not, so may be rewritten.
+  bool _pingRecordReadable = false;
+
+  DaemonPingRecord? _pingRecord;
 
   Completer acked = Completer();
 
@@ -76,14 +111,16 @@ abstract class SshnpdChannel
   /// [featureCheck] function.
   late final bool twinKeys;
 
-  /// Whether the daemon advertised support for the ESCR relay-auth mode (reads
-  /// the live ping response). Used to decide, progressively, whether the daemon
-  /// side of a session may use ESCR; false for daemons that predate it.
-  bool get daemonSupportsRelayAuthEscr {
-    final features = pingResponse?['supportedFeatures'];
-    return features is Map &&
-        features[DaemonFeature.supportsRamEscr.name] == true;
-  }
+  /// What the live ping response says about the daemon's relay
+  /// authentication; null until the daemon has answered a ping.
+  DaemonRelayAuthSupport? get liveRelayAuthSupport => pingResponse == null
+      ? null
+      : DaemonRelayAuthSupport.fromPingResponse(pingResponse!);
+
+  /// Whether the live ping response advertised the ESCR relay-auth mode; false
+  /// for daemons that predate it, and until the daemon has answered a ping.
+  bool get daemonSupportsRelayAuthEscr =>
+      liveRelayAuthSupport?.supportsRamEscr ?? false;
 
   SshnpdChannel({
     required this.atClient,
@@ -105,20 +142,82 @@ abstract class SshnpdChannel
         shouldDecrypt: true,
       ).listen(handleSshnpdResponses),
     );
+  }
 
+  /// What this process last heard live from this daemon device, or else what
+  /// its ping record on the client's own atServer says; null when neither is
+  /// known.
+  ///
+  /// Reads the record, which [refreshPingRecord] needs, waiting at most
+  /// [pingRecordTimeout]; a record that cannot be read or decoded counts as
+  /// absent.
+  Future<DaemonRelayAuthSupport?> knownRelayAuthSupport() async {
+    await _readPingRecord();
+    return _liveAnswers[_daemonDevice] ?? _pingRecord?.support;
+  }
+
+  Future<void> _readPingRecord() async {
+    final AtKey key = pingRecordKey;
+    final AtValue stored;
     try {
-      cachedPingResponse = jsonDecode(
-        (await atClient.get(
-          AtKey.fromString(locallyCachedPingResponseKey),
-        )).value,
-      );
-    } on AtKeyNotFoundException catch (_) {
-      // AtKeyNotFoundException is fine
+      stored = await atClient
+          .get(
+            key,
+            getRequestOptions: GetRequestOptions()..useRemoteAtServer = true,
+          )
+          .timeout(pingRecordTimeout);
+    } on AtKeyNotFoundException {
+      _pingRecordReadable = true;
+      return;
     } catch (e) {
-      // Any other exception is not fine, but the session can still proceed OK
       logger.warning(
-        '${e.runtimeType} $e while fetching $locallyCachedPingResponseKey',
+        'Could not read $key, so waiting for the daemon to answer its ping:'
+        ' $e',
       );
+      return;
+    }
+    _pingRecordReadable = true;
+    try {
+      _pingRecord = DaemonPingRecord.decode(stored.value);
+    } catch (e) {
+      logger.warning(
+        'Ignoring $key, which cannot be decoded, so waiting for the daemon to'
+        ' answer its ping: $e',
+      );
+    }
+  }
+
+  /// Writes the live ping answer to this daemon device's ping record on the
+  /// client's own atServer, when the record is absent or undecodable, says
+  /// something else, or is older than [pingRecordRefreshAge].
+  ///
+  /// Writes nothing when the daemon has not answered a ping, or when
+  /// [knownRelayAuthSupport] could not read the record. Waits at most
+  /// [pingRecordTimeout]; a write that fails is logged, and the session
+  /// carries on.
+  Future<void> refreshPingRecord() async {
+    final DaemonRelayAuthSupport? live = liveRelayAuthSupport;
+    if (live == null || !_pingRecordReadable) return;
+    final DaemonPingRecord? stored = _pingRecord;
+    if (stored != null &&
+        stored.support == live &&
+        DateTime.now().difference(stored.storedAt) <= pingRecordRefreshAge) {
+      return;
+    }
+    final AtKey key = pingRecordKey;
+    try {
+      final bool written = await atClient
+          .put(
+            key,
+            DaemonPingRecord(storedAt: DateTime.now(), support: live).encode(),
+            putRequestOptions: PutRequestOptions()..useRemoteAtServer = true,
+          )
+          .timeout(pingRecordTimeout);
+      if (!written) {
+        logger.warning('The atServer did not write $key');
+      }
+    } catch (e) {
+      logger.warning('Could not write $key: $e');
     }
   }
 
@@ -313,15 +412,7 @@ abstract class SshnpdChannel
     } on TimeoutException catch (_) {
       throw TimeoutException('Daemon feature check timed out');
     }
-
-    try {
-      await atClient.put(
-        AtKey.fromString(locallyCachedPingResponseKey),
-        jsonEncode(pingResponse),
-      );
-    } catch (e) {
-      logger.shout('$e while storing $locallyCachedPingResponseKey');
-    }
+    _liveAnswers[_daemonDevice] = liveRelayAuthSupport!;
 
     // If supportedFeatures was null (i.e. a response from a v4 daemon),
     // then we will assume that "acceptsPublicKeys" is true

@@ -33,6 +33,9 @@ class NoPortsHarness {
   /// [clientAtSign], [daemonAtSign] and [relayAtSign], or [atSigns] when
   /// given.
   static NoPortsHarness create({Set<String>? atSigns}) {
+    // NOTE: a client keeps each daemon device's live ping answer for the life
+    // of the process, so each harness starts as a new process would
+    SshnpdChannel.forgetLiveAnswers();
     final server = FakeAtServer();
     for (final atSign in atSigns ?? {clientAtSign, daemonAtSign, relayAtSign}) {
       server.addAtSign(atSign);
@@ -148,8 +151,9 @@ class NoPortsHarness {
   /// managed by [managerAtsigns] (with
   /// [policyAtSign] as its policy service, when given) and permitted to open
   /// [permitOpen], sharing its device info with its managers when
-  /// [makeDeviceInfoVisible]. With [advertisesEscr] false it tells
-  /// clients it predates ESCR relay authentication, as an old daemon does;
+  /// [makeDeviceInfoVisible]. With [advertisesEscr] false its ping names
+  /// neither ESCR relay authentication nor a signing key URI, as a daemon
+  /// that predates ESCR does;
   /// with [strict] it verifies each request's signature. It checks clients'
   /// enrollments every [clientKeyCheckInterval], and with
   /// [requireEnrollmentSignature] refuses requests not signed with one. With
@@ -206,6 +210,7 @@ class NoPortsHarness {
     );
     (daemon.pingResponse['supportedFeatures'] as Map)[
         DaemonFeature.supportsRamEscr.name] = advertisesEscr;
+    if (!advertisesEscr) daemon.pingResponse.remove('publicSigningKeyUri');
     await daemon.init();
     await daemon.run();
     return daemon;

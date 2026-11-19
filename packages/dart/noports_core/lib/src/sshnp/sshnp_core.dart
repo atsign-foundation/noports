@@ -9,6 +9,7 @@ import 'package:noports_core/src/common/mixins/async_initialization.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/sshnp/util/sshnp_ssh_key_handler/sshnp_ssh_key_handler.dart';
+import 'package:noports_core/src/sshnp/util/sshnpd_channel/daemon_ping_record.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/srvd_channel.dart';
 import 'package:noports_core/sshnp.dart';
@@ -117,10 +118,6 @@ abstract class SshnpCore
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
 
-    /// Send ping to the daemon to discover its supported features. Note that
-    /// we only wait for the ping response **after** we have completed our
-    /// interaction with the srvd; as a result the ping causes no increase in
-    /// overall time-to-session-started
     List<DaemonFeature> requiredFeatures = [];
     if (params.authenticateDeviceToRvd) {
       requiredFeatures.add(DaemonFeature.srAuth);
@@ -131,14 +128,8 @@ abstract class SshnpCore
     if (params.sendSshPublicKey) {
       requiredFeatures.add(DaemonFeature.acceptsPublicKeys);
     }
-    // We deliberately do NOT require DaemonFeature.supportsRamEscr here: an
-    // auto-detecting relay authenticates each side by its own mode, so a daemon
-    // that cannot do ESCR simply uses legacy on its own side — no ping-gated
-    // wait, no abort. An explicit --relay-auth-mode escr also tells such a
-    // daemon to use legacy; a relay that applies the request's ESCR to both
-    // sides refuses it at connect, and the non-auto-detecting relay case is
-    // rejected below, once both the relay response and the ping have
-    // resolved.
+    // NOTE: not DaemonFeature.supportsRamEscr: a daemon that cannot do ESCR
+    // uses legacy on its own side
     sendProgress('Sending daemon feature check request');
 
     Future<List<(DaemonFeature feature, bool supported, String reason)>>
@@ -146,10 +137,12 @@ abstract class SshnpCore
       requiredFeatures,
       timeout: params.daemonPingTimeout,
     );
-    // NOTE: awaited only after the relay step. A failure before then, or one
-    // never awaited because an earlier step threw, must not go unhandled; the
-    // await below still sees it.
+    // NOTE: may be awaited only after the relay step. A failure before then,
+    // or one never awaited because an earlier step threw, must not go
+    // unhandled; the await below still sees it.
     featureCheckFuture.ignore();
+    final Future<DaemonRelayAuthSupport?> knownFuture =
+        sshnpdChannel.knownRelayAuthSupport();
 
     /// Set the remote username to use for the ssh session
     sendProgress('Resolving remote username for user session');
@@ -167,10 +160,13 @@ abstract class SshnpCore
     }
     await sshnpdChannel.sharePublicKeyIfRequired(identityKeyPair);
 
-    if (sshnpdChannel.cachedPingResponse != null) {
-      srvdChannel.cachedDaemonPublicSigningKeyUri =
-          sshnpdChannel.cachedPingResponse!['publicSigningKeyUri'];
+    final DaemonRelayAuthSupport? known = await knownFuture;
+    if (known == null) {
+      sendProgress('Waiting for daemon feature check response');
+      await featureCheckFuture;
     }
+    srvdChannel.daemonRelayAuthSupport =
+        known ?? sshnpdChannel.liveRelayAuthSupport;
 
     /// Retrieve the srvd host and port pair
     sendProgress('Fetching host and port from srvd');
@@ -181,18 +177,15 @@ abstract class SshnpCore
     List<(DaemonFeature, bool, String)> features = await featureCheckFuture;
     sendProgress('Received daemon feature check response');
 
+    await sshnpdChannel.refreshPingRecord();
+    srvdChannel.checkDaemonAnswer(sshnpdChannel.liveRelayAuthSupport);
+
     await Future.delayed(Duration(milliseconds: 1));
     for (final (DaemonFeature _, bool supported, String reason) in features) {
       if (!supported) throw SshnpError(reason);
     }
     sendProgress('Required daemon features are supported');
 
-    // Reject an explicit --relay-auth-mode escr that this session genuinely
-    // cannot honour: a non-auto-detecting relay applies one mode to both sockets
-    // (and ignores the definitive-auth-modes hint), so if the daemon also cannot
-    // do ESCR the two ends can never agree. Fail fast with a clear message
-    // rather than a mid-connect handshake failure. A relay that applies the
-    // request's ESCR to both sides refuses such a daemon at connect instead.
     if (SrvdChannel.escrRequestedButUnreconcilable(
       explicitEscr: params.relayAuthModeExplicit &&
           params.relayAuthMode == RelayAuthMode.escr,
@@ -209,11 +202,6 @@ abstract class SshnpCore
       );
     }
 
-    // The daemon ping has now resolved, so we know which relay-auth mode each
-    // side will use. Tell the relay definitively (before the daemon session
-    // request is sent, below); a relay whose request left side B's mode open
-    // waits for it before challenging the daemon's socket. No-op against a
-    // relay that doesn't auto-detect.
     await srvdChannel.sendDefinitiveAuthModes(
       daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
     );

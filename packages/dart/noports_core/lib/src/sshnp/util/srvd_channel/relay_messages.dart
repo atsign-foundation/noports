@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:noports_core/sshnp_foundation.dart';
+import 'package:noports_core/src/srvd/srvd_session_params.dart'
+    show RelayAuthModes;
 
 class RelayResponse {
   final String address;
@@ -63,6 +65,10 @@ class RelayRequest {
   final bool authenticateSocketB;
   final String clientNonce;
   final RelayAuthMode relayAuthMode;
+
+  /// Each side's mode, which a relay that reads it applies in place of
+  /// [relayAuthMode].
+  final RelayAuthModes relayAuthModes;
   final String? relayAuthAesKey;
   final bool only443;
   final bool multipleAcksOk;
@@ -77,6 +83,7 @@ class RelayRequest {
     required this.authenticateSocketB,
     required this.clientNonce,
     required this.relayAuthMode,
+    required this.relayAuthModes,
     required this.relayAuthAesKey,
     required this.only443,
     required this.multipleAcksOk,
@@ -92,6 +99,10 @@ class RelayRequest {
     'authenticateSocketB': authenticateSocketB,
     'clientNonce': clientNonce,
     'relayAuthMode': relayAuthMode.name,
+    'relayAuthModes': {
+      'sideA': relayAuthModes.sideA.name,
+      'sideB': relayAuthModes.sideB.name,
+    },
     'relayAuthAesKey': relayAuthAesKey,
     'only443': only443,
     'multipleAcksOk': multipleAcksOk,
