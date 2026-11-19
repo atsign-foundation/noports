@@ -245,6 +245,80 @@ void main() {
     },
   );
 
+  group('A ping answer is taken only from this device of this daemon', () {
+    const String thisDevice = 'ab';
+    for (final (String sender, String key, String from, bool taken) in [
+      (
+        'this device of this daemon',
+        '$clientAtSign:heartbeat.$thisDevice.sshnp$daemonAtSign',
+        daemonAtSign,
+        true,
+      ),
+      (
+        "another device of this daemon whose name ends in this one's",
+        '$clientAtSign:heartbeat.heartbeat_$thisDevice.sshnp$daemonAtSign',
+        daemonAtSign,
+        false,
+      ),
+      (
+        "another daemon whose Atsign begins with this one's",
+        '$clientAtSign:heartbeat.$thisDevice.sshnp${daemonAtSign}by',
+        '${daemonAtSign}by',
+        false,
+      ),
+    ]) {
+      test(sender, () async {
+        final w = newWorld();
+        final channel = channelIn(w, device: thisDevice);
+        final Future<Object?> check = channel
+            .featureCheck([
+              DaemonFeature.srAuth,
+            ], timeout: const Duration(milliseconds: 500))
+            .then((_) => null, onError: (Object e) => e);
+
+        w.deliverAs(
+          key,
+          from: from,
+          value: jsonEncode(pingResponse(escr: true)),
+        );
+
+        expect(
+          await check,
+          taken ? isNull : isA<TimeoutException>(),
+          reason: taken
+              ? 'the ping takes an answer from $sender'
+              : 'the ping takes no answer from $sender',
+        );
+      });
+    }
+
+    test("a key that runs on past this daemon's Atsign does not reach the "
+        'ping', () {
+      final w = newWorld();
+      final channel = channelIn(w, device: thisDevice);
+      channel.featureCheck([
+        DaemonFeature.srAuth,
+      ], timeout: const Duration(milliseconds: 100)).ignore();
+
+      expect(
+        w.subscriptionsReached(
+          '$clientAtSign:heartbeat.$thisDevice.sshnp$daemonAtSign',
+        ),
+        1,
+        reason: "this daemon's heartbeat reaches the ping",
+      );
+      expect(
+        w.subscriptionsReached(
+          '$clientAtSign:heartbeat.$thisDevice.sshnp${daemonAtSign}by',
+        ),
+        0,
+        reason:
+            "only a key that ends with this daemon's Atsign reaches the "
+            'ping',
+      );
+    });
+  });
+
   group('The live answer kept for the process is keyed by client, daemon and '
       'device together', () {
     for (final (String other, String client, String daemon, String device) in [

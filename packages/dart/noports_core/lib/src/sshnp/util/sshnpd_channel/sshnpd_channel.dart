@@ -440,13 +440,12 @@ abstract class SshnpdChannel
   Future<Map<String, dynamic>> ping() async {
     Completer<Map<String, dynamic>> completer = Completer();
 
+    final String heartbeatKey = 'heartbeat.${params.device}'
+        '.${DefaultArgs.namespace}${params.sshnpdAtSign.toAtsign()}';
     late final StreamSubscription<AtNotification> subscription;
     subscription = track(
       subscribe(
-        regex:
-            'heartbeat'
-            '.${params.device}'
-            '.${DefaultArgs.namespace}',
+        regex: '${RegExp.escape(heartbeatKey)}\$',
         shouldDecrypt: true,
       ).listen((notification) {
         logger.info(

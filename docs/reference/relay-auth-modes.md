@@ -135,6 +135,9 @@ ESCR support, in this order, from:
    ping response the session fails with the ping timeout, and the relay is
    never asked.
 
+A ping answer counts only when it comes from the daemon Atsign under that
+device's own key, `heartbeat.<device>.sshnp@<daemon>`, matched in full.
+
 **The record** is `cached.ping.<daemon Atsign, without @>.<device>.sshnp`,
 owned by the client Atsign, with a 30-day ttl. Its value is
 `{"storedAt", "supportsRamEscr", "publicSigningKeyUri"}` and nothing else. The

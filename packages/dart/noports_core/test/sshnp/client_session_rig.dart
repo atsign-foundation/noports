@@ -221,6 +221,26 @@ class ClientWorld {
     _notifications.deliver(notification);
   }
 
+  /// Delivers a notification from [from] under [key], holding [value].
+  void deliverAs(String key, {required String from, required String value}) =>
+      _deliver(
+        key,
+        AtNotification(
+          'as-${log.length}',
+          key,
+          from,
+          clientAtSign,
+          DateTime.now().millisecondsSinceEpoch,
+          'update',
+          false,
+          value: value,
+        ),
+      );
+
+  /// How many of the client's subscriptions a notification under [key] would
+  /// reach.
+  int subscriptionsReached(String key) => _notifications.reached(key);
+
   /// Once [client] has sent a ping this has not answered, its daemon answers
   /// it with [response].
   Future<void> answerPing(
@@ -355,6 +375,9 @@ class _FakeNotifications implements NotificationService {
   }) => _subscriptions
       .putIfAbsent(regex!, () => StreamController.broadcast())
       .stream;
+
+  int reached(String key) =>
+      _subscriptions.keys.where((regex) => RegExp(regex).hasMatch(key)).length;
 
   void deliver(AtNotification notification) {
     _subscriptions.forEach((regex, controller) {

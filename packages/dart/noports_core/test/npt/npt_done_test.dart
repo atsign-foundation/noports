@@ -282,7 +282,7 @@ void main() {
           notifications.controllers.keys,
           unorderedEquals([
             '${npt.sessionId}.${npt.namespace}@device\$',
-            'heartbeat.test_device.sshnp',
+            r'heartbeat\.test_device\.sshnp@device$',
             '${npt.sessionId}.${Srvd.namespace}@',
           ]),
           reason:
