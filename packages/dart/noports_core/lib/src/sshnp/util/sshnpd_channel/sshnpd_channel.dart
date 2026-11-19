@@ -69,6 +69,10 @@ abstract class SshnpdChannel
   /// How old a ping record grows before a live ping rewrites it unchanged.
   static const Duration pingRecordRefreshAge = Duration(days: 7);
 
+  /// How far ahead of this clock a ping record's time may be, for clock skew,
+  /// before a live ping rewrites it unchanged.
+  static const Duration pingRecordClockSkew = Duration(minutes: 5);
+
   /// How long the client waits for its own atServer to read or write the
   /// ping record.
   @visibleForTesting
@@ -198,7 +202,8 @@ abstract class SshnpdChannel
 
   /// Writes the live ping answer to this daemon device's ping record on the
   /// client's own atServer, when the record is absent or undecodable, says
-  /// something else, or is older than [pingRecordRefreshAge].
+  /// something else, is older than [pingRecordRefreshAge], or was stored more
+  /// than [pingRecordClockSkew] ahead of this clock.
   ///
   /// Writes nothing when the daemon has not answered a ping, or when the
   /// record could not be read. Waits for the record's read and then its
@@ -210,10 +215,9 @@ abstract class SshnpdChannel
     await _recordRead;
     if (!_pingRecordReadable) return;
     final DaemonPingRecord? stored = _pingRecord;
-    if (stored != null &&
-        stored.support == live &&
-        DateTime.now().difference(stored.storedAt) <= pingRecordRefreshAge) {
-      return;
+    if (stored != null && stored.support == live) {
+      final Duration age = DateTime.now().difference(stored.storedAt);
+      if (age <= pingRecordRefreshAge && age >= -pingRecordClockSkew) return;
     }
     final AtKey key = pingRecordKey;
     try {

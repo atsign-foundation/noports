@@ -144,8 +144,9 @@ owned by the client Atsign, with a 30-day ttl. Its value is
 `{"storedAt", "supportsRamEscr", "publicSigningKeyUri"}` and nothing else. The
 client reads and writes it on the atServer, not in local storage, and waits
 at most 5 seconds for either. After a live ping it writes the record when
-there is none, when `supportsRamEscr` or `publicSigningKeyUri` changed, or
-when the record is more than 7 days old, and never when the read failed. A
+there is none, when `supportsRamEscr` or `publicSigningKeyUri` changed, when
+the record is more than 7 days old, or when its `storedAt` is more than 5
+minutes ahead of the client's clock, and never when the read failed. A
 record that cannot be read or decoded counts as absent; a write that fails is
 logged, and the session carries on.
 

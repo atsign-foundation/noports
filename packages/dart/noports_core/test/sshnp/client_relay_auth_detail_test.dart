@@ -431,6 +431,31 @@ void main() {
     },
   );
 
+  group('A record stored ahead of this clock', () {
+    for (final (String how, Duration ahead, bool rewritten) in [
+      ('by a day is rewritten', const Duration(days: 1), true),
+      ('by a minute is not rewritten', const Duration(minutes: 1), false),
+    ]) {
+      test(how, () async {
+        final w = newWorld();
+        w.records[pingRecordKeyOf()] = pingRecord(escr: true, age: -ahead);
+        final channel = channelIn(w);
+
+        await channel.knownRelayAuthSupport();
+        await pingAnswered(w, channel, pingResponse(escr: true));
+        await channel.refreshPingRecord();
+
+        expect(
+          w.writes,
+          hasLength(rewritten ? 1 : 0),
+          reason: rewritten
+              ? 'a record stored beyond the clock skew allowance is rewritten'
+              : 'a record stored within the clock skew allowance is kept',
+        );
+      });
+    }
+  });
+
   test(
     'a record that cannot be decoded is rewritten from the live ping',
     () async {
