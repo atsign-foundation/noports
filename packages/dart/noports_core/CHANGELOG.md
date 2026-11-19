@@ -9,10 +9,25 @@
   `relayAuthModes` is malformed or that names ESCR for a side with no
   `relayAuthAesKey`
 - **BREAKING CHANGE**: `SrvdParams` no longer takes `relayAuthDetectWindowMs`
-- **BREAKING CHANGE**: a v5.18.x client given `--relay-auth-mode escr` fails at
-  connect when its daemon authenticates to the relay but cannot do ESCR
-- **BREAKING CHANGE**: a v5.18.x client's default session with a daemon that
-  can do ESCR fails if its auth_modes notification does not reach srvd in time
+- **BREAKING CHANGE**: against this srvd, a v5.18.0 to v5.18.2 client given
+  `--relay-auth-mode escr` fails at connect when its daemon authenticates to
+  the relay but cannot do ESCR
+- **BREAKING CHANGE**: against this srvd, a v5.18.0 to v5.18.2 client's default
+  session with a daemon that can do ESCR fails if its auth_modes notification
+  does not reach srvd in time
+- feat: npt, sshnp and NoPorts Desktop name both sides' relay auth modes in
+  `relayAuthModes`, so against this srvd `--relay-auth-mode escr` with a
+  daemon that can't do ESCR uses ESCR on the client's side and legacy on the
+  daemon's, and a session no longer waits on the `auth_modes` notification
+- feat: the client records each daemon device's ping answer on its own
+  atServer for 30 days; with no record, it waits for the daemon's ping before
+  asking srvd for ports
+- feat: an attempt whose daemon's relay auth support has changed since it was
+  last seen fails before the daemon is sent its session request, and the next
+  attempt uses the new answer
+- **BREAKING CHANGE**: removed `SshnpdChannel.cachedPingResponse`,
+  `SshnpdChannel.locallyCachedPingResponseKey` and
+  `SrvdChannel.cachedDaemonPublicSigningKeyUri`
 - feat: `SrvdParams.telemetryCollectorAtsign` (`--telemetry-collector-atsign`)
   sends srvd's session telemetry to a collector Atsign
 - feat: `SrvdParams.reportedSigningKeyCheckSecs`
