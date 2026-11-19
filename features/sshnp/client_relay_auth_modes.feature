@@ -1,20 +1,22 @@
 Feature: The client tells the relay both sides' relay auth modes when it asks for ports
   npt, sshnp and NoPorts Desktop name both sides' relay auth modes in
   request_ports, in relayAuthModes. The client takes the daemon's ESCR support
-  from a record of the daemon's last ping response on the client's own
-  atServer; without one, it waits for the live ping before asking the relay.
-  The live ping still runs on every session. When it contradicts the record
-  in a way that matters, the client corrects the record and fails that
-  attempt before the daemon is asked for anything; the next attempt uses the
-  live answer.
+  from the answer this process last heard live from the daemon or, without
+  one, from a record of the daemon's last ping response on the client's own
+  atServer; with neither, it waits for the live ping before asking the relay.
+  The live ping still runs on every session that pings the daemon, as every
+  npt and NoPorts Desktop session does. When it contradicts the answer the
+  request was built from in a way that matters, the client corrects the record
+  and fails that attempt before the daemon is sent its session request; the
+  next attempt uses the live answer.
 
-  @race: the live ping and the relay request overlap only when a record
-  exists. A contradiction between them ends the attempt before the daemon
-  request is sent. Two of the client's installations writing the record at once both
-  write a recent response.
+  @race: the live ping and the relay request overlap only when the client
+  already holds an answer, live or recorded. A contradiction between them ends
+  the attempt before the daemon request is sent. Two of the client's
+  installations writing the record at once both write a recent response.
   @replay: a record older than the daemon's current state is caught by the
-  live ping on the same session. That the live ping reply carries no nonce
-  predates this feature.
+  live ping on the same session, whenever the session pings the daemon. That
+  the live ping reply carries no nonce predates this feature.
   @dos: a contradicted record costs one abandoned relay session, whose ports
   the relay releases at its own limit. A record is written at most once a week
   per daemon device unless the daemon's answer changes.
@@ -23,7 +25,8 @@ Feature: The client tells the relay both sides' relay auth modes when it asks fo
   every session the record affects. The live ping is accepted only from the
   daemon's Atsign, as before.
   @impersonation: the record is keyed by the daemon's Atsign and device name,
-  so one daemon's answer never decides another's mode.
+  and a ping answer is taken only from that device's own heartbeat, so one
+  daemon's answer never decides another's mode.
 
   Scenario: With no record, the client asks the relay only after the ping returns
     Given no ping record for the device on the client's atServer
