@@ -10,8 +10,8 @@ expectedDaemonRelayAuthMode() {
   local typeAndVersion="$1"
   case "$typeAndVersion" in
   d:current | c:current) echo "ESCR" ;;
-  d:*)
-    if [[ $(versionIsLessThan "$typeAndVersion" "d:5.10.0") == "true" ]]; then
+  d:* | c:*)
+    if [[ $(versionIsLessThan "$typeAndVersion" "d:5.10.0 c:1.1.0") == "true" ]]; then
       echo "LEGACY"
     else
       echo "ESCR"
@@ -32,18 +32,24 @@ countSettledByWindow() {
   grep -F "RelayAuthVerifierAuto ($2 $3)" "$1" | grep -c -F "assuming ESCR"
 }
 
-# Checks one side of a session: at least one socket verified, all of them in
-# the expected mode. checkSide <relayLog> <sessionId> <side> <expectedMode>
+# Prints how many of one side's sockets failed verification.
+countFailed() {
+  grep -F "RelayAuthVerifierAuto ($2 $3)" "$1" | grep -c -F "auto verification FAILED"
+}
+
+# Checks one side of a session: at least one socket verified, every one in
+# the expected mode, none failed. checkSide <relayLog> <sessionId> <side> <expectedMode>
 checkSide() {
   local relayLog="$1" sessionId="$2" side="$3" expected="$4"
   local other="ESCR"
   [[ "$expected" == "ESCR" ]] && other="LEGACY"
-  local expectedCount otherCount windowCount
+  local expectedCount otherCount failedCount windowCount
   expectedCount=$(countVerified "$relayLog" "$sessionId" "$side" "$expected")
   otherCount=$(countVerified "$relayLog" "$sessionId" "$side" "$other")
+  failedCount=$(countFailed "$relayLog" "$sessionId" "$side")
   windowCount=$(countSettledByWindow "$relayLog" "$sessionId" "$side")
-  logInfo "    relay verified $side of $sessionId: $expectedCount by $expected, $otherCount by $other; $windowCount settled by the detection window"
-  if ((expectedCount < 1 || otherCount > 0)); then
+  logInfo "    relay verified $side of $sessionId: $expectedCount by $expected, $otherCount by $other, $failedCount failed; $windowCount settled by the detection window"
+  if ((expectedCount < 1 || otherCount > 0 || failedCount > 0)); then
     logError "    $side of session $sessionId was not verified by $expected alone"
     return 1
   fi
@@ -76,12 +82,12 @@ checkRelayAuthModes() {
     return 1
   fi
 
-  for _ in {1..10}; do
+  for _ in {1..4}; do
     if (($(countVerified "$relayLog" "$sessionId" sideA ESCR) + $(countVerified "$relayLog" "$sessionId" sideA LEGACY) > 0)) &&
       (($(countVerified "$relayLog" "$sessionId" sideB ESCR) + $(countVerified "$relayLog" "$sessionId" sideB LEGACY) > 0)); then
       break
     fi
-    sleep 1
+    sleep 0.5
   done
 
   checkSide "$relayLog" "$sessionId" sideA ESCR || return 1

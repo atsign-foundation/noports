@@ -32,7 +32,7 @@ exitStatus=1
 maxAttempts=5
 attempts=0
 
-while ((exitStatus != 0 && exitStatus != 50 && attempts < maxAttempts)); do
+while ((exitStatus != 0 && exitStatus != 50 && exitStatus != 52 && attempts < maxAttempts)); do
   rm -f "$daemonLogFragmentName"
   touch "$daemonLogFragmentName"
   if ((attempts > 0)); then

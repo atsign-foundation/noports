@@ -58,11 +58,10 @@ nptCommand="$baseNptCommand $extraFlags --verbose"
 # 1. Execute the npt command - its output is the port that npt is using
 echo "$(iso8601Date) | Executing $nptCommand"
 nptStderrFile="$(getBaseFileName "$testToRun" "$daemonVersion" "$clientVersion").npt.err"
-nptPort=$($nptCommand 2>"$nptStderrFile")
+nptPort=$($nptCommand 2> >(tee "$nptStderrFile" >&2))
 
 # 2. Check the exit status
 nptExitStatus=$?
-cat "$nptStderrFile" >&2
 if ((nptExitStatus != 0)); then
   # Kill the daemon log tail, and exit with the exit status of the npt command
   kill "$tailPid"
@@ -89,7 +88,7 @@ ps -ef | grep "srv " | grep "$nptPort"
 # 4. Check the modes the relay verified each side in
 if ((sshExitStatus == 0)) && [[ "$clientVersion" == "d:current" ]]; then
   if [[ -n "$relayLogFile" ]]; then
-    checkRelayAuthModes "$nptStderrFile" "$daemonVersion" "$relayLogFile" || sshExitStatus=1
+    checkRelayAuthModes "$nptStderrFile" "$daemonVersion" "$relayLogFile" || sshExitStatus=52
   else
     logInfo "    relay auth modes not checked: relayLogFile is not set"
   fi
