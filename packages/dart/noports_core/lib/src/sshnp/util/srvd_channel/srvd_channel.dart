@@ -9,8 +9,6 @@ import 'package:noports_core/src/common/mixins/subscription_tracking.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/sshnp/util/srvd_channel/relay_messages.dart';
 import 'package:noports_core/src/sshnp/util/sshnpd_channel/daemon_ping_record.dart';
-import 'package:noports_core/src/srvd/srvd_session_params.dart'
-    show RelayAuthModes;
 import 'package:noports_core/srv.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:noports_core/sshnp.dart';

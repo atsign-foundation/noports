@@ -1,8 +1,6 @@
 import 'dart:convert';
 
 import 'package:noports_core/sshnp_foundation.dart';
-import 'package:noports_core/src/srvd/srvd_session_params.dart'
-    show RelayAuthModes;
 
 class RelayResponse {
   final String address;

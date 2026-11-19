@@ -62,3 +62,7 @@ enum RelayAuthMode {
   /// encrypted signed response to explicit challenge
   escr,
 }
+
+/// The relay auth mode of each side of a session, as a session request names
+/// them in its `relayAuthModes`.
+typedef RelayAuthModes = ({RelayAuthMode sideA, RelayAuthMode sideB});

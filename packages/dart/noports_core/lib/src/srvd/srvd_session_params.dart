@@ -27,10 +27,6 @@ class SrvdRequestRefused implements Exception {
       : 'a session whose id is not a UUID: $reason';
 }
 
-/// The relay auth mode of each side of a session, as a session request names
-/// them in its `relayAuthModes`.
-typedef RelayAuthModes = ({RelayAuthMode sideA, RelayAuthMode sideB});
-
 /// One session as srvd relays it, between a client-side and a device-side
 /// Atsign.
 class SrvdSessionParams {
