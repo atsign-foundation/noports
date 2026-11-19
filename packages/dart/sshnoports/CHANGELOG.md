@@ -4,6 +4,13 @@
 
 ## v5.18.3
 
+* feat: srvd decides each side's relay auth mode from what the client told it,
+  never from a timing window, so slow legacy clients and daemons are no longer
+  refused; `--relay-auth-detect-window-ms` has no effect
+* BREAKING CHANGE: against this srvd, a v5.18.x client given
+  `--relay-auth-mode escr` fails at connect when its daemon authenticates to
+  the relay but cannot do ESCR, and a v5.18.x client's default session with an
+  ESCR daemon fails if its auth_modes notification does not arrive in time
 * build: take socket_connector 2.7.0, so a tunnel connection closes once data
   has waited two minutes for one of its ends to read it, and a closing
   connection ends within 30 seconds even when an end has stopped reading
