@@ -45,3 +45,4 @@ class at_cRecipe(ConanFile):
 
     def requirements(self):
         self.requires("at_c/0.4.2")
+        self.requires("libcurl/8.23.0")

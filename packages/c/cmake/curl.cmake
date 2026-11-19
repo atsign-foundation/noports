@@ -15,8 +15,8 @@ if(NOT TARGET CURL::libcurl)
   else()
     FetchContent_Declare(
       curl
-      URL https://github.com/curl/curl/releases/download/curl-8_22_0/curl-8.22.0.tar.xz
-      URL_HASH SHA256=f7ef3ae8a22e521f289803fe93543eb64c329b58aa73a9e224dfd915a2a5f4f7
+      URL https://github.com/curl/curl/releases/download/curl-8_23_0/curl-8.23.0.tar.xz
+      URL_HASH SHA256=8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5
     )
   endif()
 
