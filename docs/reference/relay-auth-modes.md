@@ -156,9 +156,11 @@ does not read `relayAuthModes`, and its `preFetch` holds the daemon's
 uses the mode the request named: the client authenticates its own socket by
 side A's, tells the daemon side B's, and sends no auth-modes notification.
 The live ping can still contradict the answer the request was built from.
-`checkDaemonAnswer` ends the attempt when the request named ESCR for side B
-and the live ping gives legacy, or, under an explicit `--relay-auth-mode`,
-when the two give side B different modes. The client first corrects the
+When the daemon authenticates to the relay, `checkDaemonAnswer` ends the
+attempt if the request named ESCR for side B and the live ping gives legacy,
+or, under an explicit `--relay-auth-mode`, if the two give side B different
+modes. A daemon that does not authenticate to the relay uses no side B mode,
+so its answer ends nothing. The client first corrects the
 record, then fails the attempt before the daemon is asked for anything,
 saying the daemon's relay auth support changed since it was last seen. The
 relay releases the abandoned session's ports at its 30-second limit. The

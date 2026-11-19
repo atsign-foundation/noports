@@ -195,11 +195,16 @@ abstract class SrvdChannel<T>
   /// Throws [SshnpError] when the daemon's [live] ping answer means this
   /// attempt must end before the daemon is asked for anything.
   ///
-  /// That is only when the relay applied the request's modes, and the side B
-  /// mode [live] gives is legacy where the request named ESCR or, under an
-  /// explicit relay-auth mode, differs at all from what the request named.
+  /// That is only when the daemon authenticates to the relay, the relay
+  /// applied the request's modes, and the side B mode [live] gives is legacy
+  /// where the request named ESCR or, under an explicit relay-auth mode,
+  /// differs at all from what the request named.
   void checkDaemonAnswer(DaemonRelayAuthSupport? live) {
-    if (live == null || !relayResponse.appliedRelayAuthModes) return;
+    if (live == null ||
+        !params.authenticateDeviceToRvd ||
+        !relayResponse.appliedRelayAuthModes) {
+      return;
+    }
     final RelayAuthModes now = _modes(
       autoDetect: true,
       daemonSupportsEscr: live.supportsRamEscr,

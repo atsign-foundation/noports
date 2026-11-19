@@ -456,6 +456,33 @@ void main() {
     }
   });
 
+  test('a daemon that does not authenticate to the relay never has the attempt '
+      'end over its relay auth support', () async {
+    for (final make in clients) {
+      final w = newWorld();
+      w.records[pingRecordKeyOf()] = pingRecord(escr: true);
+      final c = make(w, authenticateDeviceToRvd: false);
+      final outcome = c.start();
+
+      await w.answerRelay(c, applied: true);
+      await w.answerPing(c, pingResponse(escr: false));
+      final Object? thrown = await w.finish(c, outcome);
+
+      expect(
+        '$thrown',
+        isNot(contains('relay auth support changed')),
+        reason:
+            '${c.name} ignores the relay auth support of a daemon that '
+            'does not authenticate to the relay',
+      );
+      expect(
+        w.sentTo(c.daemonRequestKey),
+        isNotEmpty,
+        reason: '${c.name} asks the daemon',
+      );
+    }
+  });
+
   test('a relay that neither applied relayAuthModes nor auto-detects is sent '
       'no auth_modes notification', () async {
     for (final make in clients) {
