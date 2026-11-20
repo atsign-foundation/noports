@@ -40,6 +40,7 @@ static struct {
   bool authenticated;
   bool reset;     // the atServer dropped this connection while it sat idle
   bool slow_pkam; // the atServer takes longer than the read timeout to answer the next pkam:
+  bool unreachable; // the network, or the atServer, is down: nothing connects
   int connects;
   int updates_stored;
 } srv;
@@ -79,6 +80,9 @@ int atclient_tls_socket_connect(struct atclient_tls_socket *socket, const char *
   (void)socket;
   (void)host;
   (void)port;
+  if (srv.unreachable) {
+    return 1;
+  }
   srv.connects++;
   srv.authenticated = false;
   srv.reset = false;
@@ -258,6 +262,16 @@ int main(void) {
   check(srv.connects == connects_before + 1,
         "when a reconnect of the worker has failed, then the connection it was made on is dropped and one new connection "
         "replaces it");
+
+  printf("\n--- the atServer drops the connection, and can't be reached for the next two refreshes\n");
+  srv.reset = true;
+  srv.unreachable = true;
+  int stored_before = srv.updates_stored;
+  check(refresh_device_info() != 0 && refresh_device_info() != 0 && srv.updates_stored == stored_before,
+        "when the atServer can't be reached, then each refresh fails");
+  srv.unreachable = false;
+  check(refresh_device_info() == 0 && srv.updates_stored == stored_before + 1,
+        "when the atServer can be reached again, then the next refresh reconnects and @bob's device info is stored");
 
   if (failures > 0) {
     printf("%d check(s) failed\n", failures);

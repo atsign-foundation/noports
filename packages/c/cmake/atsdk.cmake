@@ -16,7 +16,7 @@ if(NOT atsdk_FOUND)
       # Replace with the v0.4.3 tag commit once it is tagged.
       # at_c v0.4.3: a re-authentication that fails closes its connection and
       # keeps the connection's hooks (at_c#737) on top of v0.4.2
-      GIT_TAG 88c0d91d3ac8776183a425e923dd12ca0c44631f
+      GIT_TAG 6507d49bb3305bb143dbb9c48a161a833b8a29e8
     )
   endif()
   FetchContent_MakeAvailable(atsdk)
