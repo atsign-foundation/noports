@@ -1,0 +1,90 @@
+name: Arduino platform update
+
+# The ESP32-P4 firmware builds on pioarduino's platform-espressif32, which is
+# installed from a GitHub release zip named in platformio.ini. Dependabot has
+# no PlatformIO ecosystem and can't see that pin, so this does its job for it:
+# when a newer release of the arduino-esp32 3.x line appears, it opens a PR
+# moving the pin, and the Arduino Firmware workflow builds it.
+#
+# Only 3.x (tags NN.03.*) is followed. 4.x (NN.04.*) is on Mbed TLS 4, which
+# at_client does not build against yet.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  INI: packages/arduino/packages/NoPorts_PoE/platformio.ini
+  UPSTREAM: pioarduino/platform-espressif32
+
+jobs:
+  check:
+    if: github.repository == 'atsign-foundation/noports'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # a PR opened with the default token doesn't run workflows, and
+          # the build is the point of opening it
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
+
+      - name: Open a PR if a newer 3.x platform release exists
+        env:
+          GH_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # NN.03.NNN or NN.03.NNN-N and nothing else: the tag goes into a
+          # file, a branch name and a commit message
+          tag_re='^[0-9]{2}\.03\.[0-9]+(-[0-9]+)?$'
+
+          current=$(sed -nE "s#^platform = https://github.com/${UPSTREAM}/releases/download/([^/]+)/platform-espressif32\.zip\$#\1#p" "$INI")
+          if ! [[ "$current" =~ $tag_re ]]; then
+            echo "::error::no 3.x pin of ${UPSTREAM} found in ${INI} (found '${current}')"
+            exit 1
+          fi
+
+          latest=$(gh api "repos/${UPSTREAM}/releases?per_page=100" \
+            --jq '.[] | select(.prerelease == false and .draft == false) | .tag_name' \
+            | grep -E "$tag_re" | sort -V | tail -1)
+          if [ -z "$latest" ]; then
+            echo "::error::no 3.x release of ${UPSTREAM} found"
+            exit 1
+          fi
+
+          newest=$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -1)
+          if [ "$latest" = "$current" ] || [ "$newest" != "$latest" ]; then
+            echo "Pinned to ${current}; newest 3.x release is ${latest}. Nothing to do."
+            exit 0
+          fi
+
+          branch="build/pioarduino-platform-${latest}"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            echo "Branch ${branch} already exists. Nothing to do."
+            exit 0
+          fi
+
+          sed -i -E "s#(releases/download/)${current//./\\.}(/platform-espressif32\.zip)#\1${latest}\2#" "$INI"
+          git diff --exit-code --quiet -- "$INI" && { echo "::error::the pin was not changed"; exit 1; }
+
+          git config user.name 'library-action[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$branch"
+          git commit -m "build(deps): Bump pioarduino platform-espressif32 from ${current} to ${latest}" -- "$INI"
+          git push origin "$branch"
+
+          {
+            echo "Moves the ESP32-P4 firmware's platform pin from \`${current}\` to \`${latest}\`, the newest release of the arduino-esp32 3.x line."
+            echo
+            echo "Release notes: https://github.com/${UPSTREAM}/releases/tag/${latest}"
+            echo
+            echo "Opened by the Arduino platform update workflow. The \`NoPorts_PoE-esp32p4\` job on this PR is the check that the firmware still builds."
+          } > "$RUNNER_TEMP/body.md"
+          gh pr create --base "${{ github.event.repository.default_branch }}" --head "$branch" \
+            --title "build(deps): Bump pioarduino platform-espressif32 from ${current} to ${latest}" \
+            --body-file "$RUNNER_TEMP/body.md"
