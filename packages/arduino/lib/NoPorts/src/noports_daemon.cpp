@@ -2967,6 +2967,17 @@ bool NoPortsDaemon::_reconnectWorker() {
       if (_reconnect_failures < 255) _reconnect_failures++;
       NOPORTS_LOGW(TAG, "Worker reconnect failed (%d/%d consecutive atServer connection failures)",
                    _reconnect_failures, NOPORTS_MAX_RECONNECT_FAILURES);
+      // An attempt that failed after its TLS connect leaves the connection
+      // open (at_client up to 1.0.2), and the atServer may yet send the reply
+      // the attempt stopped waiting for. A notify sent on it would read that
+      // reply as its own, and report a response delivered that the atServer
+      // refused. Close it, so that whatever uses the worker next fails
+      // cleanly, and have the main loop reconnect on its next pass whichever
+      // caller this attempt was made for.
+      _freeAtServerConnection(worker);
+      atclient_free(worker);
+      atclient_init(worker);
+      _worker_check_due = true;
       return false;
     }
     NOPORTS_LOGI(TAG, "Worker reconnect succeeded after atServer address refresh");
