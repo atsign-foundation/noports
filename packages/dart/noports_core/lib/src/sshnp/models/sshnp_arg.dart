@@ -396,13 +396,15 @@ class SshnpArg {
     help:
         'The authentication mode to use when authenticating to the relay.'
         ' "escr" (encrypted signed challenge response) is strongest and is the'
-        ' default: it is used wherever the whole path supports it, while older'
-        ' relays/daemons fall back to legacy and the relay auto-detects each'
-        ' side. Passing "escr" EXPLICITLY forces ESCR wherever the path supports'
-        ' it - the daemon side degrades to legacy if it cannot do ESCR, which an'
-        ' auto-detecting relay reconciles - and errors only when the relay does'
-        ' not auto-detect AND the daemon cannot do ESCR. "payload" is the legacy'
-        ' mode. Alias: --ram',
+        ' default: the client names ESCR for its own side, and for the'
+        " daemon's side when the daemon supports ESCR, otherwise legacy, and a"
+        ' relay from v5.18.0 authenticates each side by its own mode. A relay'
+        ' before v5.18.0 applies one mode to both sides, so there both use'
+        ' legacy. Passing "escr" explicitly uses ESCR on the client\'s side'
+        ' with every relay, and errors with a relay before v5.18.0 when the'
+        ' daemon cannot do ESCR. "payload" is the legacy mode, on both sides.'
+        ' With --443 both sides use ESCR, and "payload" is refused.'
+        ' Alias: --ram',
     defaultsTo: 'escr',
     allowed: ['payload', 'escr'],
     // allowed: RelayAuthMode.values.map((c) => c.name).toList(),

@@ -6,11 +6,25 @@ import 'package:at_chops/at_chops.dart';
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/npt.dart';
 import 'package:noports_core/srvd.dart';
+import 'package:noports_core/src/sshnp/util/sshnpd_channel/daemon_ping_record.dart';
 import 'package:socket_connector/socket_connector.dart';
 import 'package:test/test.dart';
 
+/// The client's own record of `@device`'s `test_device`, so a startup asks the
+/// relay without waiting for the daemon's ping.
+const _pingRecordKey = 'cached.ping.device.test_device.sshnp@alice';
+
+final _pingRecord = DaemonPingRecord(
+  storedAt: DateTime.now(),
+  support: const DaemonRelayAuthSupport(
+    supportsRamEscr: true,
+    publicSigningKeyUri: null,
+  ),
+).encode();
+
 /// Minimal stand-in - these tests only exercise the startup failure path, so
-/// the only calls that must succeed are the ones [NptBase]'s constructor makes.
+/// the only calls that must succeed are the ones [NptBase]'s constructor makes,
+/// and the read of the daemon's ping record.
 class _FailingAtClient implements AtClient {
   AtClientPreference _preference = AtClientPreference()
     ..rootDomain = 'root.atsign.org';
@@ -32,6 +46,15 @@ class _FailingAtClient implements AtClient {
   NotificationService get notificationService =>
       fakeNotificationService ??
       noSuchMethod(Invocation.getter(#notificationService));
+
+  @override
+  Future<AtValue> get(
+    AtKey key, {
+    bool isDedicated = false,
+    GetRequestOptions? getRequestOptions,
+  }) async => key.toString() == _pingRecordKey
+      ? (AtValue()..value = _pingRecord)
+      : throw UnimplementedError('get $key is not available');
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>
@@ -81,7 +104,9 @@ class _StartableAtClient extends _FailingAtClient {
     AtKey key, {
     bool isDedicated = false,
     GetRequestOptions? getRequestOptions,
-  }) async => throw AtKeyNotFoundException('$key does not exist');
+  }) async => key.toString() == _pingRecordKey
+      ? (AtValue()..value = _pingRecord)
+      : throw AtKeyNotFoundException('$key does not exist');
 
   @override
   Future<bool> put(
@@ -257,7 +282,7 @@ void main() {
           notifications.controllers.keys,
           unorderedEquals([
             '${npt.sessionId}.${npt.namespace}@device\$',
-            'heartbeat.test_device.sshnp',
+            r'heartbeat\.test_device\.sshnp@device$',
             '${npt.sessionId}.${Srvd.namespace}@',
           ]),
           reason:
