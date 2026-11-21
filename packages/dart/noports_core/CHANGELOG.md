@@ -8,6 +8,9 @@
 - fix: srvd refuses at once, before allocating ports, a request whose
   `relayAuthModes` is malformed or that names ESCR for a side with no
   `relayAuthAesKey`
+- fix: `RelayAuthVerifierESCR`, `RelayAuthVerifierLegacy` and
+  `RelayAuthVerifierAuto` fail `verifySocketAuth` at once, and destroy the
+  socket, when it closes or errors before authenticating
 - **BREAKING CHANGE**: `SrvdParams` no longer takes `relayAuthDetectWindowMs`
 - **BREAKING CHANGE**: against this srvd, a v5.18.0 to v5.18.2 client given
   `--relay-auth-mode escr` fails at connect when its daemon authenticates to
