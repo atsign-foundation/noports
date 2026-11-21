@@ -59,10 +59,6 @@ class SrvdImpl
   @override
   final int localBindPort443;
 
-  /// Window (ms) the auto-detecting relay auth verifiers wait for a connecting
-  /// side to speak (legacy) before assuming ESCR and issuing a challenge.
-  final int relayAuthDetectWindowMs;
-
   /// How often to re-check that the signing keys each live session's ESCR
   /// sockets were accepted with haven't been withdrawn; [Duration.zero] turns
   /// the check off, [reportedSigningKeyCheckInterval]'s included.
@@ -186,7 +182,6 @@ class SrvdImpl
     required this.verbose,
     required this.bind443,
     required this.localBindPort443,
-    required this.relayAuthDetectWindowMs,
     required this.signingKeyCheckInterval,
     this.reportedSigningKeyCheckInterval =
         defaultReportedSigningKeyCheckInterval,
@@ -256,7 +251,6 @@ class SrvdImpl
         verbose: p.verbose,
         bind443: p.bind443,
         localBindPort443: p.localBindPort443,
-        relayAuthDetectWindowMs: p.relayAuthDetectWindowMs,
         signingKeyCheckInterval: Duration(seconds: p.signingKeyCheckSecs),
         reportedSigningKeyCheckInterval:
             Duration(seconds: p.reportedSigningKeyCheckSecs),
@@ -879,11 +873,15 @@ class SrvdImpl
     );
   }
 
-  /// A requesting client, having learnt (via the daemon ping) which relay-auth
-  /// mode each side of its session will use, sends this so the relay can skip
-  /// the auto-detect window (see [Srvd] / RelayAuthVerifierAuto). Best-effort:
-  /// if it arrives after a socket has already connected, that socket falls back
-  /// to auto-detect. Only the session's requester (side A) may send it.
+  /// A requesting client names side B's relay auth mode in this
+  /// notification once it has learnt, from the daemon ping, which mode the
+  /// daemon will use. The relay gives that mode to every side B socket still
+  /// waiting for one, and to every later one, when the session's request left
+  /// side B's mode to the client (a payload request carrying a
+  /// relayAuthAesKey, and no relayAuthModes). The rest is ignored and, where
+  /// it differs from what the request set, logged: side A's mode always, and
+  /// side B's when the request set it. Only the session's requester (side A)
+  /// may send it.
   ///
   /// Several relay instances share this atSign and all receive this
   /// notification, but only one is actually handling the session — the one
@@ -934,35 +932,56 @@ class SrvdImpl
       return;
     }
 
+    final Map<String, RelayAuthMode?> named = {};
     for (final String side in ['sideA', 'sideB']) {
       final Object? mode = decoded[side];
-      if (mode != null && !RelayAuthMode.values.any((m) => m.name == mode)) {
+      final RelayAuthMode? m =
+          mode is String ? RelayAuthMode.values.asNameMap()[mode] : null;
+      if (mode != null && m == null) {
         logger.warning(
           'auth_modes from ${n.from} for $id names no relay auth mode'
           ' for $side; ignoring',
         );
         return;
       }
+      named[side] = m;
     }
 
-    final SendPort? toWorker = si.toWorker;
-    if (toWorker == null) {
-      logger.info(
-        'auth_modes: no worker isolate for session $id'
-        ' (only443 sessions do not auto-detect)',
+    for (final (String side, RelayAuthMode? applied) in [
+      ('sideA', si.params.sideAMode),
+      ('sideB', si.params.sideBMode),
+    ]) {
+      final RelayAuthMode? m = named[side];
+      if (applied != null && m != null && m != applied) {
+        logger.warning(
+          'auth_modes from ${n.from} for $id names ${m.name} for $side,'
+          ' whose mode the request set to ${applied.name}; ignoring it',
+        );
+      }
+    }
+
+    if (si.params.sideBMode != null) return;
+    final RelayAuthMode? sideB = named['sideB'];
+    if (sideB == null) {
+      logger.warning(
+        'auth_modes from ${n.from} for $id names no mode for sideB, which'
+        ' waits for one; ignoring it',
       );
       return;
     }
 
-    toWorker.send(
-      IIRequest.create('auth_modes', {
-        'sideA': decoded['sideA'],
-        'sideB': decoded['sideB'],
-      }),
-    );
+    final SendPort? toWorker = si.toWorker;
+    if (toWorker == null) {
+      logger.warning(
+        'auth_modes from ${n.from} for $id: no worker isolate to give side B'
+        ' ${sideB.name}; ignoring it',
+      );
+      return;
+    }
+
+    toWorker.send(IIRequest.create('auth_modes', {'sideB': sideB.name}));
     logger.info(
-      'Forwarded definitive auth modes for $id to worker:'
-      ' sideA=${decoded['sideA']} sideB=${decoded['sideB']}',
+      'Forwarded side B auth mode for $id to worker: ${sideB.name}',
     );
   }
 
@@ -1367,7 +1386,6 @@ class SrvdImpl
       BuildEnv.enableSnoop && logTraffic,
       verbose,
       sessionParams.sessionId,
-      relayAuthDetectWindowMs,
     );
 
     logger.info(
@@ -1386,7 +1404,6 @@ class SrvdImpl
         logTraffic: connectorParams.$2,
         verbose: connectorParams.$3,
         loggingTag: connectorParams.$4,
-        relayAuthDetectWindowMs: connectorParams.$5,
       );
 
       await worker.run();

@@ -25,9 +25,9 @@ class DefaultArgs {
   static const bool encryptRvdTraffic = true;
 
   /// Default relay auth mode. ESCR (the strongest) is the default: the relay
-  /// auto-detects each side's mode, so a client can use its best without
-  /// knowing the daemon's capabilities in advance. Legacy remains available as
-  /// an explicit override (`--relay-auth-mode payload`).
+  /// authenticates each side by its own mode, so a client can use its best
+  /// without knowing the daemon's capabilities in advance. Legacy remains
+  /// available as an explicit override (`--relay-auth-mode payload`).
   static const RelayAuthMode relayAuthMode = RelayAuthMode.escr;
 
   /// How long a daemon or relay holds the lock that makes one instance of

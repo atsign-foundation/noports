@@ -110,7 +110,9 @@ mixin SrvdUtilMixin {
   /// [ArgumentError] when it is not a map with a string sessionId. Once the
   /// session id is read, throws [SrvdRequestRefused] when a field is missing
   /// or malformed, naming the field and why, including when the session id
-  /// is not a UUID, or atSignA or atSignB is not a valid Atsign.
+  /// is not a UUID, atSignA or atSignB is not a valid Atsign, relayAuthModes
+  /// does not name a relay auth mode for both sides, or a side whose mode is
+  /// ESCR has no relayAuthAesKey.
   SrvdSessionParams srvdSessionParamsFromJson(String encodedJson) {
     final Object? json = jsonDecode(encodedJson);
     if (json is! Map || json['sessionId'] is! String) {
@@ -160,13 +162,21 @@ mixin SrvdUtilMixin {
     final RelayAuthMode relayAuthMode =
         RelayAuthMode.values.asNameMap()[relayAuthModeName] ??
             refuse('Parameter relayAuthMode must name a relay auth mode');
+    final RelayAuthModes? relayAuthModes =
+        switch (optional<Map>('relayAuthModes', 'a map')) {
+      null => null,
+      final Map named => (
+          sideA: _namedMode(named, 'sideA', refuse),
+          sideB: _namedMode(named, 'sideB', refuse),
+        ),
+    };
     final List preFetch =
         optional<List>('preFetch', 'a list of strings') ?? const [];
     if (preFetch.any((e) => e is! String)) {
       refuse('Parameter preFetch must be a list of strings');
     }
 
-    return SrvdSessionParams(
+    final params = SrvdSessionParams(
       sessionId: sessionId,
       sessionIdAsSent: json['sessionId'] as String,
       atSignA: atSignA,
@@ -177,19 +187,47 @@ mixin SrvdUtilMixin {
       clientNonce: clientNonce,
       relayAuthMode: relayAuthMode,
       relayAuthAesKey: optional<String>('relayAuthAesKey', 'a String'),
+      relayAuthModes: relayAuthModes,
       only443: optional<bool>('only443', 'a bool') ?? false,
       multipleAcksOk: optional<bool>('multipleAcksOk', 'a bool') ?? false,
       preFetch: List<String>.from(preFetch),
       sendJsonResponse: optional<bool>('sendJsonResponse', 'a bool') ?? false,
     );
+    if (params.relayAuthAesKey == null &&
+        (params.sideAMode == RelayAuthMode.escr ||
+            params.sideBMode == RelayAuthMode.escr)) {
+      refuse(
+        'Parameter relayAuthAesKey is required for a side whose mode is'
+        ' ESCR',
+      );
+    }
+    return params;
   }
 
-  /// [params] with the public key of each side that authenticates, when the
-  /// session is in payload mode; [params] itself otherwise. ESCR sessions
-  /// look their signing keys up at socket-auth time instead.
+  static RelayAuthMode _namedMode(
+    Map named,
+    String side,
+    Never Function(String) refuse,
+  ) {
+    final Object? name = named[side];
+    if (name == null) {
+      refuse('Parameter relayAuthModes must name a mode for $side');
+    }
+    return (name is String ? RelayAuthMode.values.asNameMap()[name] : null) ??
+        refuse('Parameter relayAuthModes must name a relay auth mode for'
+            ' $side');
+  }
+
+  /// [params] with the public key of each side that authenticates and may
+  /// authenticate by legacy: a side whose mode is legacy, or is left to the
+  /// client; [params] itself when there is none. An ESCR side looks its
+  /// signing key up at socket-auth time instead.
   Future<SrvdSessionParams> withPayloadKeys(SrvdSessionParams params) async {
-    if (params.relayAuthMode != RelayAuthMode.payload ||
-        !(params.authenticateSocketA || params.authenticateSocketB)) {
+    final bool fetchA = params.authenticateSocketA &&
+        params.sideAMode != RelayAuthMode.escr;
+    final bool fetchB = params.authenticateSocketB &&
+        params.sideBMode != RelayAuthMode.escr;
+    if (!(fetchA || fetchB)) {
       return params;
     }
     return SrvdSessionParams(
@@ -199,16 +237,13 @@ mixin SrvdUtilMixin {
       atSignB: params.atSignB,
       authenticateSocketA: params.authenticateSocketA,
       authenticateSocketB: params.authenticateSocketB,
-      publicKeyA: params.authenticateSocketA
-          ? await _fetchPublicKey(params.atSignA)
-          : null,
-      publicKeyB: params.authenticateSocketB
-          ? await _fetchPublicKey(params.atSignB)
-          : null,
+      publicKeyA: fetchA ? await _fetchPublicKey(params.atSignA) : null,
+      publicKeyB: fetchB ? await _fetchPublicKey(params.atSignB) : null,
       rvdNonce: params.rvdNonce,
       clientNonce: params.clientNonce,
       relayAuthMode: params.relayAuthMode,
       relayAuthAesKey: params.relayAuthAesKey,
+      relayAuthModes: params.relayAuthModes,
       only443: params.only443,
       multipleAcksOk: params.multipleAcksOk,
       preFetch: params.preFetch,
@@ -230,9 +265,10 @@ mixin SrvdUtilMixin {
           portB: portB,
           rvdNonce: sessionParams.rvdNonce,
           supportsEventLogging: true,
-          // This srvd auto-detects each socket's relay-auth mode per side, so
-          // clients may safely use their strongest mode independently.
+          // NOTE: a client sends auth_modes, which a side the request left
+          // to it waits for, only when this is true.
           autoDetectsRelayAuth: true,
+          appliedRelayAuthModes: sessionParams.relayAuthModes != null,
         ),
       );
     } else {

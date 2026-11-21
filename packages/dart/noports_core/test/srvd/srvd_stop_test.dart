@@ -5,8 +5,6 @@ import 'dart:isolate';
 import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart'
@@ -29,7 +27,6 @@ class _CountingSrvd extends SrvdImpl {
           verbose: false,
           bind443: false,
           localBindPort443: 0,
-          relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
           signingKeyCheckInterval: const Duration(milliseconds: 10),
         );
 
@@ -71,7 +68,6 @@ void main() {
         verbose: false,
         bind443: bind443,
         localBindPort443: localBindPort443,
-        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         signingKeyCheckInterval: defaultSigningKeyCheckInterval,
       );
 
@@ -80,6 +76,7 @@ void main() {
         atSignA: '@alice',
         atSignB: '@bob',
         rvdNonce: 'rvd nonce',
+        relayAuthModes: null,
         only443: false,
         multipleAcksOk: true,
         preFetch: const [],

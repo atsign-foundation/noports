@@ -9,8 +9,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
 import 'package:noports_core/src/srvd/session_info.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:test/test.dart';
@@ -36,7 +34,6 @@ class AnsweringSrvd extends SrvdImpl {
           verbose: false,
           bind443: false,
           localBindPort443: 0,
-          relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
           signingKeyCheckInterval: Duration.zero,
         );
 
@@ -63,7 +60,6 @@ class RecordingSrvd extends SrvdImpl {
           verbose: false,
           bind443: false,
           localBindPort443: 443,
-          relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
           signingKeyCheckInterval: Duration.zero,
         );
 
@@ -106,6 +102,7 @@ void main() {
             'authenticateSocketA': false,
             'authenticateSocketB': false,
             'relayAuthMode': RelayAuthMode.escr.name,
+            'relayAuthAesKey': 'relay auth key',
           }),
         );
 
@@ -182,6 +179,7 @@ void main() {
           atSignA: '@alice',
           atSignB: '@device',
           rvdNonce: 'rvd nonce',
+          relayAuthModes: null,
           only443: false,
           multipleAcksOk: true,
           preFetch: const [],
@@ -280,6 +278,7 @@ void main() {
           atSignA: '@bob',
           atSignB: '@device',
           rvdNonce: 'rvd nonce',
+          relayAuthModes: null,
           only443: false,
           multipleAcksOk: true,
           preFetch: const [],
@@ -384,6 +383,7 @@ void main() {
       String atSignB = '@bob',
       bool multipleAcksOk = false,
       String id = sessionId,
+      RelayAuthMode relayAuthMode = RelayAuthMode.escr,
     }) async {
       await srvd.handleRequestPorts(AtNotification(
         'notif-id',
@@ -400,7 +400,8 @@ void main() {
           'clientNonce': 'client nonce',
           'authenticateSocketA': false,
           'authenticateSocketB': false,
-          'relayAuthMode': RelayAuthMode.escr.name,
+          'relayAuthMode': relayAuthMode.name,
+          'relayAuthAesKey': 'relay auth key',
           'only443': false,
           'multipleAcksOk': multipleAcksOk,
         }),
@@ -545,7 +546,10 @@ void main() {
       final toWorker = <Object?>[];
       srvd.portPair.listen(toWorker.add);
 
-      await request(srvd, id: upper, multipleAcksOk: true);
+      await request(srvd,
+          id: upper,
+          multipleAcksOk: true,
+          relayAuthMode: RelayAuthMode.payload);
 
       expect(upper, isNot(sessionId), reason: 'the id has letters to fold');
       expect(srvd.sessions.keys, [sessionId]);

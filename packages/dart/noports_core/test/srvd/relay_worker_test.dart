@@ -20,7 +20,6 @@ void main() {
       logTraffic: false,
       verbose: false,
       loggingTag: 'relay worker test',
-      relayAuthDetectWindowMs: 500,
     );
     addTearDown(() {
       worker.fromMain.close();
@@ -36,6 +35,7 @@ void main() {
       rvdNonce: 'rvd nonce',
       relayAuthMode: RelayAuthMode.escr,
       relayAuthAesKey: 'relay auth key',
+      relayAuthModes: null,
       only443: false,
       multipleAcksOk: true,
       preFetch: [],
@@ -57,7 +57,6 @@ void main() {
       logTraffic: false,
       verbose: false,
       loggingTag: 'relay worker test',
-      relayAuthDetectWindowMs: 500,
     );
     addTearDown(() {
       worker.fromMain.close();
@@ -74,6 +73,7 @@ void main() {
       rvdNonce: 'rvd nonce',
       relayAuthMode: RelayAuthMode.payload,
       publicKeyA: keyPair.atPublicKey.publicKey,
+      relayAuthModes: null,
       only443: false,
       multipleAcksOk: true,
       preFetch: [],

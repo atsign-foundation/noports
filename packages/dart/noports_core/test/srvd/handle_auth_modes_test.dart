@@ -5,8 +5,6 @@ import 'dart:isolate';
 
 import 'package:at_client/at_client.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
@@ -39,13 +37,14 @@ void main() {
       verbose: false,
       bind443: false,
       localBindPort443: 443,
-      relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
       signingKeyCheckInterval: Duration.zero,
     );
 
-    /// Registers a session owned by this relay instance, wiring [toWorker] to a
-    /// [ReceivePort] we can inspect. [rvdNonce] is the nonce this instance
-    /// generated; [toWorker] null models the only443 path (no worker isolate).
+    /// Registers a session owned by this relay instance, requested in payload
+    /// mode with a relayAuthAesKey so that side B's mode is left to the
+    /// client, wiring [toWorker] to a [ReceivePort] we can inspect.
+    /// [rvdNonce] is the nonce this instance generated; [toWorker] null
+    /// models a session with no worker isolate.
     void registerSession({
       String rvdNonce = relayRvdNonce,
       bool withWorker = true,
@@ -58,6 +57,8 @@ void main() {
           authenticateSocketA: true,
           authenticateSocketB: true,
           rvdNonce: rvdNonce,
+          relayAuthAesKey: 'relay auth key',
+          relayAuthModes: null,
           only443: false,
           multipleAcksOk: true,
           preFetch: const [],
@@ -117,8 +118,8 @@ void main() {
       expect(forwarded, hasLength(1));
       final req = forwarded.single as IIRequest;
       expect(req.type, 'auth_modes');
-      expect(req.payload['sideA'], 'escr');
-      expect(req.payload['sideB'], 'payload');
+      expect(req.payload, {'sideB': 'payload'},
+          reason: "side A's mode is the request's, so only side B's goes on");
     });
 
     test('ignores a mode that is not a relay auth mode', () async {

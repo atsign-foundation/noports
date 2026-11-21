@@ -13,6 +13,8 @@ import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
+import 'socket_endings.dart';
+
 class MockRelayAuthVerifyHelper extends Mock implements RelayAuthVerifyHelper {}
 
 class MockSocket extends Mock implements Socket {}
@@ -1270,6 +1272,230 @@ void main() {
         ),
         refused('Signatures did not match'),
       );
+    });
+  });
+
+  group('RelayAuthVerifierESCR when its socket ends', () {
+    const publicSigningKeyUri = '_apsk.my_enrollment_id.a.__e@alice';
+    late RsaKeyPair signingKP;
+    late String relayAuthAesKey;
+    late String relaySessionId;
+    late Completer<String> lookup;
+    late MockRelayAuthVerifyHelper helper;
+    late Socket relaySide;
+    late Socket peer;
+
+    setUpAll(() {
+      signingKP = RsaKeyPair.generate(keySize: 2048);
+    });
+
+    setUp(() async {
+      relayAuthAesKey = AESKey.generate(32).key;
+      relaySessionId = Uuid().v4();
+      lookup = Completer<String>();
+      helper = MockRelayAuthVerifyHelper();
+      when(
+        () => helper.isSessionActive(relaySessionId),
+      ).thenAnswer((_) async => true);
+      when(
+        () => helper.getRelayAuthAesKey(relaySessionId),
+      ).thenAnswer((_) async => relayAuthAesKey);
+      when(
+        () => helper.lookup(relaySessionId, publicSigningKeyUri),
+      ).thenAnswer((_) => lookup.future);
+      (relaySide, peer) = await loopbackPair();
+    });
+
+    tearDown(() {
+      relaySide.destroy();
+      peer.destroy();
+    });
+
+    RelayAuthenticatorESCR authenticator() => RelayAuthenticatorESCR(
+      sessionId: relaySessionId,
+      relayAuthAesKey: relayAuthAesKey,
+      publicSigningKeyUri: publicSigningKeyUri,
+      publicSigningKey: signingKP.atPublicKey.publicKey,
+      privateSigningKey: signingKP.atPrivateKey.privateKey,
+      signingAlgo: SigningAlgoType.rsa2048,
+      isSideA: false,
+    );
+
+    /// A socket whose stream events the test delivers itself, so that it can
+    /// deliver the close while a response is still being verified.
+    MockSocket drivenSocket({
+      required List<String> written,
+      required void Function(void Function(Uint8List)) onData,
+      void Function(void Function())? onDone,
+      void Function(void Function(Object, StackTrace))? onError,
+    }) {
+      final socket = MockSocket();
+      when(() => socket.writeln(any())).thenAnswer(
+        (invocation) => written.add('${invocation.positionalArguments.first}'),
+      );
+      when(() => socket.flush()).thenAnswer((_) async {});
+      when(
+        () => socket.listen(
+          any(),
+          onError: any(named: 'onError'),
+          onDone: any(named: 'onDone'),
+        ),
+      ).thenAnswer((invocation) {
+        onData(invocation.positionalArguments[0] as void Function(Uint8List));
+        onDone?.call(invocation.namedArguments[#onDone] as void Function());
+        onError?.call(
+          invocation.namedArguments[#onError]
+              as void Function(Object, StackTrace),
+        );
+        return MockStreamSubscription<Uint8List>();
+      });
+      return socket;
+    }
+
+    test(
+      'a socket its peer closes before answering the challenge fails at once',
+      () async {
+        final outcome = outcomeWithin(
+          RelayAuthVerifierESCR(
+            'closed before answering',
+            helper,
+          ).verifySocketAuth(relaySide),
+        );
+        final lines = linesFrom(peer);
+        expect(
+          await nextLineWithin(lines),
+          startsWith('line: '),
+          reason: 'the control: the peer is challenged',
+        );
+        unawaited(peer.close());
+
+        expect(
+          await outcome,
+          'failed: Error during socket authentication:'
+          ' the socket closed before it authenticated',
+        );
+        expect(
+          await nextLineWithin(lines),
+          'done',
+          reason: 'the relay closes its side',
+        );
+      },
+    );
+
+    test('a socket its peer resets before answering the challenge fails at once'
+        ' with the error', () async {
+      relaySide.write('unread by the peer, so its close is a reset');
+      await relaySide.flush();
+      final outcome = outcomeWithin(
+        RelayAuthVerifierESCR(
+          'reset before answering',
+          helper,
+        ).verifySocketAuth(relaySide),
+      );
+      await pumpEventQueue();
+      peer.destroy();
+
+      expect(
+        await outcome,
+        allOf(
+          startsWith(
+            'failed: Error during socket authentication:'
+            ' the socket failed before it authenticated: ',
+          ),
+          contains('Connection reset by peer'),
+        ),
+      );
+    });
+
+    test(
+      'a socket that authenticates and then closes ends without an error',
+      () async {
+        lookup.complete(signingKP.atPublicKey.publicKey);
+        final verification = RelayAuthVerifierESCR(
+          'authenticates then closes',
+          helper,
+        ).verifySocketAuth(relaySide);
+        final (told, _) = await authenticator()
+            .authenticate(peer)
+            .timeout(hangGuard);
+        expect(told, isTrue, reason: 'the control: the peer is told "ok"');
+        final (authenticated, stream) = await verification.timeout(hangGuard);
+        expect(authenticated, isTrue);
+
+        peer.destroy();
+
+        expect(await endingWithin(stream!), 'done');
+      },
+    );
+
+    test('a socket that closes while its response is still being verified'
+        ' is authenticated', () async {
+      final written = <String>[];
+      late void Function(Uint8List) feed;
+      late void Function() eof;
+      final verifier = RelayAuthVerifierESCR('closes while verifying', helper);
+      final result = verifier.verifySocketAuth(
+        drivenSocket(
+          written: written,
+          onData: (fn) => feed = fn,
+          onDone: (fn) => eof = fn,
+        ),
+      );
+      await pumpEventQueue();
+      final response = await authenticator().responseToChallenge(
+        verifier.challenge,
+      );
+      feed(Uint8List.fromList(utf8.encode('$response\n')));
+      await pumpEventQueue();
+      verify(
+        () => helper.lookup(relaySessionId, publicSigningKeyUri),
+      ).called(1);
+
+      eof();
+      await pumpEventQueue();
+      lookup.complete(signingKP.atPublicKey.publicKey);
+
+      expect(
+        await outcomeWithin(result),
+        'authenticated',
+        reason: 'the close waits behind the response ahead of it',
+      );
+      expect(written, [verifier.challenge, 'ok']);
+    });
+
+    test('a socket error while its response is still being verified follows'
+        ' the verification', () async {
+      late void Function(Uint8List) feed;
+      late void Function(Object, StackTrace) fail;
+      final verifier = RelayAuthVerifierESCR('errors while verifying', helper);
+      final result = verifier.verifySocketAuth(
+        drivenSocket(
+          written: <String>[],
+          onData: (fn) => feed = fn,
+          onError: (fn) => fail = fn,
+        ),
+      );
+      await pumpEventQueue();
+      final response = await authenticator().responseToChallenge(
+        verifier.challenge,
+      );
+      feed(Uint8List.fromList(utf8.encode('$response\n')));
+      await pumpEventQueue();
+      verify(
+        () => helper.lookup(relaySessionId, publicSigningKeyUri),
+      ).called(1);
+
+      fail(const SocketException('reset'), StackTrace.current);
+      await pumpEventQueue();
+      lookup.complete(signingKP.atPublicKey.publicKey);
+
+      expect(
+        await outcomeWithin(result),
+        'authenticated',
+        reason: 'the error waits behind the response ahead of it',
+      );
+      final (_, stream) = await result;
+      expect(await endingWithin(stream!), 'error: SocketException: reset');
     });
   });
 }

@@ -27,11 +27,6 @@ countVerified() {
     grep -c -F "Auto-detected $4; verification success"
 }
 
-# Prints how many of one side's sockets the detection window settled as ESCR.
-countSettledByWindow() {
-  grep -F "RelayAuthVerifierAuto ($2 $3)" "$1" | grep -c -F "assuming ESCR"
-}
-
 # Prints how many of one side's sockets failed verification.
 countFailed() {
   grep -F "RelayAuthVerifierAuto ($2 $3)" "$1" | grep -c -F "auto verification FAILED"
@@ -43,12 +38,11 @@ checkSide() {
   local relayLog="$1" sessionId="$2" side="$3" expected="$4"
   local other="ESCR"
   [[ "$expected" == "ESCR" ]] && other="LEGACY"
-  local expectedCount otherCount failedCount windowCount
+  local expectedCount otherCount failedCount
   expectedCount=$(countVerified "$relayLog" "$sessionId" "$side" "$expected")
   otherCount=$(countVerified "$relayLog" "$sessionId" "$side" "$other")
   failedCount=$(countFailed "$relayLog" "$sessionId" "$side")
-  windowCount=$(countSettledByWindow "$relayLog" "$sessionId" "$side")
-  logInfo "    relay verified $side of $sessionId: $expectedCount by $expected, $otherCount by $other, $failedCount failed; $windowCount settled by the detection window"
+  logInfo "    relay verified $side of $sessionId: $expectedCount by $expected, $otherCount by $other, $failedCount failed"
   if ((expectedCount < 1 || otherCount > 0 || failedCount > 0)); then
     logError "    $side of session $sessionId was not verified by $expected alone"
     return 1
@@ -75,10 +69,10 @@ checkRelayAuthModes() {
     return 1
   fi
   local sessionId
-  sessionId=$(grep -o -E 'Sending definitive auth modes to srvd: \{"sessionId":"[0-9a-fA-F-]{36}"' "$nptStderrFile" |
+  sessionId=$(grep -o -E 'Sending npt_request for session [0-9a-fA-F-]{36} to ' "$nptStderrFile" |
     head -n 1 | grep -o -E '[0-9a-fA-F-]{36}' | tr 'A-F' 'a-f')
   if [[ -z "$sessionId" ]]; then
-    logError "    npt logged no session id with its auth modes"
+    logError "    npt logged no session id with its npt_request"
     return 1
   fi
 

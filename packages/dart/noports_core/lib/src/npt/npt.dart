@@ -233,10 +233,11 @@ class _NptImpl extends NptBase
       DaemonFeature.controlChannelHeartbeats,
     ];
     // We deliberately do NOT require DaemonFeature.supportsRamEscr: a daemon that
-    // cannot do ESCR uses legacy on its own side and the relay reconciles it,
-    // even under an explicit --relay-auth-mode escr. The one unreconcilable case
-    // (explicit ESCR + non-auto-detecting relay + non-ESCR daemon) is rejected
-    // below. See sshnp_core.initialize for detail.
+    // cannot do ESCR uses legacy on its own side and the relay reconciles it.
+    // Under an explicit --relay-auth-mode escr a relay that applies the
+    // request's ESCR to both sides refuses it at connect, and the
+    // non-auto-detecting relay case is rejected below. See
+    // sshnp_core.initialize for detail.
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
@@ -287,9 +288,11 @@ class _NptImpl extends NptBase
 
     sendProgress('Required daemon features are supported');
 
-    // Reject an explicit --relay-auth-mode escr this session cannot honour (a
-    // non-auto-detecting relay + a non-ESCR daemon can never agree). Every other
-    // explicit-ESCR case degrades gracefully. See sshnp_core.initialize.
+    // Reject up front a session whose daemon must do ESCR but cannot: the 443
+    // path, or an explicit --relay-auth-mode escr through a relay that does not
+    // auto-detect. With any other explicit ESCR such a daemon is told to use
+    // legacy, and a relay that applies the request's ESCR to both sides refuses
+    // its socket at connect. See sshnp_core.initialize.
     if (SrvdChannel.escrRequestedButUnreconcilable(
       explicitEscr: params.relayAuthModeExplicit &&
           params.relayAuthMode == RelayAuthMode.escr,
@@ -308,9 +311,9 @@ class _NptImpl extends NptBase
 
     // The daemon ping has now resolved, so we know which relay-auth mode each
     // side will use. Tell the relay definitively (before the daemon session
-    // request, sent from _preRun) so it can skip the auto-detect window; if
-    // this loses the race to the daemon's socket, the relay just auto-detects.
-    // No-op against a relay that doesn't auto-detect.
+    // request, sent from _preRun); a relay whose request left side B's mode
+    // open waits for it before challenging the daemon's socket. No-op against
+    // a relay that doesn't auto-detect.
     await _srvdChannel.sendDefinitiveAuthModes(
       daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
     );

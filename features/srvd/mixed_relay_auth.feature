@@ -5,13 +5,14 @@ Feature: srvd verifies each side of a tunnel in the relay auth mode that side sp
   predates ESCR. e2e_all runs both through a relay built from the branch and
   reads the relay's own log of each socket it verified.
 
-  Races: the client's auth-modes hint and each socket race to the relay; the
-  scenarios assert the mode each side was verified in, whichever settled it,
-  and the test logs which did. Replay: unchanged; each connection's challenge
-  is fresh, which the unit tests pin. DoS: none added; the test reads a log
-  file. Forgery and impersonation: unchanged; the test reads what the relay
-  recorded about sockets it had already verified, and adds nothing the relay
-  trusts.
+  Races: each side's mode reaches the relay in the session request, in the
+  client's auth-modes notification or as a legacy socket's first byte, and a
+  socket may connect before or after it; the scenarios assert the mode each
+  side was verified in, whichever settled it. Replay: unchanged; each
+  connection's challenge is fresh, which the unit tests pin. DoS: none added;
+  the test reads a log file. Forgery and impersonation: unchanged; the test
+  reads what the relay recorded about sockets it had already verified, and
+  adds nothing the relay trusts.
 
   Scenario: A current client and a daemon that predates ESCR are each verified in their own mode
     Given a relay built from the branch, which auto-detects relay auth
