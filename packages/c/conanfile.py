@@ -8,7 +8,7 @@ from conan.tools.files import get
 
 class at_cRecipe(ConanFile):
     name = "noports"
-    version = "1.2.0"
+    version = "1.2.1"
     package_type = "application"
 
     # Optional metadata
@@ -44,7 +44,7 @@ class at_cRecipe(ConanFile):
         tc.generate()
 
     def requirements(self):
-        self.requires("at_c/0.4.2")
+        self.requires("at_c/0.4.3")
         self.requires("mbedtls/3.6.7", override=True)
         self.requires("libcurl/8.23.0")
 

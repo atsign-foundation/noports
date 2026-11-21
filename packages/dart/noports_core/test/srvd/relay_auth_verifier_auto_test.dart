@@ -11,6 +11,8 @@ import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
+import 'socket_endings.dart';
+
 class MockRelayAuthVerifyHelper extends Mock
     implements RelayAuthVerifyHelper {}
 
@@ -954,6 +956,115 @@ void main() {
         isFalse,
       );
     });
+  });
+
+  group('RelayAuthVerifierAuto when its socket ends', () {
+    late Socket relaySide;
+    late Socket peer;
+
+    setUp(() async {
+      (relaySide, peer) = await loopbackPair();
+    });
+
+    tearDown(() {
+      relaySide.destroy();
+      peer.destroy();
+    });
+
+    RelayAuthVerifierAuto verifier(RelayAuthMode? knownMode) =>
+        RelayAuthVerifierAuto(
+          'auto sideA',
+          MockRelayAuthVerifyHelper(),
+          atSign: '@alice',
+          sessionId: Uuid().v4(),
+          isSideA: true,
+          dataToVerify: 'x',
+          rvdNonce: 'x',
+          knownMode: knownMode,
+        );
+
+    for (final (String state, RelayAuthMode? knownMode)
+        in <(String, RelayAuthMode?)>[
+          ('waiting for its mode', null),
+          ('known to be ESCR', RelayAuthMode.escr),
+          ('known to be legacy', RelayAuthMode.payload),
+        ]) {
+      test('a socket its peer closes before it authenticates fails at once'
+          ' ($state)', () async {
+        final outcome = outcomeWithin(
+          verifier(knownMode).verifySocketAuth(relaySide),
+        );
+        final lines = linesFrom(peer);
+        if (knownMode == RelayAuthMode.escr) {
+          expect(
+            await nextLineWithin(lines),
+            startsWith('line: '),
+            reason: 'the control: the peer is challenged',
+          );
+        }
+        unawaited(peer.close());
+
+        expect(
+          await outcome,
+          'failed: Error during socket authentication:'
+          ' the socket closed before it authenticated',
+        );
+        expect(
+          await nextLineWithin(lines),
+          'done',
+          reason: 'the relay closes its side',
+        );
+      });
+
+      test('a socket its peer resets before it authenticates fails at once'
+          ' with the error ($state)', () async {
+        relaySide.write('unread by the peer, so its close is a reset');
+        await relaySide.flush();
+        final outcome = outcomeWithin(
+          verifier(knownMode).verifySocketAuth(relaySide),
+        );
+        await pumpEventQueue();
+        peer.destroy();
+
+        expect(
+          await outcome,
+          allOf(
+            startsWith(
+              'failed: Error during socket authentication:'
+              ' the socket failed before it authenticated: ',
+            ),
+            contains('Connection reset by peer'),
+          ),
+        );
+      });
+    }
+
+    test(
+      'a socket that authenticates and then closes ends without an error',
+      () async {
+        final fx = escrFixture();
+        final verification = RelayAuthVerifierAuto(
+          'auto sideA',
+          fx.helper,
+          atSign: '@alice',
+          sessionId: fx.sessionId,
+          isSideA: true,
+          dataToVerify: 'unused for escr',
+          rvdNonce: 'unused for escr',
+          knownMode: RelayAuthMode.escr,
+        ).verifySocketAuth(relaySide);
+        final (told, _) = await fx.authenticator
+            .authenticate(peer)
+            .timeout(hangGuard);
+        expect(told, isTrue, reason: 'the control: the peer is told "ok"');
+        final (authenticated, stream) = await verification.timeout(hangGuard);
+        expect(authenticated, isTrue);
+
+        peer.destroy();
+
+        expect(await endingWithin(stream!), 'done');
+      },
+    );
   });
 }
 

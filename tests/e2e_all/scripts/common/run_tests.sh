@@ -109,6 +109,10 @@ for daemonVersion in $daemonVersions; do
           testResult="FAILED"
           additionalInfo="(test exit status was 0, but no 'TEST PASSED' in test output)"
           ;;
+        52) # special exit code, indicates the relay auth mode check failed; never retried
+          testResult="FAILED"
+          additionalInfo="(relay auth mode check failed)"
+          ;;
         124) # timeout returns 124 if the command timed out
           testResult="FAILED"
           additionalInfo="(timed out after $timeoutDuration seconds)"

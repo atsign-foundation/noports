@@ -111,8 +111,8 @@ mixin SrvdUtilMixin {
   /// session id is read, throws [SrvdRequestRefused] when a field is missing
   /// or malformed, naming the field and why, including when the session id
   /// is not a UUID, atSignA or atSignB is not a valid Atsign, relayAuthModes
-  /// does not name a relay auth mode for both sides, or a side authenticates
-  /// by ESCR with no relayAuthAesKey.
+  /// does not name a relay auth mode for both sides, or a side whose mode is
+  /// ESCR has no relayAuthAesKey.
   SrvdSessionParams srvdSessionParamsFromJson(String encodedJson) {
     final Object? json = jsonDecode(encodedJson);
     if (json is! Map || json['sessionId'] is! String) {
@@ -196,8 +196,10 @@ mixin SrvdUtilMixin {
     if (params.relayAuthAesKey == null &&
         (params.sideAMode == RelayAuthMode.escr ||
             params.sideBMode == RelayAuthMode.escr)) {
-      refuse('Parameter relayAuthAesKey is required when a side authenticates'
-          ' by ESCR');
+      refuse(
+        'Parameter relayAuthAesKey is required for a side whose mode is'
+        ' ESCR',
+      );
     }
     return params;
   }

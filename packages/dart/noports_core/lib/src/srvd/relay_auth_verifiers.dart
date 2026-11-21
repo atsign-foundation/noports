@@ -397,6 +397,13 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     Mutex listenMutex = Mutex();
 
+    void failIfUnauthenticated(String why) {
+      if (authenticated || completer.isCompleted) return;
+      logger.info(why);
+      socket.destroy();
+      completer.completeError('Error during socket authentication: $why');
+    }
+
     subscription = socket.listen(
       (Uint8List data) async {
         // Fast path: safe only because no `await` separates `authenticated`
@@ -527,15 +534,30 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
           listenMutex.release();
         }
       },
-      onError: (Object error, StackTrace stackTrace) {
-        if (!sc.isClosed) {
-          sc.addError(error);
-          sc.close();
+      // NOTE: end through the mutex, behind a response still being verified.
+      onError: (Object error, StackTrace stackTrace) async {
+        await listenMutex.acquire();
+        try {
+          failIfUnauthenticated(
+            'the socket failed before it authenticated: $error',
+          );
+          if (!sc.isClosed) {
+            sc.addError(error);
+            unawaited(sc.close());
+          }
+        } finally {
+          listenMutex.release();
         }
       },
-      onDone: () {
-        if (!sc.isClosed) {
-          sc.close();
+      onDone: () async {
+        await listenMutex.acquire();
+        try {
+          failIfUnauthenticated('the socket closed before it authenticated');
+          if (!sc.isClosed) {
+            unawaited(sc.close());
+          }
+        } finally {
+          listenMutex.release();
         }
       },
     );
@@ -663,6 +685,14 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
     );
     logger.info('SignatureAuthVerifier for $tag: starting listen');
     List<int> buffer = [];
+
+    void failIfUnauthenticated(String why) {
+      if (authenticated || completer.isCompleted) return;
+      logger.info('$tag : $why');
+      socket.destroy();
+      completer.completeError('Error during socket authentication: $why');
+    }
+
     subscription = socket.listen(
       (Uint8List data) async {
         if (authenticated) {
@@ -674,7 +704,8 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
             }
           }
         } else {
-          // NOTE: verification awaits, so later chunks must wait for this one
+          // NOTE: verification awaits, so later chunks and the close must wait
+          // for this one
           subscription.pause();
           try {
             if (buffer.length + data.length >
@@ -741,12 +772,16 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
         }
       },
       onError: (Object error, StackTrace stackTrace) {
+        failIfUnauthenticated(
+          'the socket failed before it authenticated: $error',
+        );
         if (!sc.isClosed) {
           sc.addError(error);
           sc.close();
         }
       },
       onDone: () {
+        failIfUnauthenticated('the socket closed before it authenticated');
         if (!sc.isClosed) {
           sc.close();
         }
@@ -755,6 +790,10 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
     return completer.future;
   }
 }
+
+/// How a [RelayAuthVerifierAuto] socket is verified: not yet, while it waits
+/// for its mode, then by legacy or by ESCR.
+enum _SocketMode { waiting, legacy, escr }
 
 /// A [RelayAuthVerifier] for one side of a two-port session, which verifies
 /// each socket by the relay auth mode the session's client gave that side:
@@ -875,9 +914,9 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     final buffer = <int>[];
     bool authenticated = false;
 
-    // 'waiting' -> 'legacy' | 'escr'. Guarded by [mutex] so the client's word
-    // and inbound data cannot race to pick different modes.
-    String mode = 'waiting';
+    // Guarded by [mutex] so the client's word and inbound data cannot race to
+    // pick different modes.
+    _SocketMode mode = _SocketMode.waiting;
     final mutex = Mutex();
     Future<void> Function(RelayAuthMode)? waitingFor;
 
@@ -894,7 +933,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
         try {
           // NOTE: only a challenged peer reads from the relay; a legacy peer
           // forwards anything written here to its local app.
-          if (mode == 'escr') {
+          if (mode == _SocketMode.escr) {
             socket.writeln('Socket auth failed');
             await socket.flush();
           }
@@ -904,6 +943,13 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
           completer.completeError('Error during socket authentication: $e');
         }
       }
+    }
+
+    void failIfUnauthenticated(String why) {
+      if (authenticated || completer.isCompleted) return;
+      logger.info(why);
+      socket.destroy();
+      completer.completeError('Error during socket authentication: $why');
     }
 
     void completeSuccess() {
@@ -989,15 +1035,15 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
     // [mutex]. An ESCR socket is challenged at once; a legacy one is sent
     // nothing and waits for its signed envelope.
     Future<void> resolveLocked(RelayAuthMode m) async {
-      if (mode != 'waiting' || authenticated) return;
+      if (mode != _SocketMode.waiting || authenticated) return;
       stopWaiting();
       if (m == RelayAuthMode.escr) {
-        mode = 'escr';
+        mode = _SocketMode.escr;
         logger.info('resolving to ESCR; sending challenge');
         socket.writeln(escr.challenge);
         await socket.flush();
       } else {
-        mode = 'legacy';
+        mode = _SocketMode.legacy;
         logger.info('resolving to LEGACY; awaiting signed envelope');
       }
     }
@@ -1054,11 +1100,11 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
           // Unsolicited bytes on a socket still waiting for a mode can only be
           // legacy (a JSON object); an ESCR peer sends nothing until we
           // challenge it.
-          if (mode == 'waiting') {
+          if (mode == _SocketMode.waiting) {
             stopWaiting();
             final int? firstByte = data.isNotEmpty ? data.first : null;
             if (firstByte == 0x7B /* '{' */ ) {
-              mode = 'legacy';
+              mode = _SocketMode.legacy;
             } else {
               throw RAVE(
                 'Unexpected first byte $firstByte from connecting side'
@@ -1083,7 +1129,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
             final List<int> lineBytes = buffer.sublist(0, idx);
             buffer.removeRange(0, idx + 1);
             final String line = String.fromCharCodes(lineBytes);
-            if (mode == 'legacy') {
+            if (mode == _SocketMode.legacy) {
               await handleLegacyLine(line);
             } else {
               await handleEscrLine(line.trim());
@@ -1102,6 +1148,9 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
         stopWaiting();
         await mutex.acquire();
         try {
+          failIfUnauthenticated(
+            'the socket failed before it authenticated: $error',
+          );
           if (!sc.isClosed) {
             sc.addError(error);
             unawaited(sc.close());
@@ -1114,6 +1163,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
         stopWaiting();
         await mutex.acquire();
         try {
+          failIfUnauthenticated('the socket closed before it authenticated');
           if (!sc.isClosed) {
             unawaited(sc.close());
           }
