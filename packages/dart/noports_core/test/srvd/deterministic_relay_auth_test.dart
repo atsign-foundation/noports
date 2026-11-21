@@ -1018,7 +1018,11 @@ void main() {
       final daemon = await connect(s, sideA: false);
 
       await daemon.line(within: const Duration(milliseconds: 400));
-      expect(stopwatch.elapsed, lessThan(const Duration(milliseconds: 400)));
+      expect(
+        stopwatch.elapsed,
+        lessThan(const Duration(milliseconds: 400)),
+        reason: 'it is challenged as it connects, without any wait',
+      );
       expect(s.verifierB.waitingSockets, 0, reason: 'it never waits');
     },
   );
