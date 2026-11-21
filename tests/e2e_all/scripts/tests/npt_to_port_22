@@ -9,6 +9,7 @@ fi
 
 source "$testScriptsDir/common/common_functions.include.sh"
 source "$testScriptsDir/common/check_env.include.sh" || exit $?
+source "$testScriptsDir/common/relay_auth_modes.include.sh"
 
 daemonVersion="$1"
 clientVersion="$2"
@@ -56,7 +57,8 @@ nptCommand="$baseNptCommand $extraFlags --verbose"
 
 # 1. Execute the npt command - its output is the port that npt is using
 echo "$(iso8601Date) | Executing $nptCommand"
-nptPort=$($nptCommand)
+nptStderrFile="$(getBaseFileName "$testToRun" "$daemonVersion" "$clientVersion").npt.err"
+nptPort=$($nptCommand 2> >(tee "$nptStderrFile" >&2))
 
 # 2. Check the exit status
 nptExitStatus=$?
@@ -83,6 +85,15 @@ sshExitStatus=$?
 echo "$(iso8601Date) | Running ps for the spawned srv process with port $nptPort AFTER running ssh"
 ps -ef | grep "srv " | grep "$nptPort"
 
-# 4. Kill the daemon log tail, and exit with the exit status of the ssh command
+# 4. Check the modes the relay verified each side in
+if ((sshExitStatus == 0)) && [[ "$clientVersion" == "d:current" ]]; then
+  if [[ -n "$relayLogFile" ]]; then
+    checkRelayAuthModes "$nptStderrFile" "$daemonVersion" "$relayLogFile" || sshExitStatus=52
+  else
+    logInfo "    relay auth modes not checked: relayLogFile is not set"
+  fi
+fi
+
+# 5. Kill the daemon log tail, and exit with the exit status of the ssh command
 kill "$tailPid"
 exit $sshExitStatus

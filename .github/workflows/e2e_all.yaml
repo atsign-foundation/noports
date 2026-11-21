@@ -26,6 +26,8 @@ jobs:
     if: ${{ github.event.pull_request.head.repo.fork == false }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      relayLogFile: /tmp/ve_srvd/srvd.log
 
     steps:
       - name: Checkout
@@ -80,6 +82,7 @@ jobs:
         if: always()
         run: |
           tests/tools/ve/stop_srvd.sh
+          cp "$relayLogFile" /tmp/e2e_all/srvd.log || true
 
       - name: Teardown VE
         if: always()
