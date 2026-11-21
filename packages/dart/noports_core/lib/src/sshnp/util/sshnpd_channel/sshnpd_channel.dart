@@ -203,21 +203,24 @@ abstract class SshnpdChannel
   /// Writes the live ping answer to this daemon device's ping record on the
   /// client's own atServer, when the record is absent or undecodable, says
   /// something else, is older than [pingRecordRefreshAge], or was stored more
-  /// than [pingRecordClockSkew] ahead of this clock.
+  /// than [pingRecordClockSkew] ahead of this clock; returns whether the
+  /// record now says what the live answer says.
   ///
   /// Writes nothing when the daemon has not answered a ping, or when the
   /// record could not be read. Waits for the record's read and then its
   /// write, each at most [pingRecordTimeout]; a write that fails is logged,
   /// and the session carries on.
-  Future<void> refreshPingRecord() async {
+  Future<bool> refreshPingRecord() async {
     final DaemonRelayAuthSupport? live = liveRelayAuthSupport;
-    if (live == null) return;
+    if (live == null) return false;
     await _recordRead;
-    if (!_pingRecordReadable) return;
+    if (!_pingRecordReadable) return false;
     final DaemonPingRecord? stored = _pingRecord;
     if (stored != null && stored.support == live) {
       final Duration age = DateTime.now().difference(stored.storedAt);
-      if (age <= pingRecordRefreshAge && age >= -pingRecordClockSkew) return;
+      if (age <= pingRecordRefreshAge && age >= -pingRecordClockSkew) {
+        return true;
+      }
     }
     final AtKey key = pingRecordKey;
     try {
@@ -231,8 +234,10 @@ abstract class SshnpdChannel
       if (!written) {
         logger.warning('The atServer did not write $key');
       }
+      return written;
     } catch (e) {
       logger.warning('Could not write $key: $e');
+      return false;
     }
   }
 

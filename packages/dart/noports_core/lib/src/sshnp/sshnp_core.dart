@@ -179,7 +179,7 @@ abstract class SshnpCore
     List<(DaemonFeature, bool, String)> features = await featureCheckFuture;
     sendProgress('Received daemon feature check response');
 
-    await sshnpdChannel.refreshPingRecord();
+    final bool recordCurrent = await sshnpdChannel.refreshPingRecord();
 
     await Future.delayed(Duration(milliseconds: 1));
     for (final (DaemonFeature _, bool supported, String reason) in features) {
@@ -189,6 +189,7 @@ abstract class SshnpCore
 
     srvdChannel.failIfDaemonContradictsRequest(
       sshnpdChannel.liveRelayAuthSupport,
+      recordCurrent: recordCurrent,
     );
 
     if (SrvdChannel.escrRequestedButUnreconcilable(

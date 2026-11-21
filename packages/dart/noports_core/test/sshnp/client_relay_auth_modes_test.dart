@@ -724,9 +724,21 @@ void main() {
               isA<SshnpError>().having(
                 (e) => e.message,
                 'message',
-                contains('relay auth support changed since it was last seen'),
+                allOf(
+                  contains('relay auth support changed since it was last seen'),
+                  contains(
+                    'device $deviceName of $daemonAtSign '
+                    '${liveEscr ? 'now' : 'no longer'} supports ESCR',
+                  ),
+                  contains(
+                    'record of the device is updated, so the next attempt '
+                    'will work',
+                  ),
+                ),
               ),
-              reason: '${c.name} fails the attempt, saying why',
+              reason:
+                  '${c.name} fails the attempt, saying what changed and that '
+                  'the next attempt will work',
             );
             expect(
               w.sentTo(c.daemonRequestKey),
@@ -756,8 +768,18 @@ void main() {
       await w.answerPing(first, pingResponse(escr: false));
       expect(
         await firstOutcome.timeout(const Duration(seconds: 10)),
-        isA<SshnpError>(),
-        reason: '${first.name} failed the first attempt',
+        isA<SshnpError>().having(
+          (e) => e.message,
+          'message',
+          contains(
+            'record of the device could not be updated, so a retry from this '
+            'process will work, but one from a new process may fail the same '
+            'way',
+          ),
+        ),
+        reason:
+            '${first.name} failed the first attempt, saying only a retry '
+            'from this process is sure to work',
       );
       expect(
         recordIn(w).support.supportsRamEscr,

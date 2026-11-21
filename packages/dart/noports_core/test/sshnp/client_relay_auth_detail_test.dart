@@ -683,6 +683,93 @@ void main() {
     }
   });
 
+  group('An attempt the live ping ends says whether the record of the device '
+      'is updated', () {
+    for (final (
+          String how,
+          void Function(ClientWorld) given,
+          bool heldEscr,
+          bool updated,
+        )
+        in [
+          (
+            'when the record is rewritten',
+            (ClientWorld w) =>
+                w.records[pingRecordKeyOf()] = pingRecord(escr: true),
+            false,
+            true,
+          ),
+          (
+            'when the record already says what the live ping says',
+            (ClientWorld w) =>
+                w.records[pingRecordKeyOf()] = pingRecord(escr: false),
+            true,
+            true,
+          ),
+          (
+            'when the rewrite fails',
+            (ClientWorld w) => w
+              ..records[pingRecordKeyOf()] = pingRecord(escr: true)
+              ..writeFailure = AtClientException.message('the write failed'),
+            false,
+            false,
+          ),
+          (
+            'when the atServer does not make the rewrite',
+            (ClientWorld w) => w
+              ..records[pingRecordKeyOf()] = pingRecord(escr: true)
+              ..writeAnswer = false,
+            false,
+            false,
+          ),
+          (
+            'when the record cannot be read',
+            (ClientWorld w) =>
+                w.readFailure = AtClientException.message('the read failed'),
+            true,
+            false,
+          ),
+        ]) {
+      test(how, () async {
+        for (final make in clients) {
+          final w = newWorld();
+          if (heldEscr) {
+            await pingAnswered(w, channelIn(w), pingResponse(escr: true));
+          }
+          given(w);
+          final c = make(w);
+          final outcome = c.start();
+
+          await w.answerRelay(c, applied: true);
+          await w.answerPing(c, pingResponse(escr: false));
+          final Object? thrown = await outcome.timeout(
+            const Duration(seconds: 10),
+          );
+
+          expect(
+            thrown,
+            isA<SshnpError>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains('device $deviceName of $daemonAtSign no longer'),
+                contains(
+                  updated
+                      ? 'record of the device is updated, so the next attempt '
+                            'will work'
+                      : 'record of the device could not be updated',
+                ),
+              ),
+            ),
+            reason: updated
+                ? '${c.name} says the next attempt will work'
+                : '${c.name} says the record could not be updated',
+          );
+        }
+      });
+    }
+  });
+
   test('a daemon that does not authenticate to the relay never has the attempt '
       'end over its relay auth support', () async {
     for (final make in clients) {

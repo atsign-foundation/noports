@@ -266,7 +266,7 @@ class _NptImpl extends NptBase
     List<(DaemonFeature, bool, String)> features = await featureCheckFuture;
     sendProgress('Received daemon feature check response');
 
-    await sshnpdChannel.refreshPingRecord();
+    final bool recordCurrent = await sshnpdChannel.refreshPingRecord();
 
     await Future.delayed(Duration(milliseconds: 1));
     for (final (DaemonFeature feature, bool supported, String reason)
@@ -294,6 +294,7 @@ class _NptImpl extends NptBase
 
     _srvdChannel.failIfDaemonContradictsRequest(
       sshnpdChannel.liveRelayAuthSupport,
+      recordCurrent: recordCurrent,
     );
 
     if (SrvdChannel.escrRequestedButUnreconcilable(

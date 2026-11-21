@@ -116,7 +116,7 @@ class MockSshnpdChannel extends Mock implements SshnpdChannel {
       knownSupport;
 
   @override
-  Future<void> refreshPingRecord() async {}
+  Future<bool> refreshPingRecord() async => true;
 }
 
 class MockSrvdChannel extends Mock implements SrvdChannel {
@@ -131,7 +131,10 @@ class MockSrvdChannel extends Mock implements SrvdChannel {
       RelayAuthMode.payload;
 
   @override
-  void failIfDaemonContradictsRequest(DaemonRelayAuthSupport? live) {}
+  void failIfDaemonContradictsRequest(
+    DaemonRelayAuthSupport? live, {
+    required bool recordCurrent,
+  }) {}
 }
 
 /// [dart:io] Mocks

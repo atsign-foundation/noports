@@ -176,11 +176,15 @@ or, under an explicit `--relay-auth-mode`, if the two give side B different
 modes. A daemon that does not authenticate to the relay uses no side B mode,
 so its answer ends nothing. The client first corrects the
 record, then fails the attempt before the daemon is asked for anything,
-saying the daemon's relay auth support changed since it was last seen. The
-relay releases the abandoned session's ports at its 30-second limit. The
-next attempt in the same process takes the live answer from memory, even if
-the record could not be rewritten: `npt --keep-alive` and NoPorts Desktop
-retry with it, and a one-shot `npt` or `sshnp` is rerun. A record that says
+saying the daemon's relay auth support changed since it was last seen,
+whether the daemon now supports ESCR or no longer does, and whether the
+record is updated. The relay releases the abandoned session's ports at its
+30-second limit. The next attempt in the same process takes the live answer
+from memory, even if the record could not be rewritten: `npt --keep-alive`
+and NoPorts Desktop retry with it, and a one-shot `npt` or `sshnp` is rerun.
+When the record could not be rewritten, the failure says that only a retry
+from the same process will work, and that one from a new process may fail
+the same way, since a new process can read the old record. A record that says
 legacy for a daemon that now does ESCR, under the default mode, does not end
 the attempt: the session runs with legacy on side B, and the record is
 corrected.
@@ -293,8 +297,9 @@ With no record, the client waits for the daemon's ping response before step
 2. The daemon's live ping response says it no longer can.
 3. The client rewrites the record, and fails the attempt before it asks the
    daemon for anything, saying the daemon's relay auth support changed since
-   it was last seen. The relay releases the ports it allocated at its
-   30-second limit.
+   it was last seen, that the daemon no longer supports ESCR, and that the
+   record is updated, so the next attempt will work. The relay releases the
+   ports it allocated at its 30-second limit.
 4. The next attempt names legacy for the daemon's side, from the live answer
    the client keeps in memory, or from the rewritten record in a new process.
 

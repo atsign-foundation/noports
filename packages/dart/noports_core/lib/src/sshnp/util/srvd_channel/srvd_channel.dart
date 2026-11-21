@@ -194,13 +194,18 @@ abstract class SrvdChannel<T>
       _modesAtAssignedRelay(daemonSupportsEscr: daemonSupportsEscr).sideB;
 
   /// Throws [SshnpError] when the daemon's [live] ping answer means this
-  /// attempt must end before the daemon is asked for anything.
+  /// attempt must end before the daemon is asked for anything, saying what
+  /// changed and whether the client's record of the daemon now says what
+  /// [live] says, as [recordCurrent] gives.
   ///
   /// That is only when the daemon authenticates to the relay, the relay
   /// applied the request's modes, and the side B mode [live] gives is legacy
   /// where the request named ESCR or, under an explicit relay-auth mode,
   /// differs at all from what the request named.
-  void failIfDaemonContradictsRequest(DaemonRelayAuthSupport? live) {
+  void failIfDaemonContradictsRequest(
+    DaemonRelayAuthSupport? live, {
+    required bool recordCurrent,
+  }) {
     if (live == null ||
         !params.authenticateDeviceToRvd ||
         !relayResponse.appliedRelayAuthModes) {
@@ -214,12 +219,20 @@ abstract class SrvdChannel<T>
         ? now != _requestedRelayAuthModes
         : _requestedRelayAuthModes.sideB == RelayAuthMode.escr &&
             now.sideB == RelayAuthMode.payload;
-    if (ends) {
-      throw SshnpError(
-        "The daemon's relay auth support changed since it was last seen"
-        ' (device ${params.device} of ${params.sshnpdAtSign}); try again',
-      );
-    }
+    if (!ends) return;
+    final String change = live.supportsRamEscr
+        ? 'now supports ESCR'
+        : 'no longer supports ESCR';
+    final String next = recordCurrent
+        ? "This client's record of the device is updated, so the next"
+              ' attempt will work; try again'
+        : "This client's record of the device could not be updated, so a"
+              ' retry from this process will work, but one from a new process'
+              ' may fail the same way';
+    throw SshnpError(
+      "The daemon's relay auth support changed since it was last seen:"
+      ' device ${params.device} of ${params.sshnpdAtSign} $change. $next',
+    );
   }
 
   // * Volatile fields set at runtime
