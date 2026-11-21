@@ -66,7 +66,7 @@ class RelayRequest {
 
   /// Each side's mode, which a relay that reads it applies in place of
   /// [relayAuthMode].
-  final RelayAuthModes relayAuthModes;
+  final RelayAuthModesBySide relayAuthModes;
   final String? relayAuthAesKey;
   final bool only443;
   final bool multipleAcksOk;

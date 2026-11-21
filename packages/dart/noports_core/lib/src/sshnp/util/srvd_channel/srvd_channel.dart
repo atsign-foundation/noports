@@ -49,7 +49,7 @@ abstract class SrvdChannel<T>
   /// it names ESCR for both sides.
   DaemonRelayAuthSupport? daemonRelayAuthSupport;
 
-  late RelayAuthModes _requestedRelayAuthModes;
+  late RelayAuthModesBySide _requestedRelayAuthModes;
 
   Completer acked = Completer();
 
@@ -163,7 +163,7 @@ abstract class SrvdChannel<T>
 
   /// Each side's mode when the daemon [daemonSupportsEscr], at a relay that
   /// [autoDetect]s or applies the request's modes when true.
-  RelayAuthModes _modes({
+  RelayAuthModesBySide _modes({
     required bool autoDetect,
     required bool daemonSupportsEscr,
   }) {
@@ -179,7 +179,7 @@ abstract class SrvdChannel<T>
 
   /// Each side's mode at the relay we were assigned: the modes the request
   /// named, when the relay applied them, and otherwise what it can reconcile.
-  RelayAuthModes _sessionModes({required bool daemonSupportsEscr}) =>
+  RelayAuthModesBySide _sessionModes({required bool daemonSupportsEscr}) =>
       relayResponse.appliedRelayAuthModes
           ? _requestedRelayAuthModes
           : _modes(
@@ -205,7 +205,7 @@ abstract class SrvdChannel<T>
         !relayResponse.appliedRelayAuthModes) {
       return;
     }
-    final RelayAuthModes now = _modes(
+    final RelayAuthModesBySide now = _modes(
       autoDetect: true,
       daemonSupportsEscr: live.supportsRamEscr,
     );
@@ -362,7 +362,7 @@ abstract class SrvdChannel<T>
   Future<void> sendDefinitiveAuthModes({required bool daemonSupportsEscr}) async {
     if (!autoDetectsRelayAuth || relayResponse.appliedRelayAuthModes) return;
 
-    final RelayAuthModes modes =
+    final RelayAuthModesBySide modes =
         _sessionModes(daemonSupportsEscr: daemonSupportsEscr);
 
     final AtKey authModesKey = AtKey()

@@ -53,7 +53,7 @@ class SrvdSessionParams {
 
   /// Each side's mode as the request named it, or null when the request named
   /// none and [relayAuthMode] and [relayAuthAesKey] decide.
-  final RelayAuthModes? relayAuthModes;
+  final RelayAuthModesBySide? relayAuthModes;
   final bool only443;
   final bool multipleAcksOk;
   final List<String> preFetch;
@@ -97,7 +97,7 @@ class SrvdSessionParams {
   /// otherwise [relayAuthMode], except that a payload request with a
   /// [relayAuthAesKey] leaves it to the client.
   RelayAuthMode? get sideBMode {
-    final RelayAuthModes? named = relayAuthModes;
+    final RelayAuthModesBySide? named = relayAuthModes;
     if (named != null) return named.sideB;
     if (relayAuthMode == RelayAuthMode.escr) return RelayAuthMode.escr;
     return relayAuthAesKey == null ? RelayAuthMode.payload : null;

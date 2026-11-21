@@ -162,7 +162,7 @@ mixin SrvdUtilMixin {
     final RelayAuthMode relayAuthMode =
         RelayAuthMode.values.asNameMap()[relayAuthModeName] ??
             refuse('Parameter relayAuthMode must name a relay auth mode');
-    final RelayAuthModes? relayAuthModes =
+    final RelayAuthModesBySide? relayAuthModes =
         switch (optional<Map>('relayAuthModes', 'a map')) {
       null => null,
       final Map named => (
