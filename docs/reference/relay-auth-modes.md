@@ -81,7 +81,8 @@ the modes it applies to them are ESCR. A 443 request whose `relayAuthModes`
 names legacy for either side is refused.
 
 `srvd --relay-auth-detect-window-ms` is still accepted, so that existing
-command lines keep working, and has no effect.
+command lines keep working, and has no effect. srvd's usage text does not list
+it.
 
 ## Older relays
 

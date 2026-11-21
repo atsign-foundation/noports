@@ -529,6 +529,27 @@ void main() {
 
       expect(srvd.signingKeyCheckInterval, const Duration(seconds: 7));
     });
+
+    test(
+      'accepts --relay-auth-detect-window-ms and does not list it',
+      () async {
+        expect(
+          (await parse(['--relay-auth-detect-window-ms', '500'])).atSign,
+          '@relay',
+          reason: 'a command line that names it still parses',
+        );
+        expect(
+          SrvdParams.parser.usage,
+          isNot(contains('relay-auth-detect-window-ms')),
+          reason: 'the usage text does not list it',
+        );
+        expect(
+          SrvdParams.parser.usage,
+          contains('--signing-key-check-secs'),
+          reason: 'the control: the usage text lists the options srvd uses',
+        );
+      },
+    );
   });
 
   group('SinglePortWorker', () {

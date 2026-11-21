@@ -249,6 +249,7 @@ class SrvdParams {
     parser.addOption(
       'relay-auth-detect-window-ms',
       mandatory: false,
+      hide: true,
       help:
           'Has no effect, and is accepted so that existing command lines keep'
           ' working. srvd takes each side\'s relay auth mode from the session'
