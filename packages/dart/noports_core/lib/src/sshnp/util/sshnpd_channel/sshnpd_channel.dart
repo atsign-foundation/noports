@@ -459,6 +459,9 @@ abstract class SshnpdChannel
 
   Future<Map<String, dynamic>> ping() async {
     Completer<Map<String, dynamic>> completer = Completer();
+    // NOTE: a heartbeat can fail this before it is returned, or after the
+    // ping's send throws; the caller still sees the error.
+    completer.future.ignore();
 
     final String heartbeatKey = 'heartbeat.${params.device}'
         '.${DefaultArgs.namespace}${params.sshnpdAtSign.toAtsign()}';
@@ -473,8 +476,19 @@ abstract class SshnpdChannel
         );
         if (notification.from.toAtsign() == params.sshnpdAtSign.toAtsign()) {
           if (!completer.isCompleted) {
-            logger.info('Completing the future');
-            completer.complete(jsonDecode(notification.value ?? '{}'));
+            final Map<String, dynamic>? response = _pingResponseIn(
+              notification.value,
+            );
+            if (response == null) {
+              final String why =
+                  'Device ${params.device} of ${params.sshnpdAtSign} answered'
+                  ' its ping with a heartbeat that is not a JSON object';
+              logger.warning('$why: ${notification.key}');
+              completer.completeError(SshnpError(why));
+            } else {
+              logger.info('Completing the future');
+              completer.complete(response);
+            }
             unawaited(subscription.cancel());
           }
         }
@@ -500,6 +514,16 @@ abstract class SshnpdChannel
     );
 
     return completer.future;
+  }
+
+  /// The ping response [value] holds, or null when it is not a JSON object.
+  static Map<String, dynamic>? _pingResponseIn(String? value) {
+    try {
+      final Object? decoded = jsonDecode(value ?? '{}');
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } on FormatException {
+      return null;
+    }
   }
 
   /// List all available devices from the daemon.
