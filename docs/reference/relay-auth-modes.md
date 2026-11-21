@@ -179,7 +179,7 @@ so its answer ends nothing. The client first corrects the
 record, then fails the attempt before the daemon is asked for anything,
 saying the daemon's relay auth support changed since it was last seen,
 whether the daemon now supports ESCR or no longer does, and whether the
-record is updated. The relay releases the abandoned session's ports at its
+record is now up to date. The relay releases the abandoned session's ports at its
 30-second limit. The next attempt in the same process takes the live answer
 from memory, even if the record could not be rewritten: `npt --keep-alive`
 and NoPorts Desktop retry with it, and a one-shot `npt` or `sshnp` is rerun.
@@ -299,7 +299,7 @@ With no record, the client waits for the daemon's ping response before step
 3. The client rewrites the record, and fails the attempt before it asks the
    daemon for anything, saying the daemon's relay auth support changed since
    it was last seen, that the daemon no longer supports ESCR, and that the
-   record is updated, so the next attempt will work. The relay releases the
+   record is now up to date, so the next attempt will work. The relay releases the
    ports it allocated at its 30-second limit.
 4. The next attempt names legacy for the daemon's side, from the live answer
    the client keeps in memory, or from the rewritten record in a new process.

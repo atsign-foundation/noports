@@ -684,7 +684,7 @@ void main() {
   });
 
   group('An attempt the live ping ends says whether the record of the device '
-      'is updated', () {
+      'is up to date', () {
     for (final (
           String how,
           void Function(ClientWorld) given,
@@ -755,7 +755,8 @@ void main() {
                 contains('device $deviceName of $daemonAtSign no longer'),
                 contains(
                   updated
-                      ? 'record of the device is updated, so the next attempt '
+                      ? 'record of the device is now up to date, so the next '
+                            'attempt '
                             'will work'
                       : 'record of the device could not be updated',
                 ),

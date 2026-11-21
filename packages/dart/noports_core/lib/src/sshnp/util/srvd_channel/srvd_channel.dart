@@ -224,7 +224,7 @@ abstract class SrvdChannel<T>
         ? 'now supports ESCR'
         : 'no longer supports ESCR';
     final String next = recordCurrent
-        ? "This client's record of the device is updated, so the next"
+        ? "This client's record of the device is now up to date, so the next"
               ' attempt will work; try again'
         : "This client's record of the device could not be updated, so a"
               ' retry from this process will work, but one from a new process'

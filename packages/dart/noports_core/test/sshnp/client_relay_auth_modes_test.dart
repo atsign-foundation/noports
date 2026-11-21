@@ -731,7 +731,8 @@ void main() {
                     '${liveEscr ? 'now' : 'no longer'} supports ESCR',
                   ),
                   contains(
-                    'record of the device is updated, so the next attempt '
+                    'record of the device is now up to date, so the next '
+                    'attempt '
                     'will work',
                   ),
                 ),
