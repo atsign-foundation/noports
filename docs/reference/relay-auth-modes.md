@@ -69,7 +69,7 @@ the request accepts one (`multipleAcksOk`):
 
 - `relayAuthModes` that is not a map, does not name both `sideA` and
   `sideB`, or names a mode other than `escr` or `payload`;
-- a side that authenticates by ESCR (named by `relayAuthModes`, or by
+- a side whose mode is ESCR (named by `relayAuthModes`, or by
   `relayAuthMode: escr`) with no `relayAuthAesKey`.
 
 **The response** says `autoDetectsRelayAuth: true` for every session, because

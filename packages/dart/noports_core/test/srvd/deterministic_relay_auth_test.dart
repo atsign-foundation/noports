@@ -561,7 +561,7 @@ void main() {
         'naming ESCR for a side, with no relayAuthAesKey',
         {'sideA': 'payload', 'sideB': 'escr'},
         false,
-        'relayAuthAesKey is required when a side authenticates by ESCR',
+        'relayAuthAesKey is required for a side whose mode is ESCR',
       ),
     ]) {
       test(row, () async {
@@ -620,7 +620,7 @@ void main() {
     expect(srvd.allocations, 0, reason: 'no ports are allocated');
     expect(
       nackFor(id)?.value,
-      contains('relayAuthAesKey is required when a side authenticates'),
+      contains('relayAuthAesKey is required for a side whose mode is ESCR'),
       reason: 'the NACK says why',
     );
 
@@ -643,7 +643,7 @@ void main() {
     expect(srvd.allocations, 0, reason: 'no ports are allocated');
     expect(
       nackFor(id)?.value,
-      contains('relayAuthAesKey is required when a side authenticates'),
+      contains('relayAuthAesKey is required for a side whose mode is ESCR'),
       reason: 'the NACK says why',
     );
 
