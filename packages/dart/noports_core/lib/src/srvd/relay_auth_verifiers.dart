@@ -397,6 +397,13 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
 
     Mutex listenMutex = Mutex();
 
+    void failIfUnauthenticated(String why) {
+      if (authenticated || completer.isCompleted) return;
+      logger.info(why);
+      socket.destroy();
+      completer.completeError('Error during socket authentication: $why');
+    }
+
     subscription = socket.listen(
       (Uint8List data) async {
         // Fast path: safe only because no `await` separates `authenticated`
@@ -527,15 +534,30 @@ class RelayAuthVerifierESCR implements RelayAuthVerifier {
           listenMutex.release();
         }
       },
-      onError: (Object error, StackTrace stackTrace) {
-        if (!sc.isClosed) {
-          sc.addError(error);
-          sc.close();
+      // NOTE: end through the mutex, behind a response still being verified.
+      onError: (Object error, StackTrace stackTrace) async {
+        await listenMutex.acquire();
+        try {
+          failIfUnauthenticated(
+            'the socket failed before it authenticated: $error',
+          );
+          if (!sc.isClosed) {
+            sc.addError(error);
+            unawaited(sc.close());
+          }
+        } finally {
+          listenMutex.release();
         }
       },
-      onDone: () {
-        if (!sc.isClosed) {
-          sc.close();
+      onDone: () async {
+        await listenMutex.acquire();
+        try {
+          failIfUnauthenticated('the socket closed before it authenticated');
+          if (!sc.isClosed) {
+            unawaited(sc.close());
+          }
+        } finally {
+          listenMutex.release();
         }
       },
     );
@@ -663,6 +685,14 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
     );
     logger.info('SignatureAuthVerifier for $tag: starting listen');
     List<int> buffer = [];
+
+    void failIfUnauthenticated(String why) {
+      if (authenticated || completer.isCompleted) return;
+      logger.info('$tag : $why');
+      socket.destroy();
+      completer.completeError('Error during socket authentication: $why');
+    }
+
     subscription = socket.listen(
       (Uint8List data) async {
         if (authenticated) {
@@ -674,7 +704,8 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
             }
           }
         } else {
-          // NOTE: verification awaits, so later chunks must wait for this one
+          // NOTE: verification awaits, so later chunks and the close must wait
+          // for this one
           subscription.pause();
           try {
             if (buffer.length + data.length >
@@ -741,12 +772,16 @@ class RelayAuthVerifierLegacy implements RelayAuthVerifier {
         }
       },
       onError: (Object error, StackTrace stackTrace) {
+        failIfUnauthenticated(
+          'the socket failed before it authenticated: $error',
+        );
         if (!sc.isClosed) {
           sc.addError(error);
           sc.close();
         }
       },
       onDone: () {
+        failIfUnauthenticated('the socket closed before it authenticated');
         if (!sc.isClosed) {
           sc.close();
         }
@@ -904,6 +939,13 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
           completer.completeError('Error during socket authentication: $e');
         }
       }
+    }
+
+    void failIfUnauthenticated(String why) {
+      if (authenticated || completer.isCompleted) return;
+      logger.info(why);
+      socket.destroy();
+      completer.completeError('Error during socket authentication: $why');
     }
 
     void completeSuccess() {
@@ -1102,6 +1144,9 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
         stopWaiting();
         await mutex.acquire();
         try {
+          failIfUnauthenticated(
+            'the socket failed before it authenticated: $error',
+          );
           if (!sc.isClosed) {
             sc.addError(error);
             unawaited(sc.close());
@@ -1114,6 +1159,7 @@ class RelayAuthVerifierAuto implements RelayAuthVerifier {
         stopWaiting();
         await mutex.acquire();
         try {
+          failIfUnauthenticated('the socket closed before it authenticated');
           if (!sc.isClosed) {
             unawaited(sc.close());
           }
