@@ -26,8 +26,12 @@
   atServer for 30 days; with no record, it waits for the daemon's ping before
   asking srvd for ports
 - feat: an attempt whose daemon's relay auth support has changed since it was
-  last seen fails before the daemon is sent its session request, and the next
-  attempt uses the new answer
+  last seen fails before the daemon is sent its session request, saying what
+  changed and whether the client's record of the daemon was updated, and the
+  next attempt uses the new answer
+- fix: `SshnpdChannel.featureCheck` fails at once with an `SshnpError` naming
+  the daemon and device when the heartbeat answering its ping is not a JSON
+  object
 - **BREAKING CHANGE**: removed `SshnpdChannel.cachedPingResponse`,
   `SshnpdChannel.locallyCachedPingResponseKey` and
   `SrvdChannel.cachedDaemonPublicSigningKeyUri`
