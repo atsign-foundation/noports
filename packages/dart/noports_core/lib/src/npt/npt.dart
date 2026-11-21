@@ -292,7 +292,9 @@ class _NptImpl extends NptBase
 
     sendProgress('Required daemon features are supported');
 
-    _srvdChannel.checkDaemonAnswer(sshnpdChannel.liveRelayAuthSupport);
+    _srvdChannel.failIfDaemonContradictsRequest(
+      sshnpdChannel.liveRelayAuthSupport,
+    );
 
     if (SrvdChannel.escrRequestedButUnreconcilable(
       explicitEscr: params.relayAuthModeExplicit &&

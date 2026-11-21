@@ -163,7 +163,7 @@ abstract class SrvdChannel<T>
 
   /// Each side's mode when the daemon [daemonSupportsEscr], at a relay that
   /// [autoDetect]s or applies the request's modes when true.
-  RelayAuthModesBySide _modes({
+  RelayAuthModesBySide _modesForDaemon({
     required bool autoDetect,
     required bool daemonSupportsEscr,
   }) {
@@ -179,18 +179,19 @@ abstract class SrvdChannel<T>
 
   /// Each side's mode at the relay we were assigned: the modes the request
   /// named, when the relay applied them, and otherwise what it can reconcile.
-  RelayAuthModesBySide _sessionModes({required bool daemonSupportsEscr}) =>
-      relayResponse.appliedRelayAuthModes
-          ? _requestedRelayAuthModes
-          : _modes(
-              autoDetect: autoDetectsRelayAuth,
-              daemonSupportsEscr: daemonSupportsEscr,
-            );
+  RelayAuthModesBySide _modesAtAssignedRelay({
+    required bool daemonSupportsEscr,
+  }) => relayResponse.appliedRelayAuthModes
+      ? _requestedRelayAuthModes
+      : _modesForDaemon(
+          autoDetect: autoDetectsRelayAuth,
+          daemonSupportsEscr: daemonSupportsEscr,
+        );
 
   /// The relay-auth mode the daemon (side B) should use for this session, told
   /// to it in the session request.
   RelayAuthMode daemonRelayAuthMode({required bool daemonSupportsEscr}) =>
-      _sessionModes(daemonSupportsEscr: daemonSupportsEscr).sideB;
+      _modesAtAssignedRelay(daemonSupportsEscr: daemonSupportsEscr).sideB;
 
   /// Throws [SshnpError] when the daemon's [live] ping answer means this
   /// attempt must end before the daemon is asked for anything.
@@ -199,13 +200,13 @@ abstract class SrvdChannel<T>
   /// applied the request's modes, and the side B mode [live] gives is legacy
   /// where the request named ESCR or, under an explicit relay-auth mode,
   /// differs at all from what the request named.
-  void checkDaemonAnswer(DaemonRelayAuthSupport? live) {
+  void failIfDaemonContradictsRequest(DaemonRelayAuthSupport? live) {
     if (live == null ||
         !params.authenticateDeviceToRvd ||
         !relayResponse.appliedRelayAuthModes) {
       return;
     }
-    final RelayAuthModesBySide now = _modes(
+    final RelayAuthModesBySide now = _modesForDaemon(
       autoDetect: true,
       daemonSupportsEscr: live.supportsRamEscr,
     );
@@ -289,7 +290,7 @@ abstract class SrvdChannel<T>
 
     RelayAuthenticator? relayAuthenticator;
     if (params.authenticateClientToRvd) {
-      switch (_sessionModes(daemonSupportsEscr: true).sideA) {
+      switch (_modesAtAssignedRelay(daemonSupportsEscr: true).sideA) {
         case RelayAuthMode.payload:
           relayAuthenticator = RelayAuthenticatorLegacy(
             await signAndWrapAndJsonEncode(atClient, {
@@ -363,7 +364,7 @@ abstract class SrvdChannel<T>
     if (!autoDetectsRelayAuth || relayResponse.appliedRelayAuthModes) return;
 
     final RelayAuthModesBySide modes =
-        _sessionModes(daemonSupportsEscr: daemonSupportsEscr);
+        _modesAtAssignedRelay(daemonSupportsEscr: daemonSupportsEscr);
 
     final AtKey authModesKey = AtKey()
       ..key = '${params.device}.auth_modes.${Srvd.namespace}'
@@ -400,7 +401,7 @@ abstract class SrvdChannel<T>
     Duration timeout = DefaultArgs.relayResponseTimeoutDuration,
   }) async {
     srvdAck = SrvdAck.notAcknowledged;
-    _requestedRelayAuthModes = _modes(
+    _requestedRelayAuthModes = _modesForDaemon(
       autoDetect: true,
       daemonSupportsEscr: daemonRelayAuthSupport?.supportsRamEscr ?? false,
     );

@@ -187,7 +187,9 @@ abstract class SshnpCore
     }
     sendProgress('Required daemon features are supported');
 
-    srvdChannel.checkDaemonAnswer(sshnpdChannel.liveRelayAuthSupport);
+    srvdChannel.failIfDaemonContradictsRequest(
+      sshnpdChannel.liveRelayAuthSupport,
+    );
 
     if (SrvdChannel.escrRequestedButUnreconcilable(
       explicitEscr: params.relayAuthModeExplicit &&

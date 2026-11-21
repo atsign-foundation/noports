@@ -7,7 +7,8 @@ connection uses.
 
 > Reference for `RelayAuthMode`, `SrvdSessionParams.sideAMode` and
 > `sideBMode`, `SrvdChannel.effectiveRelayAuthMode`,
-> `SrvdChannel.daemonRelayAuthMode`, `SrvdChannel.checkDaemonAnswer`,
+> `SrvdChannel.daemonRelayAuthMode`,
+> `SrvdChannel.failIfDaemonContradictsRequest`,
 > `SrvdChannel.escrRequestedButUnreconcilable` and
 > `SshnpdChannel.knownRelayAuthSupport`. It describes behaviour, not a
 > protocol spec.
@@ -168,7 +169,8 @@ does not read `relayAuthModes`, and its `preFetch` holds the daemon's
 uses the mode the request named: the client authenticates its own socket by
 side A's, tells the daemon side B's, and sends no auth-modes notification.
 The live ping can still contradict the answer the request was built from.
-When the daemon authenticates to the relay, `checkDaemonAnswer` ends the
+When the daemon authenticates to the relay,
+`failIfDaemonContradictsRequest` ends the
 attempt if the request named ESCR for side B and the live ping gives legacy,
 or, under an explicit `--relay-auth-mode`, if the two give side B different
 modes. A daemon that does not authenticate to the relay uses no side B mode,

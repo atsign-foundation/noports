@@ -131,7 +131,7 @@ class MockSrvdChannel extends Mock implements SrvdChannel {
       RelayAuthMode.payload;
 
   @override
-  void checkDaemonAnswer(DaemonRelayAuthSupport? live) {}
+  void failIfDaemonContradictsRequest(DaemonRelayAuthSupport? live) {}
 }
 
 /// [dart:io] Mocks
