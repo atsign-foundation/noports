@@ -26,8 +26,8 @@ typedef struct {
 } sshpublickey_permissions_appender;
 
 // Appends each comma-separated part of an --sshpublickey-permissions value,
-// trimmed, to params->sshpublickey_permissions, joining the non-empty parts of
-// every value given with commas
+// trimmed, to params->sshpublickey_permissions, joining the parts of every
+// value given with commas
 static int append_sshpublickey_permissions(struct argparse *self, const struct argparse_option *option) {
   (void)self;
   sshpublickey_permissions_appender *appender = (sshpublickey_permissions_appender *)option->data;
@@ -42,10 +42,6 @@ static int append_sshpublickey_permissions(struct argparse *self, const struct a
     }
     while (end > start && isspace((unsigned char)end[-1])) {
       end--;
-    }
-    if (end == start) {
-      part = comma != NULL ? comma + 1 : NULL;
-      continue;
     }
     size_t old_len = params->sshpublickey_permissions == NULL ? 0 : strlen(params->sshpublickey_permissions);
     size_t separator = params->sshpublickey_permissions == NULL ? 0 : 1;
