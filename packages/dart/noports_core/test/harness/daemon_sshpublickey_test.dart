@@ -158,6 +158,35 @@ void main() {
     },
   );
 
+  test(
+    'sshnpd refuses a --sshpublickey-permissions value holding its own from= option',
+    () async {
+      final List<Object> usage = [];
+
+      await expectLater(
+        SshnpdImpl.fromCommandLineArgs(
+          [
+            '-a', NoPortsHarness.daemonAtSign, //
+            '-m', NoPortsHarness.clientAtSign,
+            '-d', NoPortsHarness.device,
+            '--sshpublickey',
+            '--sshpublickey-permissions', 'from="10.0.0.0/8"',
+          ],
+          usageCallback: (e, _) => usage.add(e),
+          version: '1.0.0',
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('sshnpd sets the from= option itself'),
+          ),
+        ),
+      );
+      expect(usage, hasLength(1));
+    },
+  );
+
   test('a value holding two key lines changes nothing', () async {
     givenAuthorizedKeys('ssh-ed25519 $k0 user@laptop\n');
     final List<int> before = authKeys.readAsBytesSync();

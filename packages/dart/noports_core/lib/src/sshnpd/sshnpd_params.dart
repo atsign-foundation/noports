@@ -1,5 +1,6 @@
 import 'package:at_client_cli/at_client_cli.dart';
 import 'package:config/config.dart';
+import 'package:noports_core/src/common/at_ssh_key_util/authorized_public_key.dart';
 import 'package:noports_core/src/common/default_args.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/common/validation_utils.dart';
@@ -124,6 +125,9 @@ class SshnpdParams {
     if (RegExp(r'[\r\n]').hasMatch(normalizedPermissions)) {
       // bad input... newlines are dangerous
       throw ArgumentError(invalidSshKeyPermissionsMsg);
+    }
+    if (sshKeyPermissionsHoldFrom(normalizedPermissions)) {
+      throw ArgumentError(sshKeyPermissionsFromMsg);
     }
 
     var permitOpen = c.optionalValue(SshnpdOption.permitOpen)?.join(",");
