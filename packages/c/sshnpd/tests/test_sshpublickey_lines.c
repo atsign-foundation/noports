@@ -347,6 +347,20 @@ static int test_refused_value_on_one_line(void) {
   return ret;
 }
 
+static int test_key_data_not_base64_logged_on_one_line(void) {
+  const char *test = "a value whose key data is not base64 is refused with one log line";
+  make_home(true);
+  send_default("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBKm94wiGMQ7pOM6hG1bW4EAAkv-GjahbkzLo48iFnZT");
+  int ret = expect_log(test, true, "Refusing the sshpublickey from " ALICE);
+  char *newline = strchr(log_text, '\n');
+  if (newline == NULL || newline[1] != '\0') {
+    printf("%s: the log is not one line: [%s]\n", test, log_text);
+    ret++;
+  }
+  remove_home();
+  return ret;
+}
+
 static int test_refused_value_cut_to_200(void) {
   const char *test = "a refused value over 200 characters is logged cut to 200 characters";
   char value[512];
@@ -406,11 +420,17 @@ static int test_no_ssh_directory(void) {
   int ret = 0;
   struct stat dir_stat;
   struct stat file_stat;
-  if (stat(ssh_dir, &dir_stat) != 0 || (dir_stat.st_mode & 0777) != 0700) {
+  if (stat(ssh_dir, &dir_stat) != 0) {
+    printf("%s: there is no ~/.ssh\n", test);
+    ret++;
+  } else if ((dir_stat.st_mode & 0777) != 0700) {
     printf("%s: ~/.ssh's mode is %o\n", test, (unsigned)(dir_stat.st_mode & 0777));
     ret++;
   }
-  if (stat(authkeys, &file_stat) != 0 || (file_stat.st_mode & 0777) != 0600) {
+  if (stat(authkeys, &file_stat) != 0) {
+    printf("%s: there is no authorized_keys\n", test);
+    ret++;
+  } else if ((file_stat.st_mode & 0777) != 0600) {
     printf("%s: authorized_keys' mode is %o\n", test, (unsigned)(file_stat.st_mode & 0777));
     ret++;
   }
@@ -683,6 +703,7 @@ int main(void) {
       test_key_data_of_another_type,
       test_unsupported_key_type,
       test_refused_value_on_one_line,
+      test_key_data_not_base64_logged_on_one_line,
       test_refused_value_cut_to_200,
       test_value_over_8_kib,
       test_ignored_without_sshpublickey,
