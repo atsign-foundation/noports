@@ -146,6 +146,7 @@ int main(int argc, char **argv) {
   res += atcommons_memlist_add(&memlist, params.permitopen_hosts, true, free_if_not_null);
   res += atcommons_memlist_add(&memlist, params.permitopen_ports, true, free_if_not_null);
   res += atcommons_memlist_add(&memlist, params.permitopen_str, true, free_if_not_null);
+  res += atcommons_memlist_add(&memlist, params.sshpublickey_permissions, true, free_if_not_null);
   res += atcommons_memlist_add(&memlist, NULL, true, mbedtls_psa_crypto_free);
   if (res > 0) {
     free(params.manager_list);
@@ -154,6 +155,7 @@ int main(int argc, char **argv) {
     free(params.permitopen_hosts);
     free(params.permitopen_ports);
     free(params.permitopen_str);
+    free(params.sshpublickey_permissions);
     mbedtls_psa_crypto_free();
     exit(1);
   }

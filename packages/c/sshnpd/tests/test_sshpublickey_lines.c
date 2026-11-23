@@ -133,6 +133,33 @@ static int expect_log(const char *test, bool contains, const char *text) {
   return 0;
 }
 
+// Runs parse_sshnpd_params, keeping what it prints in out
+static int parse_capturing_stdout(sshnpd_params *params, int argc, const char **argv, char *out, size_t out_size) {
+  fflush(stdout);
+  int saved = dup(STDOUT_FILENO);
+  FILE *capture = tmpfile();
+  if (saved < 0 || capture == NULL) {
+    printf("Failed to capture stdout\n");
+    exit(1);
+  }
+  dup2(fileno(capture), STDOUT_FILENO);
+  int ret = parse_sshnpd_params(params, argc, argv);
+  fflush(stdout);
+  dup2(saved, STDOUT_FILENO);
+  close(saved);
+  rewind(capture);
+  size_t n = fread(out, 1, out_size - 1, capture);
+  out[n] = '\0';
+  fclose(capture);
+  return ret;
+}
+
+static void free_parsed_params(sshnpd_params *params) {
+  free(params->sshpublickey_permissions);
+  free(params->manager_list);
+  free(params->normalized_manager_buf);
+  free(params->permitopen_str);
+}
 
 static int test_key_added_as_one_loopback_line(void) {
   const char *test = "a client's key is added as one line that allows only loopback logins";
@@ -240,6 +267,39 @@ static int test_rsa_signature_algorithm_written_as_ssh_rsa(void) {
   return ret;
 }
 
+static int test_permissions_follow_loopback(void) {
+  const char *test = "the --sshpublickey-permissions value follows the loopback restriction";
+  const char *argv[] = {"sshnpd", "-a", "@device", "-m", ALICE, "-s", "--sshpublickey-permissions", "no-pty"};
+  sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
+  char out[8192];
+  if (parse_capturing_stdout(&params, 8, argv, out, sizeof(out)) != 0) {
+    printf("%s: parse_sshnpd_params failed: %s\n", test, out);
+    return 1;
+  }
+  make_home(true);
+  send_key(&params, "ssh-ed25519 " K1);
+  int ret = expect_authkeys(test, LOOPBACK ",no-pty ssh-ed25519 " K1 "\n");
+  remove_home();
+  free_parsed_params(&params);
+  return ret;
+}
+
+static int test_permissions_holding_from_refused(void) {
+  const char *test = "sshnpd refuses a --sshpublickey-permissions value holding its own from= option";
+  const char *argv[] = {"sshnpd", "-a", "@device", "-m", ALICE, "--sshpublickey", "--sshpublickey-permissions",
+                        "from=\"10.0.0.0/8\""};
+  sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
+  char out[8192];
+  int parsed = parse_capturing_stdout(&params, 8, argv, out, sizeof(out));
+  int ret = 0;
+  if (parsed == 0 || strstr(out, "sshnpd sets the from= option itself") == NULL) {
+    printf("%s: parse_sshnpd_params returned %d, printing [%s]\n", test, parsed, out);
+    ret = 1;
+  }
+  return ret;
+}
 
 static int test_two_key_lines_change_nothing(void) {
   const char *test = "a value holding two key lines changes nothing";
@@ -533,6 +593,39 @@ static int test_permissions_hold_from(void) {
   return ret;
 }
 
+static int test_permissions_values_joined(void) {
+  const char *argv[] = {"sshnpd", "-a", "@device", "-m", ALICE, "-S", "no-pty", "-S",
+                        "command=\"echo hi\" , no-X11-forwarding"};
+  sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
+  char out[8192];
+  int ret = 0;
+  if (parse_capturing_stdout(&params, 9, argv, out, sizeof(out)) != 0 || params.sshpublickey_permissions == NULL ||
+      strcmp(params.sshpublickey_permissions, "no-pty,command=\"echo hi\",no-X11-forwarding") != 0) {
+    printf("-S values were joined as [%s]\n",
+           params.sshpublickey_permissions == NULL ? "(none)" : params.sshpublickey_permissions);
+    ret = 1;
+  }
+  free_parsed_params(&params);
+  return ret;
+}
+
+static int test_permissions_with_newline_refused(void) {
+  const char *values[] = {"no-pty\nssh-ed25519 " K2, "no-pty\rno-X11-forwarding"};
+  int ret = 0;
+  for (size_t i = 0; i < 2; i++) {
+    const char *argv[] = {"sshnpd", "-a", "@device", "-m", ALICE, "-S", values[i]};
+    sshnpd_params params;
+    apply_default_values_to_sshnpd_params(&params);
+    char out[8192];
+    if (parse_capturing_stdout(&params, 7, argv, out, sizeof(out)) == 0 ||
+        strstr(out, "Detected newline characters") == NULL) {
+      printf("-S [%s] was not refused: [%s]\n", values[i], out);
+      ret++;
+    }
+  }
+  return ret;
+}
 
 static int test_one_line_for_log(void) {
   char out[SSHNPD_SSHPUBLICKEY_LOG_MAX_LEN + 1];
@@ -571,6 +664,8 @@ int main(void) {
       test_trailing_newline_keeps_comment,
       test_comment_left_out,
       test_rsa_signature_algorithm_written_as_ssh_rsa,
+      test_permissions_follow_loopback,
+      test_permissions_holding_from_refused,
       test_two_key_lines_change_nothing,
       test_key_data_of_another_type,
       test_unsupported_key_type,
@@ -584,6 +679,8 @@ int main(void) {
       test_build_refuses_malformed_values,
       test_build_keeps_a_256_character_comment,
       test_permissions_hold_from,
+      test_permissions_values_joined,
+      test_permissions_with_newline_refused,
       test_one_line_for_log,
   };
   int failed = 0;

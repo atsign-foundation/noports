@@ -18,7 +18,7 @@ void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *messag
   const char *value = message->notification->decrypted_value;
   sshnpd_authorized_key key;
   const char *reason = NULL;
-  if (sshnpd_authorized_key_build(value, NULL, &key, &reason) != 0) {
+  if (sshnpd_authorized_key_build(value, params->sshpublickey_permissions, &key, &reason) != 0) {
     char shown[SSHNPD_SSHPUBLICKEY_LOG_MAX_LEN + 1];
     sshnpd_one_line_for_log(value, shown, sizeof(shown));
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "Refusing the sshpublickey from %s, as %s: \"%s\"\n", from,

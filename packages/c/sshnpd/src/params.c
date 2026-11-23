@@ -1,6 +1,8 @@
 #include <atlogger/atlogger.h>
+#include <ctype.h>
 #include <errno.h>
 #include <sshnpd/authorization.h>
+#include <sshnpd/file_utils.h>
 #include <sshnpd/params.h>
 #include <sshnpd/permitopen.h>
 #include <sshnpd/policy_limits.h>
@@ -13,6 +15,52 @@
 #define default_permitopen "localhost:22,localhost:3389"
 #define default_client_key_check_secs 10
 #define max_client_key_check_secs 86400
+#define sshpublickey_permissions_newline_msg                                                                           \
+  "Detected newline characters in the ssh public key permissions which malforms the authorized_keys file."
+#define sshpublickey_permissions_from_msg                                                                              \
+  "The ssh public key permissions may not hold a from= option: sshnpd sets the from= option itself."
+
+typedef struct {
+  sshnpd_params *params;
+  bool failed;
+} sshpublickey_permissions_appender;
+
+// Appends each comma-separated part of an --sshpublickey-permissions value,
+// trimmed, to params->sshpublickey_permissions, joining the parts of every
+// value given with commas
+static int append_sshpublickey_permissions(struct argparse *self, const struct argparse_option *option) {
+  (void)self;
+  sshpublickey_permissions_appender *appender = (sshpublickey_permissions_appender *)option->data;
+  sshnpd_params *params = appender->params;
+  const char *part = *(const char **)option->value;
+  while (part != NULL && !appender->failed) {
+    const char *comma = strchr(part, ',');
+    const char *end = comma != NULL ? comma : part + strlen(part);
+    const char *start = part;
+    while (start < end && isspace((unsigned char)*start)) {
+      start++;
+    }
+    while (end > start && isspace((unsigned char)end[-1])) {
+      end--;
+    }
+    size_t old_len = params->sshpublickey_permissions == NULL ? 0 : strlen(params->sshpublickey_permissions);
+    size_t separator = params->sshpublickey_permissions == NULL ? 0 : 1;
+    char *joined = realloc(params->sshpublickey_permissions, old_len + separator + (size_t)(end - start) + 1);
+    if (joined == NULL) {
+      appender->failed = true;
+      break;
+    }
+    if (separator) {
+      joined[old_len] = ',';
+    }
+    memcpy(joined + old_len + separator, start, (size_t)(end - start));
+    joined[old_len + separator + (size_t)(end - start)] = '\0';
+    params->sshpublickey_permissions = joined;
+    part = comma != NULL ? comma + 1 : NULL;
+  }
+  return 0;
+}
+
 void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->key_file = NULL;
   params->atsign = NULL;
@@ -23,6 +71,7 @@ void apply_default_values_to_sshnpd_params(sshnpd_params *params) {
   params->policy_cache_size = POLICY_CACHE_DEFAULT_SIZE;
   params->device = "default";
   params->sshpublickey = 0;
+  params->sshpublickey_permissions = NULL;
   params->hide = 0;
   params->verbose = 0;
   params->ssh_algorithm = ED25519;
@@ -42,6 +91,8 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   // the uint16_t params->local_sshd_port directly
   int local_sshd_port = params->local_sshd_port;
   int policy_cache_size = (int)params->policy_cache_size;
+  const char *sshpublickey_permissions = NULL;
+  sshpublickey_permissions_appender appender = {.params = params, .failed = false};
 
 // pragma GCC works for both gcc and clang
 #pragma GCC diagnostic push
@@ -58,6 +109,10 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
                  "atSign. At least one of --manager and --policy-manager must be supplied."),
       OPT_STRING('d', "device", &params->device, "Device to use"),
       OPT_BOOLEAN('s', "sshpublickey", &params->sshpublickey, "Generate ssh public key"),
+      OPT_STRING('S', "sshpublickey-permissions", &sshpublickey_permissions,
+                 "When --sshpublickey is enabled, will include the specified permissions in the public key entry in "
+                 "authorized_keys",
+                 append_sshpublickey_permissions, (intptr_t)&appender),
       OPT_BOOLEAN('h', "hide", &params->hide, "Hide device from device entry (still responds to pings)"),
       OPT_BOOLEAN('v', "verbose", &params->verbose, "Verbose output"),
       OPT_STRING(0, "permit-open", &permitopen,
@@ -98,6 +153,26 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
   snprintf(description, sizeof(description), "Version : %s\n", SSHNPD_VERSION);
   argparse_describe(&argparse, description, "");
   argc = argparse_parse(&argparse, argc, argv);
+
+  if (appender.failed) {
+    printf("Failed to allocate memory for sshpublickey-permissions\n");
+    free(params->sshpublickey_permissions);
+    params->sshpublickey_permissions = NULL;
+    return 1;
+  }
+  const char *permissions_error = NULL;
+  if (params->sshpublickey_permissions != NULL && strpbrk(params->sshpublickey_permissions, "\r\n") != NULL) {
+    permissions_error = sshpublickey_permissions_newline_msg;
+  } else if (sshnpd_permissions_hold_from(params->sshpublickey_permissions)) {
+    permissions_error = sshpublickey_permissions_from_msg;
+  }
+  if (permissions_error != NULL) {
+    argparse_usage(&argparse);
+    printf("Invalid Argument(s): %s\n", permissions_error);
+    free(params->sshpublickey_permissions);
+    params->sshpublickey_permissions = NULL;
+    return 1;
+  }
 
   if (local_sshd_port < 1 || local_sshd_port > 65535) {
     argparse_usage(&argparse);
