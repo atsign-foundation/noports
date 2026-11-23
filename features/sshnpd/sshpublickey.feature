@@ -98,6 +98,11 @@ Feature: sshnpd adds a client's ssh public key to authorized_keys
     And sshnpd logs a warning naming "@alice"
 
   @forgery
+  Scenario: a value holding a control character changes nothing
+    When "@alice" sends the sshpublickey "ssh-ed25519 <K1> user", a tab, then "client"
+    Then authorized_keys is unchanged
+
+  @forgery
   Scenario: a value whose key data is not of its stated key type changes nothing
     When "@alice" sends the sshpublickey "ssh-ed25519 <R1>"
     Then authorized_keys is unchanged
