@@ -284,6 +284,33 @@ static int test_key_after_quoted_options_found(void) {
   return ret;
 }
 
+static int test_key_present_on_crlf_line(void) {
+  const char *test = "a key already on a line ending in CRLF is not added again";
+  const char *existing = "ssh-ed25519 " K0 " user@laptop\r\n" LOOPBACK " ssh-ed25519 " K1 "\r\n";
+  make_home(true);
+  write_authkeys(existing);
+  send_default("ssh-ed25519 " K1);
+  int ret = expect_authkeys(test, existing);
+  ret += expect_log(test, true, "is already in authorized_keys");
+  ret += expect_log(test, false, "WARN");
+  remove_home();
+  return ret;
+}
+
+static int test_key_present_with_upper_case_loopback(void) {
+  const char *test = "a key already on a line whose loopback option is written FROM= is logged at info";
+  const char *existing = "FROM=\"127.0.0.1,::1\" ssh-ed25519 " K1 "\n";
+  make_home(true);
+  write_authkeys(existing);
+  send_default("ssh-ed25519 " K1);
+  int ret = expect_authkeys(test, existing);
+  ret += expect_log(test, true, "INFO");
+  ret += expect_log(test, true, "is already in authorized_keys");
+  ret += expect_log(test, false, "WARN");
+  remove_home();
+  return ret;
+}
+
 static int test_trailing_newline_keeps_comment(void) {
   const char *test = "a key sent with a trailing newline keeps its comment";
   make_home(true);
@@ -430,6 +457,17 @@ static int test_two_key_lines_change_nothing(void) {
   int ret = expect_authkeys(test, K0_LINE);
   ret += expect_log(test, true, "WARN");
   ret += expect_log(test, true, "Refusing the sshpublickey from " ALICE);
+  remove_home();
+  return ret;
+}
+
+static int test_control_character_changes_nothing(void) {
+  const char *test = "a value holding a control character changes nothing";
+  make_home(true);
+  write_authkeys(K0_LINE);
+  send_default("ssh-ed25519 " K1 " user\tclient");
+  int ret = expect_authkeys(test, K0_LINE);
+  ret += expect_log(test, true, "Refusing the sshpublickey from " ALICE ", as it holds a control character");
   remove_home();
   return ret;
 }
@@ -877,6 +915,8 @@ int main(void) {
       test_key_present_without_loopback_warns,
       test_key_only_in_comment_hash_line_or_longer_token_added,
       test_key_after_quoted_options_found,
+      test_key_present_on_crlf_line,
+      test_key_present_with_upper_case_loopback,
       test_trailing_newline_keeps_comment,
       test_comment_left_out,
       test_rsa_signature_algorithm_written_as_ssh_rsa,
@@ -886,6 +926,7 @@ int main(void) {
       test_starts_with_from_in_permissions_without_sshpublickey,
       test_permissions_and_comment_together,
       test_two_key_lines_change_nothing,
+      test_control_character_changes_nothing,
       test_key_data_of_another_type,
       test_unsupported_key_type,
       test_refused_value_on_one_line,

@@ -314,6 +314,18 @@ void main() {
       expect(authKeys.readAsBytesSync(), before);
     });
 
+    test('a key already on a line ending in CRLF is not added again', () async {
+      authKeys.writeAsStringSync(
+        'ssh-ed25519 $k0 user@laptop\r\n'
+        '${loopbackLine('ssh-ed25519', k1)}\r\n',
+      );
+      final List<int> before = authKeys.readAsBytesSync();
+
+      expect(await add('ssh-ed25519 $k1'), PublicKeyAddition.alreadyPresent);
+
+      expect(authKeys.readAsBytesSync(), before);
+    });
+
     test(
       'a key already in authorized_keys on a line of its own options is left as it is',
       () async {

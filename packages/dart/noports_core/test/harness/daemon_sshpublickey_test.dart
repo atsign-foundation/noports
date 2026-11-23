@@ -294,6 +294,23 @@ void main() {
     expect(outcome.message, contains(NoPortsHarness.clientAtSign));
   });
 
+  test('a value holding a control character changes nothing', () async {
+    givenAuthorizedKeys('ssh-ed25519 $k0 user@laptop\n');
+    final List<int> before = authKeys.readAsBytesSync();
+    await startDaemon();
+
+    final [outcome] = await send(['ssh-ed25519 $k1 user\tclient']);
+
+    expect(authKeys.readAsBytesSync(), before);
+    expect(
+      outcome.message,
+      startsWith(
+        'Refusing the sshpublickey from ${NoPortsHarness.clientAtSign},'
+        ' as it holds a control character',
+      ),
+    );
+  });
+
   test(
     'a value whose key data is not of its stated key type changes nothing',
     () async {
