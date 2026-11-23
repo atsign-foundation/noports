@@ -64,10 +64,10 @@ char *sshnpd_authorized_keys_filename(const char *home_dir);
 
 /**
  * @brief Appends key's line to the authorized_keys file at filename, after a
- * '\n' when the file does not end in one, unless the key's key data is already
- * a whitespace-separated token on a line there. Creates a missing parent
- * directory with mode 0700 and a missing file with mode 0600. Sets *added to
- * whether it wrote the line; returns 0 on success.
+ * '\n' when the file does not end in one, in a single write, unless the key's
+ * key data is already a whitespace-separated token on a line there. Creates a
+ * missing parent directory with mode 0700 and a missing file with mode 0600.
+ * Sets *added to whether it wrote the line; returns 0 on success.
  */
 int authorize_ssh_public_key(const char *filename, const sshnpd_authorized_key *key, bool *added);
 

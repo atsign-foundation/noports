@@ -306,7 +306,7 @@ static FILE *open_authorized_keys(const char *filename) {
   if (fd < 0) {
     return NULL;
   }
-  FILE *file = fdopen(fd, "a+");
+  FILE *file = fdopen(fd, "r");
   if (file == NULL) {
     int err = errno;
     close(fd);
@@ -361,9 +361,25 @@ int authorize_ssh_public_key(const char *filename, const sshnpd_authorized_key *
     goto exit;
   }
 
-  if (fseek(file, 0, SEEK_END) != 0 || (last != '\n' && fputc('\n', file) == EOF) || fputs(key->line, file) == EOF ||
-      fflush(file) != 0) {
-    ret = errno != 0 ? errno : 1;
+  size_t line_len = strlen(key->line);
+  char *out = malloc(line_len + 2);
+  if (out == NULL) {
+    ret = ENOMEM;
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to append to %s: %s\n", filename, strerror(ret));
+    goto exit;
+  }
+  size_t out_len = 0;
+  if (last != '\n') {
+    out[out_len++] = '\n';
+  }
+  memcpy(out + out_len, key->line, line_len);
+  out_len += line_len;
+  // NOTE: the separator and the line go to the O_APPEND descriptor in one
+  // write(2), never through stdio's buffer
+  ssize_t written = write(fileno(file), out, out_len);
+  free(out);
+  if (written != (ssize_t)out_len) {
+    ret = written < 0 && errno != 0 ? errno : EIO;
     atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to append to %s: %s\n", filename, strerror(ret));
     goto exit;
   }
