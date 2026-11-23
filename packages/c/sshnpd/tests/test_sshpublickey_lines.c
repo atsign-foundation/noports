@@ -161,6 +161,29 @@ static void free_parsed_params(sshnpd_params *params) {
   free(params->permitopen_str);
 }
 
+// Runs parse_sshnpd_params, keeping what it logs in log_text and what it
+// prints in out
+static int parse_capturing_log(sshnpd_params *params, int argc, const char **argv, char *out, size_t out_size) {
+  FILE *log = tmpfile();
+  if (log == NULL) {
+    printf("Failed to open a log file\n");
+    exit(1);
+  }
+  atlogger_set_logging_stream(log);
+  atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_INFO);
+  int ret = parse_capturing_stdout(params, argc, argv, out, out_size);
+  atlogger_set_logging_stream(stdout);
+  atlogger_set_logging_level(ATLOGGER_LOGGING_LEVEL_NONE);
+  rewind(log);
+  size_t n = fread(log_text, 1, sizeof(log_text) - 1, log);
+  log_text[n] = '\0';
+  fclose(log);
+  return ret;
+}
+
+#define FROM_LEFT_OUT                                                                                                  \
+  "Leaving the from= option out of the ssh public key permissions: sshnpd sets the from= option itself."
+
 static int test_key_added_as_one_loopback_line(void) {
   const char *test = "a client's key is added as one line that allows only loopback logins";
   make_home(true);
@@ -193,18 +216,6 @@ static int test_two_keys_one_after_the_other(void) {
 
 // The daemon's single monitor thread handles notifications that arrive
 // together one at a time, in the order it reads them
-static int test_two_keys_together(void) {
-  const char *test = "two keys sent together are each on a line of their own";
-  make_home(true);
-  sshnpd_params params;
-  default_params(&params);
-  send_key(&params, "ssh-ed25519 " K1);
-  send_key(&params, "ssh-ed25519 " K2);
-  int ret = expect_authkeys(test, LOOPBACK " ssh-ed25519 " K1 "\n" LOOPBACK " ssh-ed25519 " K2 "\n");
-  remove_home();
-  return ret;
-}
-
 static int test_key_already_present(void) {
   const char *test = "a key already in authorized_keys is not added again";
   make_home(true);
@@ -226,6 +237,52 @@ static int test_key_present_with_own_options(void) {
   return ret;
 }
 
+static int test_key_present_without_loopback_warns(void) {
+  const char *test =
+      "a key already on a line without the loopback restriction is left as it is, with a warning";
+  make_home(true);
+  write_authkeys("ssh-ed25519 " K1 " user@laptop\n");
+  send_default("ssh-ed25519 " K1);
+  int ret = expect_authkeys(test, "ssh-ed25519 " K1 " user@laptop\n");
+  ret += expect_log(test, true, "WARN");
+  ret += expect_log(test, true,
+                    "The ssh public key from " ALICE " is already in authorized_keys on a line without the loopback "
+                    "from= option, which sshnpd leaves as it is");
+  remove_home();
+  return ret;
+}
+
+static int test_key_only_in_comment_hash_line_or_longer_token_added(void) {
+  const char *test = "a key whose data is only in a comment, a # line or a longer token is added";
+  const char *existing = "ssh-ed25519 " K0 " " K1 "\n"
+                         "ssh-ed25519 " K0 " ssh-ed25519 " K1 "\n"
+                         "# ssh-ed25519 " K1 "\n"
+                         "  #ssh-ed25519 " K1 "\n"
+                         "ssh-ed25519 " K1 "AAAA\n";
+  char expected[2048];
+  snprintf(expected, sizeof(expected), "%s" LOOPBACK " ssh-ed25519 " K1 "\n", existing);
+  make_home(true);
+  write_authkeys(existing);
+  send_default("ssh-ed25519 " K1);
+  int ret = expect_authkeys(test, expected);
+  remove_home();
+  return ret;
+}
+
+static int test_key_after_quoted_options_found(void) {
+  const char *test = "a key after options holding spaces in quotes is found";
+  const char *existing = "command=\"echo a b\",from=\"127.0.0.1,::1\" ssh-ed25519 " K1 " me\n";
+  make_home(true);
+  write_authkeys(existing);
+  send_default("ssh-ed25519 " K1);
+  int ret = expect_authkeys(test, existing);
+  ret += expect_log(test, true, "INFO");
+  ret += expect_log(test, true, "is already in authorized_keys");
+  ret += expect_log(test, false, "WARN");
+  remove_home();
+  return ret;
+}
+
 static int test_trailing_newline_keeps_comment(void) {
   const char *test = "a key sent with a trailing newline keeps its comment";
   make_home(true);
@@ -236,7 +293,7 @@ static int test_trailing_newline_keeps_comment(void) {
 }
 
 static int test_comment_left_out(void) {
-  const char *test = "a key whose comment is not printable ASCII, or is over 256 characters, is added without it";
+  const char *test = "a key whose comment holds a character outside ASCII, or is over 256 characters, is added without it";
   char value[512];
   char comment[258];
   memset(comment, 'a', 257);
@@ -285,19 +342,82 @@ static int test_permissions_follow_loopback(void) {
   return ret;
 }
 
-static int test_permissions_holding_from_refused(void) {
-  const char *test = "sshnpd refuses a --sshpublickey-permissions value holding its own from= option";
+static int test_permissions_from_left_out_with_warning(void) {
+  const char *test = "sshnpd leaves a from= option out of the --sshpublickey-permissions value, with a warning";
   const char *argv[] = {"sshnpd", "-a", "@device", "-m", ALICE, "--sshpublickey", "--sshpublickey-permissions",
-                        "from=\"10.0.0.0/8\""};
+                        "from=\"10.0.0.0/8\",no-pty"};
   sshnpd_params params;
   apply_default_values_to_sshnpd_params(&params);
   char out[8192];
-  int parsed = parse_capturing_stdout(&params, 8, argv, out, sizeof(out));
-  int ret = 0;
-  if (parsed == 0 || strstr(out, "sshnpd sets the from= option itself") == NULL) {
-    printf("%s: parse_sshnpd_params returned %d, printing [%s]\n", test, parsed, out);
-    ret = 1;
+  if (parse_capturing_log(&params, 8, argv, out, sizeof(out)) != 0) {
+    printf("%s: parse_sshnpd_params failed: %s\n", test, out);
+    return 1;
   }
+  int ret = expect_log(test, true, "WARN");
+  ret += expect_log(test, true, FROM_LEFT_OUT);
+  make_home(true);
+  send_key(&params, "ssh-ed25519 " K1);
+  ret += expect_authkeys(test, LOOPBACK ",no-pty ssh-ed25519 " K1 "\n");
+  remove_home();
+  free_parsed_params(&params);
+  return ret;
+}
+
+static int test_permissions_from_left_out_however_cased(void) {
+  const char *test = "sshnpd leaves a from= option out however it is cased";
+  const char *argv[] = {"sshnpd", "-a", "@device", "-m", ALICE, "--sshpublickey", "--sshpublickey-permissions",
+                        "FROM=\"10.0.0.0/8\""};
+  sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
+  char out[8192];
+  if (parse_capturing_log(&params, 8, argv, out, sizeof(out)) != 0) {
+    printf("%s: parse_sshnpd_params failed: %s\n", test, out);
+    return 1;
+  }
+  make_home(true);
+  send_key(&params, "ssh-ed25519 " K1);
+  int ret = expect_authkeys(test, LOOPBACK " ssh-ed25519 " K1 "\n");
+  remove_home();
+  free_parsed_params(&params);
+  return ret;
+}
+
+static int test_starts_with_from_in_permissions_without_sshpublickey(void) {
+  const char *test = "sshnpd without --sshpublickey starts with a from= option in --sshpublickey-permissions";
+  const char *argv[] = {"sshnpd", "-a", "@device", "-m", ALICE, "--sshpublickey-permissions", "from=\"10.0.0.0/8\""};
+  sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
+  char out[8192];
+  int ret = 0;
+  if (parse_capturing_log(&params, 7, argv, out, sizeof(out)) != 0) {
+    printf("%s: parse_sshnpd_params failed: %s\n", test, out);
+    return 1;
+  }
+  ret += expect_log(test, true, FROM_LEFT_OUT);
+  if (params.sshpublickey_permissions == NULL || strcmp(params.sshpublickey_permissions, "") != 0) {
+    printf("%s: the permissions kept are [%s]\n", test,
+           params.sshpublickey_permissions == NULL ? "(none)" : params.sshpublickey_permissions);
+    ret++;
+  }
+  free_parsed_params(&params);
+  return ret;
+}
+
+static int test_permissions_and_comment_together(void) {
+  const char *test = "a key with a comment, under --sshpublickey-permissions, keeps both";
+  const char *argv[] = {"sshnpd", "-a", "@device", "-m", ALICE, "-s", "--sshpublickey-permissions", "no-pty"};
+  sshnpd_params params;
+  apply_default_values_to_sshnpd_params(&params);
+  char out[8192];
+  if (parse_capturing_stdout(&params, 8, argv, out, sizeof(out)) != 0) {
+    printf("%s: parse_sshnpd_params failed: %s\n", test, out);
+    return 1;
+  }
+  make_home(true);
+  send_key(&params, "ssh-ed25519 " K1 " user@client");
+  int ret = expect_authkeys(test, LOOPBACK ",no-pty ssh-ed25519 " K1 " user@client\n");
+  remove_home();
+  free_parsed_params(&params);
   return ret;
 }
 
@@ -357,6 +477,17 @@ static int test_key_data_not_base64_logged_on_one_line(void) {
     printf("%s: the log is not one line: [%s]\n", test, log_text);
     ret++;
   }
+  remove_home();
+  return ret;
+}
+
+static int test_refused_value_escapes_quotes(void) {
+  const char *test = "a refused value shows quotes, backslashes and non-ASCII bytes escaped";
+  make_home(true);
+  send_default("ssh-ed25519 " K1 "\n\", as it is from @bob: \"x\\ caf\xc3\xa9");
+  int ret = expect_log(test, true,
+                       "Refusing the sshpublickey from " ALICE ", as it holds a control character: \"ssh-ed25519 " K1
+                       "\\n\\\", as it is from @bob: \\\"x\\\\ caf\\xc3\\xa9\"\n");
   remove_home();
   return ret;
 }
@@ -442,8 +573,13 @@ static int test_no_ssh_directory(void) {
 static int test_starts_without_authorized_keys(void) {
   const char *test = "sshnpd starts on a device with no authorized_keys";
   make_home(false);
-  char *filename = sshnpd_authorized_keys_filename(home);
+  char *filename = NULL;
+  int prepared = sshnpd_prepare_authorized_keys(home, &filename);
   int ret = 0;
+  if (prepared != 0) {
+    printf("%s: sshnpd_prepare_authorized_keys returned %d\n", test, prepared);
+    ret++;
+  }
   if (filename == NULL || strcmp(filename, authkeys) != 0) {
     printf("%s: the authorized_keys path is %s\n", test, filename == NULL ? "(none)" : filename);
     ret++;
@@ -561,6 +697,55 @@ static int test_build_refuses_malformed_values(void) {
   return ret;
 }
 
+static int expect_reason(const char *value, const char *expected) {
+  sshnpd_authorized_key key;
+  const char *reason = NULL;
+  if (sshnpd_authorized_key_build(value, NULL, &key, &reason) == 0) {
+    printf("build [%.80s] was not refused: [%s]\n", value, key.line);
+    sshnpd_authorized_key_free(&key);
+    return 1;
+  }
+  if (strcmp(reason, expected) != 0) {
+    printf("build [%.80s] was refused as [%s], not [%s]\n", value, reason, expected);
+    return 1;
+  }
+  return 0;
+}
+
+static int test_build_refuses_noncanonical_base64(void) {
+  const char *other_type = "its key data is not of its stated key type";
+  char value[400];
+  int ret = 0;
+  ret += expect_reason("ssh-ed25519 AAAACw==", other_type);
+  ret += expect_reason("ssh-ed25519 AAAACx==", other_type);
+  snprintf(value, sizeof(value), "ssh-ed25519 %.66s", K1);
+  ret += expect_reason(value, other_type);
+  snprintf(value, sizeof(value), "ssh-ed25519 %.65s===", K1);
+  ret += expect_reason(value, other_type);
+  snprintf(value, sizeof(value), "ecdsa-sha2-nistp256 %s", E1);
+  size_t len = strlen(value);
+  if (strcmp(value + len - 2, "c=") != 0) {
+    printf("E1 does not end in c=\n");
+    ret++;
+  }
+  value[len - 2] = 'd';
+  ret += expect_reason(value, other_type);
+  return ret;
+}
+
+static int test_build_reasons_match_the_dart_daemon(void) {
+  char value[8300];
+  memset(value, 'a', 8193);
+  memcpy(value, "ssh-ed25519 ", 12);
+  value[8193] = '\0';
+  int ret = expect_reason(value, "it is over 8192 bytes");
+  ret += expect_reason("ssh-ed25519 " K1 " a\x01" "b", "it holds a control character");
+  ret += expect_reason("ssh-ed25519", "it is not \"<type> <key data>\"");
+  ret += expect_reason("ssh-dss " K1, "its key type is not one sshnpd accepts");
+  ret += expect_reason("ssh-ed25519 " R1, "its key data is not of its stated key type");
+  return ret;
+}
+
 static int test_build_refuses_unlisted_type_whose_key_data_names_it(void) {
   const char *types[] = {"ssh-dss", "sk-ssh-ed25519@openssh.com", "ssh-ed25519-cert-v01@openssh.com"};
   char named[256];
@@ -588,39 +773,34 @@ static int test_build_keeps_a_256_character_comment(void) {
   return expect_built(value, line);
 }
 
-static int test_permissions_hold_from(void) {
-  const char *holding[] = {
-      "from=\"10.0.0.0/8\"",
-      "FROM=\"10.0.0.0/8\"",
-      "no-pty,From=\"10.0.0.0/8\"",
-      "command=\"echo a,b\",from=\"10.0.0.0/8\"",
-      "no-pty, from=\"10.0.0.0/8\"",
-      "no-pty,from",
-  };
-  const char *not_holding[] = {
-      "",
-      "no-pty",
-      "no-port-forwarding,no-pty",
-      "command=\"echo a,from=b\"",
-      "command=\"echo \\\",from=b\"",
-      "environment=\"FROM=x\"",
-      "fromage",
+static int test_permissions_leave_out_from(void) {
+  const char *cases[][3] = {
+      {"from=\"10.0.0.0/8\"", "", "1"},
+      {"FROM=\"10.0.0.0/8\"", "", "1"},
+      {"no-pty,From=\"10.0.0.0/8\"", "no-pty", "1"},
+      {"command=\"echo a,b\",from=\"10.0.0.0/8\",no-pty", "command=\"echo a,b\",no-pty", "1"},
+      {"no-pty, from=\"10.0.0.0/8\"", "no-pty", "1"},
+      {"no-pty,from", "no-pty", "1"},
+      {"", "", "0"},
+      {"no-pty", "no-pty", "0"},
+      {"no-port-forwarding,,no-pty,", "no-port-forwarding,no-pty", "0"},
+      {"command=\"echo a,from=b\"", "command=\"echo a,from=b\"", "0"},
+      {"command=\"echo \\\",from=b\"", "command=\"echo \\\",from=b\"", "0"},
+      {"environment=\"FROM=x\"", "environment=\"FROM=x\"", "0"},
+      {"fromage", "fromage", "0"},
   };
   int ret = 0;
-  for (size_t i = 0; i < sizeof(holding) / sizeof(holding[0]); i++) {
-    if (!sshnpd_permissions_hold_from(holding[i])) {
-      printf("permissions [%s] should hold from\n", holding[i]);
+  for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+    char permissions[128];
+    snprintf(permissions, sizeof(permissions), "%s", cases[i][0]);
+    bool left_out = sshnpd_permissions_leave_out_from(permissions);
+    if (strcmp(permissions, cases[i][1]) != 0 || left_out != (cases[i][2][0] == '1')) {
+      printf("permissions [%s] became [%s], from left out %d\n", cases[i][0], permissions, left_out);
       ret++;
     }
   }
-  for (size_t i = 0; i < sizeof(not_holding) / sizeof(not_holding[0]); i++) {
-    if (sshnpd_permissions_hold_from(not_holding[i])) {
-      printf("permissions [%s] should not hold from\n", not_holding[i]);
-      ret++;
-    }
-  }
-  if (sshnpd_permissions_hold_from(NULL)) {
-    printf("NULL permissions should not hold from\n");
+  if (sshnpd_permissions_leave_out_from(NULL)) {
+    printf("NULL permissions should hold no from\n");
     ret++;
   }
   return ret;
@@ -628,7 +808,7 @@ static int test_permissions_hold_from(void) {
 
 static int test_permissions_values_joined(void) {
   const char *argv[] = {"sshnpd", "-a", "@device", "-m", ALICE, "-S", "no-pty", "-S",
-                        "command=\"echo hi\" , no-X11-forwarding"};
+                        "command=\"echo hi\" , , no-X11-forwarding,"};
   sshnpd_params params;
   apply_default_values_to_sshnpd_params(&params);
   char out[8192];
@@ -663,8 +843,8 @@ static int test_permissions_with_newline_refused(void) {
 static int test_one_line_for_log(void) {
   char out[SSHNPD_SSHPUBLICKEY_LOG_MAX_LEN + 1];
   int ret = 0;
-  sshnpd_one_line_for_log("a\nb\rc\td\x01" "e\x7f" "f\xc2\x85g\xe2\x80\xa8h", out, sizeof(out));
-  if (strcmp(out, "a\\nb\\rc\\td\\x01e\\x7ff\\xc2\\x85g\\xe2\\x80\\xa8h") != 0) {
+  sshnpd_one_line_for_log("a\nb\rc\td\x01" "e\x7f" "f\xc2\x85g\xe2\x80\xa8h\"i\\j", out, sizeof(out));
+  if (strcmp(out, "a\\nb\\rc\\td\\x01e\\x7ff\\xc2\\x85g\\xe2\\x80\\xa8h\\\"i\\\\j") != 0) {
     printf("one_line_for_log escaped to [%s]\n", out);
     ret++;
   }
@@ -691,19 +871,25 @@ int main(void) {
       test_key_added_as_one_loopback_line,
       test_key_after_last_line_without_newline,
       test_two_keys_one_after_the_other,
-      test_two_keys_together,
       test_key_already_present,
       test_key_present_with_own_options,
+      test_key_present_without_loopback_warns,
+      test_key_only_in_comment_hash_line_or_longer_token_added,
+      test_key_after_quoted_options_found,
       test_trailing_newline_keeps_comment,
       test_comment_left_out,
       test_rsa_signature_algorithm_written_as_ssh_rsa,
       test_permissions_follow_loopback,
-      test_permissions_holding_from_refused,
+      test_permissions_from_left_out_with_warning,
+      test_permissions_from_left_out_however_cased,
+      test_starts_with_from_in_permissions_without_sshpublickey,
+      test_permissions_and_comment_together,
       test_two_key_lines_change_nothing,
       test_key_data_of_another_type,
       test_unsupported_key_type,
       test_refused_value_on_one_line,
       test_key_data_not_base64_logged_on_one_line,
+      test_refused_value_escapes_quotes,
       test_refused_value_cut_to_200,
       test_value_over_8_kib,
       test_ignored_without_sshpublickey,
@@ -711,9 +897,11 @@ int main(void) {
       test_starts_without_authorized_keys,
       test_build_accepts_each_supported_type,
       test_build_refuses_malformed_values,
+      test_build_refuses_noncanonical_base64,
+      test_build_reasons_match_the_dart_daemon,
       test_build_refuses_unlisted_type_whose_key_data_names_it,
       test_build_keeps_a_256_character_comment,
-      test_permissions_hold_from,
+      test_permissions_leave_out_from,
       test_permissions_values_joined,
       test_permissions_with_newline_refused,
       test_one_line_for_log,

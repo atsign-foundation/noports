@@ -26,16 +26,21 @@ void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *messag
     return;
   }
 
-  bool added = false;
-  if (authorize_ssh_public_key(authkeys_filename, &key, &added) != 0) {
+  sshnpd_key_addition addition = SSHNPD_KEY_ALREADY_PRESENT;
+  if (authorize_ssh_public_key(authkeys_filename, &key, &addition) != 0) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to add the ssh public key from %s\n", from);
-  } else if (!added) {
+  } else if (addition == SSHNPD_KEY_ALREADY_PRESENT) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "The ssh public key from %s is already in authorized_keys\n",
+                 from);
+  } else if (addition == SSHNPD_KEY_ALREADY_PRESENT_WITHOUT_LOOPBACK) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN,
+                 "The ssh public key from %s is already in authorized_keys on a line without the loopback from= "
+                 "option, which sshnpd leaves as it is\n",
                  from);
   } else if (key.comment_left_out) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO,
-                 "Added the ssh public key from %s without its comment, which was not printable ASCII or was over %d "
-                 "characters\n",
+                 "Added the ssh public key from %s without its comment, which held a character outside ASCII or was "
+                 "over %d characters\n",
                  from, SSHNPD_SSHPUBLICKEY_MAX_COMMENT_LEN);
   } else {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_INFO, "Added the ssh public key from %s\n", from);

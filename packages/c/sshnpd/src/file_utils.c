@@ -15,6 +15,8 @@
 #include <unistd.h>
 
 #define TAG "AUTH SSH KEY"
+#define STRINGIFY(x) #x
+#define TO_STRING(x) STRINGIFY(x)
 
 // Each key type accepted, with the type its key data must name
 static const struct {
@@ -75,6 +77,21 @@ static bool is_base64(const char *s, size_t len) {
   return true;
 }
 
+// Whether bytes encode in base64 as exactly encoded, which a value with
+// padding bits set does not
+static bool encodes_as(const unsigned char *bytes, size_t len, const char *encoded, size_t encoded_len) {
+  size_t size = atchops_base64_encoded_size(len) + 1;
+  char *again = malloc(size);
+  if (again == NULL) {
+    return false;
+  }
+  size_t again_len = 0;
+  bool same = atchops_base64_encode(bytes, len, again, size, &again_len) == 0 && again_len == encoded_len &&
+              memcmp(again, encoded, encoded_len) == 0;
+  free(again);
+  return same;
+}
+
 // Whether key_data is base64 whose first field (a big-endian uint32 length,
 // then that many bytes) is type
 static bool key_data_names(const char *key_data, size_t len, const char *type) {
@@ -88,7 +105,8 @@ static bool key_data_names(const char *key_data, size_t len, const char *type) {
   }
   size_t decoded_len = 0;
   bool names = false;
-  if (atchops_base64_decode(key_data, len, decoded, size, &decoded_len) == 0 && decoded_len >= 4) {
+  if (atchops_base64_decode(key_data, len, decoded, size, &decoded_len) == 0 && decoded_len >= 4 &&
+      encodes_as(decoded, decoded_len, key_data, len)) {
     uint32_t name_len = ((uint32_t)decoded[0] << 24) | ((uint32_t)decoded[1] << 16) | ((uint32_t)decoded[2] << 8) |
                         (uint32_t)decoded[3];
     names = name_len <= decoded_len - 4 && name_len == strlen(type) && memcmp(decoded + 4, type, name_len) == 0;
@@ -118,7 +136,7 @@ int sshnpd_authorized_key_build(const char *value, const char *permissions, sshn
   }
   size_t len = strlen(value);
   if (len > SSHNPD_SSHPUBLICKEY_MAX_BYTES) {
-    *reason = "it is over 8192 bytes";
+    *reason = "it is over " TO_STRING(SSHNPD_SSHPUBLICKEY_MAX_BYTES) " bytes";
     return 1;
   }
 
@@ -195,10 +213,12 @@ void sshnpd_authorized_key_free(sshnpd_authorized_key *key) {
   key->key_data = NULL;
 }
 
-bool sshnpd_permissions_hold_from(const char *permissions) {
+bool sshnpd_permissions_leave_out_from(char *permissions) {
   if (permissions == NULL) {
     return false;
   }
+  bool left_out = false;
+  char *out = permissions;
   const char *option = permissions;
   bool quoted = false;
   for (const char *c = permissions;; c++) {
@@ -207,25 +227,37 @@ bool sshnpd_permissions_hold_from(const char *permissions) {
     } else if (*c == '"') {
       quoted = !quoted;
     } else if (*c == '\0' || (*c == ',' && !quoted)) {
-      const char *name_end = option;
-      while (name_end < c && *name_end != '=') {
-        name_end++;
-      }
-      while (option < name_end && is_ascii_space(*option)) {
+      const char *end = c;
+      while (option < end && is_ascii_space(*option)) {
         option++;
+      }
+      while (end > option && is_ascii_space(end[-1])) {
+        end--;
+      }
+      const char *name_end = option;
+      while (name_end < end && *name_end != '=') {
+        name_end++;
       }
       while (name_end > option && is_ascii_space(name_end[-1])) {
         name_end--;
       }
-      if (name_end - option == 4 && strncasecmp(option, "from", 4) == 0) {
-        return true;
+      bool is_from = name_end - option == 4 && strncasecmp(option, "from", 4) == 0;
+      left_out = left_out || is_from;
+      if (!is_from && end > option) {
+        if (out != permissions) {
+          *out++ = ',';
+        }
+        memmove(out, option, (size_t)(end - option));
+        out += end - option;
       }
       if (*c == '\0') {
-        return false;
+        break;
       }
       option = c + 1;
     }
   }
+  *out = '\0';
+  return left_out;
 }
 
 void sshnpd_one_line_for_log(const char *value, char *out, size_t out_size) {
@@ -241,6 +273,10 @@ void sshnpd_one_line_for_log(const char *value, char *out, size_t out_size) {
       strcpy(shown, "\\r");
     } else if (*c == '\t') {
       strcpy(shown, "\\t");
+    } else if (*c == '"') {
+      strcpy(shown, "\\\"");
+    } else if (*c == '\\') {
+      strcpy(shown, "\\\\");
     } else if (*c < 0x20 || *c > 0x7e) {
       snprintf(shown, sizeof(shown), "\\x%02x", *c);
     } else {
@@ -257,14 +293,17 @@ void sshnpd_one_line_for_log(const char *value, char *out, size_t out_size) {
   out[n] = '\0';
 }
 
-char *sshnpd_authorized_keys_filename(const char *home_dir) {
+int sshnpd_prepare_authorized_keys(const char *home_dir, char **filename) {
   const char *suffix = "/.ssh/authorized_keys";
   size_t size = strlen(home_dir) + strlen(suffix) + 1;
-  char *filename = malloc(size);
-  if (filename != NULL) {
-    snprintf(filename, size, "%s%s", home_dir, suffix);
+  *filename = malloc(size);
+  if (*filename == NULL) {
+    atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for the authorized_keys path\n");
+    return ENOMEM;
   }
-  return filename;
+  snprintf(*filename, size, "%s%s", home_dir, suffix);
+  atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Using authorized_keys file: %s\n", *filename);
+  return 0;
 }
 
 static int create_parent_directory(const char *filename) {
@@ -291,6 +330,95 @@ static int create_parent_directory(const char *filename) {
   return ret;
 }
 
+static bool is_blank(char c) { return c == ' ' || c == '\t'; }
+
+static const char *skip_blanks(const char *s) {
+  while (is_blank(*s)) {
+    s++;
+  }
+  return s;
+}
+
+static const char *token_end(const char *s) {
+  while (*s != '\0' && !is_blank(*s)) {
+    s++;
+  }
+  return s;
+}
+
+// Where the options at the start of s end: at the first space or tab outside
+// double quotes, where \" does not end a quoted value
+static const char *options_end(const char *s) {
+  bool quoted = false;
+  for (; *s != '\0' && (quoted || !is_blank(*s)); s++) {
+    if (*s == '\\' && s[1] == '"') {
+      s++;
+    } else if (*s == '"') {
+      quoted = !quoted;
+    }
+  }
+  return s;
+}
+
+// Whether the options in [start, end) include SSHNPD_LOOPBACK_FROM_OPTION,
+// matching its name in any case
+static bool options_hold_loopback_from(const char *start, const char *end) {
+  size_t loopback_len = strlen(SSHNPD_LOOPBACK_FROM_OPTION);
+  const char *option = start;
+  bool quoted = false;
+  for (const char *c = start;; c++) {
+    if (c < end && *c == '\\' && c + 1 < end && c[1] == '"') {
+      c++;
+    } else if (c < end && *c == '"') {
+      quoted = !quoted;
+    } else if (c == end || (*c == ',' && !quoted)) {
+      const char *option_end = c;
+      while (option < option_end && is_ascii_space(*option)) {
+        option++;
+      }
+      while (option_end > option && is_ascii_space(option_end[-1])) {
+        option_end--;
+      }
+      if ((size_t)(option_end - option) == loopback_len &&
+          strncasecmp(option, SSHNPD_LOOPBACK_FROM_OPTION, loopback_len) == 0) {
+        return true;
+      }
+      if (c == end) {
+        return false;
+      }
+      option = c + 1;
+    }
+  }
+}
+
+// Whether line, without its line ending, holds key_data as the token after a
+// supported key type, read as sshd reads it, setting *loopback_only to
+// whether its options include SSHNPD_LOOPBACK_FROM_OPTION
+static bool line_holds_key_data(const char *line, const char *key_data, bool *loopback_only) {
+  const char *s = skip_blanks(line);
+  if (*s == '\0' || *s == '#') {
+    return false;
+  }
+  const char *options = s;
+  const char *options_stop = s;
+  if (key_data_type_for(s, (size_t)(token_end(s) - s)) == NULL) {
+    options_stop = options_end(s);
+    s = skip_blanks(options_stop);
+  }
+  const char *type_end = token_end(s);
+  if (key_data_type_for(s, (size_t)(type_end - s)) == NULL) {
+    return false;
+  }
+  const char *data = skip_blanks(type_end);
+  const char *data_end = token_end(data);
+  size_t key_data_len = strlen(key_data);
+  if ((size_t)(data_end - data) != key_data_len || memcmp(data, key_data, key_data_len) != 0) {
+    return false;
+  }
+  *loopback_only = options_hold_loopback_from(options, options_stop);
+  return true;
+}
+
 static FILE *open_authorized_keys(const char *filename) {
   int fd = open(filename, O_RDWR | O_APPEND | O_CREAT | O_EXCL, 0600);
   if (fd >= 0) {
@@ -315,8 +443,8 @@ static FILE *open_authorized_keys(const char *filename) {
   return file;
 }
 
-int authorize_ssh_public_key(const char *filename, const sshnpd_authorized_key *key, bool *added) {
-  *added = false;
+int authorize_ssh_public_key(const char *filename, const sshnpd_authorized_key *key, sshnpd_key_addition *addition) {
+  *addition = SSHNPD_KEY_ALREADY_PRESENT;
   int ret = create_parent_directory(filename);
   if (ret != 0) {
     atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to create the directory of %s: %s\n", filename,
@@ -342,15 +470,13 @@ int authorize_ssh_public_key(const char *filename, const sshnpd_authorized_key *
     atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to read %s: %s\n", filename, strerror(ret));
     goto exit;
   }
+  bool loopback_only = false;
   while (!present && (read_len = getline(&buf, &bufsize, file)) > 0) {
     last = buf[read_len - 1];
-    char *saveptr = NULL;
-    for (char *token = strtok_r(buf, " \t\r\n", &saveptr); token != NULL; token = strtok_r(NULL, " \t\r\n", &saveptr)) {
-      if (strcmp(token, key->key_data) == 0) {
-        present = true;
-        break;
-      }
+    while (read_len > 0 && (buf[read_len - 1] == '\n' || buf[read_len - 1] == '\r')) {
+      buf[--read_len] = '\0';
     }
+    present = line_holds_key_data(buf, key->key_data, &loopback_only);
   }
   if (ferror(file)) {
     ret = errno != 0 ? errno : 1;
@@ -358,6 +484,7 @@ int authorize_ssh_public_key(const char *filename, const sshnpd_authorized_key *
     goto exit;
   }
   if (present) {
+    *addition = loopback_only ? SSHNPD_KEY_ALREADY_PRESENT : SSHNPD_KEY_ALREADY_PRESENT_WITHOUT_LOOPBACK;
     goto exit;
   }
 
@@ -383,7 +510,7 @@ int authorize_ssh_public_key(const char *filename, const sshnpd_authorized_key *
     atlogger_log(TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to append to %s: %s\n", filename, strerror(ret));
     goto exit;
   }
-  *added = true;
+  *addition = SSHNPD_KEY_ADDED;
 
 exit:
   free(buf);

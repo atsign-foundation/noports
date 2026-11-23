@@ -594,11 +594,10 @@ int main(int argc, char **argv) {
   }
 
   // 11. The authorized_keys file's path
-  authkeys_filename = sshnpd_authorized_keys_filename(home_dir);
-  if (authkeys_filename == NULL) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for authkeys_filename\n");
+  res = sshnpd_prepare_authorized_keys(home_dir, &authkeys_filename);
+  if (res != 0) {
     atcommons_memlist_failure_free(&memlist);
-    return 1;
+    return res;
   }
   res = atcommons_memlist_add(&memlist, authkeys_filename, true, NULL);
   if (res != 0) {
@@ -606,7 +605,6 @@ int main(int argc, char **argv) {
     atcommons_memlist_failure_free(&memlist);
     return res;
   }
-  atlogger_log("AUTH SSH KEY", ATLOGGER_LOGGING_LEVEL_DEBUG, "Using authorized_keys file: %s\n", authkeys_filename);
 
   if (!should_run) {
     atcommons_memlist_failure_free(&memlist);

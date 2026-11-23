@@ -3,6 +3,7 @@
 #include "sshnpd/file_utils.h"
 #include <atchops/base64.h>
 #include <dlfcn.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,9 +22,11 @@ static dev_t counted_dev;
 static ino_t counted_ino;
 static int counted_writes;
 static size_t counted_bytes;
+static const char *other_writer_line;
 
 // NOTE: this binary's write(2) wrapper; it passes every call through and
-// counts the calls on authorized_keys while counting is set
+// counts the calls on authorized_keys while counting is set, first appending
+// other_writer_line, when set, as another process would
 ssize_t write(int fd, const void *buf, size_t count) {
   static ssize_t (*real_write)(int, const void *, size_t) = NULL;
   if (real_write == NULL) {
@@ -36,6 +39,14 @@ ssize_t write(int fd, const void *buf, size_t count) {
   if (counting && fstat(fd, &st) == 0 && st.st_dev == counted_dev && st.st_ino == counted_ino) {
     counted_writes++;
     counted_bytes += count;
+    if (other_writer_line != NULL) {
+      int other = open(authkeys, O_WRONLY | O_APPEND);
+      if (other < 0 || real_write(other, other_writer_line, strlen(other_writer_line)) < 0) {
+        abort();
+      }
+      close(other);
+      other_writer_line = NULL;
+    }
   }
   return real_write(fd, buf, count);
 }
@@ -131,8 +142,8 @@ static int test_line_and_separator_in_one_write(void) {
   counted_writes = 0;
   counted_bytes = 0;
   counting = true;
-  bool added = false;
-  int authorized = authorize_ssh_public_key(authkeys, &key, &added);
+  sshnpd_key_addition addition = SSHNPD_KEY_ALREADY_PRESENT;
+  int authorized = authorize_ssh_public_key(authkeys, &key, &addition);
   counting = false;
 
   int ret = 0;
@@ -140,8 +151,8 @@ static int test_line_and_separator_in_one_write(void) {
     printf("%s: the line is only %zu bytes\n", test, line_len);
     ret++;
   }
-  if (authorized != 0 || !added) {
-    printf("%s: authorize_ssh_public_key returned %d, added %d\n", test, authorized, added);
+  if (authorized != 0 || addition != SSHNPD_KEY_ADDED) {
+    printf("%s: authorize_ssh_public_key returned %d, addition %d\n", test, authorized, (int)addition);
     ret++;
   }
   if (counted_writes != 1 || counted_bytes != line_len + 1) {
@@ -162,8 +173,62 @@ static int test_line_and_separator_in_one_write(void) {
   return ret;
 }
 
+static int test_line_after_another_writers_line(void) {
+  const char *test = "a key's line goes after a line another writer appended after the file was opened";
+  const char *other = "ssh-ed25519 " K2 " other@host\n";
+  if (make_home() != 0) {
+    printf("%s: setup failed\n", test);
+    return 1;
+  }
+  FILE *f = fopen(authkeys, "w");
+  if (f == NULL) {
+    printf("%s: setup failed\n", test);
+    remove_home();
+    return 1;
+  }
+  fputs(K0_LINE "\n", f);
+  fclose(f);
+  struct stat st;
+  stat(authkeys, &st);
+
+  sshnpd_authorized_key key;
+  const char *reason = NULL;
+  if (sshnpd_authorized_key_build("ssh-ed25519 " K1, NULL, &key, &reason) != 0) {
+    printf("%s: the value was refused, as %s\n", test, reason);
+    remove_home();
+    return 1;
+  }
+  counted_dev = st.st_dev;
+  counted_ino = st.st_ino;
+  other_writer_line = other;
+  counting = true;
+  sshnpd_key_addition addition = SSHNPD_KEY_ALREADY_PRESENT;
+  int authorized = authorize_ssh_public_key(authkeys, &key, &addition);
+  counting = false;
+  other_writer_line = NULL;
+
+  int ret = 0;
+  if (authorized != 0 || addition != SSHNPD_KEY_ADDED) {
+    printf("%s: authorize_ssh_public_key returned %d, addition %d\n", test, authorized, (int)addition);
+    ret++;
+  }
+  char expected[1024];
+  snprintf(expected, sizeof(expected), K0_LINE "\n%s%s", other, key.line);
+  char *content = read_authkeys();
+  if (content == NULL || strcmp(content, expected) != 0) {
+    printf("%s:\n  authorized_keys holds [%s]\n  expected [%s]\n", test, content == NULL ? "(no file)" : content,
+           expected);
+    ret++;
+  }
+  free(content);
+  sshnpd_authorized_key_free(&key);
+  remove_home();
+  return ret;
+}
+
 int main(void) {
   int failed = test_line_and_separator_in_one_write();
+  failed += test_line_after_another_writers_line();
   printf("Tests failed: %d\n", failed);
   return failed;
 }

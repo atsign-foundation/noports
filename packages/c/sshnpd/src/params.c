@@ -17,8 +17,8 @@
 #define max_client_key_check_secs 86400
 #define sshpublickey_permissions_newline_msg                                                                           \
   "Detected newline characters in the ssh public key permissions which malforms the authorized_keys file."
-#define sshpublickey_permissions_from_msg                                                                              \
-  "The ssh public key permissions may not hold a from= option: sshnpd sets the from= option itself."
+#define sshpublickey_permissions_from_left_out_msg                                                                     \
+  "Leaving the from= option out of the ssh public key permissions: sshnpd sets the from= option itself."
 
 typedef struct {
   sshnpd_params *params;
@@ -26,8 +26,8 @@ typedef struct {
 } sshpublickey_permissions_appender;
 
 // Appends each comma-separated part of an --sshpublickey-permissions value,
-// trimmed, to params->sshpublickey_permissions, joining the parts of every
-// value given with commas
+// trimmed, to params->sshpublickey_permissions, joining the non-empty parts of
+// every value given with commas
 static int append_sshpublickey_permissions(struct argparse *self, const struct argparse_option *option) {
   (void)self;
   sshpublickey_permissions_appender *appender = (sshpublickey_permissions_appender *)option->data;
@@ -42,6 +42,10 @@ static int append_sshpublickey_permissions(struct argparse *self, const struct a
     }
     while (end > start && isspace((unsigned char)end[-1])) {
       end--;
+    }
+    if (end == start) {
+      part = comma != NULL ? comma + 1 : NULL;
+      continue;
     }
     size_t old_len = params->sshpublickey_permissions == NULL ? 0 : strlen(params->sshpublickey_permissions);
     size_t separator = params->sshpublickey_permissions == NULL ? 0 : 1;
@@ -160,18 +164,15 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
     params->sshpublickey_permissions = NULL;
     return 1;
   }
-  const char *permissions_error = NULL;
   if (params->sshpublickey_permissions != NULL && strpbrk(params->sshpublickey_permissions, "\r\n") != NULL) {
-    permissions_error = sshpublickey_permissions_newline_msg;
-  } else if (sshnpd_permissions_hold_from(params->sshpublickey_permissions)) {
-    permissions_error = sshpublickey_permissions_from_msg;
-  }
-  if (permissions_error != NULL) {
     argparse_usage(&argparse);
-    printf("Invalid Argument(s): %s\n", permissions_error);
+    printf("Invalid Argument(s): %s\n", sshpublickey_permissions_newline_msg);
     free(params->sshpublickey_permissions);
     params->sshpublickey_permissions = NULL;
     return 1;
+  }
+  if (sshnpd_permissions_leave_out_from(params->sshpublickey_permissions)) {
+    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_WARN, "%s\n", sshpublickey_permissions_from_left_out_msg);
   }
 
   if (local_sshd_port < 1 || local_sshd_port > 65535) {
