@@ -19,10 +19,6 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
   final bool verbose;
   final String loggingTag;
 
-  /// Window used by [RelayAuthVerifierAuto] to distinguish a legacy connecting
-  /// side (which speaks first) from an ESCR one (which waits to be challenged).
-  final int relayAuthDetectWindowMs;
-
   late final ReceivePort fromMain;
   late final AtSignLogger logger;
   final Map<String, RelayWorkerRequestHandler> reqHandlers = {};
@@ -49,7 +45,6 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     required this.logTraffic,
     required this.verbose,
     required this.loggingTag,
-    this.relayAuthDetectWindowMs = defaultRelayAuthDetectWindowMs,
   }) {
     AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
     AtSignLogger.root_level = verbose ? 'INFO' : 'WARNING';
@@ -117,22 +112,15 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
     await stop();
   }
 
-  /// Builds a per-socket auto-detecting verifier for each authenticated side.
-  ///
-  /// Both sides are left to auto-detect: the client declares the universally-
-  /// safe legacy mode in `request_ports` (so a relay that does NOT auto-detect
-  /// applies one mode both sides can do), and it decides its *actual* per-side
-  /// mode only after learning this relay auto-detects — so `params.relayAuthMode`
-  /// no longer reflects either side's real mode and must not be used as a
-  /// `knownMode` here. Once the client has resolved the modes it sends a
-  /// definitive auth-modes notification, which the worker feeds to each verifier
-  /// via [setKnownMode] to skip the detection window.
+  /// Builds a verifier for each authenticated side, which verifies its
+  /// sockets by the mode the request gives that side
+  /// ([SrvdSessionParams.sideAMode], [SrvdSessionParams.sideBMode]); a side B
+  /// the request leaves to the client waits for the client's auth_modes
+  /// notification or a legacy envelope.
   ///
   /// A legacy socket needs the connecting atSign's public key. The request
-  /// handler fetches it up front (`publicKeyA/B`) whenever the request
-  /// declares the legacy mode, as clients do by default; when the request
-  /// declares ESCR, the auto verifier looks it up only if the socket turns out
-  /// to be legacy.
+  /// handler fetches it up front (`publicKeyA/B`) for a side that may be
+  /// legacy; otherwise the verifier looks it up only if it needs it.
   Future<(RelayAuthVerifierAuto?, RelayAuthVerifierAuto?)> createAuthVerifiers(
     SrvdSessionParams params,
   ) async {
@@ -155,7 +143,7 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
         dataToVerify: dataToVerify,
         rvdNonce: params.rvdNonce,
         publicKey: params.publicKeyA,
-        detectWindow: Duration(milliseconds: relayAuthDetectWindowMs),
+        knownMode: params.sideAMode,
         onEscrVerified: (key) => reportSigningKey(params.sessionId, key),
       );
     }
@@ -170,7 +158,7 @@ abstract class RelayWorker implements RelayAuthVerifyHelper {
         dataToVerify: dataToVerify,
         rvdNonce: params.rvdNonce,
         publicKey: params.publicKeyB,
-        detectWindow: Duration(milliseconds: relayAuthDetectWindowMs),
+        knownMode: params.sideBMode,
         onEscrVerified: (key) => reportSigningKey(params.sessionId, key),
       );
     }

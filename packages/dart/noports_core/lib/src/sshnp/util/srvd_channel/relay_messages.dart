@@ -9,12 +9,18 @@ class RelayResponse {
   final String rvdNonce;
   final bool supportsEventLogging;
 
-  /// Whether this relay auto-detects each socket's relay-auth mode per side.
-  /// Only such a relay can reconcile a client and daemon that use different
-  /// modes; against a relay that does not (older releases, and the CSV
-  /// response format), the client must fall back to legacy for both sides.
-  /// Absent in older/CSV responses -> false.
+  /// Whether this relay authenticates each side by its own relay-auth mode,
+  /// taking side B's from the client's auth_modes notification when the
+  /// request leaves it open. Only such a relay can reconcile a client and
+  /// daemon that use different modes; against a relay that does not (older
+  /// releases, and the CSV response format), the client must fall back to
+  /// legacy for both sides. Absent in older/CSV responses -> false.
   final bool autoDetectsRelayAuth;
+
+  /// Whether this relay applied the per-side `relayAuthModes` of the request,
+  /// ignoring its `relayAuthMode` and any auth_modes notification. Absent
+  /// from the response when false.
+  final bool appliedRelayAuthModes;
 
   RelayResponse({
     required this.address,
@@ -23,6 +29,7 @@ class RelayResponse {
     required this.rvdNonce,
     required this.supportsEventLogging,
     this.autoDetectsRelayAuth = false,
+    this.appliedRelayAuthModes = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -32,6 +39,7 @@ class RelayResponse {
     'rvdNonce': rvdNonce,
     'supportsEventLogging': supportsEventLogging,
     'autoDetectsRelayAuth': autoDetectsRelayAuth,
+    if (appliedRelayAuthModes) 'appliedRelayAuthModes': true,
   };
 
   factory RelayResponse.fromJson(Map<String, dynamic> json) {
@@ -42,6 +50,7 @@ class RelayResponse {
       rvdNonce: json['rvdNonce'],
       supportsEventLogging: json['supportsEventLogging'],
       autoDetectsRelayAuth: json['autoDetectsRelayAuth'] ?? false,
+      appliedRelayAuthModes: json['appliedRelayAuthModes'] == true,
     );
   }
 }
@@ -54,6 +63,10 @@ class RelayRequest {
   final bool authenticateSocketB;
   final String clientNonce;
   final RelayAuthMode relayAuthMode;
+
+  /// Each side's mode, which a relay that reads it applies in place of
+  /// [relayAuthMode].
+  final RelayAuthModesBySide relayAuthModes;
   final String? relayAuthAesKey;
   final bool only443;
   final bool multipleAcksOk;
@@ -68,6 +81,7 @@ class RelayRequest {
     required this.authenticateSocketB,
     required this.clientNonce,
     required this.relayAuthMode,
+    required this.relayAuthModes,
     required this.relayAuthAesKey,
     required this.only443,
     required this.multipleAcksOk,
@@ -83,6 +97,10 @@ class RelayRequest {
     'authenticateSocketB': authenticateSocketB,
     'clientNonce': clientNonce,
     'relayAuthMode': relayAuthMode.name,
+    'relayAuthModes': {
+      'sideA': relayAuthModes.sideA.name,
+      'sideB': relayAuthModes.sideB.name,
+    },
     'relayAuthAesKey': relayAuthAesKey,
     'only443': only443,
     'multipleAcksOk': multipleAcksOk,

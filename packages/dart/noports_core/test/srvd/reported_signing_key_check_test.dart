@@ -13,8 +13,6 @@ import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/public_lookup.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
@@ -232,7 +230,6 @@ void main() {
     verbose: false,
     bind443: false,
     localBindPort443: 0,
-    relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
     signingKeyCheckInterval: every,
     reportedSigningKeyCheckInterval: reportedEvery,
     reportedSigningKeyCheckDeadline: deadline,
@@ -1444,7 +1441,6 @@ void main() {
         perSessionStorage: true,
         bind443: false,
         localBindPort443: 443,
-        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         signingKeyCheckSecs: 300,
         debug: false,
       );

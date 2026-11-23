@@ -20,6 +20,7 @@ import '../common/streaming_logging_handler.dart';
 import '../sshnp/impl/notification_request_message.dart';
 import '../sshnp/util/srvd_channel/srvd_channel.dart';
 import '../sshnp/util/srvd_channel/srvd_dart_channel.dart';
+import '../sshnp/util/sshnpd_channel/daemon_ping_record.dart';
 import '../sshnp/util/sshnpd_channel/sshnpd_channel.dart';
 import '../sshnp/util/sshnpd_channel/sshnpd_default_channel.dart';
 
@@ -221,22 +222,14 @@ class _NptImpl extends NptBase
     /// Start the sshnpd payload handler
     await sshnpdChannel.callInitialization();
 
-    if (sshnpdChannel.cachedPingResponse != null) {
-      _srvdChannel.cachedDaemonPublicSigningKeyUri =
-          sshnpdChannel.cachedPingResponse!['publicSigningKeyUri'];
-    }
-
     List<DaemonFeature> requiredFeatures = [
       DaemonFeature.srAuth,
       DaemonFeature.srE2ee,
       DaemonFeature.supportsPortChoice,
       DaemonFeature.controlChannelHeartbeats,
     ];
-    // We deliberately do NOT require DaemonFeature.supportsRamEscr: a daemon that
-    // cannot do ESCR uses legacy on its own side and the relay reconciles it,
-    // even under an explicit --relay-auth-mode escr. The one unreconcilable case
-    // (explicit ESCR + non-auto-detecting relay + non-ESCR daemon) is rejected
-    // below. See sshnp_core.initialize for detail.
+    // NOTE: not DaemonFeature.supportsRamEscr: a daemon that cannot do ESCR
+    // uses legacy on its own side
     if (!(params.timeout == DefaultArgs.srvTimeout)) {
       requiredFeatures.add(DaemonFeature.adjustableTimeout);
     }
@@ -248,20 +241,32 @@ class _NptImpl extends NptBase
       requiredFeatures,
       timeout: params.daemonPingTimeout,
     );
-    // NOTE: this is awaited only once the relay has answered. A failure before
-    // then - or the relay step throwing, so it is never awaited at all - would
-    // otherwise be an unhandled error, which kills the npt binary. The await
-    // below still sees the error.
+    // NOTE: it can fail before the first await below reaches it, or never be
+    // awaited when an earlier step throws; an unhandled error kills the npt
+    // binary, and the awaits below still see it.
     featureCheckFuture.ignore();
+
+    final DaemonRelayAuthSupport? known =
+        await sshnpdChannel.knownRelayAuthSupport();
+    if (known == null) {
+      sendProgress('Waiting for daemon feature check response');
+      await featureCheckFuture;
+    }
+    _srvdChannel.daemonRelayAuthSupport =
+        known ?? sshnpdChannel.liveRelayAuthSupport;
 
     /// Retrieve the srvd host and port pair
     sendProgress('Fetching host and port from srvd');
     await _srvdChannel.callInitialization();
     sendProgress('Received host and port from srvd');
 
-    sendProgress('Waiting for daemon feature check response');
+    if (known != null) {
+      sendProgress('Waiting for daemon feature check response');
+    }
     List<(DaemonFeature, bool, String)> features = await featureCheckFuture;
     sendProgress('Received daemon feature check response');
+
+    final bool recordCurrent = await sshnpdChannel.refreshPingRecord();
 
     await Future.delayed(Duration(milliseconds: 1));
     for (final (DaemonFeature feature, bool supported, String reason)
@@ -287,9 +292,11 @@ class _NptImpl extends NptBase
 
     sendProgress('Required daemon features are supported');
 
-    // Reject an explicit --relay-auth-mode escr this session cannot honour (a
-    // non-auto-detecting relay + a non-ESCR daemon can never agree). Every other
-    // explicit-ESCR case degrades gracefully. See sshnp_core.initialize.
+    _srvdChannel.failIfDaemonContradictsRequest(
+      sshnpdChannel.liveRelayAuthSupport,
+      recordCurrent: recordCurrent,
+    );
+
     if (SrvdChannel.escrRequestedButUnreconcilable(
       explicitEscr: params.relayAuthModeExplicit &&
           params.relayAuthMode == RelayAuthMode.escr,
@@ -306,11 +313,6 @@ class _NptImpl extends NptBase
       );
     }
 
-    // The daemon ping has now resolved, so we know which relay-auth mode each
-    // side will use. Tell the relay definitively (before the daemon session
-    // request, sent from _preRun) so it can skip the auto-detect window; if
-    // this loses the race to the daemon's socket, the relay just auto-detects.
-    // No-op against a relay that doesn't auto-detect.
     await _srvdChannel.sendDefinitiveAuthModes(
       daemonSupportsEscr: sshnpdChannel.daemonSupportsRelayAuthEscr,
     );

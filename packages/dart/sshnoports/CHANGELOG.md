@@ -4,6 +4,31 @@
 
 ## v5.18.3
 
+* feat: srvd decides each side's relay auth mode from what the client told it,
+  never from a timing window, so slow legacy clients and daemons are no longer
+  refused; `--relay-auth-detect-window-ms` has no effect, and srvd's usage
+  text no longer lists it
+* BREAKING CHANGE: against this srvd, a v5.18.0 to v5.18.2 client given
+  `--relay-auth-mode escr` fails at connect when its daemon authenticates to
+  the relay but cannot do ESCR, and a v5.18.0 to v5.18.2 client's default
+  session with an ESCR daemon fails if its auth_modes notification does not
+  arrive in time
+* fix: srvd fails a relay socket's authentication as soon as the socket
+  closes or errors, instead of holding it until the 30-second authentication
+  limit
+* feat: npt and sshnp tell srvd each side's relay auth mode, so against this
+  srvd `--relay-auth-mode escr` with a daemon that can't do ESCR uses ESCR on
+  the client's side and legacy on the daemon's
+* feat: npt and sshnp remember each daemon device's ping answer on the
+  client's own atServer; until one is recorded, a session waits for the
+  daemon's ping before asking srvd for ports
+* feat: a session whose daemon's relay auth support changed since it was last
+  seen fails with a message saying what changed and whether the client's
+  record of the daemon was updated, and the retry uses the daemon's current
+  answer
+* fix: npt, sshnp and NoPorts Desktop fail a session at once, naming the
+  daemon and device, when the daemon answers the ping with a heartbeat that
+  is not a JSON object
 * build: take socket_connector 2.7.0, so a tunnel connection closes once data
   has waited two minutes for one of its ends to read it, and a closing
   connection ends within 30 seconds even when an end has stopped reading

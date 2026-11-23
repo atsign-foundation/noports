@@ -27,11 +27,13 @@ abstract interface class ClientParams {
 
   RelayAuthMode get relayAuthMode;
 
-  /// Whether [relayAuthMode] was explicitly chosen by the caller (CLI flag,
-  /// config file, or API) rather than left at the default. When true the caller
-  /// is being prescriptive: the mode is forced on BOTH sides of the session and
-  /// the daemon is required to support it (an ESCR-incapable daemon is a
-  /// hard error) instead of the mode being softly negotiated per socket.
+  /// Whether [relayAuthMode] was chosen by the caller (CLI flag, config file
+  /// or API) rather than left at the default. An explicit ESCR is used on the
+  /// client's side with every relay and on the daemon's side when the daemon
+  /// supports it; the session fails before the daemon is asked when the relay
+  /// applies one mode to both sides and the daemon cannot do ESCR, or when a
+  /// relay that applied the named modes was given a daemon mode the live ping
+  /// changes.
   bool get relayAuthModeExplicit;
 
   bool get encryptRvdTraffic;
@@ -149,7 +151,7 @@ abstract class ClientParamsBase implements ClientParams {
     // The 443 single-port relay multiplexes both sides onto one port and
     // identifies each from its authenticated payload, so both sides must
     // authenticate. General ESCR sessions do NOT require this: the relay
-    // auto-detects and verifies each socket independently, so one side may
+    // verifies each socket independently, so one side may
     // authenticate with ESCR while the other does not authenticate at all.
     if (only443 && (!authenticateClientToRvd || !authenticateDeviceToRvd)) {
       throw ArgumentError(

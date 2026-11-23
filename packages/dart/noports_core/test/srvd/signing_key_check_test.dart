@@ -12,8 +12,6 @@ import 'package:noports_core/sshnp_foundation.dart' show RelayAuthMode;
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_params.dart';
@@ -39,6 +37,7 @@ void main() {
         rvdNonce: 'rvd nonce',
         relayAuthMode: RelayAuthMode.escr,
         relayAuthAesKey: relayAuthAesKey,
+        relayAuthModes: null,
         only443: only443,
         multipleAcksOk: true,
         preFetch: const [],
@@ -72,7 +71,6 @@ void main() {
         verbose: false,
         bind443: bind443,
         localBindPort443: localBindPort443,
-        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         signingKeyCheckInterval: interval,
         publicLookup: ClientPublicLookup(atClient),
       );
@@ -531,6 +529,27 @@ void main() {
 
       expect(srvd.signingKeyCheckInterval, const Duration(seconds: 7));
     });
+
+    test(
+      'accepts --relay-auth-detect-window-ms and does not list it',
+      () async {
+        expect(
+          (await parse(['--relay-auth-detect-window-ms', '500'])).atSign,
+          '@relay',
+          reason: 'a command line that names it still parses',
+        );
+        expect(
+          SrvdParams.parser.usage,
+          isNot(contains('relay-auth-detect-window-ms')),
+          reason: 'the usage text does not list it',
+        );
+        expect(
+          SrvdParams.parser.usage,
+          contains('--signing-key-check-secs'),
+          reason: 'the control: the usage text lists the options srvd uses',
+        );
+      },
+    );
   });
 
   group('SinglePortWorker', () {

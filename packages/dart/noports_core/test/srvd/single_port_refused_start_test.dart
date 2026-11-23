@@ -11,8 +11,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/shared_single_port_isolate.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
@@ -44,6 +42,7 @@ SrvdSessionParams params443({
       authenticateSocketB: authenticateSocketB,
       rvdNonce: 'rvd nonce',
       relayAuthMode: relayAuthMode,
+      relayAuthModes: null,
       only443: only443,
       multipleAcksOk: true,
       preFetch: const [],
@@ -202,7 +201,6 @@ void main() {
         verbose: false,
         bind443: true,
         localBindPort443: 0,
-        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         signingKeyCheckInterval: Duration.zero,
       );
       await srvd.init();
@@ -246,6 +244,8 @@ void main() {
             'authenticateSocketA': true,
             'authenticateSocketB': authenticateSocketB,
             'relayAuthMode': relayAuthMode.name,
+            if (relayAuthMode == RelayAuthMode.escr)
+              'relayAuthAesKey': 'relay auth key',
             'only443': true,
             'multipleAcksOk': multipleAcksOk,
           }),

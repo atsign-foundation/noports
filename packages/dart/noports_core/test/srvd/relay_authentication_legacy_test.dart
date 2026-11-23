@@ -10,6 +10,8 @@ import 'package:noports_core/src/srvd/relay_auth_verifiers.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
 
+import 'socket_endings.dart';
+
 void main() {
   late RsaKeyPair encryptionKeyPair;
 
@@ -207,6 +209,93 @@ void main() {
       }
       expect(somethingThrown, true);
     });
+  });
+
+  group('RelayAuthVerifierLegacy when its socket ends', () {
+    final String rvdNonce = DateTime.now().toIso8601String();
+    final Map<String, String> payload = {
+      'sessionId': Uuid().v4(),
+      'rvdNonce': rvdNonce,
+    };
+    late Socket relaySide;
+    late Socket peer;
+
+    setUpAll(() {
+      encryptionKeyPair = RsaKeyPair.generate(keySize: 2048);
+    });
+
+    setUp(() async {
+      (relaySide, peer) = await loopbackPair();
+    });
+
+    tearDown(() {
+      relaySide.destroy();
+      peer.destroy();
+    });
+
+    RelayAuthVerifierLegacy verifier() => RelayAuthVerifierLegacy(
+      encryptionKeyPair.atPublicKey.publicKey,
+      jsonEncode(payload),
+      rvdNonce,
+      'legacy socket ends',
+      '@alice'.toAtsign(),
+      payload['sessionId']!,
+    );
+
+    test(
+      'a socket its peer closes before sending its envelope fails at once',
+      () async {
+        final outcome = outcomeWithin(verifier().verifySocketAuth(relaySide));
+        final lines = linesFrom(peer);
+        unawaited(peer.close());
+
+        expect(
+          await outcome,
+          'failed: Error during socket authentication:'
+          ' the socket closed before it authenticated',
+        );
+        expect(
+          await nextLineWithin(lines),
+          'done',
+          reason: 'the relay closes its side',
+        );
+      },
+    );
+
+    test('a socket its peer resets before sending its envelope fails at once'
+        ' with the error', () async {
+      relaySide.write('unread by the peer, so its close is a reset');
+      await relaySide.flush();
+      final outcome = outcomeWithin(verifier().verifySocketAuth(relaySide));
+      await pumpEventQueue();
+      peer.destroy();
+
+      expect(
+        await outcome,
+        allOf(
+          startsWith(
+            'failed: Error during socket authentication:'
+            ' the socket failed before it authenticated: ',
+          ),
+          contains('Connection reset by peer'),
+        ),
+      );
+    });
+
+    test(
+      'a socket that authenticates and then closes ends without an error',
+      () async {
+        final verification = verifier().verifySocketAuth(relaySide);
+        peer.writeln(signPayload(encryptionKeyPair, payload));
+        await peer.flush();
+        final (authenticated, stream) = await verification.timeout(hangGuard);
+        expect(authenticated, isTrue, reason: 'the control: it authenticates');
+
+        peer.destroy();
+
+        expect(await endingWithin(stream!), 'done');
+      },
+    );
   });
 }
 

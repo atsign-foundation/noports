@@ -6,8 +6,6 @@ import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
 import 'package:logging/logging.dart';
 import 'package:noports_core/srvd.dart' show Srvd;
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/session_info.dart';
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
@@ -30,7 +28,6 @@ class _Srvd extends SrvdImpl {
           verbose: false,
           bind443: false,
           localBindPort443: 443,
-          relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
           signingKeyCheckInterval: Duration.zero,
         ) {
     logger.logger.level = Level.INFO;
@@ -70,6 +67,7 @@ void main() {
           atSignA: '@alice',
           atSignB: '@bob',
           rvdNonce: 'rvd nonce',
+          relayAuthModes: null,
           only443: false,
           multipleAcksOk: false,
           preFetch: const [],
@@ -176,6 +174,7 @@ void main() {
           atSignA: '@alice',
           atSignB: '@bob',
           rvdNonce: 'rvd nonce',
+          relayAuthModes: null,
           only443: false,
           multipleAcksOk: false,
           preFetch: const [],

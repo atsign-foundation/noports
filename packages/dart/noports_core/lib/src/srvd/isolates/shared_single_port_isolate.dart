@@ -75,10 +75,13 @@ class SinglePortWorker extends RelayWorker {
 
   /// Why a single-port session with [params] can't be started, or null if it
   /// can: the single port accepts only sockets that both authenticate with
-  /// ESCR.
+  /// ESCR, by the modes the request applies to its sides.
   static String? whyRefused(SrvdSessionParams params) {
-    if (params.relayAuthMode == RelayAuthMode.payload) {
-      return 'relayAuthMode may not be "payload" on port 443';
+    if (params.sideAMode != RelayAuthMode.escr ||
+        params.sideBMode != RelayAuthMode.escr) {
+      return params.relayAuthModes == null
+          ? 'relayAuthMode may not be "payload" on port 443'
+          : 'relayAuthModes may not name "payload" on port 443';
     }
     if (!(params.authenticateSocketA && params.authenticateSocketB)) {
       return 'both sides must authenticate on port 443';

@@ -78,7 +78,6 @@ void main() {
           '@a:heartbeat.harness.sshnp@a',
           '@a:harness.request_ports.sshrvd@a',
           '@a:<id>.sshrvd@a',
-          '@a:harness.auth_modes.sshrvd@a',
           if (!cached) ...policyCheck,
           '@a:npt_request.harness.sshnp@a',
           '@a:<id>.harness.sshnp@a',
@@ -370,8 +369,6 @@ void main() {
         unorderedEquals([
           ...startUp,
           '@a:ping.harness.sshnp@a',
-          '@a:harness.request_ports.sshrvd@a',
-          '@a:<id>.sshrvd@a',
           ...policyCheck,
         ]),
         reason: 'a denied client is sent nothing',

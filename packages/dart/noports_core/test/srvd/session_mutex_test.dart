@@ -10,8 +10,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/session_crypto.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:test/test.dart';
@@ -40,7 +38,6 @@ class _RecordingSrvd extends SrvdImpl {
         verbose: false,
         bind443: false,
         localBindPort443: 0,
-        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         signingKeyCheckInterval: Duration.zero,
       ) {
     portPair.listen((m) {
@@ -104,7 +101,7 @@ void main() {
   AtNotification requestPorts(
     String sessionId, {
     required bool multipleAcksOk,
-    String? relayAuthAesKey,
+    String? relayAuthAesKey = 'relay auth key',
   }) => AtNotification(
     'notif-id',
     '@relay:device.request_ports.sshrvd@alice',

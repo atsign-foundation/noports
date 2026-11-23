@@ -62,6 +62,10 @@ to `/path/to/repoRoot/tests/e2e_all/scripts/`
         - runs that test script for that daemon version and client version
         - checks exit status == zero AND 'TEST PASSED' appears in the test
           script's output
+        - when `relayLogFile` names the relay's log, as the GitHub workflow
+          sets it, `tests/npt_to_port_22` also checks, for the current client,
+          that the relay verified each side of the session in the relay auth
+          mode that side speaks (`features/srvd/mixed_relay_auth.feature`)
     - logs progress as it goes
     - outputs a summary report at the end
 - Runs `common/stop_daemons.sh`

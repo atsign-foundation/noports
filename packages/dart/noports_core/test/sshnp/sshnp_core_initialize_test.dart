@@ -73,7 +73,11 @@ StubbedSshnp _sshnp({
   when(
     () => sshnpdChannel.sharePublicKeyIfRequired(any()),
   ).thenAnswer((_) async {});
-  when(() => sshnpdChannel.cachedPingResponse).thenReturn(null);
+  // NOTE: known, so the relay step runs while the feature check is pending
+  sshnpdChannel.knownSupport = const DaemonRelayAuthSupport(
+    supportsRamEscr: true,
+    publicSigningKeyUri: null,
+  );
   when(() => srvdChannel.callInitialization()).thenAnswer((_) => relayStep());
 
   final sshnp = StubbedSshnp(

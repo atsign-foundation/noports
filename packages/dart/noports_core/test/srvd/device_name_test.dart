@@ -6,8 +6,6 @@ import 'package:at_client/at_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:noports_core/src/common/types.dart';
 import 'package:noports_core/src/srvd/isolates/types.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/src/srvd/srvd_session_params.dart';
 import 'package:test/test.dart';
@@ -32,7 +30,6 @@ class _RecordingSrvd extends SrvdImpl {
           verbose: false,
           bind443: false,
           localBindPort443: 0,
-          relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
           signingKeyCheckInterval: Duration.zero,
         );
 
@@ -87,6 +84,7 @@ void main() {
           'authenticateSocketA': false,
           'authenticateSocketB': false,
           'relayAuthMode': RelayAuthMode.escr.name,
+          'relayAuthAesKey': 'relay auth key',
           'only443': false,
           'multipleAcksOk': true,
         }),

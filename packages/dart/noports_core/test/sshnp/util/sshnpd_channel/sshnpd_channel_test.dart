@@ -5,6 +5,8 @@ import 'package:at_client/at_client.dart';
 // ignore: implementation_imports
 import 'package:at_client/src/client/remote_secondary.dart';
 import 'package:at_commons/at_builders.dart';
+import 'package:at_utils/at_logger.dart';
+import 'package:logging/logging.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/sshnp_foundation.dart';
 import 'package:noports_core/version.dart';
@@ -245,6 +247,161 @@ void main() {
         when(() => mockParams.sshnpdAtSign).thenReturn('@Device');
         await expectLater(c.featureCheck([DaemonFeature.srE2ee]), completes);
         expect(c.twinKeys, true);
+      });
+    });
+    group('Given a ping, when the heartbeat that answers it arrives while the '
+        'ping is still being sent', () {
+      late SshnpdChannel c;
+      late List<Object> uncaught;
+      late _Warnings warnings;
+
+      setUp(() {
+        uncaught = [];
+        warnings = _Warnings();
+        final previous = AtSignLogger.defaultLoggingHandler;
+        AtSignLogger.defaultLoggingHandler = warnings;
+        addTearDown(() => AtSignLogger.defaultLoggingHandler = previous);
+        when(() => mockParams.verbose).thenReturn(true);
+        when(() => mockParams.sshnpdAtSign).thenReturn('@device');
+        when(() => mockParams.clientAtSign).thenReturn('@client');
+        c = SshnpdDefaultChannel(
+          atClient: mockAtClient,
+          params: mockParams,
+          sessionId: 'abcde',
+          namespace: 'test',
+        );
+        when(
+          () => mockNotificationService.subscribe(
+            regex: any(named: 'regex'),
+            shouldDecrypt: any(named: 'shouldDecrypt'),
+          ),
+        ).thenAnswer((_) => notificationStreamController.stream);
+        registerFallbackValue(NotificationParams());
+      });
+
+      /// Pings @device's device, whose heartbeat from [from] holds [value];
+      /// completes with what the feature check threw, or null.
+      Future<Object?> pingAnsweredWith(
+        String value, {
+        String from = '@device',
+        Duration timeout = const Duration(seconds: 5),
+      }) {
+        when(
+          () => mockNotificationService.notify(
+            any(),
+            waitForFinalDeliveryStatus: any(
+              named: 'waitForFinalDeliveryStatus',
+            ),
+            checkForFinalDeliveryStatus: any(
+              named: 'checkForFinalDeliveryStatus',
+            ),
+            encryptValue: any(named: 'encryptValue'),
+            onSuccess: any(named: 'onSuccess'),
+            onError: any(named: 'onError'),
+            onSentToSecondary: any(named: 'onSentToSecondary'),
+          ),
+        ).thenAnswer((_) async {
+          notificationStreamController.add(
+            AtNotification(
+              '1',
+              '@client:heartbeat.$device.sshnp$from',
+              from,
+              '@client',
+              DateTime.now().millisecondsSinceEpoch,
+              'update',
+              false,
+              value: value,
+              operation: 'update',
+            ),
+          );
+          await Future.delayed(const Duration(milliseconds: 100));
+          return NotificationResult();
+        });
+        final outcome = Completer<Object?>();
+        runZonedGuarded(
+          () => c
+              .featureCheck([DaemonFeature.srE2ee], timeout: timeout)
+              .then(
+                (_) => outcome.complete(null),
+                onError: (Object e) => outcome.complete(e),
+              ),
+          (e, _) => uncaught.add(e),
+        );
+        return outcome.future;
+      }
+
+      for (final (String what, String value) in [
+        ('not JSON', 'not json'),
+        ('a JSON list', '[1, 2]'),
+        ('a JSON string', '"text"'),
+        ('JSON null', 'null'),
+      ]) {
+        test('and it holds $what, then the ping fails at once, naming the '
+            'daemon and device', () async {
+          final watch = Stopwatch()..start();
+          final Object? thrown = await pingAnsweredWith(value);
+
+          expect(
+            thrown,
+            isA<SshnpError>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains('Device $device of @device'),
+                contains('not a JSON object'),
+              ),
+            ),
+            reason: 'a heartbeat holding $what fails the ping, saying why',
+          );
+          expect(
+            watch.elapsed,
+            lessThan(const Duration(seconds: 2)),
+            reason: 'the ping fails without waiting out its timeout',
+          );
+          expect(
+            uncaught,
+            isEmpty,
+            reason: 'no error escapes the heartbeat listener or the ping',
+          );
+          expect(
+            warnings.messages,
+            contains(contains('Device $device of @device')),
+            reason: 'the bad heartbeat is logged at warning',
+          );
+          await pumpEventQueue();
+          expect(
+            notificationStreamController.hasListener,
+            isFalse,
+            reason: 'the ping stops listening',
+          );
+        });
+      }
+
+      test('and it holds a JSON object, then the ping completes', () async {
+        final Object? thrown = await pingAnsweredWith(
+          jsonEncode({
+            'supportedFeatures': {DaemonFeature.srE2ee.name: true},
+          }),
+        );
+
+        expect(thrown, isNull, reason: 'a JSON object answers the ping');
+        expect(uncaught, isEmpty, reason: 'no error escapes the ping');
+      });
+
+      test('and it holds no JSON but is from another Atsign, then the ping '
+          'ignores it', () async {
+        final Object? thrown = await pingAnsweredWith(
+          'not json',
+          from: '@stranger',
+          timeout: const Duration(milliseconds: 500),
+        );
+
+        expect(
+          thrown,
+          isA<TimeoutException>(),
+          reason: "a stranger's heartbeat neither answers nor fails the ping",
+        );
+        expect(uncaught, isEmpty, reason: 'no error escapes the ping');
       });
     });
     group('handleSshnpdResponses', () {
@@ -725,4 +882,14 @@ void main() {
       expect(mockAtClient.getRemoteSecondary(), isA<RemoteSecondary>());
     }); // test getAtKeysRemote
   }); // group SshnpdChannel
+}
+
+/// The warnings logged by every logger made while this is the default handler.
+class _Warnings implements LoggingHandler {
+  final List<String> messages = [];
+
+  @override
+  void call(LogRecord record) {
+    if (record.level == Level.WARNING) messages.add(record.message);
+  }
 }

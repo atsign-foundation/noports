@@ -1,5 +1,40 @@
 # 7.0.0
 
+- feat: srvd takes each side's relay auth mode from what the client told it,
+  never from how long a socket stays silent, so a legacy client or daemon
+  whose first bytes arrive late is no longer refused
+- feat: a session request can name both sides' relay auth modes in
+  `relayAuthModes`
+- fix: srvd refuses at once, before allocating ports, a request whose
+  `relayAuthModes` is malformed or that names ESCR for a side with no
+  `relayAuthAesKey`
+- fix: `RelayAuthVerifierESCR`, `RelayAuthVerifierLegacy` and
+  `RelayAuthVerifierAuto` fail `verifySocketAuth` at once, and destroy the
+  socket, when it closes or errors before authenticating
+- **BREAKING CHANGE**: `SrvdParams` no longer takes `relayAuthDetectWindowMs`
+- **BREAKING CHANGE**: against this srvd, a v5.18.0 to v5.18.2 client given
+  `--relay-auth-mode escr` fails at connect when its daemon authenticates to
+  the relay but cannot do ESCR
+- **BREAKING CHANGE**: against this srvd, a v5.18.0 to v5.18.2 client's default
+  session with a daemon that can do ESCR fails if its auth_modes notification
+  does not reach srvd in time
+- feat: npt, sshnp and NoPorts Desktop name both sides' relay auth modes in
+  `relayAuthModes`, so against this srvd `--relay-auth-mode escr` with a
+  daemon that can't do ESCR uses ESCR on the client's side and legacy on the
+  daemon's, and a session no longer waits on the `auth_modes` notification
+- feat: the client records each daemon device's ping answer on its own
+  atServer for 30 days; with no record, it waits for the daemon's ping before
+  asking srvd for ports
+- feat: an attempt whose daemon's relay auth support has changed since it was
+  last seen fails before the daemon is sent its session request, saying what
+  changed and whether the client's record of the daemon was updated, and the
+  next attempt uses the new answer
+- fix: `SshnpdChannel.featureCheck` fails at once with an `SshnpError` naming
+  the daemon and device when the heartbeat answering its ping is not a JSON
+  object
+- **BREAKING CHANGE**: removed `SshnpdChannel.cachedPingResponse`,
+  `SshnpdChannel.locallyCachedPingResponseKey` and
+  `SrvdChannel.cachedDaemonPublicSigningKeyUri`
 - feat: `SrvdParams.telemetryCollectorAtsign` (`--telemetry-collector-atsign`)
   sends srvd's session telemetry to a collector Atsign
 - feat: `SrvdParams.reportedSigningKeyCheckSecs`

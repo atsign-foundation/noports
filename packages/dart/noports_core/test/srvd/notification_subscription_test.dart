@@ -8,8 +8,6 @@ import 'package:at_client/at_client.dart';
 import 'package:at_client/src/client/remote_secondary.dart';
 import 'package:at_commons/at_builders.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:noports_core/src/srvd/relay_auth_verifiers.dart'
-    show defaultRelayAuthDetectWindowMs;
 import 'package:noports_core/src/srvd/srvd_impl.dart';
 import 'package:noports_core/srvd.dart';
 import 'package:test/test.dart';
@@ -79,7 +77,6 @@ void main() {
         verbose: false,
         bind443: false,
         localBindPort443: 443,
-        relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
         signingKeyCheckInterval: Duration.zero,
       );
 
@@ -210,7 +207,6 @@ void main() {
           verbose: false,
           bind443: bind443,
           localBindPort443: localBindPort443,
-          relayAuthDetectWindowMs: defaultRelayAuthDetectWindowMs,
           signingKeyCheckInterval: Duration.zero,
         );
       }
