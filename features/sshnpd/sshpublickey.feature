@@ -61,7 +61,7 @@ Feature: sshnpd adds a client's ssh public key to authorized_keys
     When "@alice" sends the sshpublickey "ssh-ed25519 <K1> user@client" followed by a newline
     Then authorized_keys holds the line 'from="127.0.0.1,::1" ssh-ed25519 <K1> user@client'
 
-  Scenario: a key whose comment is not printable ASCII, or is over 256 characters, is added without it
+  Scenario: a key whose comment holds a character outside ASCII, or is over 256 characters, is added without it
     When "@alice" sends the sshpublickey "ssh-ed25519 <K1>" followed by a space and 257 "a" characters
     Then authorized_keys holds the line 'from="127.0.0.1,::1" ssh-ed25519 <K1>'
     And sshnpd logs at info that it left the comment out, without the comment's text
@@ -75,9 +75,20 @@ Feature: sshnpd adds a client's ssh public key to authorized_keys
     When "@alice" sends the sshpublickey "ssh-ed25519 <K1>"
     Then authorized_keys holds the line 'from="127.0.0.1,::1",no-pty ssh-ed25519 <K1>'
 
-  Scenario: sshnpd refuses a --sshpublickey-permissions value holding its own from= option
-    When sshnpd starts with --sshpublickey --sshpublickey-permissions 'from="10.0.0.0/8"'
-    Then sshnpd exits, saying sshnpd sets the from= option itself
+  Scenario: sshnpd leaves a from= option out of the --sshpublickey-permissions value, with a warning
+    Given sshnpd started with --sshpublickey --sshpublickey-permissions 'from="10.0.0.0/8",no-pty'
+    When "@alice" sends the sshpublickey "ssh-ed25519 <K1>"
+    Then authorized_keys holds the line 'from="127.0.0.1,::1",no-pty ssh-ed25519 <K1>'
+    And sshnpd logged at startup a warning that it leaves the from= option out, as sshnpd sets from= itself
+
+  Scenario: sshnpd leaves a from= option out however it is cased
+    Given sshnpd started with --sshpublickey --sshpublickey-permissions 'FROM="10.0.0.0/8"'
+    When "@alice" sends the sshpublickey "ssh-ed25519 <K1>"
+    Then authorized_keys holds the line 'from="127.0.0.1,::1" ssh-ed25519 <K1>'
+
+  Scenario: sshnpd without --sshpublickey starts with a from= option in --sshpublickey-permissions
+    When sshnpd starts with --sshpublickey-permissions 'from="10.0.0.0/8"' and without --sshpublickey
+    Then sshnpd runs, logging a warning that it leaves the from= option out
 
   @forgery
   Scenario: a value holding two key lines changes nothing
