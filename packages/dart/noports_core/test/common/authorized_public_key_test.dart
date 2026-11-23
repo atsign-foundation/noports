@@ -75,11 +75,38 @@ void main() {
           k1.replaceAll('+', '-'),
           'AAAA',
           'AAAAC3Nz',
+          'AAAACw==',
           '=AAA',
         ]) {
           expect(
             () => AuthorizedPublicKey.parse('ssh-ed25519 $keyData'),
             throwsFormatException,
+            reason: keyData,
+          );
+        }
+      },
+    );
+
+    test(
+      'refuses key data whose length is not a multiple of 4, with more than two "=", or with padding bits set',
+      () {
+        final String paddingBitsSet = '${e1.substring(0, e1.length - 2)}d=';
+        expect(e1, endsWith('c='));
+        for (final String keyData in [
+          k1.substring(0, 66),
+          '${k1.substring(0, 65)}===',
+          paddingBitsSet,
+          'AAAACx==',
+        ]) {
+          expect(
+            () => AuthorizedPublicKey.parse('ecdsa-sha2-nistp256 $keyData'),
+            throwsA(
+              isA<FormatException>().having(
+                (e) => e.message,
+                'message',
+                'its key data is not of its stated key type',
+              ),
+            ),
             reason: keyData,
           );
         }
@@ -137,14 +164,17 @@ void main() {
       expect(key.commentLeftOut, isFalse);
     });
 
-    test('leaves out a longer comment, or one not printable ASCII', () {
-      for (final String comment in ['x' * 257, 'café', ' x']) {
-        final key = AuthorizedPublicKey.parse('ssh-ed25519 $k1 $comment');
-        expect(key.comment, isNull, reason: comment);
-        expect(key.commentLeftOut, isTrue, reason: comment);
-        expect(key.line(), '${loopbackLine('ssh-ed25519', k1)}\n');
-      }
-    });
+    test(
+      'leaves out a longer comment, or one holding a character outside ASCII',
+      () {
+        for (final String comment in ['x' * 257, 'caf\u00e9', '\u00a0x']) {
+          final key = AuthorizedPublicKey.parse('ssh-ed25519 $k1 $comment');
+          expect(key.comment, isNull, reason: comment);
+          expect(key.commentLeftOut, isTrue, reason: comment);
+          expect(key.line(), '${loopbackLine('ssh-ed25519', k1)}\n');
+        }
+      },
+    );
 
     test('refuses a value over 8192 bytes counted in UTF-8', () {
       final String value = 'ssh-ed25519 $k1 '.padRight(8190, 'a');
@@ -153,55 +183,137 @@ void main() {
     });
   });
 
-  group('sshKeyPermissionsHoldFrom', () {
-    test('finds a from option in any case, wherever it is in the list', () {
+  group('AuthorizedPublicKey.line', () {
+    test('refuses permissions holding a CR, an LF or a from option', () {
+      final key = AuthorizedPublicKey.parse('ssh-ed25519 $k1');
       for (final String permissions in [
+        'no-pty\nssh-ed25519 $k2',
+        'no-pty\r',
         'from="10.0.0.0/8"',
-        'FROM="10.0.0.0/8"',
-        'no-pty,From="10.0.0.0/8"',
-        'command="echo a,b",from="10.0.0.0/8"',
-        'no-pty, from="10.0.0.0/8"',
-        'no-pty,from',
+        'no-pty,FROM="10.0.0.0/8"',
       ]) {
         expect(
-          sshKeyPermissionsHoldFrom(permissions),
-          isTrue,
+          () => key.line(permissions: permissions),
+          throwsArgumentError,
           reason: permissions,
         );
       }
+      expect(
+        key.line(permissions: 'no-pty'),
+        '${loopbackLine('ssh-ed25519', k1, permissions: 'no-pty')}\n',
+      );
     });
+  });
 
-    test('does not count from= inside a quoted value', () {
-      for (final String permissions in [
-        '',
-        'no-pty',
-        'no-port-forwarding,no-pty',
-        'command="echo a,from=b"',
-        'command="echo \\",from=b"',
-        'environment="FROM=x"',
-        'fromage',
-      ]) {
-        expect(
-          sshKeyPermissionsHoldFrom(permissions),
-          isFalse,
-          reason: permissions,
-        );
+  group('sshKeyPermissionsLeavingOutFrom', () {
+    test(
+      'leaves out a from option in any case, wherever it is in the list',
+      () {
+        for (final MapEntry(key: permissions, value: kept) in {
+          'from="10.0.0.0/8"': '',
+          'FROM="10.0.0.0/8"': '',
+          'no-pty,From="10.0.0.0/8"': 'no-pty',
+          'command="echo a,b",from="10.0.0.0/8",no-pty':
+              'command="echo a,b",no-pty',
+          'no-pty, from="10.0.0.0/8"': 'no-pty',
+          'no-pty,from': 'no-pty',
+        }.entries) {
+          expect(sshKeyPermissionsLeavingOutFrom(permissions), (
+            permissions: kept,
+            fromLeftOut: true,
+          ), reason: permissions);
+        }
+      },
+    );
+
+    test('keeps every option that is not from, dropping empty ones', () {
+      for (final MapEntry(key: permissions, value: kept) in {
+        '': '',
+        'no-pty': 'no-pty',
+        'no-port-forwarding,,no-pty,': 'no-port-forwarding,no-pty',
+        'command="echo a,from=b"': 'command="echo a,from=b"',
+        'command="echo \\",from=b"': 'command="echo \\",from=b"',
+        'environment="FROM=x"': 'environment="FROM=x"',
+        'fromage': 'fromage',
+      }.entries) {
+        expect(sshKeyPermissionsLeavingOutFrom(permissions), (
+          permissions: kept,
+          fromLeftOut: false,
+        ), reason: permissions);
       }
     });
   });
 
-  group('oneLineForLog', () {
-    test('escapes control characters and line separators', () {
-      expect(
-        oneLineForLog('a\nb\rc\td\x00e\x7ff\u0085g\u2028h\u2029i'),
-        r'a\nb\rc\td\x00e\x7ff\x85g\u2028h\u2029i',
-      );
+  group('authorizedKeysLineKey', () {
+    test('reads the key data after a supported key type, past any options', () {
+      for (final MapEntry(key: line, value: keyData) in {
+        'ssh-ed25519 $k1': k1,
+        'ssh-ed25519 $k1 user@laptop': k1,
+        ' \tssh-ed25519 $k1': k1,
+        'no-pty ssh-ed25519 $k1': k1,
+        'command="echo a b",no-pty ssh-rsa $r1 me': r1,
+        'command="echo \\" ssh-ed25519 $k0" ssh-ed25519 $k1': k1,
+        'ssh-ed25519 $k0 $k1': k0,
+        'ssh-ed25519 $k0 ssh-ed25519 $k1': k0,
+        'ssh-ed25519 ${k1}x': '${k1}x',
+      }.entries) {
+        expect(authorizedKeysLineKey(line)?.keyData, keyData, reason: line);
+      }
     });
+
+    test('finds no key on a blank line, a # line, or an unsupported type', () {
+      for (final String line in [
+        '',
+        '  ',
+        '# ssh-ed25519 $k1',
+        ' \t#ssh-ed25519 $k1',
+        'ssh-dss $k1',
+        'no-pty ssh-dss $k1',
+        'no-pty',
+      ]) {
+        expect(authorizedKeysLineKey(line), isNull, reason: line);
+      }
+    });
+
+    test('says whether the line allows logins only from loopback', () {
+      for (final MapEntry(key: options, value: loopbackOnly) in {
+        'from="127.0.0.1,::1"': true,
+        'from="127.0.0.1,::1",no-pty': true,
+        'no-pty,FROM="127.0.0.1,::1"': true,
+        'from="10.0.0.0/8"': false,
+        'no-pty': false,
+        'command="from=\\"127.0.0.1,::1\\""': false,
+      }.entries) {
+        expect(
+          authorizedKeysLineKey('$options ssh-ed25519 $k1')?.loopbackOnly,
+          loopbackOnly,
+          reason: options,
+        );
+      }
+      expect(authorizedKeysLineKey('ssh-ed25519 $k1')?.loopbackOnly, isFalse);
+    });
+  });
+
+  group('oneLineForLog', () {
+    test(
+      'escapes each byte outside printable ASCII, and each quote and backslash',
+      () {
+        expect(
+          oneLineForLog(
+            'a\nb\rc\td\x00e\x7ff\u0085g\u2028h"i\\j caf\u00e9 \u{1f600}',
+          ),
+          r'a\nb\rc\td\x00e\x7ff\xc2\x85g\xe2\x80\xa8h\"i\\j caf\xc3\xa9 '
+          r'\xf0\x9f\x98\x80',
+        );
+      },
+    );
 
     test('cuts to 200 characters without splitting an escape', () {
       expect(oneLineForLog('x' * 300), 'x' * 200);
       expect(oneLineForLog('${'x' * 199}\n'), 'x' * 199);
       expect(oneLineForLog('${'x' * 198}\n'), '${'x' * 198}\\n');
+      expect(oneLineForLog('${'x' * 197}\u00e9'), 'x' * 197);
+      expect(oneLineForLog('${'x' * 196}\u00e9'), '${'x' * 196}\\xc3');
     });
   });
 }

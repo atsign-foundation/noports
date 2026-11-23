@@ -246,35 +246,28 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     }
   }
 
-  /// Adds [sshPublicKey], a client's `<type> <base64>[ <comment>]` value, to
-  /// `authorized_keys` as one line allowing logins only from the loopback
-  /// address, followed by [permissions], unless its key data is already on a
-  /// line there; a missing `authorized_keys` is created readable only by its
-  /// owner.
+  /// Adds [key] to `authorized_keys` as one line allowing logins only from
+  /// the loopback address, followed by [permissions], unless a line there
+  /// already holds its key data; a missing `authorized_keys` is created
+  /// readable only by its owner.
   ///
-  /// Throws a [FormatException] when [AuthorizedPublicKey.parse] refuses
-  /// [sshPublicKey], and an [ArgumentError] when [permissions] hold a newline
-  /// or a `from` option.
-  Future<({AuthorizedPublicKey key, bool added})> addPublicKey({
-    required String sshPublicKey,
+  /// Throws an [ArgumentError] when [permissions] hold a newline or a `from`
+  /// option.
+  Future<PublicKeyAddition> addPublicKey({
+    required AuthorizedPublicKey key,
     String permissions = '',
   }) async {
-    if (RegExp(r'[\r\n]').hasMatch(permissions)) {
-      throw ArgumentError(invalidSshKeyPermissionsMsg);
-    }
-    if (sshKeyPermissionsHoldFrom(permissions)) {
-      throw ArgumentError(sshKeyPermissionsFromMsg);
-    }
-    final AuthorizedPublicKey key = AuthorizedPublicKey.parse(sshPublicKey);
     final String line = key.line(permissions: permissions);
-    final bool added = await _editAuthorizedKeys((authKeys) async {
+    return _editAuthorizedKeys((authKeys) async {
       await _createAuthorizedKeysIfMissing(authKeys);
       final Uint8List content = await authKeys.readAsBytes();
-      final bool present = const LineSplitter()
-          .convert(latin1.decode(content))
-          .any((l) => l.split(RegExp(r'[ \t]+')).contains(key.keyData));
-      if (present) {
-        return false;
+      for (final String l in latin1.decode(content).split('\n')) {
+        final held = authorizedKeysLineKey(l.replaceFirst(RegExp(r'\r+$'), ''));
+        if (held != null && held.keyData == key.keyData) {
+          return held.loopbackOnly
+              ? PublicKeyAddition.alreadyPresent
+              : PublicKeyAddition.alreadyPresentWithoutLoopback;
+        }
       }
       final String separator =
           content.isEmpty || content.last == 0x0a ? '' : '\n';
@@ -283,9 +276,8 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
         mode: FileMode.append,
         flush: true,
       );
-      return true;
+      return PublicKeyAddition.added;
     });
-    return (key: key, added: added);
   }
 
   Future<void> _createAuthorizedKeysIfMissing(File authKeys) async {
@@ -301,4 +293,18 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
       }
     }
   }
+}
+
+/// What [LocalSshKeyUtil.addPublicKey] did with a key.
+enum PublicKeyAddition {
+  /// It added the key's line.
+  added,
+
+  /// The key was already on a line allowing logins only from the loopback
+  /// address, which it left as it is.
+  alreadyPresent,
+
+  /// The key was already on a line without the loopback `from=` option,
+  /// which it left as it is.
+  alreadyPresentWithoutLoopback,
 }

@@ -20,6 +20,9 @@ const String invalidSshKeyPermissionsMsg =
 const String sshKeyPermissionsFromMsg =
     'The ssh public key permissions may not hold a from= option:'
     ' sshnpd sets the from= option itself.';
+const String sshKeyPermissionsFromLeftOutMsg =
+    'Leaving the from= option out of the ssh public key permissions:'
+    ' sshnpd sets the from= option itself.';
 
 /// [atSign] in canonical form, or null when it isn't a valid atSign.
 Atsign? canonicalAtsign(String? atSign) {

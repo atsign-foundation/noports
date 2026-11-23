@@ -109,19 +109,16 @@ void main() {
     test('joins the --sshpublickey-permissions values with commas', () async {
       final p = await SshnpdParams.fromArgs([
         ...'-a @daemon -m @bob -S no-pty'.split(' '),
-        ...['-S', 'command="echo hi" , no-X11-forwarding'],
+        ...['-S', 'command="echo hi" , , no-X11-forwarding,'],
       ]);
       expect(
         p.sshPublicKeyPermissions,
         'no-pty,command="echo hi",no-X11-forwarding',
       );
     });
-    test('refuses a --sshpublickey-permissions value holding a from option',
+    test('refuses a --sshpublickey-permissions value holding a newline',
         () async {
-      for (final String permissions in [
-        'from="10.0.0.0/8"',
-        'no-pty,FROM="10.0.0.0/8"',
-      ]) {
+      for (final String permissions in ['no-pty\nssh-ed25519 x', 'a\rb']) {
         await expectLater(
           () => SshnpdParams.fromArgs(
             [...'-a @daemon -m @bob -S'.split(' '), permissions],
@@ -129,13 +126,21 @@ void main() {
           throwsA(isA<ArgumentError>().having(
             (e) => e.message,
             'message',
-            sshKeyPermissionsFromMsg,
+            invalidSshKeyPermissionsMsg,
           )),
           reason: permissions,
         );
       }
     });
-    test('refuses a from option in the config file\'s publickey-permissions',
+    test('passes a from option in --sshpublickey-permissions on to sshnpd',
+        () async {
+      final p = await SshnpdParams.fromArgs(
+        [...'-a @daemon -m @bob -S'.split(' '), 'no-pty,FROM="10.0.0.0/8"'],
+      );
+      expect(p.sshPublicKeyPermissions, 'no-pty,FROM="10.0.0.0/8"');
+    });
+    test(
+        'passes a from option in the config file\'s publickey-permissions on to sshnpd',
         () async {
       final Directory dir = Directory.systemTemp.createTempSync('sshnpd_cfg');
       addTearDown(() => dir.deleteSync(recursive: true));
@@ -147,16 +152,10 @@ void main() {
           '    - from="10.0.0.0/8"\n',
         );
 
-      await expectLater(
-        () => SshnpdParams.fromArgs(
-          ['-a', '@daemon', '-m', '@bob', '--config', config.path],
-        ),
-        throwsA(isA<ArgumentError>().having(
-          (e) => e.message,
-          'message',
-          sshKeyPermissionsFromMsg,
-        )),
+      final p = await SshnpdParams.fromArgs(
+        ['-a', '@daemon', '-m', '@bob', '--config', config.path],
       );
+      expect(p.sshPublicKeyPermissions, 'no-pty,from="10.0.0.0/8"');
     });
     // TODO add unit tests for other mildly complicated options
     // device

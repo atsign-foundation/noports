@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:noports_core/src/common/at_ssh_key_util/authorized_public_key.dart';
 import 'package:noports_core/src/common/at_ssh_key_util/local_ssh_key_util.dart';
 import 'package:test/test.dart';
 import 'package:uuid/uuid.dart';
@@ -179,7 +180,7 @@ void main() {
       () async {
         authKeys.deleteSync();
 
-        await keyUtil.addPublicKey(sshPublicKey: 'ssh-ed25519 $k1');
+        await keyUtil.addPublicKey(key: _key('ssh-ed25519 $k1'));
 
         expect(authKeys.readAsLinesSync(), [loopbackLine('ssh-ed25519', k1)]);
         if (!Platform.isWindows) {
@@ -192,7 +193,7 @@ void main() {
     test('addPublicKey puts the permissions after the loopback restriction',
         () async {
       await keyUtil.addPublicKey(
-        sshPublicKey: 'ssh-ed25519 $k1',
+        key: _key('ssh-ed25519 $k1'),
         permissions: 'no-pty',
       );
 
@@ -203,8 +204,14 @@ void main() {
     });
 
     test('addPublicKey adds a key only once', () async {
-      await keyUtil.addPublicKey(sshPublicKey: 'ssh-ed25519 $k1');
-      await keyUtil.addPublicKey(sshPublicKey: 'ssh-ed25519 $k1');
+      expect(
+        await keyUtil.addPublicKey(key: _key('ssh-ed25519 $k1')),
+        PublicKeyAddition.added,
+      );
+      expect(
+        await keyUtil.addPublicKey(key: _key('ssh-ed25519 $k1')),
+        PublicKeyAddition.alreadyPresent,
+      );
 
       expect(authKeys.readAsLinesSync(), [
         _userKey,
@@ -219,7 +226,7 @@ void main() {
         keyUtil.deauthorizePublicKey(idA),
         LocalSshKeyUtil(
           homeDirectory: home.path,
-        ).addPublicKey(sshPublicKey: 'ssh-ed25519 $k1'),
+        ).addPublicKey(key: _key('ssh-ed25519 $k1')),
       ]);
 
       expect(authKeys.readAsLinesSync(), [
@@ -241,7 +248,7 @@ void main() {
         ]) {
           await expectLater(
             keyUtil.addPublicKey(
-              sshPublicKey: 'ssh-ed25519 $k1',
+              key: _key('ssh-ed25519 $k1'),
               permissions: permissions,
             ),
             throwsArgumentError,
@@ -268,15 +275,8 @@ void main() {
       home.deleteSync(recursive: true);
     });
 
-    Future<void> add(String value) =>
-        keyUtil.addPublicKey(sshPublicKey: value);
-
-    /// Checks that [add] refuses [value], leaving authorized_keys as it was.
-    Future<void> expectRefused(String value) async {
-      final List<int> before = authKeys.readAsBytesSync();
-      await expectLater(add(value), throwsFormatException);
-      expect(authKeys.readAsBytesSync(), before);
-    }
+    Future<PublicKeyAddition> add(String value) =>
+        keyUtil.addPublicKey(key: _key(value));
 
     test(
       'a key added after a last line with no newline starts a line of its own',
@@ -309,7 +309,7 @@ void main() {
       authKeys.writeAsStringSync('${loopbackLine('ssh-ed25519', k1)}\n');
       final List<int> before = authKeys.readAsBytesSync();
 
-      await add('ssh-ed25519 $k1');
+      expect(await add('ssh-ed25519 $k1'), PublicKeyAddition.alreadyPresent);
 
       expect(authKeys.readAsBytesSync(), before);
     });
@@ -320,7 +320,10 @@ void main() {
         authKeys.writeAsStringSync('ssh-ed25519 $k1 user@laptop\n');
         final List<int> before = authKeys.readAsBytesSync();
 
-        await add('ssh-ed25519 $k1');
+        expect(
+          await add('ssh-ed25519 $k1'),
+          PublicKeyAddition.alreadyPresentWithoutLoopback,
+        );
 
         expect(authKeys.readAsBytesSync(), before);
       },
@@ -341,40 +344,6 @@ void main() {
       expect(authKeys.readAsLinesSync(), [loopbackLine('ssh-rsa', r1)]);
     });
 
-    test(
-      'a value whose key data is not of its stated key type changes nothing',
-      () async {
-        authKeys.writeAsStringSync('ssh-ed25519 $k0 user@laptop\n');
-
-        await expectRefused('ssh-ed25519 $r1');
-      },
-    );
-
-    test(
-      'a value with a key type outside the supported list changes nothing',
-      () async {
-        authKeys.writeAsStringSync('ssh-ed25519 $k0 user@laptop\n');
-
-        await expectRefused('ssh-dss $k1');
-      },
-    );
-
-    test('a value over 8 KiB changes nothing', () async {
-      authKeys.writeAsStringSync('ssh-ed25519 $k0 user@laptop\n');
-      final String value = 'ssh-ed25519 $k1 '.padRight(8193, 'a');
-      expect(value.length, 8193);
-
-      await expectRefused(value);
-    });
-
-    test('a value of exactly 8 KiB is added', () async {
-      final String value = 'ssh-ed25519 $k1 '.padRight(8192, 'a');
-
-      await add(value);
-
-      expect(authKeys.readAsLinesSync(), [loopbackLine('ssh-ed25519', k1)]);
-    });
-
     test('a key with a comment of 256 printable characters keeps it', () async {
       final String comment = 'a' * 255 + '~';
 
@@ -384,5 +353,40 @@ void main() {
         loopbackLine('ssh-ed25519', k1, comment: comment),
       ]);
     });
+
+    test(
+      'a key whose data is only in a comment, a # line or a longer token is added',
+      () async {
+        final String existing =
+            'ssh-ed25519 $k0 $k1\n'
+            'ssh-ed25519 $k0 ssh-ed25519 $k1\n'
+            '# ssh-ed25519 $k1\n'
+            '  #ssh-ed25519 $k1\n'
+            'ssh-ed25519 ${k1}AAAA\n';
+        authKeys.parent.createSync(recursive: true);
+        authKeys.writeAsStringSync(existing);
+
+        expect(await add('ssh-ed25519 $k1'), PublicKeyAddition.added);
+
+        expect(
+          authKeys.readAsStringSync(),
+          '$existing${loopbackLine('ssh-ed25519', k1)}\n',
+        );
+      },
+    );
+
+    test('a key after options holding spaces in quotes is found', () async {
+      authKeys.parent.createSync(recursive: true);
+      authKeys.writeAsStringSync(
+        'command="echo a b",from="127.0.0.1,::1" ssh-ed25519 $k1 me\n',
+      );
+      final List<int> before = authKeys.readAsBytesSync();
+
+      expect(await add('ssh-ed25519 $k1'), PublicKeyAddition.alreadyPresent);
+
+      expect(authKeys.readAsBytesSync(), before);
+    });
   });
 }
+
+AuthorizedPublicKey _key(String value) => AuthorizedPublicKey.parse(value);

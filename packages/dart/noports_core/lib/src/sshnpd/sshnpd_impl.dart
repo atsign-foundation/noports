@@ -171,7 +171,7 @@ class SshnpdImpl
     this.makeDeviceInfoVisible = false,
     this.addSshPublicKeys = false,
     this.localSshdPort = DefaultSshnpdArgs.localSshdPort,
-    this.sshPublicKeyPermissions = DefaultSshnpdArgs.sshPublicKeyPermissions,
+    String sshPublicKeyPermissions = DefaultSshnpdArgs.sshPublicKeyPermissions,
     required this.ephemeralPermissions,
     required this.sshAlgorithm,
     required this.deviceGroup,
@@ -184,12 +184,19 @@ class SshnpdImpl
     required this.clientKeyCheckInterval,
     required this.requireEnrollmentSignature,
     PublicLookup? publicLookup,
-  }) : publicLookup = publicLookup ?? DirectPublicLookup(atClient) {
+  }) : publicLookup = publicLookup ?? DirectPublicLookup(atClient),
+       sshPublicKeyPermissions = _permissionsLeavingOutFrom(
+         sshPublicKeyPermissions,
+       ) {
     this.inline = inline ?? Platform.environment['SRV_INLINE'] == 'true';
     if (invalidDeviceName(device)) {
       throw ArgumentError(invalidDeviceNameMsg);
     }
     logger.hierarchicalLoggingEnabled = true;
+
+    if (sshKeyPermissionsLeavingOutFrom(sshPublicKeyPermissions).fromLeftOut) {
+      logger.warning(sshKeyPermissionsFromLeftOutMsg);
+    }
 
     if (authChecker == null && policyManagerAtsign != null) {
       authChecker = _NPAAuthChecker(this);
@@ -198,7 +205,7 @@ class SshnpdImpl
     if (addSshPublicKeys) {
       logger.info(
         "Starting sshnpd with addSshPublicKeys on, using permissions: "
-        "'$sshPublicKeyPermissions'",
+        "'${this.sshPublicKeyPermissions}'",
       );
     }
 
@@ -222,6 +229,13 @@ class SshnpdImpl
       'npCpVersion': DaemonFeature.latestVersion.toString(),
       'publicSigningKeyUri': publicSigningKeyUri,
     };
+  }
+
+  static String _permissionsLeavingOutFrom(String permissions) {
+    if (RegExp(r'[\r\n]').hasMatch(permissions)) {
+      throw ArgumentError(invalidSshKeyPermissionsMsg);
+    }
+    return sshKeyPermissionsLeavingOutFrom(permissions).permissions;
   }
 
   static Future<Sshnpd> fromCommandLineArgs(
@@ -792,34 +806,42 @@ class SshnpdImpl
     logger.info(
       'ssh Public Key received from ${notification.from} notification id : ${notification.id}',
     );
-    final String sshPublicKey = notification.value ?? '';
+    final String value = notification.value ?? '';
+    final AuthorizedPublicKey key;
     try {
-      final LocalSshKeyUtil keyUtil = LocalSshKeyUtil(
-        homeDirectory: homeDirectory,
-      );
-      final addition = await keyUtil.addPublicKey(
-        sshPublicKey: sshPublicKey,
-        permissions: sshPublicKeyPermissions,
-      );
-      if (!addition.added) {
-        logger.info(
-          'The ssh public key from ${notification.from} is already in'
-          ' authorized_keys',
-        );
-      } else if (addition.key.commentLeftOut) {
-        logger.info(
-          'Added the ssh public key from ${notification.from} without its'
-          ' comment, which was not printable ASCII or was over'
-          ' ${AuthorizedPublicKey.maxCommentLength} characters',
-        );
-      } else {
-        logger.info('Added the ssh public key from ${notification.from}');
-      }
+      key = AuthorizedPublicKey.parse(value);
     } on FormatException catch (e) {
       logger.warning(
         'Refusing the sshpublickey from ${notification.from}, as ${e.message}:'
-        ' "${oneLineForLog(sshPublicKey)}"',
+        ' "${oneLineForLog(value)}"',
       );
+      return;
+    }
+    try {
+      final PublicKeyAddition addition = await LocalSshKeyUtil(
+        homeDirectory: homeDirectory,
+      ).addPublicKey(key: key, permissions: sshPublicKeyPermissions);
+      switch (addition) {
+        case PublicKeyAddition.alreadyPresent:
+          logger.info(
+            'The ssh public key from ${notification.from} is already in'
+            ' authorized_keys',
+          );
+        case PublicKeyAddition.alreadyPresentWithoutLoopback:
+          logger.warning(
+            'The ssh public key from ${notification.from} is already in'
+            ' authorized_keys on a line without the loopback from= option,'
+            ' which sshnpd leaves as it is',
+          );
+        case PublicKeyAddition.added when key.commentLeftOut:
+          logger.info(
+            'Added the ssh public key from ${notification.from} without its'
+            ' comment, which held a character outside ASCII or was over'
+            ' ${AuthorizedPublicKey.maxCommentLength} characters',
+          );
+        case PublicKeyAddition.added:
+          logger.info('Added the ssh public key from ${notification.from}');
+      }
     } catch (e) {
       logger.severe(
         "Error writing to"
