@@ -362,6 +362,7 @@ void main() {
             'ssh-ed25519 $k0 ssh-ed25519 $k1\n'
             '# ssh-ed25519 $k1\n'
             '  #ssh-ed25519 $k1\n'
+            'no-pty ssh-dss $k1\n'
             'ssh-ed25519 ${k1}AAAA\n';
         authKeys.parent.createSync(recursive: true);
         authKeys.writeAsStringSync(existing);

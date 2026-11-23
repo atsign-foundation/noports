@@ -258,6 +258,7 @@ static int test_key_only_in_comment_hash_line_or_longer_token_added(void) {
                          "ssh-ed25519 " K0 " ssh-ed25519 " K1 "\n"
                          "# ssh-ed25519 " K1 "\n"
                          "  #ssh-ed25519 " K1 "\n"
+                         "no-pty ssh-dss " K1 "\n"
                          "ssh-ed25519 " K1 "AAAA\n";
   char expected[2048];
   snprintf(expected, sizeof(expected), "%s" LOOPBACK " ssh-ed25519 " K1 "\n", existing);
