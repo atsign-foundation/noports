@@ -112,10 +112,12 @@ int parse_sshnpd_params(sshnpd_params *params, int argc, const char **argv) {
                  "The atSign which this device will use to decide whether or not to accept requests from some client "
                  "atSign. At least one of --manager and --policy-manager must be supplied."),
       OPT_STRING('d', "device", &params->device, "Device to use"),
-      OPT_BOOLEAN('s', "sshpublickey", &params->sshpublickey, "Generate ssh public key"),
+      OPT_BOOLEAN('s', "sshpublickey", &params->sshpublickey,
+                  "When set, adds the ssh public key an authorized Atsign sends to authorized_keys, on a line allowing "
+                  "logins only from loopback"),
       OPT_STRING('S', "sshpublickey-permissions", &sshpublickey_permissions,
-                 "When --sshpublickey is enabled, will include the specified permissions in the public key entry in "
-                 "authorized_keys",
+                 "When --sshpublickey is enabled, adds these authorized_keys options after the from=\"127.0.0.1,::1\" "
+                 "option on each key's line; a from option is left out, with a warning",
                  append_sshpublickey_permissions, (intptr_t)&appender),
       OPT_BOOLEAN('h', "hide", &params->hide, "Hide device from device entry (still responds to pings)"),
       OPT_BOOLEAN('v', "verbose", &params->verbose, "Verbose output"),

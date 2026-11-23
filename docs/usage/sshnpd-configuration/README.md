@@ -102,8 +102,9 @@ Environment=delegate_policy=""
 # Device name
 Environment=device_name="atsign"
 
-# Comment if you don't want the daemon to update authorized_keys to include
-# public keys sent by authorized manager atSigns
+# Comment if you don't want the daemon to add the public keys authorized
+# Atsigns send it to authorized_keys, each on a line allowing logins only
+# from this device's loopback address
 Environment=s="-s"
 
 # Comment to disable verbose logging

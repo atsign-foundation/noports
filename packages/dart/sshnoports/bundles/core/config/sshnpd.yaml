@@ -77,7 +77,8 @@ device:
 # Settings for how sshnp interacts with the NoPorts daemon
 ssh:
   # Automatically add ssh public keys to the authorized_keys file
-  # This will add public keys to the authorized_keys file of the user sshnpd is running as
+  # This will add public keys to the authorized_keys file of the user sshnpd is running as,
+  # each on a line allowing logins only from this device's loopback address
   # This option should only be turned on if only ONE person will be accessing this machine
   # This feature is for consumers and not recommended to be enabled in an enterprise setting
   add-publickeys: false
@@ -91,7 +92,8 @@ ssh:
 
   # Permissions for public keys added using the add-publickeys feature
   # See the AUTHORIZED KEYS FILE FORMAT section in man sshd.
-  # This takes a list of options which will be prefixed to the line before the key
+  # This takes a list of options which sshnpd adds after its own from="127.0.0.1,::1" option
+  # A from option given here is left out, with a warning, as sshnpd sets from= itself
   publickey-permissions:
 
 

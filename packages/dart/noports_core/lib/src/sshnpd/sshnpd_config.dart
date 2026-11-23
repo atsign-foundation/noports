@@ -209,8 +209,8 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       argAbbrev: 's',
       defaultsTo: false,
       helpText:
-          'When set, will update authorized_keys'
-          ' to include public key sent by manager',
+          'When set, adds the ssh public key an authorized Atsign sends to'
+          ' authorized_keys, on a line allowing logins only from loopback',
       group: sshGroup,
     ),
   ),
@@ -247,8 +247,9 @@ enum SshnpdOption<V> implements OptionDefinition<V> {
       argAbbrev: 'S',
       defaultsTo: [],
       helpText:
-          'When --sshpublickey is enabled, will include the specified permissions'
-          ' in the public key entry in authorized_keys',
+          'When --sshpublickey is enabled, adds these authorized_keys options'
+          ' after the from="127.0.0.1,::1" option on each key\'s line;'
+          ' a from option is left out, with a warning',
       group: sshGroup,
     ),
   ),
