@@ -57,8 +57,7 @@ static const char *key_data_type_for(const char *type, size_t len) {
   return NULL;
 }
 
-// Whether s is base64 digits followed by any number of '=', its length and
-// padding being left to key_data_names' decoding and re-encoding
+// Whether s is base64 digits followed by any number of '='
 static bool is_base64(const char *s, size_t len) {
   if (len == 0) {
     return false;
