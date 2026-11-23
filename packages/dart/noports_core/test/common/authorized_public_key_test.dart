@@ -52,6 +52,20 @@ void main() {
       }
     });
 
+    test('refuses a key type outside the list whose key data names it', () {
+      for (final String type in [
+        'ssh-dss',
+        'sk-ssh-ed25519@openssh.com',
+        'ssh-ed25519-cert-v01@openssh.com',
+      ]) {
+        expect(
+          () => AuthorizedPublicKey.parse('$type ${keyDataNaming(type)}'),
+          throwsFormatException,
+          reason: type,
+        );
+      }
+    });
+
     test(
       'refuses key data that is not base64, or too short to name a type',
       () {
