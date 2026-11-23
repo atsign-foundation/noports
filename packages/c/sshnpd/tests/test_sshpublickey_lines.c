@@ -541,6 +541,19 @@ static int test_build_refuses_malformed_values(void) {
   return ret;
 }
 
+static int test_build_refuses_unlisted_type_whose_key_data_names_it(void) {
+  const char *types[] = {"ssh-dss", "sk-ssh-ed25519@openssh.com", "ssh-ed25519-cert-v01@openssh.com"};
+  char named[256];
+  char value[300];
+  int ret = 0;
+  for (size_t i = 0; i < sizeof(types) / sizeof(types[0]); i++) {
+    key_data_naming(types[i], named, sizeof(named));
+    snprintf(value, sizeof(value), "%s %s", types[i], named);
+    ret += expect_refused(value);
+  }
+  return ret;
+}
+
 static int test_build_keeps_a_256_character_comment(void) {
   char comment[257];
   char value[400];
@@ -677,6 +690,7 @@ int main(void) {
       test_starts_without_authorized_keys,
       test_build_accepts_each_supported_type,
       test_build_refuses_malformed_values,
+      test_build_refuses_unlisted_type_whose_key_data_names_it,
       test_build_keeps_a_256_character_comment,
       test_permissions_hold_from,
       test_permissions_values_joined,
