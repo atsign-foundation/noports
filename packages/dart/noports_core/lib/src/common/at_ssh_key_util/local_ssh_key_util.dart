@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
+import 'package:noports_core/src/common/at_ssh_key_util/authorized_public_key.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
@@ -243,23 +246,46 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     }
   }
 
-  Future<void> addPublicKey({
+  /// Adds [sshPublicKey], a client's `<type> <base64>[ <comment>]` value, to
+  /// `authorized_keys` as one line allowing logins only from the loopback
+  /// address, followed by [permissions], unless its key data is already on a
+  /// line there; a missing `authorized_keys` is created readable only by its
+  /// owner.
+  ///
+  /// Throws a [FormatException] when [AuthorizedPublicKey.parse] refuses
+  /// [sshPublicKey], and an [ArgumentError] when [permissions] hold a newline
+  /// or a `from` option.
+  Future<({AuthorizedPublicKey key, bool added})> addPublicKey({
     required String sshPublicKey,
     String permissions = '',
   }) async {
-    await _editAuthorizedKeys((authKeys) async {
+    if (RegExp(r'[\r\n]').hasMatch(permissions)) {
+      throw ArgumentError(invalidSshKeyPermissionsMsg);
+    }
+    if (sshKeyPermissionsHoldFrom(permissions)) {
+      throw ArgumentError(sshKeyPermissionsFromMsg);
+    }
+    final AuthorizedPublicKey key = AuthorizedPublicKey.parse(sshPublicKey);
+    final String line = key.line(permissions: permissions);
+    final bool added = await _editAuthorizedKeys((authKeys) async {
       await _createAuthorizedKeysIfMissing(authKeys);
-      final String authKeysContent = await authKeys.readAsString();
-      if (authKeysContent.contains(sshPublicKey)) {
-        return;
+      final Uint8List content = await authKeys.readAsBytes();
+      final bool present = const LineSplitter()
+          .convert(latin1.decode(content))
+          .any((l) => l.split(RegExp(r'[ \t]+')).contains(key.keyData));
+      if (present) {
+        return false;
       }
-      final String separator = permissions.isEmpty ? '' : ' ';
+      final String separator =
+          content.isEmpty || content.last == 0x0a ? '' : '\n';
       await authKeys.writeAsString(
-        '$permissions$separator$sshPublicKey',
+        '$separator$line',
         mode: FileMode.append,
         flush: true,
       );
+      return true;
     });
+    return (key: key, added: added);
   }
 
   Future<void> _createAuthorizedKeysIfMissing(File authKeys) async {

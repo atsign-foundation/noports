@@ -17,6 +17,9 @@ const String deviceNameFormatHelp =
     ' First character cannot be "-".';
 const String invalidSshKeyPermissionsMsg =
     'Detected newline characters in the ssh public key permissions which malforms the authorized_keys file.';
+const String sshKeyPermissionsFromMsg =
+    'The ssh public key permissions may not hold a from= option:'
+    ' sshnpd sets the from= option itself.';
 
 /// [atSign] in canonical form, or null when it isn't a valid atSign.
 Atsign? canonicalAtsign(String? atSign) {

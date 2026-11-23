@@ -10,6 +10,7 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:file/local.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
+import 'package:noports_core/src/common/at_ssh_key_util/authorized_public_key.dart';
 import 'package:noports_core/src/common/features.dart';
 import 'package:noports_core/src/common/handle_server_events.dart';
 import 'package:noports_core/src/common/openssh_binary_path.dart';
@@ -788,29 +789,36 @@ class SshnpdImpl
       return;
     }
 
+    logger.info(
+      'ssh Public Key received from ${notification.from} notification id : ${notification.id}',
+    );
+    final String sshPublicKey = notification.value ?? '';
     try {
-      final String sshPublicKey;
-      logger.info(
-        'ssh Public Key received from ${notification.from} notification id : ${notification.id}',
-      );
-      sshPublicKey = notification.value!;
-
-      // Check to see if the ssh public key is
-      // supported keys by the dartssh2 package
-      if (!sshPublicKey.startsWith(
-        RegExp(
-          r'^(ecdsa-sha2-nistp)|(rsa-sha2-)|(ssh-rsa)|(ssh-ed25519)|(ecdsa-sha2-nistp)',
-        ),
-      )) {
-        throw ('$sshPublicKey does not look like a public key');
-      }
-
       final LocalSshKeyUtil keyUtil = LocalSshKeyUtil(
         homeDirectory: homeDirectory,
       );
-      await keyUtil.addPublicKey(
+      final addition = await keyUtil.addPublicKey(
         sshPublicKey: sshPublicKey,
         permissions: sshPublicKeyPermissions,
+      );
+      if (!addition.added) {
+        logger.info(
+          'The ssh public key from ${notification.from} is already in'
+          ' authorized_keys',
+        );
+      } else if (addition.key.commentLeftOut) {
+        logger.info(
+          'Added the ssh public key from ${notification.from} without its'
+          ' comment, which was not printable ASCII or was over'
+          ' ${AuthorizedPublicKey.maxCommentLength} characters',
+        );
+      } else {
+        logger.info('Added the ssh public key from ${notification.from}');
+      }
+    } on FormatException catch (e) {
+      logger.warning(
+        'Refusing the sshpublickey from ${notification.from}, as ${e.message}:'
+        ' "${oneLineForLog(sshPublicKey)}"',
       );
     } catch (e) {
       logger.severe(

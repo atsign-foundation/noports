@@ -40,6 +40,7 @@ export 'src/sshnp/impl/sshnp_openssh_local_impl.dart';
 
 // Common
 export 'src/common/at_ssh_key_util/at_ssh_key_util.dart';
+export 'src/common/at_ssh_key_util/authorized_public_key.dart';
 export 'src/common/at_ssh_key_util/dart_ssh_key_util.dart';
 export 'src/common/at_ssh_key_util/local_ssh_key_util.dart';
 
