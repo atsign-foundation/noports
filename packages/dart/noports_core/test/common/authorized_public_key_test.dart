@@ -203,6 +203,17 @@ void main() {
         '${loopbackLine('ssh-ed25519', k1, permissions: 'no-pty')}\n',
       );
     });
+
+    test('trims each permission and leaves empty ones out', () {
+      final key = AuthorizedPublicKey.parse('ssh-ed25519 $k1');
+      for (final String permissions in [' no-pty', 'no-pty,,']) {
+        expect(
+          key.line(permissions: permissions),
+          '${loopbackLine('ssh-ed25519', k1, permissions: 'no-pty')}\n',
+          reason: permissions,
+        );
+      }
+    });
   });
 
   group('sshKeyPermissionsLeavingOutFrom', () {

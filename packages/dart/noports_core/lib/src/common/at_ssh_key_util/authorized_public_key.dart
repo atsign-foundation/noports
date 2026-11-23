@@ -82,19 +82,20 @@ class AuthorizedPublicKey {
   }
 
   /// The `authorized_keys` line for this key: [loopbackFromOption], then
-  /// [permissions] when there are any, then the key, ending in a newline.
-  /// Throws an [ArgumentError] when [permissions] hold a CR, an LF or a
-  /// `from` option.
+  /// each of [permissions] trimmed, leaving empty ones out, then the key,
+  /// ending in a newline. Throws an [ArgumentError] when [permissions] hold
+  /// a CR, an LF or a `from` option.
   String line({String permissions = ''}) {
     if (RegExp(r'[\r\n]').hasMatch(permissions)) {
       throw ArgumentError(invalidSshKeyPermissionsMsg);
     }
-    if (sshKeyPermissionsLeavingOutFrom(permissions).fromLeftOut) {
+    final kept = sshKeyPermissionsLeavingOutFrom(permissions);
+    if (kept.fromLeftOut) {
       throw ArgumentError(sshKeyPermissionsFromMsg);
     }
-    final String options = permissions.isEmpty
+    final String options = kept.permissions.isEmpty
         ? loopbackFromOption
-        : '$loopbackFromOption,$permissions';
+        : '$loopbackFromOption,${kept.permissions}';
     final String suffix = comment == null ? '' : ' $comment';
     return '$options $type $keyData$suffix\n';
   }
