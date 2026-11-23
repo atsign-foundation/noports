@@ -59,7 +59,6 @@ uint16_t atserver_port;
 atclient_atkeys atkeys;
 sshnpd_params params;
 char *regex;
-FILE *authkeys_file;
 char *authkeys_filename;
 char *home_dir;
 atchops_rsa_key_private_key signingkey;
@@ -244,7 +243,7 @@ void main_loop() {
         switch (notification_key) {
         case NK_SSHPUBLICKEY:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_sshpublickey\n");
-          handle_sshpublickey(&params, &message, authkeys_file, authkeys_filename);
+          handle_sshpublickey(&params, &message, authkeys_filename);
           break;
         case NK_PING:
           atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_DEBUG, "Executing handle_ping\n");

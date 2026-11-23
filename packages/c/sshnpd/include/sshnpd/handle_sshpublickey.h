@@ -2,11 +2,13 @@
 #define HANDLE_SSHPUBLICKEY_H
 #include "sshnpd/params.h"
 #include <atclient/monitor.h>
-#include <stdbool.h>
 
-void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *message, FILE *authkeys_file,
-                         char *authkeys_filename);
-
-bool is_valid_ssh_public_key_prefix(const char *ssh_key);
+/**
+ * @brief Adds the ssh public key in message to the authorized_keys file at
+ * authkeys_filename when params->sshpublickey is set, as one line allowing
+ * logins only from the loopback address; logs a warning naming the sender
+ * when the value is refused.
+ */
+void handle_sshpublickey(sshnpd_params *params, atclient_monitor_message *message, const char *authkeys_filename);
 
 #endif

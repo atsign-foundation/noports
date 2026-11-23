@@ -591,8 +591,8 @@ int main(int argc, char **argv) {
     return res;
   }
 
-  // 11. Get a pointer to the authorized_keys file
-  authkeys_filename = malloc(sizeof(char) + (strlen(home_dir) + 22));
+  // 11. The authorized_keys file's path
+  authkeys_filename = sshnpd_authorized_keys_filename(home_dir);
   if (authkeys_filename == NULL) {
     atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for authkeys_filename\n");
     atcommons_memlist_failure_free(&memlist);
@@ -604,28 +604,7 @@ int main(int argc, char **argv) {
     atcommons_memlist_failure_free(&memlist);
     return res;
   }
-  sprintf(authkeys_filename, "%s/.ssh/authorized_keys", home_dir);
-
   atlogger_log("AUTH SSH KEY", ATLOGGER_LOGGING_LEVEL_DEBUG, "Using authorized_keys file: %s\n", authkeys_filename);
-  authkeys_file = fopen(authkeys_filename, "r"); // readonly for now, we will freopen this file later
-
-  if (authkeys_file == NULL) {
-    atlogger_log("AUTH SSH KEY", ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to open authorized_keys file: %s\n",
-                 strerror(errno));
-    if (errno != 0) {
-      res = errno;
-    } else {
-      res = 1;
-    }
-    atcommons_memlist_failure_free(&memlist);
-    return res;
-  }
-
-  res = atcommons_memlist_add(&memlist, authkeys_file, true, fclose);
-  if (res != 0) {
-    atcommons_memlist_failure_free(&memlist);
-    return res;
-  }
 
   if (!should_run) {
     atcommons_memlist_failure_free(&memlist);
