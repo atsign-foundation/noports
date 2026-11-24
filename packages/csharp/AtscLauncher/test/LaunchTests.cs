@@ -226,6 +226,12 @@ public class LaunchTests
         Assert.Equal(args.Select(Q), WindowsArgv.Split(Q(commandLine)));
     }
 
+    [Fact]
+    public void TheLaunchersOwnFailuresExitWith127AsTheUnixLaunchersDo()
+    {
+        Assert.Equal(127, Launch.FailureExitCode);
+    }
+
     [Theory]
     [InlineData(2)]
     [InlineData(3)]

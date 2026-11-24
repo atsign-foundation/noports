@@ -22,7 +22,7 @@ internal static unsafe class Program
         if (error != null)
         {
             WriteError(error);
-            return 1;
+            return Launch.FailureExitCode;
         }
 
         return Run(command, atscPath, childCommandLine);
@@ -59,7 +59,7 @@ internal static unsafe class Program
         if (started == 0)
         {
             WriteError(Launch.StartFailure(command, atscPath, startError));
-            return 1;
+            return Launch.FailureExitCode;
         }
 
         Volatile.Write(ref s_child, child.Process);
@@ -74,7 +74,7 @@ internal static unsafe class Program
             || Native.GetExitCodeProcess(child.Process, &exitCode) == 0)
         {
             WriteError($"{command}: lost track of {atscPath} (Windows error {Marshal.GetLastPInvokeError()})");
-            return 1;
+            return Launch.FailureExitCode;
         }
 
         return unchecked((int)exitCode);

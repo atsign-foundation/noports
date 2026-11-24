@@ -23,6 +23,9 @@ internal static class Launch
 
     internal const string AtscFileName = "atsc.exe";
 
+    /// <summary>The exit code for the launcher's own failures, the one the Unix launchers use.</summary>
+    internal const int FailureExitCode = 127;
+
     private const int ErrorFileNotFound = 2;
     private const int ErrorPathNotFound = 3;
 
