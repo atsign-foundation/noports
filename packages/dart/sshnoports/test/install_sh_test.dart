@@ -140,6 +140,13 @@ void main() {
       expect(File(path.join(home.path, '.profile')).existsSync(), isFalse);
     });
 
+    test('atsc can be installed on its own', () async {
+      final result = await install(['-b', prefix.path, 'atsc']);
+
+      expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+      expect(namesIn(prefix.path), ['atsc']);
+    });
+
     test(
         'installing a program also installs the atsc it runs, and srv when '
         'it needs one', () async {
