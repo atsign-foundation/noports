@@ -131,13 +131,14 @@ void main() {
         telemetry: telemetry,
       );
 
-  Future<Srvd> fromArgs(List<String> extra) async {
+  Future<Srvd> fromArgs(List<String> extra, {String? version}) async {
     final Directory dir = await Directory.systemTemp.createTemp('srvd-tel');
     addTearDown(() => dir.delete(recursive: true));
     final File keys = File('${dir.path}/@relay_key.atKeys')..writeAsStringSync('{}');
     return Srvd.fromCommandLineArgs(
       ['-a', '@relay', '-k', keys.path, '-i', '127.0.0.1', ...extra],
       atClient: atClient,
+      version: version,
     );
   }
 
@@ -154,6 +155,16 @@ void main() {
       fromArgs(['--telemetry-collector-atsign', 'not an atsign']),
       throwsArgumentError,
     );
+  });
+
+  test('srvd reports the version it is given as its telemetry service version',
+      () async {
+    final relay = await fromArgs(
+      ['--telemetry-collector-atsign', '@telemetry'],
+      version: 'srvd 9.9.9 (core 9.9.9)',
+    ) as SrvdImpl;
+
+    expect(relay.telemetry!.serviceVersion, 'srvd 9.9.9 (core 9.9.9)');
   });
 
   test('A batch goes out within a second of its first record', () async {
