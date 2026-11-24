@@ -72,13 +72,20 @@ class ServiceStatusCheck extends DiagnosticCheck {
         duration: DateTime.now().difference(start),
       );
     } else if (serviceRunning) {
+      String message = 'The service manager reports sshnpd RUNNING,'
+          ' but no sshnpd process was found:'
+          ' it may be restarting, or hidden from this user.';
+      message += '\n      System Service: Installed, Running';
+      if (exitInfo != null && exitInfo.exitCode >= 0) {
+        message += '\n      Exit Code: ${exitInfo.exitCode}';
+        message += '\n      Result: ${exitInfo.result}';
+        message += '\n      Active State: ${exitInfo.activeState} (${exitInfo.subState})';
+      }
+
       return CheckResult(
         checkName: name,
         status: CheckStatus.warning,
-        message: 'The service manager reports sshnpd RUNNING,'
-            ' but this user cannot see its process.'
-            '\n      System Service: Installed, Running'
-            ' (its process is not visible to this user)',
+        message: message,
         duration: DateTime.now().difference(start),
       );
     } else {

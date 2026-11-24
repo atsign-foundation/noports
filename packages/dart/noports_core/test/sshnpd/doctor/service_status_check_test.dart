@@ -10,6 +10,7 @@ Future<CheckResult> runCheck({
   required bool processVisible,
   required bool serviceInstalled,
   required bool serviceRunning,
+  ServiceExitInfo? exitInfo,
 }) {
   final platform = MockPlatformUtils();
   when(
@@ -23,16 +24,16 @@ Future<CheckResult> runCheck({
   ).thenAnswer((_) async => serviceRunning);
   when(
     () => platform.getServiceExitInfo('sshnpd'),
-  ).thenAnswer((_) async => ServiceExitInfo());
+  ).thenAnswer((_) async => exitInfo ?? ServiceExitInfo());
   return ServiceStatusCheck(platform: platform).run({});
 }
 
 void main() {
   group('Given the service manager reports sshnpd running '
-      'but its process is not visible to this user', () {
+      'but no sshnpd process is found', () {
     test('when the service status check runs, '
-        'then it reports the service running with its process not visible, '
-        'not stopped', () async {
+        'then it warns that the process may be restarting or hidden, '
+        'not that the service is stopped', () async {
       final result = await runCheck(
         processVisible: false,
         serviceInstalled: true,
@@ -41,10 +42,37 @@ void main() {
       expect(
         result.message,
         'The service manager reports sshnpd RUNNING,'
-        ' but this user cannot see its process.'
+        ' but no sshnpd process was found:'
+        ' it may be restarting, or hidden from this user.'
+        '\n      System Service: Installed, Running',
+        reason: 'a missing process is not claimed to be hidden',
+      );
+      expect(result.status, CheckStatus.warning);
+    });
+
+    test('when the service manager has exit details, '
+        'then the warning includes them', () async {
+      final result = await runCheck(
+        processVisible: false,
+        serviceInstalled: true,
+        serviceRunning: true,
+        exitInfo: ServiceExitInfo(
+          exitCode: 0,
+          result: 'success',
+          activeState: 'active',
+          subState: 'running',
+        ),
+      );
+      expect(
+        result.message,
+        'The service manager reports sshnpd RUNNING,'
+        ' but no sshnpd process was found:'
+        ' it may be restarting, or hidden from this user.'
         '\n      System Service: Installed, Running'
-        ' (its process is not visible to this user)',
-        reason: 'a running service is not reported as stopped',
+        '\n      Exit Code: 0'
+        '\n      Result: success'
+        '\n      Active State: active (running)',
+        reason: 'exit details are reported as on the stopped path',
       );
       expect(result.status, CheckStatus.warning);
     });
