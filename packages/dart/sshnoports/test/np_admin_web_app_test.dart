@@ -32,8 +32,7 @@ void main() {
     expect(servedFor('atsc'), path.join(installation.path, 'web', 'admin'));
   });
 
-  test('an executable named np_admin does not serve the web app beside it',
-      () {
+  test('an executable named np_admin does not serve the web app beside it', () {
     expect(
       servedFor('np_admin'),
       path.join(Directory.current.path, '..', '..', '..', 'apps', 'admin',
