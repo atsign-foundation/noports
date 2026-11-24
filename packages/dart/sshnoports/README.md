@@ -24,10 +24,11 @@ links to the script, so keep `atsc`, `srv` and the scripts together. The
 which logs the traffic it relays, and a `srvd` script that runs it.
 
 A Windows release holds `atsc.exe`, `srv.exe` and a small launcher `.exe` for
-each program, named after it, so `sshnp.exe -t @device` runs
-`atsc.exe sshnp -t @device`. A launcher runs the `atsc.exe` in its own
-folder, after following any symbolic link to the launcher, so keep them
-together. The `sshnpd` Windows service runs `atsc.exe sshnpd` directly.
+each program but `srvd`, named after it, so `sshnp.exe -t @device` runs
+`atsc.exe sshnp -t @device`, and `atsc.exe srvd` runs the relay. A launcher
+runs the `atsc.exe` in its own folder, after following any symbolic link to
+the launcher, so keep them together. The `sshnpd` Windows service runs
+`atsc.exe sshnpd` directly.
 
 To run a program from source, give its name to `bin/atsc.dart`:
 `dart run bin/atsc.dart npt --help`.

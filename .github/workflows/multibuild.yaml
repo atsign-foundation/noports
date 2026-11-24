@@ -163,8 +163,9 @@ jobs:
         working-directory: ./packages/csharp/AtscLauncher
         run: |
           dotnet publish src/AtscLauncher.csproj --configuration Release
+          # NOTE: the Windows release has no srvd.exe; atsc.exe srvd runs the relay.
           for LAUNCHER in ../../dart/sshnoports/launchers/*; do
-            if [ -f "$LAUNCHER" ]; then
+            if [ -f "$LAUNCHER" ] && [ "${LAUNCHER##*/}" != srvd ]; then
               cp src/bin/Release/net*/win-x64/publish/AtscLauncher.exe \
                 "../../dart/sshnoports/sshnp/${LAUNCHER##*/}.exe"
             fi
@@ -220,7 +221,7 @@ jobs:
         run: |
           names=()
           for LAUNCHER in launchers/*; do
-            if [ -f "$LAUNCHER" ]; then
+            if [ -f "$LAUNCHER" ] && [ "${LAUNCHER##*/}" != srvd ]; then
               names+=("${LAUNCHER##*/}")
             fi
           done
