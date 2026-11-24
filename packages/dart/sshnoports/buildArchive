@@ -13,12 +13,29 @@ mkdir -p build/sshnp/web/admin
 
 dart pub get --enforce-lockfile || exit 1
 
-echo "Compiling atsc"; dart compile exe --verbosity error bin/atsc.dart -o build/sshnp/atsc &
-echo "Compiling srv"; dart compile exe --verbosity error bin/srv.dart -o build/sshnp/srv &
-mkdir -p build/sshnp/debug
-echo "Compiling debug atsc"; dart compile exe --verbosity error bin/atsc.dart -D ENABLE_SNOOP=true -o build/sshnp/debug/atsc &
+outputs=()
+pids=()
+# Compiles bin/$1.dart to $2 in the background, with any further arguments.
+compile() {
+  echo "Compiling $2"
+  dart compile exe --verbosity error "bin/$1.dart" "${@:3}" -o "$2" &
+  outputs+=("$2")
+  pids+=($!)
+}
 
-wait
+mkdir -p build/sshnp/debug
+compile atsc build/sshnp/atsc
+compile srv build/sshnp/srv
+compile atsc build/sshnp/debug/atsc -D ENABLE_SNOOP=true
+
+failed=()
+for i in "${!pids[@]}"; do
+  wait "${pids[$i]}" || failed+=("${outputs[$i]}")
+done
+if [ "${#failed[@]}" -gt 0 ]; then
+  echo "$(date) : Failed to compile: ${failed[*]}"
+  exit 1
+fi
 echo "$(date) : Compilation complete"
 
 echo "$(date) : Copying launchers"
