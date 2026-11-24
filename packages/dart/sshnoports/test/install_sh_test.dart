@@ -205,6 +205,37 @@ void main() {
     });
 
     test(
+        "a non-root install replaces an earlier root install's links rather "
+        'than follow them', () async {
+      final rootBin = Directory(path.join(root.path, 'usr_local_bin'))
+        ..createSync();
+      standIn(path.join(rootBin.path, 'atsc'), 'root atsc');
+      for (final String name in ['srv', 'npt']) {
+        File(path.join(bundle.path, name))
+            .copySync(path.join(rootBin.path, name));
+        executable(path.join(rootBin.path, name));
+      }
+      prefix.createSync();
+      for (final String name in ['atsc', 'srv', 'npt']) {
+        Link(path.join(prefix.path, name))
+            .createSync(path.join(rootBin.path, name));
+      }
+
+      final result = await install(['-b', prefix.path, 'npt']);
+
+      expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+      for (final String name in ['atsc', 'srv', 'npt']) {
+        expect(
+          FileSystemEntity.isLinkSync(path.join(prefix.path, name)),
+          isFalse,
+          reason: name,
+        );
+      }
+      expect(await output(path.join(prefix.path, 'npt')), 'atsc 1\n[npt]\n');
+      expect(await output(path.join(rootBin.path, 'atsc')), 'root atsc\n');
+    });
+
+    test(
         'a failed copy of atsc leaves the installed one in place, installs '
         'no program and fails', () async {
       expect((await install(['-b', prefix.path, 'atsc'])).exitCode, 0);

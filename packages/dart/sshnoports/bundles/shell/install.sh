@@ -135,7 +135,7 @@ install_single_binary() {
     dest="$user_bin_dir"
   fi
   mkdir -p "$dest"
-  if cmp -s "$src" "$dest/$1"; then
+  if ! [ -L "$dest/$1" ] && cmp -s "$src" "$dest/$1"; then
     if ! chmod 755 "$dest/$1"; then
       echo "Failed to make $dest/$1 readable and executable by all - aborting"
       exit 1
