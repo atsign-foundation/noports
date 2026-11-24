@@ -53,16 +53,15 @@ void main() {
     expect(await Srv.getBinaryPathBeside(place('atsc')), isNull);
   });
 
-  group('Given an srv in the current directory', () {
+  group('Given srv and atsc in one directory', () {
+    late String atsc;
+
     setUp(() {
-      final File srv = File('srv$postfix')..createSync(exclusive: true);
-      addTearDown(srv.deleteSync);
+      place('srv');
+      atsc = place('atsc');
     });
 
     test('atsc named by an absolute path runs the srv beside it', () async {
-      place('srv');
-      final String atsc = place('atsc');
-
       expect(path.isAbsolute(atsc), isTrue);
       expect(
         await Srv.getBinaryPathBeside(atsc),
@@ -71,7 +70,10 @@ void main() {
     });
 
     test('atsc named by a relative path finds no srv', () async {
-      expect(await Srv.getBinaryPathBeside('atsc$postfix'), isNull);
+      final String relative = path.relative(atsc, from: Directory.current.path);
+
+      expect(path.isRelative(relative), isTrue);
+      expect(await Srv.getBinaryPathBeside(relative), isNull);
     });
   });
 
