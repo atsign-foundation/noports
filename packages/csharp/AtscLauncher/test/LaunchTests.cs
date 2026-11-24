@@ -333,6 +333,7 @@ public class LaunchTests
         Assert.Equal(0x2000u, Native.JobObjectLimitKillOnJobClose);
         Assert.Equal(0x1000u, Native.JobObjectLimitSilentBreakawayOk);
         Assert.Equal(9, Native.JobObjectExtendedLimitInformationClass);
+        Assert.Equal(0x1u, Native.FileShareRead);
         Assert.Equal(0x2u, Native.FileShareWrite);
         Assert.Equal(2u, Native.CtrlCloseEvent);
     }

@@ -181,7 +181,7 @@ internal static unsafe class Program
             nint console = Native.CreateFileW(
                 name,
                 Native.GenericRead | Native.GenericWrite,
-                Native.FileShareWrite,
+                Native.FileShareRead | Native.FileShareWrite,
                 null,
                 Native.OpenExisting,
                 0,

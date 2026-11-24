@@ -24,6 +24,7 @@ internal static unsafe partial class Native
 
     internal const uint GenericRead = 0x80000000;
     internal const uint GenericWrite = 0x40000000;
+    internal const uint FileShareRead = 0x1;
     internal const uint FileShareWrite = 0x2;
     internal const uint OpenExisting = 3;
 
