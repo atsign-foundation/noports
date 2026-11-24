@@ -70,6 +70,7 @@
   passphrase. A `--local` systemd install takes the unit and the config
   template from `sshnp/systemd.nfpm` and `sshnp/config`, where the release
   archive keeps them
+* fix: `sshnpd --doctor` no longer counts its own process as the running daemon
 
 * ci: the Windows release job signs in to Azure only when it is about to
   sign, after every build step, instead of first
