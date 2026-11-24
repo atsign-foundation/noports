@@ -209,6 +209,17 @@ jobs:
         run: |
           dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
           mv bin/Release/net*/win-x64/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
+      - name: Each launcher does what atsc.exe does under its name (Windows only)
+        if: ${{ matrix.platform == 'windows' }}
+        timeout-minutes: 10
+        run: |
+          names=()
+          for LAUNCHER in launchers/*; do
+            if [ -f "$LAUNCHER" ]; then
+              names+=("${LAUNCHER##*/}")
+            fi
+          done
+          bash tools/check_launchers.sh sshnp .exe "${names[@]}"
       # Signed in only now, after every build step has run: the Azure
       # session is not available to pub packages, dotnet or WiX.
       - name: Azure Login (Windows only)
@@ -231,17 +242,6 @@ jobs:
           file-digest: 'SHA256'
           timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
           timestamp-digest: 'SHA256'
-      - name: Each launcher does what atsc.exe does under its name (Windows only)
-        if: ${{ matrix.platform == 'windows' }}
-        timeout-minutes: 10
-        run: |
-          names=()
-          for LAUNCHER in launchers/*; do
-            if [ -f "$LAUNCHER" ]; then
-              names+=("${LAUNCHER##*/}")
-            fi
-          done
-          bash tools/check_launchers.sh sshnp .exe "${names[@]}"
       - name: Build Windows Installer (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./tools/windows-msi
@@ -270,25 +270,6 @@ jobs:
           file-digest: 'SHA256'
           timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
           timestamp-digest: 'SHA256'
-      - name: Install the MSI (Windows only)
-        if: ${{ matrix.platform == 'windows' }}
-        timeout-minutes: 10
-        shell: pwsh
-        run: |
-          $msi = (Resolve-Path "tarball/NoPorts-$env:VERSION-x64.msi").Path
-          $log = Join-Path $env:RUNNER_TEMP 'msi-install.log'
-          $install = Start-Process msiexec.exe -Wait -PassThru `
-            -ArgumentList '/i', "`"$msi`"", '/qn', '/l*v', "`"$log`""
-          if ($install.ExitCode -ne 0) {
-            Get-Content $log -Tail 50
-            exit $install.ExitCode
-          }
-      - name: an old Windows name is still an .exe at its installed path
-        if: ${{ matrix.platform == 'windows' }}
-        timeout-minutes: 10
-        run: >-
-          bash tools/check_launchers.sh 'C:/Program Files/NoPorts' .exe
-          sshnpd sshnp at_activate noports npp npp_atserver npp_file npt
       - name: Copy additional bundle items to build
         run: |
           cp -r bundles/core/* sshnp/
@@ -357,6 +338,51 @@ jobs:
           path: ./packages/dart/sshnoports/tarball
           if-no-files-found: error
 
+  # NOTE: this job runs what the build made, so it never holds id-token: write.
+  windows_install:
+    name: Install the Windows MSI and run what it installs
+    needs: [verify_tags, main_build]
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ./packages/dart/sshnoports
+        shell: bash
+    env:
+      VERSION: ${{ needs.verify_tags.outputs.version }}
+    steps:
+      - name: Checkout multibuild branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: multibuild-${{github.run_number}}
+      - name: Download the Windows build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name:
+            sshnp-windows-x64-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+          path: ./packages/dart/sshnoports/tarball
+      - name: Install the MSI
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $msi = (Resolve-Path "tarball/NoPorts-$env:VERSION-x64.msi").Path
+          $log = Join-Path $env:RUNNER_TEMP 'msi-install.log'
+          $install = Start-Process msiexec.exe -Wait -PassThru `
+            -ArgumentList '/i', "`"$msi`"", '/qn', '/l*v', "`"$log`""
+          if ($install.ExitCode -ne 0) {
+            Get-Content $log -Tail 50
+            exit $install.ExitCode
+          }
+      - name: an old Windows name is still an .exe at its installed path
+        timeout-minutes: 10
+        run: >-
+          bash tools/check_launchers.sh 'C:/Program Files/NoPorts' .exe
+          sshnpd sshnp at_activate noports npp npp_atserver npp_file npt
+      - name: srv.exe runs from its installed path
+        timeout-minutes: 5
+        run: "'C:/Program Files/NoPorts/srv.exe' --version"
+
   web_build:
     needs: verify_tags
     runs-on: ubuntu-latest
@@ -417,7 +443,7 @@ jobs:
   github-release:
     name: >-
       Upload artifacts and generate SBOMs and checksums for provenance
-    needs: [main_build, web_build, universal_sh]
+    needs: [main_build, windows_install, web_build, universal_sh]
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -491,7 +517,7 @@ jobs:
 
   cleanup:
     name: Clean up temporary branch
-    needs: [main_build]
+    needs: [main_build, windows_install]
     if: always()
     runs-on: ubuntu-latest
     permissions:
