@@ -166,15 +166,18 @@ abstract class Srv<T> {
   @visibleForTesting
   static String? localBinaryPathOverride;
 
+  /// The srv binary to run: [localBinaryPathOverride] when set, or else the
+  /// srv beside this executable.
   static Future<String?> getLocalBinaryPath() async {
     if (localBinaryPathOverride != null) return localBinaryPathOverride;
     return getBinaryPathBeside(Platform.resolvedExecutable);
   }
 
   /// The srv binary in the same directory as [executable] when [executable]
-  /// is atsc, sshnp, sshnpd or npt, or null.
+  /// is an absolute path to atsc, sshnp, sshnpd or npt, or null.
   @visibleForTesting
   static Future<String?> getBinaryPathBeside(String executable) async {
+    if (!File(executable).isAbsolute) return null;
     List<String> binaryNames = ['srv', 'sshrv'];
     for (var name in binaryNames) {
       var binary = await _getBinaryPathByName(executable, name);

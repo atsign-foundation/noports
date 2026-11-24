@@ -209,6 +209,9 @@ Future<void> main(List<String> args) async {
   }
 }
 
+/// The policy directory for [atSign], `.atsign/npp/<atSign>` under [baseDir]
+/// or else the home directory, exiting when [baseDir] is null and the home
+/// directory cannot be resolved.
 Directory getDefaultPolicyDirectoryPath({
   required final String atSign,
   String? baseDir,

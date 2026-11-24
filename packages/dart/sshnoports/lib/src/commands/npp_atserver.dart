@@ -128,6 +128,7 @@ Future<void> main(List<String> args) async {
   await sshnpa.run();
 }
 
+/// Answers authorization checks from the policy kept through [atClient].
 class Handler implements NPARequestHandler {
   final AtClient atClient;
   late final PolicyServiceWithAtClient api;
