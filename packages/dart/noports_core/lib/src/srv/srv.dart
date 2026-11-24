@@ -174,7 +174,7 @@ abstract class Srv<T> {
   }
 
   /// The srv binary in the same directory as [executable] when [executable]
-  /// is an absolute path to atsc, sshnp, sshnpd or npt, or null.
+  /// is an absolute path to atsc, or null.
   @visibleForTesting
   static Future<String?> getBinaryPathBeside(String executable) async {
     if (!File(executable).isAbsolute) return null;
@@ -192,11 +192,7 @@ abstract class Srv<T> {
   ) async {
     String postfix = Platform.isWindows ? '.exe' : '';
     List<String> pathList = executable.split(Platform.pathSeparator);
-    bool isExe =
-        (pathList.last == 'atsc$postfix' ||
-        pathList.last == 'sshnp$postfix' ||
-        pathList.last == 'sshnpd$postfix' ||
-        pathList.last == 'npt$postfix');
+    bool isExe = pathList.last == 'atsc$postfix';
 
     pathList
       ..removeLast()

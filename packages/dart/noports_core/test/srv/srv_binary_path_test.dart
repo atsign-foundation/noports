@@ -28,22 +28,19 @@ void main() {
       );
     });
 
-    test('sshnp, sshnpd and npt run the srv beside them', () async {
-      for (final String name in ['sshnp', 'sshnpd', 'npt']) {
-        expect(
-          await Srv.getBinaryPathBeside(place(name)),
-          File(path.join(installation.path, 'srv$postfix')).absolute.path,
-          reason: name,
-        );
-      }
-    });
-
     test('an executable with any other name finds no srv', () async {
-      for (final String name in ['other', 'srvd', 'dart']) {
+      for (final String name in [
+        'sshnp',
+        'sshnpd',
+        'npt',
+        'other',
+        'srvd',
+        'dart',
+      ]) {
         expect(
           await Srv.getBinaryPathBeside(place(name)),
           isNull,
-          reason: '$name is not atsc, sshnp, sshnpd or npt',
+          reason: '$name is not atsc',
         );
       }
     });
