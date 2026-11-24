@@ -231,6 +231,17 @@ jobs:
           file-digest: 'SHA256'
           timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
           timestamp-digest: 'SHA256'
+      - name: Each launcher does what atsc.exe does under its name (Windows only)
+        if: ${{ matrix.platform == 'windows' }}
+        timeout-minutes: 10
+        run: |
+          names=()
+          for LAUNCHER in launchers/*; do
+            if [ -f "$LAUNCHER" ]; then
+              names+=("${LAUNCHER##*/}")
+            fi
+          done
+          bash tools/check_launchers.sh sshnp .exe "${names[@]}"
       - name: Build Windows Installer (Windows only)
         if: ${{ matrix.platform == 'windows' }}
         working-directory: ./tools/windows-msi
@@ -259,6 +270,25 @@ jobs:
           file-digest: 'SHA256'
           timestamp-rfc3161: 'http://timestamp.acs.microsoft.com'
           timestamp-digest: 'SHA256'
+      - name: Install the MSI (Windows only)
+        if: ${{ matrix.platform == 'windows' }}
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $msi = (Resolve-Path "tarball/NoPorts-$env:VERSION-x64.msi").Path
+          $log = Join-Path $env:RUNNER_TEMP 'msi-install.log'
+          $install = Start-Process msiexec.exe -Wait -PassThru `
+            -ArgumentList '/i', "`"$msi`"", '/qn', '/l*v', "`"$log`""
+          if ($install.ExitCode -ne 0) {
+            Get-Content $log -Tail 50
+            exit $install.ExitCode
+          }
+      - name: an old Windows name is still an .exe at its installed path
+        if: ${{ matrix.platform == 'windows' }}
+        timeout-minutes: 10
+        run: >-
+          bash tools/check_launchers.sh 'C:/Program Files/NoPorts' .exe
+          sshnpd sshnp at_activate noports npp npp_atserver npp_file npt
       - name: Copy additional bundle items to build
         run: |
           cp -r bundles/core/* sshnp/
