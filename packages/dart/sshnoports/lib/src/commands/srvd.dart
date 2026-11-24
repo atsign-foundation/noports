@@ -109,9 +109,9 @@ Future<void> main(List<String> args) async {
   }
 
   try {
-    srvd = await Srvd.fromCommandLineArgs(
+    srvd = await createSrvd(
       args,
-      atClientGenerator: (SrvdParams p) => createAtClientCli(
+      (SrvdParams p) => createAtClientCli(
         storagePath: storageDir.path,
         atsign: p.atSign,
         atKeysFilePath: p.atKeysFilePath,
@@ -120,12 +120,6 @@ Future<void> main(List<String> args) async {
         rootDomain: p.rootDomain,
         atServiceFactory: ServiceFactoryWithNoOpSyncService(),
       ),
-      usageCallback: (e, s) {
-        stderr.write(formatCliHelp(
-            description: _description, optionsUsage: SrvdParams.parser.usage));
-        stderr.writeln('\n$e');
-      },
-      version: versionString,
     );
   } on ArgumentError catch (_) {
     exit(1);
@@ -149,3 +143,20 @@ Future<void> main(List<String> args) async {
     exit(1);
   });
 }
+
+/// Builds srvd from [args] with the atClient [atClientGenerator] makes,
+/// reporting [versionString] as its version.
+Future<Srvd> createSrvd(
+  List<String> args,
+  FutureOr<AtClient> Function(SrvdParams) atClientGenerator,
+) =>
+    Srvd.fromCommandLineArgs(
+      args,
+      atClientGenerator: atClientGenerator,
+      usageCallback: (e, s) {
+        stderr.write(formatCliHelp(
+            description: _description, optionsUsage: SrvdParams.parser.usage));
+        stderr.writeln('\n$e');
+      },
+      version: versionString,
+    );
