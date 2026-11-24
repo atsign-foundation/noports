@@ -1,7 +1,7 @@
 #!/bin/bash
 # Checks that each launcher NAME in DIR does what "DIR/atsc NAME" does: the
-# same stdout and stderr, byte for byte, and the same exit code, for --help
-# and, for npt, for an option no program has.
+# same stdout and stderr, byte for byte, not both empty, and the same exit
+# code, for --help and, for npt, for an option no program has.
 # Usage: check_launchers.sh DIR EXT NAME...
 set -u
 if [ "$#" -lt 3 ]; then
@@ -30,6 +30,7 @@ compare() {
   local verdict=same
   if ! cmp -s "$work/launcher.out" "$work/atsc.out" ||
     ! cmp -s "$work/launcher.err" "$work/atsc.err" ||
+    { [ ! -s "$work/atsc.out" ] && [ ! -s "$work/atsc.err" ]; } ||
     [ "$launcher" -ne "$atsc" ] ||
     { [ "$expected" = zero ] && [ "$atsc" -ne 0 ]; } ||
     { [ "$expected" = nonzero ] && [ "$atsc" -eq 0 ]; }; then
