@@ -26,4 +26,4 @@ Can alternatively build with Visual Studio
 - Choose `Folder` as the target
 - Configure the Project Properties to have build parameters be the binary you want to build "SSHNPD", "NPP", etc.
 - Click `Publish` to generate the binaries in the specified folder
-The published binaries will be located in `bin\Release\net8.0\win-x64\native\` folder by default.
+The published binaries will be located in `bin\Release\net10.0\win-x64\native\` folder by default.
