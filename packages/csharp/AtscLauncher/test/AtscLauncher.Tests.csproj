@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../src/Launch.cs" />
+    <Compile Include="../src/Native.cs" />
     <Compile Include="../src/NativeTypes.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -227,6 +227,48 @@ public class LaunchTests
     }
 
     [Fact]
+    public void AtscJoinsTheJobBeforeItRuns()
+    {
+        var child = new FakeSuspendedChild();
+
+        Assert.Null(Launch.Release(child, "npt", AtscPath));
+        Assert.Equal(new[] { "join", "resume" }, child.Steps);
+    }
+
+    [Fact]
+    public void AnAtscThatCannotJoinTheJobIsEndedBeforeItRuns()
+    {
+        var child = new FakeSuspendedChild(joinError: 5);
+
+        Assert.Equal(
+            $"npt: cannot run {AtscPath} in a job that ends it with this launcher (Windows error 5)",
+            Launch.Release(child, "npt", AtscPath));
+        Assert.Equal(new[] { "join", "terminate 127" }, child.Steps);
+    }
+
+    [Fact]
+    public void AnAtscThatCannotResumeIsEnded()
+    {
+        var child = new FakeSuspendedChild(resumeError: 6);
+
+        Assert.Equal($"npt: cannot resume {AtscPath} (Windows error 6)", Launch.Release(child, "npt", AtscPath));
+        Assert.Equal(new[] { "join", "resume", "terminate 127" }, child.Steps);
+    }
+
+    [Fact]
+    public void TheWin32ConstantsHaveTheirDocumentedValues()
+    {
+        Assert.Equal(0x4u, Native.CreateSuspended);
+        Assert.Equal(0x8u, Native.DetachedProcess);
+        Assert.Equal(0x100u, Native.StartfUseStdHandles);
+        Assert.Equal(0x2000u, Native.JobObjectLimitKillOnJobClose);
+        Assert.Equal(0x1000u, Native.JobObjectLimitSilentBreakawayOk);
+        Assert.Equal(9, Native.JobObjectExtendedLimitInformationClass);
+        Assert.Equal(0x2u, Native.FileShareWrite);
+        Assert.Equal(2u, Native.CtrlCloseEvent);
+    }
+
+    [Fact]
     public void TheLaunchersOwnFailuresExitWith127AsTheUnixLaunchersDo()
     {
         Assert.Equal(127, Launch.FailureExitCode);
@@ -260,6 +302,39 @@ public class LaunchTests
         Assert.Equal(144, sizeof(JobExtendedLimitInformation));
         Assert.Equal(16, (int)Marshal.OffsetOf<JobExtendedLimitInformation>(nameof(JobExtendedLimitInformation.LimitFlags)));
         Assert.Equal(64, (int)Marshal.OffsetOf<JobExtendedLimitInformation>(nameof(JobExtendedLimitInformation.ReadOperationCount)));
+    }
+
+    private sealed class FakeSuspendedChild : ISuspendedChild
+    {
+        private readonly int _joinError;
+        private readonly int _resumeError;
+
+        internal FakeSuspendedChild(int joinError = 0, int resumeError = 0)
+        {
+            _joinError = joinError;
+            _resumeError = resumeError;
+        }
+
+        internal List<string> Steps { get; } = new();
+
+        public bool TryJoinJob(out int error)
+        {
+            Steps.Add("join");
+            error = _joinError;
+            return error == 0;
+        }
+
+        public bool TryResume(out int error)
+        {
+            Steps.Add("resume");
+            error = _resumeError;
+            return error == 0;
+        }
+
+        public void Terminate(int exitCode)
+        {
+            Steps.Add($"terminate {exitCode}");
+        }
     }
 
     private static string ThisFile([CallerFilePath] string path = "") => path;

@@ -11,6 +11,7 @@ internal static unsafe partial class Native
     internal const nint InvalidHandleValue = -1;
 
     internal const uint StartfUseStdHandles = 0x100;
+    internal const uint CreateSuspended = 0x4;
     internal const uint DetachedProcess = 0x8;
     internal const uint DuplicateSameAccess = 0x2;
     internal const uint Infinite = 0xFFFFFFFF;
@@ -82,6 +83,12 @@ internal static unsafe partial class Native
         char* currentDirectory,
         StartupInfo* startupInfo,
         ProcessInformation* processInformation);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    internal static partial uint ResumeThread(nint thread);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    internal static partial int TerminateProcess(nint process, uint exitCode);
 
     [LibraryImport("kernel32.dll", SetLastError = true)]
     internal static partial uint WaitForSingleObject(nint handle, uint milliseconds);

@@ -2,6 +2,19 @@ using System;
 
 namespace AtscLauncher;
 
+/// <summary>The steps that let a child created suspended run inside the launcher's job.</summary>
+internal interface ISuspendedChild
+{
+    /// <summary>Puts the child in the launcher's job, or gives the Windows error.</summary>
+    bool TryJoinJob(out int error);
+
+    /// <summary>Lets the child's thread run, or gives the Windows error.</summary>
+    bool TryResume(out int error);
+
+    /// <summary>Ends the child with <paramref name="exitCode"/>.</summary>
+    void Terminate(int exitCode);
+}
+
 /// <summary>Decides which atsc.exe command line a launcher named after an atsc subcommand runs.</summary>
 internal static class Launch
 {
@@ -130,6 +143,33 @@ internal static class Launch
     {
         string head = "\"" + atscPath + "\" " + command;
         return tail.Length == 0 ? head : head + " " + tail;
+    }
+
+    /// <summary>
+    /// Lets <paramref name="child"/>, created suspended, run only once it is in the launcher's job;
+    /// ends it and returns the message when it cannot, or returns null.
+    /// </summary>
+    internal static string? Release(ISuspendedChild child, string command, string atscPath)
+    {
+        if (!child.TryJoinJob(out int error))
+        {
+            child.Terminate(FailureExitCode);
+            return JobFailure(command, atscPath, error);
+        }
+
+        if (!child.TryResume(out error))
+        {
+            child.Terminate(FailureExitCode);
+            return $"{command}: cannot resume {atscPath} (Windows error {error})";
+        }
+
+        return null;
+    }
+
+    /// <summary>Returns the message for failing to run atsc in a job that ends it with the launcher.</summary>
+    internal static string JobFailure(string command, string atscPath, int error)
+    {
+        return $"{command}: cannot run {atscPath} in a job that ends it with this launcher (Windows error {error})";
     }
 
     /// <summary>Returns the message for CreateProcessW failing with <paramref name="error"/>.</summary>

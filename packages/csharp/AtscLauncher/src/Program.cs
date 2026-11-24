@@ -31,7 +31,12 @@ internal static unsafe class Program
     private static int Run(string command, string atscPath, string childCommandLine)
     {
         Native.SetConsoleCtrlHandler(&OnConsoleControl, 1);
-        nint job = CreateKillOnCloseJob();
+        nint job = CreateKillOnCloseJob(out int jobError);
+        if (job == 0)
+        {
+            WriteError(Launch.JobFailure(command, atscPath, jobError));
+            return Launch.FailureExitCode;
+        }
 
         StartupInfo startupInfo = default;
         startupInfo.Cb = (uint)sizeof(StartupInfo);
@@ -39,7 +44,8 @@ internal static unsafe class Program
         startupInfo.StdInput = InheritableCopy(Native.StdInputHandle);
         startupInfo.StdOutput = InheritableCopy(Native.StdOutputHandle);
         startupInfo.StdError = InheritableCopy(Native.StdErrorHandle);
-        uint flags = HasConsole() ? 0 : Native.DetachedProcess;
+        // NOTE: atsc starts suspended, and runs only once it is in the job.
+        uint flags = Native.CreateSuspended | (HasConsole() ? 0 : Native.DetachedProcess);
 
         ProcessInformation child;
         char[] mutableCommandLine = (childCommandLine + "\0").ToCharArray();
@@ -63,12 +69,14 @@ internal static unsafe class Program
         }
 
         Volatile.Write(ref s_child, child.Process);
-        if (job != 0 && Native.AssignProcessToJobObject(job, child.Process) == 0)
+        string? releaseError = Launch.Release(new SuspendedChild(job, child), command, atscPath);
+        Native.CloseHandle(child.Thread);
+        if (releaseError != null)
         {
-            Native.CloseHandle(job);
+            WriteError(releaseError);
+            return Launch.FailureExitCode;
         }
 
-        Native.CloseHandle(child.Thread);
         uint exitCode;
         if (Native.WaitForSingleObject(child.Process, Native.Infinite) != Native.WaitObject0
             || Native.GetExitCodeProcess(child.Process, &exitCode) == 0)
@@ -81,11 +89,12 @@ internal static unsafe class Program
     }
 
     // NOTE: the job is a raw handle kept open until exit, never a SafeHandle: closing it kills atsc.
-    private static nint CreateKillOnCloseJob()
+    private static nint CreateKillOnCloseJob(out int error)
     {
         nint job = Native.CreateJobObjectW(null, null);
         if (job == 0)
         {
+            error = Marshal.GetLastPInvokeError();
             return 0;
         }
 
@@ -98,11 +107,45 @@ internal static unsafe class Program
                 &limits,
                 (uint)sizeof(JobExtendedLimitInformation)) == 0)
         {
+            error = Marshal.GetLastPInvokeError();
             Native.CloseHandle(job);
             return 0;
         }
 
+        error = 0;
         return job;
+    }
+
+    /// <summary>A child created suspended, with the job it is to run in.</summary>
+    private sealed class SuspendedChild : ISuspendedChild
+    {
+        private readonly nint _job;
+        private readonly ProcessInformation _child;
+
+        internal SuspendedChild(nint job, ProcessInformation child)
+        {
+            _job = job;
+            _child = child;
+        }
+
+        public bool TryJoinJob(out int error)
+        {
+            bool joined = Native.AssignProcessToJobObject(_job, _child.Process) != 0;
+            error = joined ? 0 : Marshal.GetLastPInvokeError();
+            return joined;
+        }
+
+        public bool TryResume(out int error)
+        {
+            bool resumed = Native.ResumeThread(_child.Thread) != uint.MaxValue;
+            error = resumed ? 0 : Marshal.GetLastPInvokeError();
+            return resumed;
+        }
+
+        public void Terminate(int exitCode)
+        {
+            Native.TerminateProcess(_child.Process, unchecked((uint)exitCode));
+        }
     }
 
     private static nint InheritableCopy(int which)
