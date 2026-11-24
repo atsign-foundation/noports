@@ -7,6 +7,7 @@ import 'package:at_client_cli/at_client_cli.dart';
 import 'package:noports_core/admin.dart';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/admin/expose_apis.dart' as expose;
+import 'package:sshnoports/src/admin/web_app.dart';
 import 'package:sshnoports/src/print_version.dart';
 
 const String _description =
@@ -109,24 +110,9 @@ Future<void> main(List<String> args) async {
 
   final app = Alfred();
   app.all('*', cors(origin: 'http://localhost:5173'));
-  if (Platform.executable.endsWith('np_admin') ||
-      Platform.executable.endsWith('np_admin.exe')) {
-    // Production usage - we're using the compiled binary
-    final executableLocation =
-        (Platform.resolvedExecutable.split(Platform.pathSeparator)
-              ..removeLast())
-            .join(Platform.pathSeparator);
-    final dir = Directory(
-        [executableLocation, 'web', 'admin'].join(Platform.pathSeparator));
-    print('Will serve webapp from $dir');
-    app.get('/*', (req, res) => dir);
-  } else {
-    // TODO Maybe do something smarter here, but this is for dev purposes only
-    final dir = Directory('../../../apps/admin/webapp/dist'
-        .replaceAll('/', Platform.pathSeparator));
-    print('Will serve webapp from ${dir.absolute}');
-    app.get('/*', (req, res) => dir);
-  }
+  final dir = webAppDirectory(Platform.resolvedExecutable);
+  print('Will serve webapp from ${dir.absolute}');
+  app.get('/*', (req, res) => dir);
   expose.policy(app, '/api/policy', api);
 
   // Track connected clients
