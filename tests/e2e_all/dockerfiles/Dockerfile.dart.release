@@ -27,7 +27,7 @@ RUN apt-get update && \
     tar -xvf sshnp-linux-${ARCH}.tgz && \
     rm sshnp-linux-${ARCH}.tgz && \
     cd sshnp && \
-    mv -f at_activate install.sh np_admin npp_atserver npp_file npt srv srvd sshnp sshnpd npevents ${OUTPUT_DIR} || true
+    mv -f atsc at_activate install.sh np_admin npp_atserver npp_file npt srv srvd sshnp sshnpd npevents ${OUTPUT_DIR} || true
 
 FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:f7db929a1bd44fbcdfb71ca3d4b58cbb58a197318d6b78e54647543c90879e74 AS runtime
 

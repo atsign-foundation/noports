@@ -42,26 +42,19 @@ jobs:
       - name: dart test
         working-directory: packages/dart/sshnoports
         run: dart test
-      - name: compile each shipped binary and check --help
+      - name: compile atsc and srv, and check --help through each old name
         working-directory: packages/dart/sshnoports
         run: |
           dart run build_runner build --delete-conflicting-outputs
           mkdir -p "$RUNNER_TEMP/bin"
-          # NOTE: keep this list in step with BINS in multibuild.yaml, plus srvd
-          for b in at_activate noports npevents npp npp_atserver npp_file npt srv sshnp sshnpd srvd; do
-            echo "$b"
-            dart compile exe "bin/$b.dart" -o "$RUNNER_TEMP/bin/$b"
-            "$RUNNER_TEMP/bin/$b" --help > /dev/null
-          done
-      - name: compile atsc and check --help for each subcommand
-        working-directory: packages/dart/sshnoports
-        run: |
-          mkdir -p "$RUNNER_TEMP/bin"
           dart compile exe bin/atsc.dart -o "$RUNNER_TEMP/bin/atsc"
+          dart compile exe bin/srv.dart -o "$RUNNER_TEMP/bin/srv"
+          find launchers -maxdepth 1 -type f -exec cp {} "$RUNNER_TEMP/bin/" \;
           "$RUNNER_TEMP/bin/atsc" --help > /dev/null
-          for c in at_activate noports np_admin npevents npp npp_atserver npp_file npt srvd sshnp sshnpd; do
-            echo "atsc $c"
-            "$RUNNER_TEMP/bin/atsc" "$c" --help > /dev/null
+          "$RUNNER_TEMP/bin/srv" --help > /dev/null
+          for b in at_activate noports np_admin npevents npp npp_atserver npp_file npt srvd sshnp sshnpd; do
+            echo "$b"
+            "$RUNNER_TEMP/bin/$b" --help > /dev/null
           done
       # Runs osv-scanner to find any vulnerable Dart dependencies
       # It needs to look at pubspec.lock files, which is why it's

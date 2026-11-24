@@ -22,13 +22,15 @@ fi
 
 cd "$REPO_ROOT"
 
-if [ ! -f "$SRVD_DIR/srvd" ]; then
-  echo "Compiling srvd..."
+if [ ! -f "$SRVD_DIR/atsc" ]; then
+  echo "Compiling atsc..."
   cd packages/dart/sshnoports
   dart pub get
-  dart compile exe bin/srvd.dart -o "$SRVD_DIR/srvd"
+  dart compile exe bin/atsc.dart -o "$SRVD_DIR/atsc"
   cd "$REPO_ROOT"
 fi
+cp packages/dart/sshnoports/launchers/srvd "$SRVD_DIR/srvd.new"
+mv -f "$SRVD_DIR/srvd.new" "$SRVD_DIR/srvd"
 
 RELAY_IP="${ROOT_DOMAIN%%:*}"
 LOG="$SRVD_DIR/srvd.log"

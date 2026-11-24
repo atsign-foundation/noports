@@ -9,16 +9,9 @@ RUN set -eux ; \
     mkdir -p ${REPO_DIR} ${OUTPUT_DIR} ; \
     cd ${REPO_DIR}/packages/dart/sshnoports ; \
     dart pub get ; \
-    dart compile exe bin/at_activate.dart -o ${OUTPUT_DIR}/at_activate ; \
-    dart compile exe bin/npp_atserver.dart -o ${OUTPUT_DIR}/npp_atserver ; \
-    dart compile exe bin/npp.dart -o ${OUTPUT_DIR}/npp ; \
-    dart compile exe bin/npp_file.dart -o ${OUTPUT_DIR}/npp_file ; \
-    dart compile exe bin/npt.dart -o ${OUTPUT_DIR}/npt ; \
-    dart compile exe bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
-    dart compile exe bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
+    dart compile exe bin/atsc.dart -o ${OUTPUT_DIR}/atsc ; \
     dart compile exe bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
-    dart compile exe bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
-    dart compile exe bin/npevents.dart -o ${OUTPUT_DIR}/npevents
+    find launchers -maxdepth 1 -type f -exec cp {} ${OUTPUT_DIR}/ ';'
 
 FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:f7db929a1bd44fbcdfb71ca3d4b58cbb58a197318d6b78e54647543c90879e74 AS runtime
 

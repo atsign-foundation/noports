@@ -25,13 +25,17 @@ Run every command from the repo root.
 cd packages/dart/sshnoports
 dart pub get
 mkdir -p build/single
-for b in sshnpd srv npt srvd npp_file npevents; do
-  dart compile exe "bin/$b.dart" -o "build/single/$b"
+dart compile exe bin/atsc.dart -o build/single/atsc
+dart compile exe bin/srv.dart -o build/single/srv
+for b in sshnpd npt srvd npp_file npevents; do
+  cp "launchers/$b" "build/single/$b"
 done
 cd ../../..
 ```
 
-`sshnpd` starts `srv` from its own directory, so build them side by side.
+`sshnpd`, `npt`, `srvd`, `npp_file` and `npevents` are scripts that run the
+`atsc` beside them, and `sshnpd` starts `srv` from its own directory, so keep
+them side by side.
 
 ## 2. Write a policy that lets `@colin` use its own device
 

@@ -15,16 +15,22 @@ RUN set -eux ; \
     git clone ${URL} . ; \
     git checkout ${branch} ; \
     dart pub get -C ${PACKAGE_DIR} ; \
-    dart compile exe ${PACKAGE_DIR}/bin/at_activate.dart -o ${OUTPUT_DIR}/at_activate ; \
-    dart compile exe ${PACKAGE_DIR}/bin/npp_atserver.dart -o ${OUTPUT_DIR}/npp_atserver ; \
-    dart compile exe ${PACKAGE_DIR}/bin/npp.dart -o ${OUTPUT_DIR}/npp ; \
-    dart compile exe ${PACKAGE_DIR}/bin/npp_file.dart -o ${OUTPUT_DIR}/npp_file ; \
-    dart compile exe ${PACKAGE_DIR}/bin/npt.dart -o ${OUTPUT_DIR}/npt ; \
-    dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
-    dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
-    dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
-    dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
-    dart compile exe ${PACKAGE_DIR}/bin/npevents.dart -o ${OUTPUT_DIR}/npevents
+    if [ -d ${PACKAGE_DIR}/launchers ]; then \
+        dart compile exe ${PACKAGE_DIR}/bin/atsc.dart -o ${OUTPUT_DIR}/atsc ; \
+        dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
+        find ${PACKAGE_DIR}/launchers -maxdepth 1 -type f -exec cp {} ${OUTPUT_DIR}/ ';' ; \
+    else \
+        dart compile exe ${PACKAGE_DIR}/bin/at_activate.dart -o ${OUTPUT_DIR}/at_activate ; \
+        dart compile exe ${PACKAGE_DIR}/bin/npp_atserver.dart -o ${OUTPUT_DIR}/npp_atserver ; \
+        dart compile exe ${PACKAGE_DIR}/bin/npp.dart -o ${OUTPUT_DIR}/npp ; \
+        dart compile exe ${PACKAGE_DIR}/bin/npp_file.dart -o ${OUTPUT_DIR}/npp_file ; \
+        dart compile exe ${PACKAGE_DIR}/bin/npt.dart -o ${OUTPUT_DIR}/npt ; \
+        dart compile exe ${PACKAGE_DIR}/bin/sshnp.dart -o ${OUTPUT_DIR}/sshnp ; \
+        dart compile exe ${PACKAGE_DIR}/bin/sshnpd.dart -o ${OUTPUT_DIR}/sshnpd ; \
+        dart compile exe ${PACKAGE_DIR}/bin/srv.dart -o ${OUTPUT_DIR}/srv ; \
+        dart compile exe ${PACKAGE_DIR}/bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
+        dart compile exe ${PACKAGE_DIR}/bin/npevents.dart -o ${OUTPUT_DIR}/npevents ; \
+    fi
 
 FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:f7db929a1bd44fbcdfb71ca3d4b58cbb58a197318d6b78e54647543c90879e74 AS runtime
 
