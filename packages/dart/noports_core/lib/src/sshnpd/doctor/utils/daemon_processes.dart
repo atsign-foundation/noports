@@ -1,0 +1,101 @@
+import 'dart:convert';
+
+/// A process as the operating system lists it: its pid and its arguments,
+/// program first.
+class ListedProcess {
+  final int pid;
+  final List<String> args;
+
+  const ListedProcess(this.pid, this.args);
+}
+
+/// Whether [processes] include one, other than [selfPid], that runs the
+/// daemon [name] as `name ...` or `atsc name ...` without `--doctor`.
+///
+/// The program is the first argument with its directory removed; on
+/// [windows] it is compared ignoring case and any `.exe` suffix.
+bool isDaemonListed(
+  Iterable<ListedProcess> processes,
+  String name, {
+  required int selfPid,
+  required bool windows,
+}) => processes.any(
+  (p) => p.pid != selfPid && _runsDaemon(p.args, name, windows),
+);
+
+bool _runsDaemon(List<String> args, String name, bool windows) {
+  if (args.isEmpty) return false;
+  final program = _programName(args.first, windows);
+  final int optionsFrom;
+  if (program == (windows ? name.toLowerCase() : name)) {
+    optionsFrom = 1;
+  } else if (program == 'atsc' && args.length > 1 && args[1] == name) {
+    optionsFrom = 2;
+  } else {
+    return false;
+  }
+  return !args.skip(optionsFrom).contains('--doctor');
+}
+
+String _programName(String program, bool windows) {
+  if (!windows) return program.substring(program.lastIndexOf('/') + 1);
+  final base = program
+      .substring(program.lastIndexOf(RegExp(r'[\\/]')) + 1)
+      .toLowerCase();
+  return base.endsWith('.exe') ? base.substring(0, base.length - 4) : base;
+}
+
+/// Parses `pgrep -af` (Linux) or `pgrep -lf` (macOS) output: per line, a pid
+/// and the command line with its arguments joined by spaces.
+List<ListedProcess> parsePgrepListing(String output) => [
+  for (final match in RegExp(
+    r'^[ \t]*(\d+)[ \t]+(.+)$',
+    multiLine: true,
+  ).allMatches(output))
+    if (int.tryParse(match.group(1)!) case final int pid)
+      ListedProcess(pid, match.group(2)!.trim().split(RegExp(r'\s+'))),
+];
+
+/// Parses a JSON array of Win32_Process `ProcessId`, `Name` and
+/// `CommandLine`; a process whose command line is unreadable is listed by its
+/// image name alone, and output that is not JSON lists nothing.
+List<ListedProcess> parseWin32ProcessListing(String output) {
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(output);
+  } on FormatException {
+    return [];
+  }
+  return [
+    for (final entry in decoded is List ? decoded : [decoded])
+      if (entry case {'ProcessId': final int pid})
+        ListedProcess(pid, switch (entry) {
+          {'CommandLine': final String line} when line.trim().isNotEmpty =>
+            _splitWindowsCommandLine(line),
+          {'Name': final String name} => [name],
+          _ => <String>[],
+        }),
+  ];
+}
+
+List<String> _splitWindowsCommandLine(String commandLine) {
+  final args = <String>[];
+  final arg = StringBuffer();
+  var quoted = false;
+  var started = false;
+  for (final char in commandLine.split('')) {
+    if (char == '"') {
+      quoted = !quoted;
+      started = true;
+    } else if (!quoted && (char == ' ' || char == '\t')) {
+      if (started) args.add(arg.toString());
+      arg.clear();
+      started = false;
+    } else {
+      arg.write(char);
+      started = true;
+    }
+  }
+  if (started) args.add(arg.toString());
+  return args;
+}

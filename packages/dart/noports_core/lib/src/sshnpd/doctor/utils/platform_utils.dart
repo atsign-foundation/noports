@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'daemon_processes.dart';
+
 
 class ServiceExitInfo {
   final int exitCode;
@@ -50,7 +52,8 @@ abstract class PlatformUtils {
   /// Check if a command is available (e.g. 'curl', 'ssh')
   Future<bool> isCommandAvailable(String command);
 
-  /// Check if a process is currently running
+  /// Whether another process runs the daemon [processName], as
+  /// `processName ...` or `atsc processName ...`, other than a `--doctor` run.
   Future<bool> isProcessRunning(String processName);
 
   /// Get list of potential config file paths
@@ -91,9 +94,13 @@ class MacOSUtils implements PlatformUtils {
 
   @override
   Future<bool> isProcessRunning(String processName) async {
-    
-    final result = await Process.run('pgrep', ['-f', processName]);
-    return result.exitCode == 0;
+    final result = await Process.run('pgrep', ['-lf', processName]);
+    return isDaemonListed(
+      parsePgrepListing(result.stdout.toString()),
+      processName,
+      selfPid: pid,
+      windows: false,
+    );
   }
 
   @override
@@ -237,9 +244,13 @@ class LinuxUtils implements PlatformUtils {
 
   @override
   Future<bool> isProcessRunning(String processName) async {
-    // pgrep -f matches full command line
-    final result = await Process.run('pgrep', ['-f', processName]);
-    return result.exitCode == 0;
+    final result = await Process.run('pgrep', ['-af', processName]);
+    return isDaemonListed(
+      parsePgrepListing(result.stdout.toString()),
+      processName,
+      selfPid: pid,
+      windows: false,
+    );
   }
 
   @override
@@ -350,13 +361,19 @@ class WindowsUtils implements PlatformUtils {
 
   @override
   Future<bool> isProcessRunning(String processName) async {
-    // tasklist /FI "IMAGENAME eq sshnpd.exe"
-    // Note: Windows processes usually have .exe extension
-    String actualName = processName.endsWith('.exe') ? processName : '$processName.exe';
-    
-    final result = await Process.run('tasklist', ['/FI', 'IMAGENAME eq $actualName']);
-    // tasklist always returns 0 even if not found, so we check stdout
-    return result.stdout.toString().contains(actualName);
+    final result = await Process.run('powershell', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      'ConvertTo-Json -Compress -InputObject @(Get-CimInstance'
+          ' -ClassName Win32_Process | Select-Object ProcessId, Name, CommandLine)',
+    ]);
+    return isDaemonListed(
+      parseWin32ProcessListing(result.stdout.toString()),
+      processName,
+      selfPid: pid,
+      windows: true,
+    );
   }
 
   @override
