@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:noports_core/srv.dart';
@@ -118,4 +120,62 @@ void main() {
     skip: Platform.isWindows ? 'runs atsc through sh' : false,
     timeout: const Timeout(Duration(minutes: 2)),
   );
+
+  group('Given atsc read its own path when it started', () {
+    test(
+      'when an upgrade replaces atsc and srv with cp and mv,'
+      ' then atsc still runs the srv beside it',
+      () async {
+        final String atsc = path.join(installation.path, 'atsc');
+        final compiled = await Process.run(Platform.resolvedExecutable, [
+          'compile',
+          'exe',
+          path.join('test', 'srv', 'print_local_binary_path_on_signal.dart'),
+          '-o',
+          atsc,
+        ]);
+        expect(
+          compiled.exitCode,
+          0,
+          reason: '${compiled.stdout}${compiled.stderr}',
+        );
+        place('srv');
+
+        final Process process = await Process.start(atsc, []);
+        addTearDown(process.kill);
+        final List<String> lines = [];
+        final Completer<void> ready = Completer();
+        process.stdout
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .listen((String line) {
+              lines.add(line);
+              if (line == 'ready') ready.complete();
+            });
+        await ready.future;
+
+        for (final String name in ['atsc', 'srv']) {
+          final String installed = path.join(installation.path, name);
+          File(installed).copySync('$installed.new');
+          File('$installed.new').renameSync(installed);
+        }
+        expect(
+          Link('/proc/${process.pid}/exe').targetSync(),
+          endsWith(' (deleted)'),
+          reason: 'the running atsc has been replaced',
+        );
+
+        process.kill(ProcessSignal.sigusr1);
+        expect(await process.exitCode, 0);
+        expect(lines, [
+          'ready',
+          path.join(installation.resolveSymbolicLinksSync(), 'srv'),
+        ]);
+      },
+      skip: Platform.isLinux
+          ? false
+          : 'only Linux reports a replaced executable as " (deleted)"',
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
+  });
 }
