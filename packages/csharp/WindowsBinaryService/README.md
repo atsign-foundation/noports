@@ -16,6 +16,9 @@ dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
 
 ```
 
+The service runs `atsc.exe` from its own folder, with the subcommand that the
+constant names (`sshnpd` or `srvd`) and then the service's own arguments.
+
 Can alternatively build with Visual Studio
 
 - Open the solution in Visual Studio
