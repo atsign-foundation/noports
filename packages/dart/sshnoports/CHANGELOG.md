@@ -47,6 +47,11 @@
   session to a freshly installed device no longer fails with
   `PathNotFoundException`, and an sshnpd run with `-s` no longer drops the
   public key a client sends it
+* fix: sshnpd builds the `authorized_keys` line for a key a client sends with
+  `-s` itself, starting `from="127.0.0.1,::1"`, followed by any
+  `--sshpublickey-permissions`
+* fix: sshnpd leaves a `from=` option out of `--sshpublickey-permissions`,
+  with a warning at startup
 * fix: srvd refuses a session request whose session id is not a UUID
 * fix: srvd refuses a session request whose device-side Atsign is not a valid
   Atsign, and tells a client why it refused a malformed request, so the client

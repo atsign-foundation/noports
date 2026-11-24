@@ -6,6 +6,10 @@
   the connection open, so every later command read the reply to the one
   before it. Fixed by at_c v0.4.3 (at_c#737, #3122)
 - build(deps): bump atsdk to at_c v0.4.3
+- feat: `-S` / `--sshpublickey-permissions`, as in the Dart sshnpd
+- fix: sshnpd builds the `authorized_keys` line for a client's ssh public key
+  itself, and starts on a device with no `~/.ssh/authorized_keys`, creating
+  it when it first adds a key
 
 ## 1.2.0
 
