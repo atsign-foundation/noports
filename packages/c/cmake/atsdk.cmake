@@ -12,10 +12,8 @@ if(NOT atsdk_FOUND)
     FetchContent_Declare(
       atsdk
       GIT_REPOSITORY https://github.com/atsign-foundation/at_c.git
-      # at_c v0.4.3 (this is the tag commit): a re-authentication that fails
-      # closes its connection and keeps the connection's hooks (at_c#737) on
-      # top of v0.4.2
-      GIT_TAG 9f973cfc00ee70d495ffc845c3ba1bf64aafe44f
+      # commit for v0.4.4 release
+      GIT_TAG 929fc775fce2fde030d351ad06542002968cd076
     )
   endif()
   FetchContent_MakeAvailable(atsdk)

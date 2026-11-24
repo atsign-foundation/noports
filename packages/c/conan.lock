@@ -1,19 +1,19 @@
 {
   "version": "0.5",
   "requires": [
-    "mbedtls/3.6.7#22f77b8f8a238f8f519183cc1a6d9a20%1784897548.9733994",
+    "mbedtls/3.6.8#82851ab936e4606b8c1d643027c8ee9a%1795520003.3931684",
     "libcurl/8.23.0#5a41dd743c6e91c90947d09d9b4cde99%1794898064.129",
     "cjson/1.7.19#0f1d9770c2c7898029ef69e0df621838%1757507235.3264372",
-    "at_c/0.4.3#26376767fdd88c0c6bcd9de9979d4bf8%1795205223.050925"
+    "at_c/0.4.4#08123855dd6adecda9f13d12a3aa1e29%1795528879.418504"
   ],
   "build_requires": [],
   "python_requires": [],
   "overrides": {
-    "mbedtls/3.6.7": [
-      "mbedtls/3.6.7"
+    "mbedtls/3.6.8": [
+      "mbedtls/3.6.8"
     ],
     "mbedtls/3.5.0": [
-      "mbedtls/3.6.7"
+      "mbedtls/3.6.8"
     ]
   },
   "config_requires": []
