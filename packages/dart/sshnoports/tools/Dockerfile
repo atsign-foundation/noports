@@ -13,8 +13,9 @@ RUN \
   cd ${PACKAGEDIR}; \
   dart pub get --enforce-lockfile; \
   dart run build_runner build --delete-conflicting-outputs ; \
-  dart compile exe bin/sshnpd.dart -o ${BINARYDIR}/sshnpd ; \
-  dart compile exe bin/srv.dart -o ${BINARYDIR}/srv
+  dart compile exe bin/atsc.dart -o ${BINARYDIR}/atsc ; \
+  dart compile exe bin/srv.dart -o ${BINARYDIR}/srv ; \
+  cp launchers/sshnpd ${BINARYDIR}/
 
 # Second stage of build FROM debian-slim
 FROM debian:stable-20261104-slim@sha256:fbfb4059d2127120aa05b6e6064523d2102552f0cf0026ddf0701c12f1f8f3e0
@@ -40,6 +41,7 @@ RUN \
   mkdir -p /run/sshd ; \
   chmod 755 /${USER}/.startup.sh
 
+COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/atsc /usr/local/at/
 COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/sshnpd /usr/local/at/
 COPY --from=buildimage --chown=${USER}:${USER} /usr/local/at/srv /usr/local/at/
 WORKDIR ${HOMEDIR}
