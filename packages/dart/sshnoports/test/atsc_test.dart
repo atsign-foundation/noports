@@ -15,13 +15,13 @@ void main() {
   late Directory snapshots;
   late Directory installation;
 
-  /// Compiles bin/[name].dart to a kernel snapshot called [name].dill, from
-  /// whose name the program derives its own, as a compiled binary does.
-  Future<void> compile(String name) async {
+  /// Compiles [source] to a kernel snapshot called [name].dill, from whose
+  /// name the program derives its own, as a compiled binary does.
+  Future<void> compile(String source, String name) async {
     final result = await Process.run(Platform.resolvedExecutable, [
       'compile',
       'kernel',
-      path.join('bin', '$name.dart'),
+      source,
       '-o',
       path.join(snapshots.path, '$name.dill'),
     ]);
@@ -59,9 +59,9 @@ void main() {
 
   setUpAll(() async {
     snapshots = Directory.systemTemp.createTempSync('atsc_test');
-    for (final String name in ['atsc', 'srv', 'npt']) {
-      await compile(name);
-    }
+    await compile(path.join('bin', 'atsc.dart'), 'atsc');
+    await compile(path.join('bin', 'srv.dart'), 'srv');
+    await compile(path.join('test', 'npt_on_its_own.dart'), 'npt');
     if (Platform.isWindows) return;
     installation = Directory(path.join(snapshots.path, 'installation'))
       ..createSync();
