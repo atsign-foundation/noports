@@ -124,6 +124,11 @@ jobs:
           ref: multibuild-${{github.run_number}}
       - name: Setup dart
         uses: dart-lang/setup-dart@2286a0c042b44434fe26d292bbce8d34f7ec662b # v1.8.2
+      - name: Setup .NET (Windows only)
+        if: ${{ matrix.platform == 'windows' }}
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: packages/csharp/global.json
       - name: Setup Go (Linux only)
         if: ${{ matrix.platform == 'linux' }} # Only needed for nfpm packaging
         uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
