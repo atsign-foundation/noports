@@ -6,6 +6,7 @@ import 'package:chalkdart/chalk.dart';
 import 'package:noports_core/commands.dart';
 import 'package:sshnoports/src/print_version.dart';
 
+/// A noports subcommand and the name that selects it on the command line.
 enum NoPortsCommand {
   activate('activate'),
   issueKeys('issue-keys');
@@ -95,6 +96,8 @@ Future<void> main(List<String> args) async {
   }
 }
 
+/// Prints the usage of noports, or of [command] when given, then the version,
+/// to [sink], which defaults to [stderr].
 void printUsage({NoPortsCommand? command, IOSink? sink}) {
   sink ??= stderr;
   if (command == null) {
@@ -114,6 +117,8 @@ void printUsage({NoPortsCommand? command, IOSink? sink}) {
   return;
 }
 
+/// Sets the root log level to severe and returns noports' own logger, which
+/// logs at info and above to stderr.
 AtSignLogger setupLogging() {
   AtSignLogger.root_level = 'severe';
   return AtSignLogger('NoPorts', loggingHandler: CLILoggingHandler())

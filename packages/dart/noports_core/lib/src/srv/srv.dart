@@ -166,6 +166,8 @@ abstract class Srv<T> {
   @visibleForTesting
   static String? localBinaryPathOverride;
 
+  /// The srv binary to run: [localBinaryPathOverride] when set, or else the
+  /// srv beside this executable.
   static Future<String?> getLocalBinaryPath() async {
     if (localBinaryPathOverride != null) return localBinaryPathOverride;
     return getBinaryPathBeside(Platform.resolvedExecutable);
