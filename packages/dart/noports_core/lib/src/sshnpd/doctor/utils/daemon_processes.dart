@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
+
+import 'package:path/path.dart' as path;
 
 /// A process as the operating system lists it: its pid and its arguments,
 /// program first.
@@ -45,16 +48,68 @@ String _programName(String program, bool windows) {
   return base.endsWith('.exe') ? base.substring(0, base.length - 4) : base;
 }
 
-/// Parses `pgrep -af` (Linux) or `pgrep -lf` (macOS) output: per line, a pid
-/// and the command line with its arguments joined by spaces.
-List<ListedProcess> parsePgrepListing(String output) => [
+/// The directory Linux lists its processes in.
+const linuxProcDirectory = '/proc';
+
+/// The macOS command listing each process's pid and command name, which `ps`
+/// takes whole from its first argument.
+const macOSCommandNameListing = ['ps', '-A', '-o', 'pid=,comm='];
+
+/// The macOS command listing each process's pid and arguments joined by
+/// spaces.
+const macOSArgumentsListing = ['ps', '-A', '-o', 'pid=,args='];
+
+/// Lists the processes in [proc], laid out as Linux's `/proc`, each by the
+/// exact arguments in its NUL-separated `cmdline`; a process that exits or
+/// cannot be read while listing is left out.
+Future<List<ListedProcess>> listProcDirectory(Directory proc) async {
+  final processes = <ListedProcess>[];
+  await for (final entry in proc.list(followLinks: false)) {
+    final pid = int.tryParse(path.basename(entry.path));
+    if (pid == null) continue;
+    final List<int> cmdline;
+    try {
+      cmdline = await File(path.join(entry.path, 'cmdline')).readAsBytes();
+    } on FileSystemException {
+      continue;
+    }
+    final args = utf8.decode(cmdline, allowMalformed: true).split('\x00');
+    if (args.last.isEmpty) args.removeLast();
+    processes.add(ListedProcess(pid, args));
+  }
+  return processes;
+}
+
+/// Joins the output of [macOSCommandNameListing] and [macOSArgumentsListing]
+/// by pid: the program is the command name whole, and the other arguments are
+/// the rest of the args split on whitespace. A process whose args do not
+/// begin with its command name is listed by its command name alone.
+List<ListedProcess> parsePsListing(String commandNames, String arguments) {
+  final argumentsByPid = _pidColumn(arguments);
+  return [
+    for (final MapEntry(key: pid, value: program) in _pidColumn(
+      commandNames,
+    ).entries)
+      if (argumentsByPid[pid] case final String line)
+        ListedProcess(pid, [program, ..._argumentsAfter(program, line)]),
+  ];
+}
+
+Map<int, String> _pidColumn(String output) => {
   for (final match in RegExp(
-    r'^[ \t]*(\d+)[ \t]+(.+)$',
+    r'^[ \t]*(\d+) (.*)$',
     multiLine: true,
   ).allMatches(output))
-    if (int.tryParse(match.group(1)!) case final int pid)
-      ListedProcess(pid, match.group(2)!.trim().split(RegExp(r'\s+'))),
-];
+    if (int.tryParse(match.group(1)!) case final int pid) pid: match.group(2)!,
+};
+
+List<String> _argumentsAfter(String program, String line) {
+  if (!line.startsWith(program)) return const [];
+  final rest = line.substring(program.length);
+  if (rest.isNotEmpty && !rest.startsWith(RegExp(r'\s'))) return const [];
+  final trimmed = rest.trim();
+  return trimmed.isEmpty ? const [] : trimmed.split(RegExp(r'\s+'));
+}
 
 /// Parses a JSON array of Win32_Process `ProcessId`, `Name` and
 /// `CommandLine`; a process whose command line is unreadable is listed by its

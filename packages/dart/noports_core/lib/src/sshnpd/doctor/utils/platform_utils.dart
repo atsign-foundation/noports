@@ -94,9 +94,16 @@ class MacOSUtils implements PlatformUtils {
 
   @override
   Future<bool> isProcessRunning(String processName) async {
-    final result = await Process.run('pgrep', ['-lf', processName]);
+    final names = await Process.run(
+      macOSCommandNameListing.first,
+      macOSCommandNameListing.sublist(1),
+    );
+    final arguments = await Process.run(
+      macOSArgumentsListing.first,
+      macOSArgumentsListing.sublist(1),
+    );
     return isDaemonListed(
-      parsePgrepListing(result.stdout.toString()),
+      parsePsListing(names.stdout.toString(), arguments.stdout.toString()),
       processName,
       selfPid: pid,
       windows: false,
@@ -244,9 +251,8 @@ class LinuxUtils implements PlatformUtils {
 
   @override
   Future<bool> isProcessRunning(String processName) async {
-    final result = await Process.run('pgrep', ['-af', processName]);
     return isDaemonListed(
-      parsePgrepListing(result.stdout.toString()),
+      await listProcDirectory(Directory(linuxProcDirectory)),
       processName,
       selfPid: pid,
       windows: false,

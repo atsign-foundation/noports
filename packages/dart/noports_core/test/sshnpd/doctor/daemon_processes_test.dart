@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:noports_core/src/sshnpd/doctor/utils/daemon_processes.dart';
 import 'package:test/test.dart';
 
 const doctorPid = 4242;
 
-const unixDoctorLine = '$doctorPid /usr/bin/sshnpd --doctor';
+typedef Proc = (int pid, List<String> args);
+
+const Proc unixDoctor = (doctorPid, ['/usr/bin/sshnpd', '--doctor']);
 
 const Map<String, Object?> windowsDoctor = {
   'ProcessId': doctorPid,
@@ -13,12 +16,44 @@ const Map<String, Object?> windowsDoctor = {
   'CommandLine': r'"C:\Program Files\NoPorts\sshnpd.exe" --doctor',
 };
 
-bool unixReportsDaemon(List<String> pgrepLines) => isDaemonListed(
-  parsePgrepListing('${pgrepLines.join('\n')}\n'),
-  'sshnpd',
-  selfPid: doctorPid,
-  windows: false,
+Future<List<ListedProcess>> listAsLinux(List<Proc> processes) async {
+  final proc = await Directory.systemTemp.createTemp('proc');
+  addTearDown(() => proc.delete(recursive: true));
+  for (final (pid, args) in processes) {
+    final dir = await Directory('${proc.path}/$pid').create();
+    await File('${dir.path}/cmdline').writeAsBytes([
+      for (final arg in args) ...[...utf8.encode(arg), 0],
+    ]);
+  }
+  return listProcDirectory(proc);
+}
+
+List<ListedProcess> listAsMacOS(List<Proc> processes) => parsePsListing(
+  [
+    for (final (pid, args) in processes) '${'$pid'.padLeft(5)} ${args.first}',
+  ].join('\n'),
+  [
+    for (final (pid, args) in processes)
+      '${'$pid'.padLeft(5)} ${args.join(' ')}',
+  ].join('\n'),
 );
+
+Future<bool> unixReportsDaemon(List<Proc> processes) async {
+  final linux = isDaemonListed(
+    await listAsLinux(processes),
+    'sshnpd',
+    selfPid: doctorPid,
+    windows: false,
+  );
+  final macOS = isDaemonListed(
+    listAsMacOS(processes),
+    'sshnpd',
+    selfPid: doctorPid,
+    windows: false,
+  );
+  expect(macOS, linux, reason: 'the Linux and macOS listings agree');
+  return linux;
+}
 
 bool windowsReportsDaemon(List<Map<String, Object?>> processes) =>
     isDaemonListed(
@@ -37,9 +72,12 @@ Map<String, Object?> windowsProcess(int pid, String name, String? line) => {
 void main() {
   group('Given the doctor is the only sshnpd process', () {
     test('when the process check runs on Linux or macOS, '
-        'then it reports no daemon running', () {
+        'then it reports no daemon running', () async {
       expect(
-        unixReportsDaemon([unixDoctorLine, '1 /sbin/init']),
+        await unixReportsDaemon([
+          unixDoctor,
+          (1, ['/sbin/init']),
+        ]),
         isFalse,
         reason: "the doctor's own process is not the daemon",
       );
@@ -60,12 +98,12 @@ void main() {
 
   group('Given another process runs the doctor', () {
     test('when the process check runs on Linux or macOS, '
-        'then that doctor run is not counted as the daemon', () {
+        'then that doctor run is not counted as the daemon', () async {
       expect(
-        unixReportsDaemon([
-          unixDoctorLine,
-          '5151 /usr/local/bin/sshnpd --doctor',
-          '5152 /usr/bin/atsc sshnpd -o report.txt --doctor',
+        await unixReportsDaemon([
+          unixDoctor,
+          (5151, ['/usr/local/bin/sshnpd', '--doctor']),
+          (5152, ['/usr/bin/atsc', 'sshnpd', '-o', 'report.txt', '--doctor']),
         ]),
         isFalse,
         reason: 'a --doctor run is not the daemon, whatever its pid',
@@ -91,29 +129,34 @@ void main() {
   });
 
   group('Given this process itself runs sshnpd without --doctor', () {
-    test('when the process check runs, then this process is not counted', () {
-      expect(
-        unixReportsDaemon(['$doctorPid /usr/bin/sshnpd -a @device -m @mgr']),
-        isFalse,
-        reason: 'the process running the check is never counted',
-      );
-    });
+    test(
+      'when the process check runs, then this process is not counted',
+      () async {
+        expect(
+          await unixReportsDaemon([
+            (doctorPid, ['/usr/bin/sshnpd', '-a', '@device', '-m', '@mgr']),
+          ]),
+          isFalse,
+          reason: 'the process running the check is never counted',
+        );
+      },
+    );
   });
 
   group(
     'Given a command line that mentions sshnpd but runs another program',
     () {
       test('when the process check runs on Linux or macOS, '
-          'then it reports no daemon running', () {
+          'then it reports no daemon running', () async {
         expect(
-          unixReportsDaemon([
-            unixDoctorLine,
-            '6001 vim /home/u/.config/sshnpd/sshnpd.yaml',
-            '6002 journalctl -u sshnpd -f',
-            '6003 tail -f /var/log/sshnpd',
-            '6004 /bin/bash /home/u/.local/bin/sshnpd.sh',
-            '6005 /usr/bin/atsc npt -t @device -d sshnpd',
-            '6006 /usr/bin/sshnpd-helper -a @device',
+          await unixReportsDaemon([
+            unixDoctor,
+            (6001, ['vim', '/home/u/.config/sshnpd/sshnpd.yaml']),
+            (6002, ['journalctl', '-u', 'sshnpd', '-f']),
+            (6003, ['tail', '-f', '/var/log/sshnpd']),
+            (6004, ['/bin/bash', '/home/u/.local/bin/sshnpd.sh']),
+            (6005, ['/usr/bin/atsc', 'npt', '-t', '@device', '-d', 'sshnpd']),
+            (6006, ['/usr/bin/sshnpd-helper', '-a', '@device']),
           ]),
           isFalse,
           reason: 'only the program position names the daemon',
@@ -151,16 +194,16 @@ void main() {
 
   group('Given the daemon runs as sshnpd', () {
     test('when the process check runs on Linux or macOS, '
-        'then it reports the daemon running', () {
-      for (final daemonLine in [
-        '1406 /usr/bin/sshnpd -a @device -m @mgr -d dev -v',
-        '1407 sshnpd -a @device -m @mgr --po 127.0.0.1:22 -d dev',
-        '1408 ./sshnpd -a @device -m @mgr',
+        'then it reports the daemon running', () async {
+      for (final Proc daemon in [
+        (1406, ['/usr/bin/sshnpd', '-a', '@device', '-m', '@mgr', '-v']),
+        (1407, ['sshnpd', '-a', '@device', '--po', '127.0.0.1:22']),
+        (1408, ['./sshnpd', '-a', '@device', '-m', '@mgr']),
       ]) {
         expect(
-          unixReportsDaemon([unixDoctorLine, daemonLine]),
+          await unixReportsDaemon([unixDoctor, daemon]),
           isTrue,
-          reason: 'sshnpd in the program position is the daemon: $daemonLine',
+          reason: 'sshnpd in the program position is the daemon: $daemon',
         );
       }
     });
@@ -187,11 +230,11 @@ void main() {
 
   group('Given the daemon runs as atsc sshnpd', () {
     test('when the process check runs on Linux or macOS, '
-        'then it reports the daemon running', () {
+        'then it reports the daemon running', () async {
       expect(
-        unixReportsDaemon([
-          unixDoctorLine,
-          '1501 /usr/bin/atsc sshnpd -a @device -m @mgr -d dev',
+        await unixReportsDaemon([
+          unixDoctor,
+          (1501, ['/usr/bin/atsc', 'sshnpd', '-a', '@device', '-m', '@mgr']),
         ]),
         isTrue,
         reason: 'atsc with the sshnpd subcommand is the daemon',
@@ -212,6 +255,87 @@ void main() {
         isTrue,
         reason: 'atsc.exe with the sshnpd subcommand is the daemon',
       );
+    });
+  });
+
+  group('Given the daemon is installed under a path with a space', () {
+    test('when the process check runs on Linux or macOS, '
+        'then it reports the daemon running', () async {
+      for (final Proc daemon in [
+        (1406, ['/opt/No Ports/sshnpd', '-a', '@device']),
+        (1407, ['/opt/No Ports/atsc', 'sshnpd', '-a', '@device']),
+      ]) {
+        expect(
+          await unixReportsDaemon([unixDoctor, daemon]),
+          isTrue,
+          reason: 'a space in the program path does not split it: $daemon',
+        );
+      }
+    });
+  });
+
+  group('Given a Linux /proc directory', () {
+    test('when it is listed, then each process keeps its exact arguments '
+        'and an entry without a readable cmdline is left out', () async {
+      final proc = await Directory.systemTemp.createTemp('proc');
+      addTearDown(() => proc.delete(recursive: true));
+      Future<void> cmdline(String entry, List<int> bytes) async {
+        final dir = await Directory('${proc.path}/$entry').create();
+        await File('${dir.path}/cmdline').writeAsBytes(bytes);
+      }
+
+      await cmdline('1406', [
+        ...utf8.encode('/opt/No Ports/sshnpd'),
+        0,
+        ...utf8.encode('-d'),
+        0,
+        ...utf8.encode('my device'),
+        0,
+      ]);
+      await cmdline('2', []);
+      await Directory('${proc.path}/3').create();
+      await cmdline('self', [...utf8.encode('/usr/bin/sshnpd'), 0]);
+      await File('${proc.path}/uptime').writeAsString('1.0 2.0');
+
+      final processes = await listProcDirectory(proc);
+      expect(
+        {for (final p in processes) p.pid: p.args},
+        {
+          1406: ['/opt/No Ports/sshnpd', '-d', 'my device'],
+          2: <String>[],
+        },
+      );
+    });
+  });
+
+  group('Given macOS ps listings', () {
+    test("when a process's args begin with its command name, "
+        'then the rest of its args are its arguments', () {
+      final processes = parsePsListing(
+        ' 1406 /opt/No Ports/sshnpd\n',
+        ' 1406 /opt/No Ports/sshnpd -a @device -m @mgr\n',
+      );
+      expect(processes.single.args, [
+        '/opt/No Ports/sshnpd',
+        '-a',
+        '@device',
+        '-m',
+        '@mgr',
+      ]);
+    });
+
+    test("when a process's args do not begin with its command name, "
+        'then it is listed by its command name alone', () {
+      final processes = parsePsListing(' 1406 sshnpd\n', ' 1406 (sshnpd)\n');
+      expect(processes.single.args, ['sshnpd']);
+    });
+
+    test('when a process is in only one listing, then it is left out', () {
+      final processes = parsePsListing(
+        ' 1406 sshnpd\n 1407 sshnpd\n',
+        ' 1407 sshnpd -a @device\n 1408 sshnpd -a @device\n',
+      );
+      expect(processes.map((p) => p.pid), [1407]);
     });
   });
 
