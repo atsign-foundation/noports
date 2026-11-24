@@ -52,6 +52,65 @@ void main() {
     expect(await Srv.getBinaryPathBeside(place('atsc')), isNull);
   });
 
+  test('atsc with only the old sshrv beside it finds no srv', () async {
+    place('sshrv');
+
+    expect(await Srv.getBinaryPathBeside(place('atsc')), isNull);
+  });
+
+  group('On Windows', () {
+    test('atsc.exe spelt in any case finds the srv.exe beside it', () {
+      for (final String name in ['atsc.exe', 'ATSC.EXE', 'Atsc.Exe']) {
+        expect(
+          Srv.srvPathBeside('C:\\Program Files\\NoPorts\\$name', windows: true),
+          'C:\\Program Files\\NoPorts\\srv.exe',
+          reason: '$name is atsc.exe',
+        );
+      }
+      expect(
+        Srv.srvPathBeside('\\\\server\\NoPorts\\atsc.exe', windows: true),
+        '\\\\server\\NoPorts\\srv.exe',
+      );
+    });
+
+    test('an executable with any other name finds no srv', () {
+      for (final String name in [
+        'sshnp.exe',
+        'npt.exe',
+        'atsc',
+        'atsc.exe.exe',
+        'srv.exe',
+        'sshrv.exe',
+      ]) {
+        expect(
+          Srv.srvPathBeside('C:\\NoPorts\\$name', windows: true),
+          isNull,
+          reason: '$name is not atsc.exe',
+        );
+      }
+    });
+
+    test('atsc.exe named by a relative path finds no srv', () {
+      for (final String relative in [
+        'atsc.exe',
+        'NoPorts\\atsc.exe',
+        'C:atsc.exe',
+        '\\NoPorts\\atsc.exe',
+      ]) {
+        expect(
+          Srv.srvPathBeside(relative, windows: true),
+          isNull,
+          reason: '$relative is relative',
+        );
+      }
+    });
+  });
+
+  test('On Linux and macOS, ATSC is not atsc', () {
+    expect(Srv.srvPathBeside('/opt/a/atsc', windows: false), '/opt/a/srv');
+    expect(Srv.srvPathBeside('/opt/a/ATSC', windows: false), isNull);
+  });
+
   group('Given srv and atsc in one directory', () {
     late String atsc;
 
