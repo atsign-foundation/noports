@@ -168,21 +168,30 @@ abstract class Srv<T> {
 
   static Future<String?> getLocalBinaryPath() async {
     if (localBinaryPathOverride != null) return localBinaryPathOverride;
+    return getBinaryPathBeside(Platform.resolvedExecutable);
+  }
+
+  /// The srv binary in the same directory as [executable] when [executable]
+  /// is atsc, sshnp, sshnpd or npt, or null.
+  @visibleForTesting
+  static Future<String?> getBinaryPathBeside(String executable) async {
     List<String> binaryNames = ['srv', 'sshrv'];
     for (var name in binaryNames) {
-      var binary = await _getBinaryPathByName(name);
+      var binary = await _getBinaryPathByName(executable, name);
       if (binary != null) return binary;
     }
     return null;
   }
 
-  static Future<String?> _getBinaryPathByName(String name) async {
+  static Future<String?> _getBinaryPathByName(
+    String executable,
+    String name,
+  ) async {
     String postfix = Platform.isWindows ? '.exe' : '';
-    List<String> pathList = Platform.resolvedExecutable.split(
-      Platform.pathSeparator,
-    );
+    List<String> pathList = executable.split(Platform.pathSeparator);
     bool isExe =
-        (pathList.last == 'sshnp$postfix' ||
+        (pathList.last == 'atsc$postfix' ||
+        pathList.last == 'sshnp$postfix' ||
         pathList.last == 'sshnpd$postfix' ||
         pathList.last == 'npt$postfix');
 

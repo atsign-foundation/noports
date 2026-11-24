@@ -102,7 +102,7 @@ class SrvImplExec implements Srv<Process> {
         'Unable to locate srv$postfix binary.\n'
         "It's possible that either the binary is missing, or you are trying to run from source."
         "If the binary is missing, make sure the srv is installed, try reinstalling."
-        "If you are trying to run from source, first compile sshnp.dart & srv.dart and try running the generated binary.",
+        "If you are trying to run from source, first compile atsc.dart & srv.dart into one directory and try running the generated atsc binary.",
       );
     }
     var rvArgs = [
