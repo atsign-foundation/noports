@@ -18,6 +18,9 @@ dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
 
 The service runs `atsc.exe` from its own folder, with the subcommand that the
 constant names (`sshnpd` or `srvd`) and then the service's own arguments.
+When `atsc.exe` ends or cannot start, the service starts it again after a
+wait: 1 s, doubled after each run shorter than a minute up to 60 s, and back
+to 1 s after a run of a minute or more. Stopping the service ends the wait.
 
 Can alternatively build with Visual Studio
 

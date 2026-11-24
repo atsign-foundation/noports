@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../WindowsBinaryService/ChildProcess.cs" />
+    <Compile Include="../WindowsBinaryService/Restarts.cs" />
     <Compile Include="../WindowsBinaryService/ServiceConfig.cs" />
   </ItemGroup>
   <ItemGroup>
