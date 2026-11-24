@@ -43,11 +43,8 @@ cp -r bundles/shell/* build/sshnp/
 cp LICENSE build/sshnp
 
 echo "Building admin API and webapp - BETA";
-pushd ../../../apps/admin/admin_api || exit 1
-dart pub get --enforce-lockfile || exit 1
-echo "Compiling admin_api"; dart compile exe --verbosity error bin/np_admin.dart -o "${packageDir}/build/sshnp/np_admin" || exit 1
-wait
-cd ../webapp || exit 1
+echo "Compiling np_admin"; dart compile exe --verbosity error bin/np_admin.dart -o "${packageDir}/build/sshnp/np_admin" || exit 1
+pushd ../../../apps/admin/webapp || exit 1
 echo "Building admin webapp"
 npm ci || exit 1
 npm run build || exit 1
