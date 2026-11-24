@@ -146,6 +146,7 @@ int main(int argc, char **argv) {
   res += atcommons_memlist_add(&memlist, params.permitopen_hosts, true, free_if_not_null);
   res += atcommons_memlist_add(&memlist, params.permitopen_ports, true, free_if_not_null);
   res += atcommons_memlist_add(&memlist, params.permitopen_str, true, free_if_not_null);
+  res += atcommons_memlist_add(&memlist, params.sshpublickey_permissions, true, free_if_not_null);
   res += atcommons_memlist_add(&memlist, NULL, true, mbedtls_psa_crypto_free);
   if (res > 0) {
     free(params.manager_list);
@@ -154,6 +155,7 @@ int main(int argc, char **argv) {
     free(params.permitopen_hosts);
     free(params.permitopen_ports);
     free(params.permitopen_str);
+    free(params.sshpublickey_permissions);
     mbedtls_psa_crypto_free();
     exit(1);
   }
@@ -591,38 +593,15 @@ int main(int argc, char **argv) {
     return res;
   }
 
-  // 11. Get a pointer to the authorized_keys file
-  authkeys_filename = malloc(sizeof(char) + (strlen(home_dir) + 22));
-  if (authkeys_filename == NULL) {
-    atlogger_log(LOGGER_TAG, ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to allocate memory for authkeys_filename\n");
+  // 11. The authorized_keys file's path
+  res = sshnpd_prepare_authorized_keys(home_dir, &authkeys_filename);
+  if (res != 0) {
     atcommons_memlist_failure_free(&memlist);
-    return 1;
+    return res;
   }
   res = atcommons_memlist_add(&memlist, authkeys_filename, true, NULL);
   if (res != 0) {
     free(authkeys_filename);
-    atcommons_memlist_failure_free(&memlist);
-    return res;
-  }
-  sprintf(authkeys_filename, "%s/.ssh/authorized_keys", home_dir);
-
-  atlogger_log("AUTH SSH KEY", ATLOGGER_LOGGING_LEVEL_DEBUG, "Using authorized_keys file: %s\n", authkeys_filename);
-  authkeys_file = fopen(authkeys_filename, "r"); // readonly for now, we will freopen this file later
-
-  if (authkeys_file == NULL) {
-    atlogger_log("AUTH SSH KEY", ATLOGGER_LOGGING_LEVEL_ERROR, "Failed to open authorized_keys file: %s\n",
-                 strerror(errno));
-    if (errno != 0) {
-      res = errno;
-    } else {
-      res = 1;
-    }
-    atcommons_memlist_failure_free(&memlist);
-    return res;
-  }
-
-  res = atcommons_memlist_add(&memlist, authkeys_file, true, fclose);
-  if (res != 0) {
     atcommons_memlist_failure_free(&memlist);
     return res;
   }

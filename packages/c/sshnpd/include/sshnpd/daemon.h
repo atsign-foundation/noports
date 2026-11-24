@@ -27,7 +27,6 @@ extern uint16_t atserver_port;
 extern atclient_atkeys atkeys;
 extern sshnpd_params params;
 extern char *regex;
-extern FILE *authkeys_file;
 extern char *authkeys_filename;
 extern char *home_dir;
 extern atchops_rsa_key_private_key signingkey;

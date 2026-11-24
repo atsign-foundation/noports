@@ -13,7 +13,13 @@ Specify the `.atKeys` file for the `-a, --atsign` atSign if it's not stored in `
 
 ### -s, --\[no-]sshpublickey
 
-When set, will update authorized\_keys to include public key sent by manager.
+When set, sshnpd adds the ssh public key an authorized Atsign sends it to `~/.ssh/authorized_keys` of the user it runs as, creating `~/.ssh` (mode 0700) and `authorized_keys` (mode 0600) when they are missing.
+
+Each key is written as one line that starts with `from="127.0.0.1,::1"`, so it allows logins only from the device's loopback address, which is where every NoPorts ssh session reaches sshd. The key's comment is kept when it is ASCII and at most 256 characters long, and left out otherwise.
+
+A key already on a line in `authorized_keys` is not added again. When that line does not have the `from="127.0.0.1,::1"` option, sshnpd leaves it as it is and logs a warning.
+
+sshnpd adds nothing, and logs a warning, for a value over 8 KiB, a value holding a control character, or a value that is not one key of a supported type (`ssh-ed25519`, `ssh-rsa`, `rsa-sha2-256`, `rsa-sha2-512`, `ecdsa-sha2-nistp256`, `ecdsa-sha2-nistp384` or `ecdsa-sha2-nistp521`) whose key data is of that type.
 
 ### -h, --hide
 
@@ -49,7 +55,9 @@ Port on which sshd is listening locally on localhost
 
 ### -S, --sshpublickey-permissions
 
-When --sshpublickey is enabled, will include the specified permissions in the public key entry in authorized\_keys
+When --sshpublickey is enabled, sshnpd adds these authorized\_keys options to each key's line, after its own `from="127.0.0.1,::1"` option. For example, `-S no-pty` writes lines starting `from="127.0.0.1,::1",no-pty`.
+
+sshnpd sets the `from=` option itself, so it leaves out any `from` option given here, logging a warning at startup. A value holding a newline stops sshnpd at startup. The C daemon takes this option too.
 
 (Defaults to "")
 

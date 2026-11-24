@@ -73,10 +73,11 @@
 - fix: `LocalSshKeyUtil.authorizePublicKey` creates `~/.ssh/authorized_keys`,
   readable only by its owner, when it is missing, so sshnpd no longer fails
   direct ssh sessions with `PathNotFoundException` on a device without one
-- feat: `LocalSshKeyUtil.addPublicKey` appends a public key to
-  `authorized_keys` unless it is already there, creating the file the same
-  way when it is missing; sshnpd's `addSshPublicKeys` uses it, so a key a
-  client sends to a device without `authorized_keys` is no longer dropped
+- feat: `LocalSshKeyUtil.addPublicKey` adds a parsed `AuthorizedPublicKey` to
+  `authorized_keys` as one line starting `from="127.0.0.1,::1"`, and creates
+  the file when it is missing
+- feat: `AuthorizedPublicKey`, exported from `sshnp_foundation.dart`, parses
+  an ssh public key sent as `<type> <key data>[ <comment>]`
 - **BREAKING CHANGE** build: depends on the at_client 4.0.0 set: at_client
   4.0.0, at_client_cli 1.0.0 in place of at_onboarding_cli and
   at_cli_commons, at_auth 4.0.0, at_lookup 4.0.0 and at_utils 4.0.0, so the

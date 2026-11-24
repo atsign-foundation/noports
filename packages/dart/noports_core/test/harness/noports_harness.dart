@@ -159,7 +159,8 @@ class NoPortsHarness {
   /// [requireEnrollmentSignature] refuses requests not signed with one. With
   /// [inline] false it runs each session's srv as a process, as it does
   /// unless `SRV_INLINE` is set. It looks public records up over HTTP on
-  /// [daemonHttp].
+  /// [daemonHttp]. With [addSshPublicKeys] it adds the ssh public keys its
+  /// clients send, with [sshPublicKeyPermissions].
   Future<SshnpdImpl> startDaemon({
     required List<String> permitOpen,
     String atSign = daemonAtSign,
@@ -175,6 +176,8 @@ class NoPortsHarness {
     bool inline = true,
     PqPosture posture = PqPosture.legacy,
     Set<SigningAlgoType>? dataSigningKeyAlgorithms,
+    bool addSshPublicKeys = false,
+    String sshPublicKeyPermissions = '',
   }) async {
     final atClient = await openClient(
       atSign,
@@ -194,9 +197,9 @@ class NoPortsHarness {
       policyManagerAtsign: policyAtSign?.toAtsign(),
       sshClient: SupportedSshClient.openssh,
       makeDeviceInfoVisible: makeDeviceInfoVisible,
-      addSshPublicKeys: false,
+      addSshPublicKeys: addSshPublicKeys,
       localSshdPort: 22,
-      sshPublicKeyPermissions: '',
+      sshPublicKeyPermissions: sshPublicKeyPermissions,
       ephemeralPermissions: '',
       sshAlgorithm: SupportedSshAlgorithm.ed25519,
       deviceGroup: 'default',

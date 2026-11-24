@@ -1,4 +1,4 @@
-#include "sshnpd/file_utils.h"
+#include "ssh_public_key_fixtures.h"
 #include "sshnpd/handle_sshpublickey.h"
 #include "sshnpd/params.h"
 #include <atclient/atnotification.h>
@@ -11,21 +11,17 @@
 
 static char authkeys_path[256];
 
-static int setup_authkeys_file(FILE **file) {
+static int setup_authkeys_file() {
   snprintf(authkeys_path, sizeof(authkeys_path), "/tmp/test_sshpublickey_%d", getpid());
-  *file = fopen(authkeys_path, "w+");
-  if (*file == NULL) {
+  FILE *file = fopen(authkeys_path, "w+");
+  if (file == NULL) {
     return 1;
   }
+  fclose(file);
   return 0;
 }
 
-static void cleanup_authkeys_file(FILE *file) {
-  if (file != NULL) {
-    fclose(file);
-  }
-  unlink(authkeys_path);
-}
+static void cleanup_authkeys_file() { unlink(authkeys_path); }
 
 static bool file_contains(const char *needle) {
   FILE *f = fopen(authkeys_path, "r");
@@ -53,8 +49,7 @@ static bool file_contains(const char *needle) {
 }
 
 static int run_e2e_test(const char *ssh_key, bool should_be_authorized) {
-  FILE *authkeys_file = NULL;
-  if (setup_authkeys_file(&authkeys_file)) {
+  if (setup_authkeys_file()) {
     return 1;
   }
 
@@ -72,12 +67,12 @@ static int run_e2e_test(const char *ssh_key, bool should_be_authorized) {
   message.type = ATCLIENT_MONITOR_MESSAGE_TYPE_NOTIFICATION;
   message.notification = &notification;
 
-  handle_sshpublickey(&params, &message, authkeys_file, authkeys_path);
+  handle_sshpublickey(&params, &message, authkeys_path);
 
   bool found = file_contains(ssh_key);
   int result = (found == should_be_authorized) ? 0 : 1;
 
-  cleanup_authkeys_file(authkeys_file);
+  cleanup_authkeys_file();
   atclient_atnotification_free(&notification);
   return result;
 }
@@ -139,19 +134,19 @@ int main() {
 }
 
 int test_valid_ed25519_e2e() {
-  return run_e2e_test("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample test@host", true);
+  return run_e2e_test("ssh-ed25519 " K1 " test@host", true);
 }
 
 int test_valid_rsa_e2e() {
-  return run_e2e_test("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgExample test@host", true);
+  return run_e2e_test("ssh-rsa " R1 " test@host", true);
 }
 
 int test_valid_ecdsa_e2e() {
-  return run_e2e_test("ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHA test@host", true);
+  return run_e2e_test("ecdsa-sha2-nistp256 " E1 " test@host", true);
 }
 
 int test_invalid_garbage_e2e() {
-  return run_e2e_test("not-a-real-ssh-key malicious-payload", false);
+  return run_e2e_test("not-a-key-type " K1, false);
 }
 
 int test_invalid_empty_e2e() {
@@ -159,13 +154,13 @@ int test_invalid_empty_e2e() {
 }
 
 int test_newline_injection_e2e() {
-  return run_e2e_test("ssh-rsa AAAA_legit\nssh-rsa AAAA_attacker attacker@evil", false);
+  return run_e2e_test("ssh-rsa " R1 "\nssh-ed25519 " K2 " user@other", false);
 }
 
 int test_carriage_return_injection_e2e() {
-  return run_e2e_test("ssh-ed25519 AAAA_legit\rssh-ed25519 AAAA_attacker attacker@evil", false);
+  return run_e2e_test("ssh-ed25519 " K1 "\rssh-ed25519 " K2 " user@other", false);
 }
 
 int test_empty_prefix_does_not_match_e2e() {
-  return run_e2e_test("unknown-keytype AAAA_something test@host", false);
+  return run_e2e_test("unknown-keytype " K1 " test@host", false);
 }

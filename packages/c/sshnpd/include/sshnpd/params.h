@@ -32,6 +32,9 @@ typedef struct {
   bool should_free_permitopen_str;
 
   bool sshpublickey;
+  // authorized_keys options added after from= on each line --sshpublickey
+  // adds, or NULL for none
+  char *sshpublickey_permissions;
   bool hide;
   bool verbose;
 

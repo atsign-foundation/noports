@@ -1,26 +1,88 @@
 #ifndef SSH_KEY_UTIL_H
 #define SSH_KEY_UTIL_H
 
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 
-enum supported_key_prefix {
-  SKP_NONE,
-  SKP_ESN, // ecdsa-sha2-nistp
-  SKP_RS2, // rsa-sha2-
-  SKP_RSA, // ssh-rsa
-  SKP_ED9, // ssh-ed25519
-};
+// The authorized_keys option that begins every line sshnpd adds for a
+// client's key, allowing logins only from the device's loopback address
+#define SSHNPD_LOOPBACK_FROM_OPTION "from=\"127.0.0.1,::1\""
 
-#define SUPPORTED_KEY_PREFIX_LEN 5
+// The longest sshpublickey value sshnpd accepts, in bytes
+#define SSHNPD_SSHPUBLICKEY_MAX_BYTES 8192
 
+// The longest key comment kept on an authorized_keys line
+#define SSHNPD_SSHPUBLICKEY_MAX_COMMENT_LEN 256
+
+// The most characters of a refused value shown in a log line
+#define SSHNPD_SSHPUBLICKEY_LOG_MAX_LEN 200
+
+/**
+ * @brief A client's ssh public key, checked and ready to be written to
+ * authorized_keys as one line.
+ */
 typedef struct {
-  FILE *authkeys_file;
-  char *authkeys_filename;
-  char *permissions; // not required for deauthorize
-  char *key;
-} authkeys_params;
+  char *line;            // ending in '\n'
+  char *key_data;        // the key data, in base64
+  bool comment_left_out; // the value's comment held a character outside ASCII or was too long
+} sshnpd_authorized_key;
 
-int authorize_ssh_public_key(authkeys_params *params);
+/**
+ * @brief What authorize_ssh_public_key did with a key.
+ */
+typedef enum {
+  SSHNPD_KEY_ADDED,
+  SSHNPD_KEY_ALREADY_PRESENT,                  // on a line allowing logins only from loopback
+  SSHNPD_KEY_ALREADY_PRESENT_WITHOUT_LOOPBACK, // on a line without SSHNPD_LOOPBACK_FROM_OPTION
+} sshnpd_key_addition;
+
+/**
+ * @brief Builds the authorized_keys line for value, a client's
+ * "<type> <base64>[ <comment>]": SSHNPD_LOOPBACK_FROM_OPTION, then
+ * ",<permissions>" when permissions is neither NULL nor empty, then the key.
+ * permissions must already hold no CR, LF or from option, as
+ * parse_sshnpd_params leaves them. Returns 0, or non-zero with *reason saying
+ * why value was refused; free key with sshnpd_authorized_key_free.
+ */
+int sshnpd_authorized_key_build(const char *value, const char *permissions, sshnpd_authorized_key *key,
+                                const char **reason);
+
+/**
+ * @brief Frees what sshnpd_authorized_key_build allocated in key.
+ */
+void sshnpd_authorized_key_free(sshnpd_authorized_key *key);
+
+/**
+ * @brief Removes every "from" option and every empty option from
+ * permissions, a comma-separated list of authorized_keys options, in place,
+ * matching "from" in any case and treating commas inside double quotes as part
+ * of an option. Returns whether it removed a from option.
+ */
+bool sshnpd_permissions_leave_out_from(char *permissions);
+
+/**
+ * @brief Writes value to out fit for one log line: each byte outside
+ * printable ASCII, and each double quote and backslash, shown escaped as \n,
+ * \r, \t, \xNN, \" or \\, and cut to at most out_size - 1 characters without
+ * splitting an escape.
+ */
+void sshnpd_one_line_for_log(const char *value, char *out, size_t out_size);
+
+/**
+ * @brief sshnpd's startup step for authorized_keys: sets *filename to its path
+ * under home_dir, for the caller to free, and logs it, neither opening nor
+ * creating it. Returns 0, or ENOMEM.
+ */
+int sshnpd_prepare_authorized_keys(const char *home_dir, char **filename);
+
+/**
+ * @brief Appends key's line to the authorized_keys file at filename, after a
+ * '\n' when the file does not end in one, in a single write, unless a line
+ * there already holds key's key data after a supported key type, read as sshd
+ * reads the line. Creates a missing parent directory with mode 0700 and a
+ * missing file with mode 0600. Sets *addition to what it did; returns 0 on
+ * success.
+ */
+int authorize_ssh_public_key(const char *filename, const sshnpd_authorized_key *key, sshnpd_key_addition *addition);
 
 #endif

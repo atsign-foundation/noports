@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 import 'package:mutex/mutex.dart';
+import 'package:noports_core/src/common/at_ssh_key_util/authorized_public_key.dart';
 import 'package:noports_core/src/common/io_types.dart';
 import 'package:noports_core/sshnp.dart';
 import 'package:noports_core/utils.dart';
@@ -243,22 +246,37 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
     }
   }
 
-  Future<void> addPublicKey({
-    required String sshPublicKey,
+  /// Adds [key] to `authorized_keys` as one line allowing logins only from
+  /// the loopback address, followed by [permissions], unless a line there
+  /// already holds its key data; a missing `authorized_keys` is created
+  /// readable only by its owner.
+  ///
+  /// Throws an [ArgumentError] when [permissions] hold a newline or a `from`
+  /// option.
+  Future<PublicKeyAddition> addPublicKey({
+    required AuthorizedPublicKey key,
     String permissions = '',
   }) async {
-    await _editAuthorizedKeys((authKeys) async {
+    final String line = key.line(permissions: permissions);
+    return _editAuthorizedKeys((authKeys) async {
       await _createAuthorizedKeysIfMissing(authKeys);
-      final String authKeysContent = await authKeys.readAsString();
-      if (authKeysContent.contains(sshPublicKey)) {
-        return;
+      final Uint8List content = await authKeys.readAsBytes();
+      for (final String l in latin1.decode(content).split('\n')) {
+        final held = authorizedKeysLineKey(l.replaceFirst(RegExp(r'\r+$'), ''));
+        if (held != null && held.keyData == key.keyData) {
+          return held.loopbackOnly
+              ? PublicKeyAddition.alreadyPresent
+              : PublicKeyAddition.alreadyPresentWithoutLoopback;
+        }
       }
-      final String separator = permissions.isEmpty ? '' : ' ';
+      final String separator =
+          content.isEmpty || content.last == 0x0a ? '' : '\n';
       await authKeys.writeAsString(
-        '$permissions$separator$sshPublicKey',
+        '$separator$line',
         mode: FileMode.append,
         flush: true,
       );
+      return PublicKeyAddition.added;
     });
   }
 
@@ -275,4 +293,18 @@ class LocalSshKeyUtil implements AtSshKeyUtil {
       }
     }
   }
+}
+
+/// What [LocalSshKeyUtil.addPublicKey] did with a key.
+enum PublicKeyAddition {
+  /// It added the key's line.
+  added,
+
+  /// The key was already on a line allowing logins only from the loopback
+  /// address, which it left as it is.
+  alreadyPresent,
+
+  /// The key was already on a line without the loopback `from=` option,
+  /// which it left as it is.
+  alreadyPresentWithoutLoopback,
 }

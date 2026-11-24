@@ -118,7 +118,7 @@ class SshnpdParams {
     String normalizedPermissions = c
         .value(SshnpdOption.sshPublicKeyPermissions)
         .map((e) => e.trim())
-        .toList()
+        .where((e) => e.isNotEmpty)
         .join(",");
     // don't remove newlines, since internal whitespace may be important to what they are trying to do
     if (RegExp(r'[\r\n]').hasMatch(normalizedPermissions)) {

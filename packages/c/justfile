@@ -84,7 +84,7 @@ memcheck-docker +ARGS='':
   --mount type=bind,src=$PWD,dst=/mnt/workdir \
   --mount type=bind,src=$HOME/.atsign/keys,dst=/home/atsign/.atsign/keys \
   atsigncompany/valgrind:latest  \
-  /bin/bash -c "mkdir -p /home/atsign/.ssh/; touch /home/atsign/.ssh/authorized_keys; just memcheck {{ARGS}}"
+  /bin/bash -c "mkdir -p /home/atsign/.ssh/; just memcheck {{ARGS}}"
 
 valgrind-docker:
   docker run --rm --platform linux/amd64 -ti \
