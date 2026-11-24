@@ -27,6 +27,8 @@ const Map<String, Future<void> Function(List<String>)> _commands = {
 };
 
 Future<void> main(List<String> args) async {
+  // NOTE Platform.resolvedExecutable must be read before any other statement.
+  Platform.resolvedExecutable;
   if (args.isNotEmpty && (args[0] == '--help' || args[0] == '-h')) {
     _printUsage(stdout);
     exit(0);
