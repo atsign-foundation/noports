@@ -18,20 +18,3 @@ class ClientBinary {
     return file.exists();
   }
 }
-
-String getDartSourcePath(ClientBinaryType binaryType) {
-  switch (binaryType) {
-    case ClientBinaryType.sshnp:
-      return 'packages/dart/sshnoports/bin/sshnp.dart';
-    case ClientBinaryType.npt:
-      return 'packages/dart/sshnoports/bin/npt.dart';
-    case ClientBinaryType.srv:
-      return 'packages/dart/sshnoports/bin/srv.dart';
-    case ClientBinaryType.npp_client:
-      return 'packages/dart/sshnoports/bin/npp_client.dart';
-    case ClientBinaryType.at_activate:
-      return 'packages/dart/sshnoports/bin/at_activate.dart';
-    case ClientBinaryType.srvd:
-      return 'packages/dart/sshnoports/bin/srvd.dart';
-  }
-}
