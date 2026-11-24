@@ -110,7 +110,7 @@ Future<void> main(List<String> args) async {
 
   final app = Alfred();
   app.all('*', cors(origin: 'http://localhost:5173'));
-  final dir = webAppDirectory(Platform.resolvedExecutable);
+  final dir = webAppDirectory();
   print('Will serve webapp from ${dir.absolute}');
   app.get('/*', (req, res) => dir);
   expose.policy(app, '/api/policy', api);
