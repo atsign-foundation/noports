@@ -43,7 +43,7 @@ void main() {
         expect(
           await Srv.getBinaryPathBeside(place(name)),
           isNull,
-          reason: '$name is not atsc',
+          reason: '$name is not atsc, sshnp, sshnpd or npt',
         );
       }
     });
@@ -52,4 +52,70 @@ void main() {
   test('atsc with no srv beside it finds none', () async {
     expect(await Srv.getBinaryPathBeside(place('atsc')), isNull);
   });
+
+  group('Given srv and atsc in one directory', () {
+    late String atsc;
+
+    setUp(() {
+      place('srv');
+      atsc = place('atsc');
+    });
+
+    test('atsc named by an absolute path runs the srv beside it', () async {
+      expect(path.isAbsolute(atsc), isTrue);
+      expect(
+        await Srv.getBinaryPathBeside(atsc),
+        File(path.join(installation.path, 'srv$postfix')).absolute.path,
+      );
+    });
+
+    test('atsc named by a relative path finds no srv', () async {
+      final String relative = path.relative(atsc, from: Directory.current.path);
+
+      expect(path.isRelative(relative), isTrue);
+      expect(await Srv.getBinaryPathBeside(relative), isNull);
+    });
+  });
+
+  test(
+    'atsc run by its bare name through PATH runs the srv beside it,'
+    ' not one in its current directory',
+    () async {
+      final compiled = await Process.run(Platform.resolvedExecutable, [
+        'compile',
+        'exe',
+        path.join('test', 'srv', 'print_local_binary_path.dart'),
+        '-o',
+        path.join(installation.path, 'atsc'),
+      ]);
+      expect(
+        compiled.exitCode,
+        0,
+        reason: '${compiled.stdout}${compiled.stderr}',
+      );
+      place('srv');
+      final Directory elsewhere = Directory.systemTemp.createTempSync(
+        'srv_elsewhere',
+      );
+      addTearDown(() => elsewhere.deleteSync(recursive: true));
+      File(path.join(elsewhere.path, 'srv')).createSync();
+
+      final result = await Process.run(
+        '/bin/sh',
+        ['-c', 'exec atsc'],
+        workingDirectory: elsewhere.path,
+        environment: {'PATH': installation.path},
+      );
+
+      expect(result.exitCode, 0, reason: '${result.stderr}');
+      final List<String> lines = (result.stdout as String).split('\n');
+      expect(lines[0], 'atsc', reason: 'atsc is run by its bare name');
+      expect(
+        lines[1],
+        path.join(installation.resolveSymbolicLinksSync(), 'srv'),
+      );
+    },
+    skip: Platform.isWindows ? 'runs atsc through sh' : false,
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 }

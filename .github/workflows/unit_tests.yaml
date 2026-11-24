@@ -52,6 +52,7 @@ jobs:
           find launchers -maxdepth 1 -type f -exec cp {} "$RUNNER_TEMP/bin/" \;
           "$RUNNER_TEMP/bin/atsc" --help > /dev/null
           "$RUNNER_TEMP/bin/srv" --help > /dev/null
+          # NOTE: keep this list in step with _commands in bin/atsc.dart
           for b in at_activate noports np_admin npevents npp npp_atserver npp_file npt srvd sshnp sshnpd; do
             echo "$b"
             "$RUNNER_TEMP/bin/$b" --help > /dev/null
