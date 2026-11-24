@@ -124,6 +124,17 @@ setup_authorized_keys() {
 
 # INSTALL BINARIES #
 
+# The directory that programs are installed into.
+install_dir() {
+  if [ -n "$binary_dir" ]; then
+    echo "$binary_dir"
+  elif is_root; then
+    echo "$bin_dir"
+  else
+    echo "$user_bin_dir"
+  fi
+}
+
 # Whether the files $1 and $2 both exist with the same contents.
 same_contents() {
   if ! [ -f "$1" ] || ! [ -f "$2" ]; then
@@ -139,13 +150,7 @@ same_contents() {
 # Installs $2 (default $1) from this bundle as $1.
 install_single_binary() {
   src="$script_dir/${2:-$1}"
-  if [ -n "$binary_dir" ]; then
-    dest="$binary_dir"
-  elif is_root; then
-    dest="$bin_dir"
-  else
-    dest="$user_bin_dir"
-  fi
+  dest=$(install_dir)
   mkdir -p "$dest"
   if ! [ -L "$dest/$1" ] && same_contents "$src" "$dest/$1"; then
     if ! chmod 755 "$dest/$1"; then
@@ -540,6 +545,9 @@ tmux() {
 }
 
 add_home_local_bin_to_path() {
+  if ! is_root && [ "$(install_dir)" != "$user_bin_dir" ]; then
+    return 0
+  fi
   if [ -f "$user_home/.profile" ] &&
     grep 'PATH=' <"$user_home/.profile" | grep -q -e "$user_home/.local/bin" -e '$HOME/.local/bin'; then
     return 0

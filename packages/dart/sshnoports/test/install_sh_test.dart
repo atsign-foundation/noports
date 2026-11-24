@@ -131,12 +131,13 @@ void main() {
   group('install.sh', () {
     test(
         'a non-root install into a chosen directory links nothing into '
-        '~/.local/bin', () async {
+        '~/.local/bin and leaves ~/.profile alone', () async {
       final result = await install(['-b', prefix.path, 'npt']);
 
       expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
       expect(namesIn(prefix.path), ['atsc', 'npt', 'srv']);
       expect(namesIn(path.join(home.path, '.local', 'bin')), isEmpty);
+      expect(File(path.join(home.path, '.profile')).existsSync(), isFalse);
     });
 
     test(
@@ -330,7 +331,7 @@ void main() {
 
     test('a missing ~/.profile is created with ~/.local/bin on its PATH',
         () async {
-      final result = await install(['-b', prefix.path, 'npt']);
+      final result = await install(['npt']);
 
       expect(result.stderr, isEmpty);
       expect(
@@ -344,7 +345,7 @@ void main() {
       final profile = File(path.join(home.path, '.profile'))
         ..writeAsStringSync('export PATH="\$HOME/.local/bin:\$PATH"\n');
 
-      final result = await install(['-b', prefix.path, 'npt']);
+      final result = await install(['npt']);
 
       expect(result.stderr, isEmpty);
       expect(
@@ -358,7 +359,7 @@ void main() {
       final profile = File(path.join(home.path, '.profile'))
         ..writeAsStringSync('umask 022\n');
 
-      final result = await install(['-b', prefix.path, 'npt']);
+      final result = await install(['npt']);
 
       expect(result.stderr, isEmpty);
       expect(
