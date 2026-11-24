@@ -49,13 +49,19 @@ void main() {
   String versionOf(String name) =>
       '$name ${binaries.packageVersion} (core ${core.packageVersion})\n';
 
-  /// Expects [usage] to be atsc's usage, listing every subcommand.
+  /// Expects [usage] to be atsc's usage, listing exactly [subcommands].
   void expectAtscUsage(String usage) {
     final List<String> lines = usage.split('\n');
     expect(lines.first, 'Usage: atsc <command> [arguments]');
-    for (final String name in subcommands) {
-      expect(lines, contains('  $name'));
-    }
+    expect(lines, contains('Commands:'));
+    expect(
+      lines
+          .skipWhile((String line) => line != 'Commands:')
+          .skip(1)
+          .takeWhile((String line) => line.isNotEmpty)
+          .toList(),
+      [for (final String name in subcommands) '  $name'],
+    );
   }
 
   setUpAll(() async {
