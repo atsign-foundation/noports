@@ -15,7 +15,15 @@ information.
 ![sshnp](https://github.com/atsign-foundation/noports/assets/6131216/4ff005f1-230e-4621-9b33-f834caa9a1d1)
 
 
-There are five binaries:-
+A Linux or macOS release holds two binaries, `atsc` and `srv`, and a short
+`sh` script for each program, named after it. Each script runs `atsc` with
+the program's name, so `./sshnpd -a @device` runs `atsc sshnpd -a @device`.
+A script runs the `atsc` in its own directory, after following any symbolic
+links to the script, so keep `atsc`, `srv` and the scripts together. The
+`debug` directory holds a build of `atsc` whose `srvd` accepts `--snoop`,
+which logs the traffic it relays, and a `srvd` script that runs it.
+
+The main programs are:-
 
 `at_activate`  : Command line tool to "cut" your atSigns cryptographic keys and place them in ~/.atsign/keys with .atKeys extension
 
@@ -29,9 +37,9 @@ can then ssh to via your localhost interface
 `srv`  : This client is called by sshnp to connect the local sshd to the rendezvous point
 
 To get going you just need two (or three if you want to use your own srvd service) atSigns and their .atKeys files and the
-binaries (from the 
+programs (from the 
 [latest release](https://github.com/atsign-foundation/noports/releases)).
-Once you have the atSigns (free or paid atSigns from [atsign.com](https://atsign.com)), drop the binaries in place
+Once you have the atSigns (free or paid atSigns from [atsign.com](https://atsign.com)), unpack the release
 on each machine and put the keys in `~/.atsign/keys` directory. You will need
 a device atSign and a manager atSign, but each device can also have a unique
 device name using the --device argument.
