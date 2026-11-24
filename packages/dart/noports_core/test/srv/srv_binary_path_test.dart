@@ -74,4 +74,46 @@ void main() {
       expect(await Srv.getBinaryPathBeside('atsc$postfix'), isNull);
     });
   });
+
+  test(
+    'atsc run by its bare name through PATH runs the srv beside it,'
+    ' not one in its current directory',
+    () async {
+      final compiled = await Process.run(Platform.resolvedExecutable, [
+        'compile',
+        'exe',
+        path.join('test', 'srv', 'print_local_binary_path.dart'),
+        '-o',
+        path.join(installation.path, 'atsc'),
+      ]);
+      expect(
+        compiled.exitCode,
+        0,
+        reason: '${compiled.stdout}${compiled.stderr}',
+      );
+      place('srv');
+      final Directory elsewhere = Directory.systemTemp.createTempSync(
+        'srv_elsewhere',
+      );
+      addTearDown(() => elsewhere.deleteSync(recursive: true));
+      File(path.join(elsewhere.path, 'srv')).createSync();
+
+      final result = await Process.run(
+        '/bin/sh',
+        ['-c', 'exec atsc'],
+        workingDirectory: elsewhere.path,
+        environment: {'PATH': installation.path},
+      );
+
+      expect(result.exitCode, 0, reason: '${result.stderr}');
+      final List<String> lines = (result.stdout as String).split('\n');
+      expect(lines[0], 'atsc', reason: 'atsc is run by its bare name');
+      expect(
+        lines[1],
+        path.join(installation.resolveSymbolicLinksSync(), 'srv'),
+      );
+    },
+    skip: Platform.isWindows ? 'runs atsc through sh' : false,
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 }
