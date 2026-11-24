@@ -123,7 +123,7 @@ Future<ClientBinary> compileDartCurrentBinary({
   required final NoPortsVersion noPortsVersion,
   required final ClientBinaryType clientBinaryType,
   required final Directory outputDirectory,
-  final Future<File>? atsc,
+  final Future<File> Function()? atsc,
 }) async {
   if (noPortsVersion.language != Language.dart) {
     throw Exception(
@@ -140,7 +140,7 @@ Future<ClientBinary> compileDartCurrentBinary({
 
   final File file;
   if (runsThroughAtsc(clientBinaryType)) {
-    await (atsc ??
+    await (atsc?.call() ??
         _compileDartSource(program: 'atsc', outputDirectory: outputDirectory));
     file = await _installLauncher(
       program: clientBinaryType.name,
@@ -215,16 +215,19 @@ Future<File> _installLauncher({
 }
 
 /// Builds each of [clientBinaryTypes] from this checkout into
-/// [outputDirectory], compiling atsc once for those that run through it.
+/// [outputDirectory], compiling atsc once, when the first of those that run
+/// through it asks for it.
 List<Future<ClientBinary>> compileDartCurrentBinariesList({
   required final NoPortsVersion noPortsVersion,
   required final List<ClientBinaryType> clientBinaryTypes,
   required final Directory
   outputDirectory, // where the compiled binaries will be placed
 }) {
-  final Future<File>? atsc = clientBinaryTypes.any(runsThroughAtsc)
-      ? _compileDartSource(program: 'atsc', outputDirectory: outputDirectory)
-      : null;
+  Future<File>? atsc;
+  Future<File> compileAtsc() => atsc ??= _compileDartSource(
+    program: 'atsc',
+    outputDirectory: outputDirectory,
+  );
   final List<Future<ClientBinary>> futures = [];
   for (final ClientBinaryType clientBinaryType in clientBinaryTypes) {
     futures.add(
@@ -232,7 +235,7 @@ List<Future<ClientBinary>> compileDartCurrentBinariesList({
         noPortsVersion: noPortsVersion,
         clientBinaryType: clientBinaryType,
         outputDirectory: outputDirectory,
-        atsc: atsc,
+        atsc: compileAtsc,
       ),
     );
   }
