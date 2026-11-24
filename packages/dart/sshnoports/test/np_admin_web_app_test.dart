@@ -32,9 +32,13 @@ void main() {
     expect(servedFor('atsc'), path.join(installation.path, 'web', 'admin'));
   });
 
-  test('np_admin compiled on its own serves its web app from beside itself',
+  test('an executable named np_admin does not serve the web app beside it',
       () {
-    expect(servedFor('np_admin'), path.join(installation.path, 'web', 'admin'));
+    expect(
+      servedFor('np_admin'),
+      path.join(Directory.current.path, '..', '..', '..', 'apps', 'admin',
+          'webapp', 'dist'),
+    );
   });
 
   test('np_admin run from source serves the web app built in this repository',
