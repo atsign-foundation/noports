@@ -43,7 +43,7 @@ void main() {
         expect(
           await Srv.getBinaryPathBeside(place(name)),
           isNull,
-          reason: '$name is not atsc',
+          reason: '$name is not atsc, sshnp, sshnpd or npt',
         );
       }
     });
