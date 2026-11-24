@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace AtscLauncher;
 
@@ -43,24 +44,26 @@ internal static class Launch
     private const int ErrorPathNotFound = 3;
 
     /// <summary>
-    /// Plans the child process for a launcher at <paramref name="modulePath"/> started with
-    /// <paramref name="commandLine"/>, returning an error message, or null and the plan.
+    /// Plans the child process for a launcher started as <paramref name="startedPath"/> with
+    /// <paramref name="commandLine"/>, whose file is <paramref name="finalPath"/> once links are
+    /// followed, returning an error message, or null and the plan.
     /// </summary>
     internal static string? TryPlan(
-        string? modulePath,
+        string? startedPath,
+        string? finalPath,
         string commandLine,
         out string command,
         out string atscPath,
         out string childCommandLine)
     {
         command = atscPath = childCommandLine = "";
-        string? directory = modulePath == null ? null : DirectoryOf(modulePath);
-        if (modulePath == null || directory == null)
+        string? directory = finalPath == null ? null : DirectoryOf(finalPath);
+        if (startedPath == null || DirectoryOf(startedPath) == null || directory == null)
         {
             return "cannot find the directory this NoPorts launcher runs from";
         }
 
-        string name = NameFromPath(modulePath);
+        string name = NameFromPath(startedPath);
         if (Array.IndexOf(Commands, name) < 0)
         {
             return $"\"{name}\" is not a NoPorts command; this launcher must be named one of: "
@@ -71,6 +74,32 @@ internal static class Launch
         atscPath = directory + AtscFileName;
         childCommandLine = ChildCommandLine(atscPath, command, ArgumentTail(commandLine));
         return null;
+    }
+
+    /// <summary>
+    /// Returns the file <paramref name="path"/> names once symbolic links to it are followed:
+    /// <paramref name="path"/> itself when it is no link, or null when it is unknown or its links
+    /// cannot be followed.
+    /// </summary>
+    internal static string? FinalPath(string? path)
+    {
+        if (path == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return File.ResolveLinkTarget(path, returnFinalTarget: true)?.FullName ?? path;
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     /// <summary>Returns the file name of <paramref name="path"/>, ASCII-lower-cased, without a trailing ".exe".</summary>

@@ -67,8 +67,8 @@ public class LaunchTests
     [MemberData(nameof(EveryCommand))]
     public void EveryTableNameIsAcceptedAndRunsAtscBesideIt(string command)
     {
-        string? error = Launch.TryPlan(
-            $@"C:\Program Files\NoPorts\{command}.exe", $"{command} -h", out string planned, out string atscPath, out string child);
+        string path = $@"C:\Program Files\NoPorts\{command}.exe";
+        string? error = Launch.TryPlan(path, path, $"{command} -h", out string planned, out string atscPath, out string child);
         Assert.Null(error);
         Assert.Equal(command, planned);
         Assert.Equal(AtscPath, atscPath);
@@ -89,7 +89,7 @@ public class LaunchTests
     [InlineData("C:\\NoPorts\\\uFF4E\uFF50\uFF54.exe")]
     public void ANameOutsideTheTableIsRefused(string modulePath)
     {
-        string? error = Launch.TryPlan(modulePath, "x -d y", out _, out string atscPath, out string child);
+        string? error = Launch.TryPlan(modulePath, modulePath, "x -d y", out _, out string atscPath, out string child);
         Assert.NotNull(error);
         Assert.Contains("is not a NoPorts command", error);
         Assert.Equal("", atscPath);
@@ -118,9 +118,78 @@ public class LaunchTests
     public void ARelativePathIsRefusedSoAtscIsNeverTakenFromTheCurrentDirectory(string modulePath)
     {
         Assert.Null(Launch.DirectoryOf(modulePath));
-        string? error = Launch.TryPlan(modulePath, "npt -d x", out _, out string atscPath, out _);
+        string? error = Launch.TryPlan(modulePath, modulePath, "npt -d x", out _, out string atscPath, out _);
         Assert.Equal("cannot find the directory this NoPorts launcher runs from", error);
         Assert.Equal("", atscPath);
+    }
+
+    [Fact]
+    public void ALinkedLauncherRunsTheAtscInTheInstallationItLinksTo()
+    {
+        string? error = Launch.TryPlan(
+            @"C:\Users\me\bin\npt.exe", NptPath, "npt -d x", out string command, out string atscPath, out string child);
+
+        Assert.Null(error);
+        Assert.Equal("npt", command);
+        Assert.Equal(AtscPath, atscPath);
+        Assert.Equal(Q($"`{AtscPath}` npt -d x"), child);
+    }
+
+    [Theory]
+    [InlineData(@"C:\Users\me\bin\npt.exe", null)]
+    [InlineData(@"C:\Users\me\bin\npt.exe", @"NoPorts\npt.exe")]
+    [InlineData(@"bin\npt.exe", NptPath)]
+    public void ALauncherIsRefusedUnlessBothItsPathsAreAbsolute(string startedPath, string? finalPath)
+    {
+        string? error = Launch.TryPlan(startedPath, finalPath, "npt -d x", out _, out string atscPath, out _);
+
+        Assert.Equal("cannot find the directory this NoPorts launcher runs from", error);
+        Assert.Equal("", atscPath);
+    }
+
+    [Fact]
+    public void FollowingLinksFindsTheFileTheyFinallyName()
+    {
+        string root = Directory.CreateTempSubdirectory("atsc-launcher-").FullName;
+        try
+        {
+            string install = Directory.CreateDirectory(Path.Join(root, "NoPorts")).FullName;
+            string bin = Directory.CreateDirectory(Path.Join(root, "bin")).FullName;
+            string npt = Path.Join(install, "npt.exe");
+            File.WriteAllText(npt, "");
+            string relativeLink = Path.Join(bin, "npt.exe");
+            File.CreateSymbolicLink(relativeLink, Path.Join("..", "NoPorts", "npt.exe"));
+            string linkToLink = Path.Join(root, "npt.exe");
+            File.CreateSymbolicLink(linkToLink, relativeLink);
+
+            Assert.Equal(npt, Launch.FinalPath(npt));
+            Assert.Equal(npt, Launch.FinalPath(relativeLink));
+            Assert.Equal(npt, Launch.FinalPath(linkToLink));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void LinksThatCannotBeFollowedGiveNoPath()
+    {
+        string root = Directory.CreateTempSubdirectory("atsc-launcher-").FullName;
+        try
+        {
+            string a = Path.Join(root, "a.exe");
+            string b = Path.Join(root, "b.exe");
+            File.CreateSymbolicLink(a, b);
+            File.CreateSymbolicLink(b, a);
+
+            Assert.Null(Launch.FinalPath(a));
+            Assert.Null(Launch.FinalPath(null));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     [Fact]
@@ -128,7 +197,7 @@ public class LaunchTests
     {
         Assert.Equal(
             "cannot find the directory this NoPorts launcher runs from",
-            Launch.TryPlan(null, "npt -d x", out _, out _, out _));
+            Launch.TryPlan(null, null, "npt -d x", out _, out _, out _));
     }
 
     [Theory]
@@ -167,7 +236,7 @@ public class LaunchTests
         string[] five = { "-d", "my device", "", "--key=a b", "-" };
         Assert.Equal(new[] { NptPath }.Concat(five), WindowsArgv.Split(typed));
 
-        string? error = Launch.TryPlan(@"C:\Program Files\NoPorts\NPT.exe", typed, out string command, out string atscPath, out string child);
+        string? error = Launch.TryPlan(@"C:\Program Files\NoPorts\NPT.exe", @"C:\Program Files\NoPorts\NPT.exe", typed, out string command, out string atscPath, out string child);
 
         Assert.Null(error);
         Assert.Equal("npt", command);
@@ -181,7 +250,7 @@ public class LaunchTests
     public void AtscSeesTheSameArgumentsTheLauncherWasGiven(string commandLine)
     {
         string line = Q(commandLine);
-        Assert.Null(Launch.TryPlan(NptPath, line, out _, out _, out string child));
+        Assert.Null(Launch.TryPlan(NptPath, NptPath, line, out _, out _, out string child));
 
         List<string> given = WindowsArgv.Split(line);
         List<string> seen = WindowsArgv.Split(child);

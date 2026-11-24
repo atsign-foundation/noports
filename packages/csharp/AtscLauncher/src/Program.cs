@@ -13,8 +13,10 @@ internal static unsafe class Program
     private static int Main()
     {
         string commandLine = new string(Native.GetCommandLineW());
+        string? startedPath = LongPath(Environment.ProcessPath);
         string? error = Launch.TryPlan(
-            LongPath(Environment.ProcessPath),
+            startedPath,
+            Launch.FinalPath(startedPath),
             commandLine,
             out string command,
             out string atscPath,
