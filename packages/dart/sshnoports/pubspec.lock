@@ -9,6 +9,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "99.0.0"
+  alfred:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: cc-directory-4-windows
+      resolved-ref: "8ecf0437cb91d591d5b1e1547e662438d5f65351"
+      url: "https://github.com/atsign-foundation/alfred"
+    source: git
+    version: "1.1.2+1"
   analyzer:
     dependency: transitive
     description:
@@ -533,10 +542,18 @@ packages:
     dependency: transitive
     description:
       name: mime
-      sha256: bd47de35f07e27267e69c8c8b22edf9473bfee170a60d60fcc93730c5144b7f6
+      sha256: "801fd0b26f14a4a58ccb09d5892c3fbdeff209594300a542492cf13fba9d247a"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "1.0.6"
+  mime_type:
+    dependency: transitive
+    description:
+      name: mime_type
+      sha256: d652b613e84dac1af28030a9fba82c0999be05b98163f9e18a0849c6e63838bb
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   mocktail:
     dependency: "direct dev"
     description:
@@ -656,6 +673,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.6.0"
+  queue:
+    dependency: transitive
+    description:
+      name: queue
+      sha256: "9bc29632072f4dac6cd0056acbb63361f654e2def9ceb4b08cfe0f9cf5618409"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.4.0"
   rfc_6901:
     dependency: transitive
     description:

@@ -1,20 +1,20 @@
 import 'dart:io';
 
-import 'package:admin_api/src/expose_apis.dart' as expose;
-import 'package:admin_api/src/version.dart' as admin;
 import 'package:alfred/alfred.dart';
 import 'package:alfred/src/type_handlers/websocket_type_handler.dart';
 import 'package:args/args.dart';
 import 'package:at_client_cli/at_client_cli.dart';
 import 'package:noports_core/admin.dart';
 import 'package:noports_core/utils.dart';
-import 'package:noports_core/version.dart' as core;
+import 'package:sshnoports/src/admin/expose_apis.dart' as expose;
+import 'package:sshnoports/src/print_version.dart';
 
 const String _description =
     'NoPorts admin: serves the NoPorts policy administration web app'
     ' and its REST API.';
 
-void main(List<String> args) async {
+/// Runs np_admin with the command-line arguments [args].
+Future<void> main(List<String> args) async {
   final ArgParser parser = CLIBase.createArgsParser(
     namespace: 'sshnp',
     hide: CLIBase.hideableArgs,
@@ -48,8 +48,7 @@ void main(List<String> args) async {
     }
 
     if (parsedArgs['version'] == true) {
-      stdout.writeln(
-          '$binaryName ${admin.packageVersion} (core ${core.packageVersion})');
+      printVersion();
       exit(0);
     }
 
