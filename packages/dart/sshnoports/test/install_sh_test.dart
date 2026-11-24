@@ -178,9 +178,6 @@ void main() {
       test(
           'installing an unchanged atsc again leaves it and atsc.old alone'
           '${withCmp ? '' : ', without cmp'}', () async {
-        expect((await install(['-b', prefix.path, 'npt'])).exitCode, 0);
-        standIn(path.join(bundle.path, 'atsc'), 'atsc 2');
-        expect((await install(['-b', prefix.path, 'npt'])).exitCode, 0);
         String? searchPath;
         if (!withCmp) {
           searchPath = pathWithout('cmp');
@@ -193,6 +190,15 @@ void main() {
           expect(probe.stdout, '$searchPath/cksum\n');
           expect(probe.exitCode, isNot(0));
         }
+        final first =
+            await install(['-b', prefix.path, 'npt'], searchPath: searchPath);
+        expect(first.exitCode, 0);
+        expect(first.stderr, isEmpty);
+        standIn(path.join(bundle.path, 'atsc'), 'atsc 2');
+        final changed =
+            await install(['-b', prefix.path, 'npt'], searchPath: searchPath);
+        expect(changed.exitCode, 0);
+        expect(changed.stderr, isEmpty);
 
         final again =
             await install(['-b', prefix.path, 'npt'], searchPath: searchPath);
