@@ -13,37 +13,23 @@ mkdir -p build/sshnp/web/admin
 
 dart pub get --enforce-lockfile || exit 1
 
-echo "Building core binaries"
-echo "Compiling at_activate"; dart compile exe --verbosity error bin/at_activate.dart -o build/sshnp/at_activate &
+echo "Compiling atsc"; dart compile exe --verbosity error bin/atsc.dart -o build/sshnp/atsc &
 echo "Compiling srv"; dart compile exe --verbosity error bin/srv.dart -o build/sshnp/srv &
-echo "Compiling sshnpd"; dart compile exe --verbosity error bin/sshnpd.dart -o build/sshnp/sshnpd &
-echo "Compiling srvd"; dart compile exe --verbosity error bin/srvd.dart -o build/sshnp/srvd &
-echo "Compiling sshnp"; dart compile exe --verbosity error bin/sshnp.dart -o build/sshnp/sshnp &
-echo "Compiling npt"; dart compile exe --verbosity error bin/npt.dart -o build/sshnp/npt &
-echo "Compiling npevents"; dart compile exe --verbosity error bin/npevents.dart -o build/sshnp/npevents &
-echo "Compiling noports"; dart compile exe --verbosity error bin/noports.dart -o build/sshnp/noports &
-
+mkdir -p build/sshnp/debug
+echo "Compiling debug atsc"; dart compile exe --verbosity error bin/atsc.dart -D ENABLE_SNOOP=true -o build/sshnp/debug/atsc &
 
 wait
 echo "$(date) : Compilation complete"
 
-echo "Compiling policy binaries"
-echo "Compiling npp_file (DEMO)"; dart compile exe --verbosity error bin/npp_file.dart -o build/sshnp/npp_file &
-echo "Compiling npp_atserver"; dart compile exe --verbosity error bin/npp_atserver.dart -o build/sshnp/npp_atserver &
-
-wait
-echo "$(date) : Compilation complete"
-
-wait
-echo "$(date) : Compilation complete"
+echo "$(date) : Copying launchers"
+cp -R launchers/. build/sshnp/
 
 echo "$(date) : Copying bundles"
 cp -r bundles/core/* build/sshnp/
 cp -r bundles/shell/* build/sshnp/
 cp LICENSE build/sshnp
 
-echo "Building admin API and webapp - BETA";
-echo "Compiling np_admin"; dart compile exe --verbosity error bin/np_admin.dart -o "${packageDir}/build/sshnp/np_admin" || exit 1
+echo "Building admin webapp - BETA";
 pushd ../../../apps/admin/webapp || exit 1
 echo "Building admin webapp"
 npm ci || exit 1
