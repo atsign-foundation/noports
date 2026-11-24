@@ -124,6 +124,18 @@ setup_authorized_keys() {
 
 # INSTALL BINARIES #
 
+# Whether the files $1 and $2 both exist with the same contents.
+same_contents() {
+  if ! [ -f "$1" ] || ! [ -f "$2" ]; then
+    return 1
+  fi
+  if command -v cmp >/dev/null 2>&1; then
+    cmp -s "$1" "$2"
+  else
+    [ "$(cksum <"$1")" = "$(cksum <"$2")" ]
+  fi
+}
+
 # Installs $2 (default $1) from this bundle as $1.
 install_single_binary() {
   src="$script_dir/${2:-$1}"
@@ -135,7 +147,7 @@ install_single_binary() {
     dest="$user_bin_dir"
   fi
   mkdir -p "$dest"
-  if ! [ -L "$dest/$1" ] && cmp -s "$src" "$dest/$1"; then
+  if ! [ -L "$dest/$1" ] && same_contents "$src" "$dest/$1"; then
     if ! chmod 755 "$dest/$1"; then
       echo "Failed to make $dest/$1 readable and executable by all - aborting"
       exit 1

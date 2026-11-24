@@ -42,9 +42,13 @@ void main() {
   }
 
   /// Runs install.sh from the bundle with [args] under [umask], as a user
-  /// whose home is [home], with the shims in front of the PATH of this
-  /// process.
-  Future<ProcessResult> install(List<String> args, {String umask = '022'}) =>
+  /// whose home is [home], with [searchPath] as its PATH, or else the shims
+  /// in front of the PATH of this process.
+  Future<ProcessResult> install(
+    List<String> args, {
+    String umask = '022',
+    String? searchPath,
+  }) =>
       Process.run(
         '/bin/sh',
         [
@@ -58,7 +62,8 @@ void main() {
         environment: {
           'HOME': home.path,
           'USER': 'tester',
-          'PATH': '${shims.path}:${Platform.environment['PATH']}',
+          'PATH':
+              searchPath ?? '${shims.path}:${Platform.environment['PATH']}',
         },
         includeParentEnvironment: false,
       );
@@ -84,6 +89,23 @@ void main() {
   /// The permission bits of [file], in octal.
   String modeOf(String file) =>
       (File(file).statSync().mode & 0x1ff).toRadixString(8);
+
+  /// A PATH that finds every command on the PATH of this process except
+  /// [command].
+  String pathWithout(String command) {
+    final without = Directory(path.join(root.path, 'without_$command'))
+      ..createSync();
+    final Set<String> linked = {};
+    for (final String dir in Platform.environment['PATH']!.split(':')) {
+      if (!Directory(dir).existsSync()) continue;
+      for (final FileSystemEntity entity in Directory(dir).listSync()) {
+        final String name = path.basename(entity.path);
+        if (name == command || !linked.add(name)) continue;
+        Link(path.join(without.path, name)).createSync(entity.path);
+      }
+    }
+    return without.path;
+  }
 
   setUp(() {
     root = Directory(
@@ -144,23 +166,39 @@ void main() {
       expect(await output(path.join(prefix.path, 'atsc.old')), 'atsc 1\n');
     });
 
-    test('installing an unchanged atsc again leaves it and atsc.old alone',
-        () async {
-      expect((await install(['-b', prefix.path, 'npt'])).exitCode, 0);
-      standIn(path.join(bundle.path, 'atsc'), 'atsc 2');
-      expect((await install(['-b', prefix.path, 'npt'])).exitCode, 0);
+    for (final bool withCmp in [true, false]) {
+      test(
+          'installing an unchanged atsc again leaves it and atsc.old alone'
+          '${withCmp ? '' : ', without cmp'}', () async {
+        expect((await install(['-b', prefix.path, 'npt'])).exitCode, 0);
+        standIn(path.join(bundle.path, 'atsc'), 'atsc 2');
+        expect((await install(['-b', prefix.path, 'npt'])).exitCode, 0);
+        String? searchPath;
+        if (!withCmp) {
+          searchPath = pathWithout('cmp');
+          final probe = await Process.run(
+            '/bin/sh',
+            ['-c', 'command -v cksum; command -v cmp'],
+            environment: {'PATH': searchPath},
+            includeParentEnvironment: false,
+          );
+          expect(probe.stdout, '$searchPath/cksum\n');
+          expect(probe.exitCode, isNot(0));
+        }
 
-      final again = await install(['-b', prefix.path, 'npt']);
+        final again =
+            await install(['-b', prefix.path, 'npt'], searchPath: searchPath);
 
-      expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
-      expect(again.stderr, isEmpty);
-      expect(
-        again.stdout,
-        contains('=> ${prefix.path}/atsc is already up to date'),
-      );
-      expect(await output(path.join(prefix.path, 'atsc')), 'atsc 2\n');
-      expect(await output(path.join(prefix.path, 'atsc.old')), 'atsc 1\n');
-    });
+        expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+        expect(again.stderr, isEmpty);
+        expect(
+          again.stdout,
+          contains('=> ${prefix.path}/atsc is already up to date'),
+        );
+        expect(await output(path.join(prefix.path, 'atsc')), 'atsc 2\n');
+        expect(await output(path.join(prefix.path, 'atsc.old')), 'atsc 1\n');
+      });
+    }
 
     test(
         'every file it installs can be read and run by everyone, whatever '
