@@ -8,7 +8,8 @@ Binaries are expected to be in windows-msi/bin
 
 - WiX Toolset V6
 - For CD pipeline:
-  - needs setup-dotnet@v4 action
+  - needs the setup-dotnet action, with the SDK that
+    `packages/csharp/global.json` names
   - dotnet tool install --global wix
 
 - Relies upon building and signing the binaries beforehand.
