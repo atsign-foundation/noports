@@ -21,6 +21,8 @@ contents:
     dst: /usr/bin/noports
   - src: ./sshnp/np_admin
     dst: /usr/bin/np_admin
+  - src: ./sshnp/npevents
+    dst: /usr/bin/npevents
   - src: ./sshnp/npp
     dst: /usr/bin/npp
   - src: ./sshnp/npp_atserver
@@ -58,6 +60,8 @@ contents:
     dst: /usr/share/man/man1/noports.1.gz
   - src: ./sshnp/np_admin.1.gz
     dst: /usr/share/man/man1/np_admin.1.gz
+  - src: ./sshnp/npevents.1.gz
+    dst: /usr/share/man/man1/npevents.1.gz
   - src: ./sshnp/npp.1.gz
     dst: /usr/share/man/man1/npp.1.gz
   - src: ./sshnp/npp_atserver.1.gz
