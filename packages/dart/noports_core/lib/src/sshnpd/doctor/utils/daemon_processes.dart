@@ -112,8 +112,10 @@ List<String> _argumentsAfter(String program, String line) {
 }
 
 /// Parses a JSON array of Win32_Process `ProcessId`, `Name` and
-/// `CommandLine`; a process whose command line is unreadable is listed by its
-/// image name alone, and output that is not JSON lists nothing.
+/// `CommandLine`: the program is the image `Name`, and the other arguments
+/// are those after the command line's first token, so a process whose
+/// command line is unreadable is listed by its image name alone. Output that
+/// is not JSON lists nothing.
 List<ListedProcess> parseWin32ProcessListing(String output) {
   final Object? decoded;
   try {
@@ -122,15 +124,28 @@ List<ListedProcess> parseWin32ProcessListing(String output) {
     return [];
   }
   return [
-    for (final entry in decoded is List ? decoded : [decoded])
-      if (entry case {'ProcessId': final int pid})
-        ListedProcess(pid, switch (entry) {
-          {'CommandLine': final String line} when line.trim().isNotEmpty =>
-            _splitWindowsCommandLine(line),
-          {'Name': final String name} => [name],
-          _ => <String>[],
-        }),
+    for (final entry
+        in (decoded is List ? decoded : [decoded]).whereType<Map>())
+      if (entry case {'ProcessId': final int pid, 'Name': final String image})
+        ListedProcess(pid, [
+          image,
+          ..._argumentsAfterProgram(entry['CommandLine']),
+        ]),
   ];
+}
+
+List<String> _argumentsAfterProgram(Object? commandLine) {
+  if (commandLine is! String) return const [];
+  final line = commandLine.trimLeft();
+  final int programEnd;
+  if (line.startsWith('"')) {
+    final closingQuote = line.indexOf('"', 1);
+    programEnd = closingQuote < 0 ? line.length : closingQuote + 1;
+  } else {
+    final whitespace = line.indexOf(RegExp(r'[ \t]'));
+    programEnd = whitespace < 0 ? line.length : whitespace;
+  }
+  return _splitWindowsCommandLine(line.substring(programEnd));
 }
 
 List<String> _splitWindowsCommandLine(String commandLine) {

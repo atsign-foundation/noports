@@ -339,6 +339,59 @@ void main() {
     });
   });
 
+  group("Given a Windows command line whose first token is not the image's "
+      'path', () {
+    test('when the image path has an unquoted space, '
+        'then the daemon is still counted', () {
+      expect(
+        windowsReportsDaemon([
+          windowsDoctor,
+          windowsProcess(
+            3201,
+            'sshnpd.exe',
+            r'C:\Program Files\NoPorts\sshnpd.exe -a @device',
+          ),
+        ]),
+        isTrue,
+        reason: 'the image name, not the first token, names the program',
+      );
+    });
+
+    test('when the image path has an unquoted space and --doctor follows, '
+        'then that doctor run is not counted', () {
+      expect(
+        windowsReportsDaemon([
+          windowsDoctor,
+          windowsProcess(
+            3202,
+            'sshnpd.exe',
+            r'C:\Program Files\NoPorts\sshnpd.exe --doctor',
+          ),
+        ]),
+        isFalse,
+        reason: 'arguments after the first token still carry --doctor',
+      );
+    });
+
+    test('when the first token differs from the image, '
+        'then the image decides the program', () {
+      for (final (daemon, counted) in [
+        (windowsProcess(3203, 'atsc.exe', 'launcher sshnpd -a @device'), true),
+        (windowsProcess(3204, 'sshnpd.exe', 'renamed -a @device'), true),
+        (
+          windowsProcess(3205, 'notepad.exe', r'"C:\NoPorts\sshnpd.exe" -a @d'),
+          false,
+        ),
+      ]) {
+        expect(
+          windowsReportsDaemon([windowsDoctor, daemon]),
+          counted,
+          reason: 'the image name is the program: $daemon',
+        );
+      }
+    });
+  });
+
   group('Given Windows cannot read a process command line', () {
     test('when its image is sshnpd.exe, then it is counted as the daemon', () {
       expect(
@@ -375,7 +428,7 @@ void main() {
       expect(processes.map((p) => p.pid), [0, 3001]);
       expect(processes.first.args, ['System Idle Process']);
       expect(processes.last.args, [
-        r'C:\Program Files\NoPorts\sshnpd.exe',
+        'sshnpd.exe',
         '-a',
         '@device',
         '-d',
