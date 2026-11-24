@@ -14,6 +14,13 @@ void main() {
   late Directory bundle;
   late Directory home;
   late Directory prefix;
+  late Directory shims;
+
+  /// Makes [file] executable.
+  void executable(String file) {
+    final result = Process.runSync('chmod', ['+x', file]);
+    expect(result.exitCode, 0, reason: '${result.stderr}');
+  }
 
   /// Writes an executable stand-in at [file] which prints [label] and then
   /// each argument it was given, one per line in brackets.
@@ -23,28 +30,87 @@ void main() {
       "echo '$label'\n"
       'for a in "\$@"; do printf \'[%s]\\n\' "\$a"; done\n',
     );
-    final result = Process.runSync('chmod', ['+x', file]);
-    expect(result.exitCode, 0, reason: '${result.stderr}');
+    executable(file);
   }
 
-  /// Runs install.sh from the bundle with [args], as a user whose home is
-  /// [home].
-  Future<ProcessResult> install(List<String> args) => Process.run(
+  /// Writes an `sh` script called [name], with [body], into the directory
+  /// that install.sh finds first on its PATH.
+  void shim(String name, String body) {
+    final String file = path.join(shims.path, name);
+    File(file).writeAsStringSync('#!/bin/sh\n$body');
+    executable(file);
+  }
+
+  /// Runs install.sh from the bundle with [args] under [umask], as a user
+  /// whose home is [home], with [searchPath] as its PATH, or else the shims
+  /// in front of the PATH of this process.
+  Future<ProcessResult> install(
+    List<String> args, {
+    String umask = '022',
+    String? searchPath,
+  }) =>
+      Process.run(
         '/bin/sh',
-        [path.join(bundle.path, 'install.sh'), ...args],
+        [
+          '-c',
+          'umask "\$1"; shift; exec /bin/sh "\$@"',
+          'sh',
+          umask,
+          path.join(bundle.path, 'install.sh'),
+          ...args,
+        ],
         environment: {
           'HOME': home.path,
           'USER': 'tester',
-          'PATH': Platform.environment['PATH']!,
+          'PATH': searchPath ?? '${shims.path}:${Platform.environment['PATH']}',
         },
         includeParentEnvironment: false,
       );
+
+  /// Runs install.sh as root would run it, with `id` and `uname` shims, into
+  /// [prefix] with [args].
+  Future<ProcessResult> installAsRoot(List<String> args, {String? umask}) {
+    shim('id',
+        'if [ "\$1" = -u ]; then echo 0; else exec /usr/bin/id "\$@"; fi\n');
+    shim('uname', 'echo Linux\n');
+    return install(['-b', prefix.path, ...args], umask: umask ?? '022');
+  }
 
   /// The names in [dir], sorted, or none when it does not exist.
   List<String> namesIn(String dir) => Directory(dir).existsSync()
       ? (Directory(dir).listSync().map((e) => path.basename(e.path)).toList()
         ..sort())
       : [];
+
+  /// What [program] prints to stdout when it is run with [args].
+  Future<String> output(String program, [List<String> args = const []]) async =>
+      (await Process.run(program, args)).stdout as String;
+
+  /// The permission bits of [file], in octal.
+  String modeOf(String file) =>
+      (File(file).statSync().mode & 0x1ff).toRadixString(8);
+
+  /// A PATH that finds every command on the PATH of this process except
+  /// [command].
+  String pathWithout(String command) {
+    final without = Directory(path.join(root.path, 'without_$command'))
+      ..createSync();
+    final Set<String> linked = {};
+    for (final String dir in Platform.environment['PATH']!.split(':')) {
+      final List<FileSystemEntity> entities;
+      try {
+        entities = Directory(dir).listSync();
+      } on FileSystemException {
+        continue;
+      }
+      for (final FileSystemEntity entity in entities) {
+        final String name = path.basename(entity.path);
+        if (name == command || !linked.add(name)) continue;
+        Link(path.join(without.path, name)).createSync(entity.path);
+      }
+    }
+    return without.path;
+  }
 
   setUp(() {
     root = Directory(
@@ -57,6 +123,7 @@ void main() {
     Directory(path.join(bundle.path, 'debug')).createSync();
     home = Directory(path.join(root.path, 'home'))..createSync();
     prefix = Directory(path.join(root.path, 'prefix'));
+    shims = Directory(path.join(root.path, 'shims'))..createSync();
     File(path.join('bundles', 'shell', 'install.sh'))
         .copySync(path.join(bundle.path, 'install.sh'));
     final copy = Process.runSync('cp', ['-R', 'launchers/.', bundle.path]);
@@ -69,12 +136,20 @@ void main() {
   group('install.sh', () {
     test(
         'a non-root install into a chosen directory links nothing into '
-        '~/.local/bin', () async {
+        '~/.local/bin and leaves ~/.profile alone', () async {
       final result = await install(['-b', prefix.path, 'npt']);
 
       expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
       expect(namesIn(prefix.path), ['atsc', 'npt', 'srv']);
       expect(namesIn(path.join(home.path, '.local', 'bin')), isEmpty);
+      expect(File(path.join(home.path, '.profile')).existsSync(), isFalse);
+    });
+
+    test('atsc can be installed on its own', () async {
+      final result = await install(['-b', prefix.path, 'atsc']);
+
+      expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+      expect(namesIn(prefix.path), ['atsc']);
     });
 
     test(
@@ -92,19 +167,193 @@ void main() {
       expect(run.stdout, 'atsc 1\n[npt]\n[-x]\n');
     });
 
-    test(
-        'installing an unchanged atsc again keeps the previous one as '
-        'atsc.old', () async {
+    test('installing a changed atsc keeps the previous one as atsc.old',
+        () async {
       expect((await install(['-b', prefix.path, 'sshnp'])).exitCode, 0);
       standIn(path.join(bundle.path, 'atsc'), 'atsc 2');
 
-      expect((await install(['-b', prefix.path, 'sshnp'])).exitCode, 0);
-      expect((await install(['-b', prefix.path, 'npt'])).exitCode, 0);
+      final result = await install(['-b', prefix.path, 'sshnp']);
 
-      final current = await Process.run(path.join(prefix.path, 'atsc'), []);
-      final old = await Process.run(path.join(prefix.path, 'atsc.old'), []);
-      expect(current.stdout, 'atsc 2\n');
-      expect(old.stdout, 'atsc 1\n');
+      expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+      expect(await output(path.join(prefix.path, 'atsc')), 'atsc 2\n');
+      expect(await output(path.join(prefix.path, 'atsc.old')), 'atsc 1\n');
+    });
+
+    for (final bool withCmp in [true, false]) {
+      test(
+          'installing an unchanged atsc again leaves it and atsc.old alone'
+          '${withCmp ? '' : ', without cmp'}', () async {
+        String? searchPath;
+        if (!withCmp) {
+          searchPath = pathWithout('cmp');
+          final probe = await Process.run(
+            '/bin/sh',
+            ['-c', 'command -v cksum; command -v cmp'],
+            environment: {'PATH': searchPath},
+            includeParentEnvironment: false,
+          );
+          expect(probe.stdout, '$searchPath/cksum\n');
+          expect(probe.exitCode, isNot(0));
+        }
+        final first =
+            await install(['-b', prefix.path, 'npt'], searchPath: searchPath);
+        expect(first.exitCode, 0);
+        expect(first.stderr, isEmpty);
+        standIn(path.join(bundle.path, 'atsc'), 'atsc 2');
+        final changed =
+            await install(['-b', prefix.path, 'npt'], searchPath: searchPath);
+        expect(changed.exitCode, 0);
+        expect(changed.stderr, isEmpty);
+
+        final again =
+            await install(['-b', prefix.path, 'npt'], searchPath: searchPath);
+
+        expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+        expect(again.stderr, isEmpty);
+        expect(
+          again.stdout,
+          contains('=> ${prefix.path}/atsc is already up to date'),
+        );
+        expect(await output(path.join(prefix.path, 'atsc')), 'atsc 2\n');
+        expect(await output(path.join(prefix.path, 'atsc.old')), 'atsc 1\n');
+      });
+    }
+
+    test(
+        'every file it installs can be read and run by everyone, whatever '
+        'the umask', () async {
+      final List<String> files = ['atsc', 'srv', 'sshnpd']
+          .map((name) => path.join(prefix.path, name))
+          .toList();
+
+      final first = await install(['-b', prefix.path, 'sshnpd'], umask: '027');
+
+      expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
+      for (final String file in files) {
+        expect(modeOf(file), '755', reason: file);
+        expect(Process.runSync('chmod', ['750', file]).exitCode, 0);
+      }
+
+      final again = await install(['-b', prefix.path, 'sshnpd'], umask: '027');
+
+      expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+      for (final String file in files) {
+        expect(modeOf(file), '755', reason: '$file, already up to date');
+      }
+    });
+
+    test(
+        'a root install leaves each program readable and runnable by the '
+        'user it links it for', () async {
+      final String links = path.join(home.path, '.local', 'bin');
+
+      final result = await installAsRoot(['sshnpd'], umask: '027');
+
+      expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+      for (final String name in ['atsc', 'srv', 'sshnpd']) {
+        final String file = path.join(prefix.path, name);
+        expect(modeOf(file), '755', reason: name);
+        expect(Link(path.join(links, name)).targetSync(), file, reason: name);
+      }
+      expect(
+        await output(path.join(links, 'sshnpd'), ['-x']),
+        'atsc 1\n[sshnpd]\n[-x]\n',
+      );
+    });
+
+    test(
+        "a non-root install replaces an earlier root install's links rather "
+        'than follow them', () async {
+      final rootBin = Directory(path.join(root.path, 'usr_local_bin'))
+        ..createSync();
+      standIn(path.join(rootBin.path, 'atsc'), 'root atsc');
+      for (final String name in ['srv', 'npt']) {
+        File(path.join(bundle.path, name))
+            .copySync(path.join(rootBin.path, name));
+        executable(path.join(rootBin.path, name));
+      }
+      prefix.createSync();
+      for (final String name in ['atsc', 'srv', 'npt']) {
+        Link(path.join(prefix.path, name))
+            .createSync(path.join(rootBin.path, name));
+      }
+
+      final result = await install(['-b', prefix.path, 'npt']);
+
+      expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+      for (final String name in ['atsc', 'srv', 'npt']) {
+        expect(
+          FileSystemEntity.isLinkSync(path.join(prefix.path, name)),
+          isFalse,
+          reason: name,
+        );
+      }
+      expect(await output(path.join(prefix.path, 'npt')), 'atsc 1\n[npt]\n');
+      expect(await output(path.join(rootBin.path, 'atsc')), 'root atsc\n');
+    });
+
+    test(
+        "a non-root install replaces links to an earlier root install's files "
+        'that it cannot read', () async {
+      final rootBin = Directory(path.join(root.path, 'usr_local_bin'))
+        ..createSync();
+      final String rootAtsc = path.join(rootBin.path, 'atsc');
+      standIn(rootAtsc, 'root atsc');
+      prefix.createSync();
+      Link(path.join(prefix.path, 'atsc')).createSync(rootAtsc);
+      expect(Process.runSync('chmod', ['311', rootAtsc]).exitCode, 0);
+      addTearDown(() => Process.runSync('chmod', ['755', rootAtsc]));
+
+      final result = await install(['-b', prefix.path, 'atsc']);
+
+      expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+      expect(namesIn(prefix.path), ['atsc']);
+      expect(await output(path.join(prefix.path, 'atsc')), 'atsc 1\n');
+    });
+
+    test(
+        'a failed copy of atsc leaves the installed one in place, installs '
+        'no program and fails', () async {
+      expect((await install(['-b', prefix.path, 'atsc'])).exitCode, 0);
+      final String newAtsc = path.join(bundle.path, 'atsc');
+      standIn(newAtsc, 'atsc 2');
+      expect(Process.runSync('chmod', ['000', newAtsc]).exitCode, 0);
+
+      final result = await install(['-b', prefix.path, 'npt']);
+
+      expect(result.exitCode, isNot(0));
+      expect(
+        result.stdout,
+        contains('Failed to copy $newAtsc to ${prefix.path} - aborting, '
+            '${prefix.path}/atsc is unchanged\n'),
+      );
+      expect(namesIn(prefix.path), ['atsc']);
+      expect(await output(path.join(prefix.path, 'atsc')), 'atsc 1\n');
+    });
+
+    test('a failed rename leaves the installed atsc in place and fails',
+        () async {
+      expect((await install(['-b', prefix.path, 'npt'])).exitCode, 0);
+      standIn(path.join(bundle.path, 'atsc'), 'atsc 2');
+      shim(
+        'mv',
+        'for a in "\$@"; do last=\$a; done\n'
+            'case \$last in */atsc) exit 1 ;; esac\n'
+            'for d in /bin /usr/bin; do\n'
+            '  if [ -x "\$d/mv" ]; then exec "\$d/mv" "\$@"; fi\n'
+            'done\n'
+            'exit 127\n',
+      );
+
+      final result = await install(['-b', prefix.path, 'npt']);
+
+      expect(result.exitCode, isNot(0));
+      expect(
+        result.stdout,
+        contains(' - aborting, ${prefix.path}/atsc is unchanged\n'),
+      );
+      expect(await output(path.join(prefix.path, 'atsc')), 'atsc 1\n');
+      expect(namesIn(prefix.path), ['atsc', 'atsc.old', 'npt', 'srv']);
     });
 
     test('the debug srvd is installed with debug_atsc in the chosen directory',
@@ -119,7 +368,7 @@ void main() {
 
     test('a missing ~/.profile is created with ~/.local/bin on its PATH',
         () async {
-      final result = await install(['-b', prefix.path, 'npt']);
+      final result = await install(['npt']);
 
       expect(result.stderr, isEmpty);
       expect(
@@ -133,7 +382,7 @@ void main() {
       final profile = File(path.join(home.path, '.profile'))
         ..writeAsStringSync('export PATH="\$HOME/.local/bin:\$PATH"\n');
 
-      final result = await install(['-b', prefix.path, 'npt']);
+      final result = await install(['npt']);
 
       expect(result.stderr, isEmpty);
       expect(
@@ -147,7 +396,7 @@ void main() {
       final profile = File(path.join(home.path, '.profile'))
         ..writeAsStringSync('umask 022\n');
 
-      final result = await install(['-b', prefix.path, 'npt']);
+      final result = await install(['npt']);
 
       expect(result.stderr, isEmpty);
       expect(

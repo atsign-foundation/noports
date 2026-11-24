@@ -16,10 +16,17 @@ while [ -L "$p" ]; do
     echo "$0: too many symbolic links" >&2
     exit 127
   fi
-  l=$(readlink -- "$p")
+  if ! l=$(readlink -- "$p"); then
+    echo "$0: cannot follow the symbolic link $p" >&2
+    exit 127
+  fi
   case $l in
   /*) p=$l ;;
   *) p=${p%/*}/$l ;;
   esac
 done
+if ! [ -f "${p%/*}/atsc" ]; then
+  echo "npp_file: cannot find atsc beside ${p%/*}; keep atsc, srv and the programs together" >&2
+  exit 127
+fi
 exec "${p%/*}/atsc" npp_file "$@"

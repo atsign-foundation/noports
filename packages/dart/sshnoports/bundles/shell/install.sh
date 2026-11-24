@@ -124,18 +124,39 @@ setup_authorized_keys() {
 
 # INSTALL BINARIES #
 
+# The directory that programs are installed into.
+install_dir() {
+  if [ -n "$binary_dir" ]; then
+    echo "$binary_dir"
+  elif is_root; then
+    echo "$bin_dir"
+  else
+    echo "$user_bin_dir"
+  fi
+}
+
+# Whether the files $1 and $2 both exist with the same contents.
+same_contents() {
+  if ! [ -f "$1" ] || ! [ -f "$2" ]; then
+    return 1
+  fi
+  if command -v cmp >/dev/null 2>&1; then
+    cmp -s "$1" "$2"
+  else
+    [ "$(cksum <"$1")" = "$(cksum <"$2")" ]
+  fi
+}
+
 # Installs $2 (default $1) from this bundle as $1.
 install_single_binary() {
   src="$script_dir/${2:-$1}"
-  if [ -n "$binary_dir" ]; then
-    dest="$binary_dir"
-  elif is_root; then
-    dest="$bin_dir"
-  else
-    dest="$user_bin_dir"
-  fi
+  dest=$(install_dir)
   mkdir -p "$dest"
-  if cmp -s "$src" "$dest/$1"; then
+  if ! [ -L "$dest/$1" ] && same_contents "$src" "$dest/$1"; then
+    if ! chmod 755 "$dest/$1"; then
+      echo "Failed to make $dest/$1 readable and executable by all - aborting"
+      exit 1
+    fi
     echo "=> $dest/$1 is already up to date"
   else
     replace_binary "$1"
@@ -148,7 +169,6 @@ install_single_binary() {
     if [ -f "$dest/$1" ]; then
       ln -sf "$dest/$1" "$user_bin_dir/$1"
       chown root:wheel "$dest/$1" 2>/dev/null || chown root:root "$dest/$1" 2>/dev/null || chown root "$dest/$1" 2>/dev/null
-      chmod o+x "$dest/$1"
 
       echo "=> Linked $user_bin_dir/$1 to $dest/$1"
     else
@@ -158,25 +178,29 @@ install_single_binary() {
   fi
 }
 
+# Installs $src as $dest/$1 by copying it into $dest and renaming the copy
+# over $dest/$1, after keeping a copy of the file it replaces as $1.old. A
+# link it replaces points into another installation, so it keeps no copy.
 replace_binary() {
-  if test -f "$dest/$1"; then
-    if test -f "$dest/$1.old"; then
-      if rm -f "$dest/$1.old"; then
-        echo "=> Removed $dest/$1.old"
-      else
-        echo "Failed to remove $dest/$1.old - aborting"
-        exit 1
-      fi
-    fi
-    if mv "$dest/$1" "$dest/$1.old"; then
-      echo "=> Renamed existing binary $dest/$1 to $dest/$1.old"
-    else
-      echo "Failed to rename $dest/$1 to $dest/$1.old - aborting"
+  new="$dest/.$1.new.$$"
+  if ! cp -f "$src" "$new" || ! chmod 755 "$new"; then
+    rm -f "$new"
+    echo "Failed to copy $src to $dest - aborting, $dest/$1 is unchanged"
+    exit 1
+  fi
+  if [ -f "$dest/$1" ] && ! [ -L "$dest/$1" ]; then
+    if ! rm -f "$dest/$1.old" || ! cp -p "$dest/$1" "$dest/$1.old"; then
+      rm -f "$new"
+      echo "Failed to copy $dest/$1 to $dest/$1.old - aborting, $dest/$1 is unchanged"
       exit 1
     fi
+    echo "=> Copied existing binary $dest/$1 to $dest/$1.old"
   fi
-  cp -f "$src" "$dest/$1"
-
+  if ! mv -f "$new" "$dest/$1"; then
+    rm -f "$new"
+    echo "Failed to rename $new to $dest/$1 - aborting, $dest/$1 is unchanged"
+    exit 1
+  fi
   echo "=> Installed $1 to $dest"
 }
 
@@ -522,6 +546,9 @@ tmux() {
 }
 
 add_home_local_bin_to_path() {
+  if ! is_root && [ "$(install_dir)" != "$user_bin_dir" ]; then
+    return 0
+  fi
   if [ -f "$user_home/.profile" ] &&
     grep 'PATH=' <"$user_home/.profile" | grep -q -e "$user_home/.local/bin" -e '$HOME/.local/bin'; then
     return 0

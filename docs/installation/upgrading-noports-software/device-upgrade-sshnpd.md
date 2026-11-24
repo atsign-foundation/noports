@@ -12,7 +12,7 @@ To upgrade, follow the [installation guide](../advanced-installation-guides/devi
 
 ### Verify the Upgrade
 
-To check the current version of sshnpd installed on your machine, simply execute the binary:
+To check the current version of sshnpd installed on your machine, simply run it:
 
 {% tabs %}
 {% tab title="Linux" %}
@@ -54,7 +54,7 @@ Version : x.x.x
 
 ### Reload the sshnpd service
 
-After upgrading the sshnpd binary, we must restart the sshnpd service so that it runs using the new version. How you proceed is dependent upon the original installation method you used:
+After upgrading sshnpd, we must restart the sshnpd service so that it runs using the new version. How you proceed is dependent upon the original installation method you used:
 
 1. [Systemd unit](device-upgrade-sshnpd.md#systemd-unit)
 2. [Tmux session](device-upgrade-sshnpd.md#tmux-session)
@@ -77,30 +77,19 @@ The installer automatically restarts your tmux session, no other steps required!
 To safely restart the headless service, we must be slightly more careful with the headless installation. First we must grab the process id of sshnpd:
 
 ```bash
-pgrep -f "$(eval echo \"$( cat $HOME/.local/bin/sshnpd.sh | grep /sshnpd | awk '{$1=$1};1')\" )"
+pgrep -f '/(atsc )?sshnpd '
 ```
 
 <details>
 
 <summary>If you're curious how this command works</summary>
 
-```bash
-cat $HOME/.local/bin/sshnpd.sh | grep /sshnpd | awk '{$1=$1};1'
-```
-
-Print out the contents of the sshnpd.sh service file, then extract the line where we execute the sshnpd program.
-
-```bash
-eval echo \"$(...)\"
-```
-
-Resolve any variables in place for the output of the previous expression.
-
-```bash
-pgrep -f "$(...)"
-```
-
-Find the process id of the program which was started using the command matching the output of the previous expression.
+`pgrep -f` finds each process whose full command line matches a pattern.
+The `sshnpd` that the sshnpd.sh service runs is a short script that runs
+`atsc sshnpd` with the same arguments, so the daemon's command line is
+`<directory>/atsc sshnpd <arguments>`. Releases before atsc ran
+`<directory>/sshnpd <arguments>` instead. The pattern `/(atsc )?sshnpd `
+matches either, but not the sshnpd.sh service itself.
 
 </details>
 
@@ -109,7 +98,7 @@ You should get a single number as output, this is the process ID of the sshnpd p
 **Example:**
 
 ```
-atsign@sshnpd-test:~# pgrep -f "$(eval echo \"$( cat $HOME/.local/bin/sshnpd.sh | grep /sshnpd | awk '{$1=$1};1')\" )"
+atsign@sshnpd-test:~# pgrep -f '/(atsc )?sshnpd '
 289
 ```
 
@@ -126,10 +115,10 @@ ps -fp <process ID>
 ```
 atsign@sshnpd-test:~# ps -fp 289
 UID            PID    PPID  C STIME TTY          TIME CMD
-atsign         289     114  0 11:10 ?        00:00:00 /home/atsign/.local/bin/sshnpd -a @atsign_device -m @atsign_client -d mydevice -suv
+atsign         289     114  0 11:10 ?        00:00:00 /home/atsign/.local/bin/atsc sshnpd -a @atsign_device -m @atsign_client -d mydevice -suv
 ```
 
-As you can see, under `CMD` we have `/home/atsign/.local/bin/sshnpd -a @atsign_device -m @atsign_client -d mydevice -suv`. This is the command inside our sshnpd.sh service which used to start sshnpd. This is the correct process that we want to kill in order to restart sshnpd.
+As you can see, under `CMD` we have `/home/atsign/.local/bin/atsc sshnpd -a @atsign_device -m @atsign_client -d mydevice -suv`. This is the sshnpd that our sshnpd.sh service started: `/home/atsign/.local/bin/sshnpd` runs `atsc sshnpd` with the arguments it is given. A daemon started by a release before atsc shows `/home/atsign/.local/bin/sshnpd -a ...` here instead. This is the correct process that we want to kill in order to restart sshnpd.
 
 #### Killing the process
 

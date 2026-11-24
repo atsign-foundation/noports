@@ -3,12 +3,29 @@
 echo Starting at $(date)
 echo
 
-echo "Compiling atsc"; dart compile exe --verbosity error bin/atsc.dart -o bin/atsc &
-echo "Compiling srv"; dart compile exe --verbosity error bin/srv.dart -o bin/srv &
-echo "Compiling demo/npa_always_deny"; dart compile exe --verbosity error bin/demo/npa_always_deny.dart -o bin/demo/npa_always_deny &
-echo "Compiling demo/npa_cli"; dart compile exe --verbosity error bin/demo/npa_cli.dart -o bin/demo/npa_cli &
+names=()
+pids=()
+# Compiles bin/$1.dart to bin/$1 in the background.
+compile() {
+  echo "Compiling $1"
+  dart compile exe --verbosity error "bin/$1.dart" -o "bin/$1" &
+  names+=("$1")
+  pids+=($!)
+}
 
-wait
+compile atsc
+compile srv
+compile demo/npa_always_deny
+compile demo/npa_cli
+
+failed=()
+for i in "${!pids[@]}"; do
+  wait "${pids[$i]}" || failed+=("${names[$i]}")
+done
+if [ "${#failed[@]}" -gt 0 ]; then
+  echo "Failed to compile: ${failed[*]}"
+  exit 1
+fi
 
 echo "Copying launchers"
 find launchers -maxdepth 1 -type f -exec cp {} bin/ \;
