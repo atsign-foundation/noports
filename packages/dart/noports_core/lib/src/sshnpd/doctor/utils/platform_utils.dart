@@ -129,13 +129,21 @@ class MacOSUtils implements PlatformUtils {
     return false;
   }
 
+  /// The `log show` predicate for the entries of [serviceName], which runs as
+  /// atsc, or under its own name in releases before atsc.
+  ///
+  /// The log does not record arguments, so it also matches the other programs
+  /// that atsc runs.
+  static String logPredicate(String serviceName) =>
+      'process == "atsc" OR process CONTAINS "$serviceName"';
+
   @override
   Future<String> getServiceLogs(String serviceName, {int lines = 50}) async {
-    
+
     try {
       final result = await Process.run('log', [
-        'show', 
-        '--predicate', 'process CONTAINS "$serviceName"', 
+        'show',
+        '--predicate', logPredicate(serviceName),
         '--last', '10m',
         '--style', 'syslog'
       ]);
