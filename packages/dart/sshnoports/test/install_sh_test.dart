@@ -288,6 +288,25 @@ void main() {
     });
 
     test(
+        "a non-root install replaces links to an earlier root install's files "
+        'that it cannot read', () async {
+      final rootBin = Directory(path.join(root.path, 'usr_local_bin'))
+        ..createSync();
+      final String rootAtsc = path.join(rootBin.path, 'atsc');
+      standIn(rootAtsc, 'root atsc');
+      prefix.createSync();
+      Link(path.join(prefix.path, 'atsc')).createSync(rootAtsc);
+      expect(Process.runSync('chmod', ['311', rootAtsc]).exitCode, 0);
+      addTearDown(() => Process.runSync('chmod', ['755', rootAtsc]));
+
+      final result = await install(['-b', prefix.path, 'atsc']);
+
+      expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+      expect(namesIn(prefix.path), ['atsc']);
+      expect(await output(path.join(prefix.path, 'atsc')), 'atsc 1\n');
+    });
+
+    test(
         'a failed copy of atsc leaves the installed one in place, installs '
         'no program and fails', () async {
       expect((await install(['-b', prefix.path, 'atsc'])).exitCode, 0);

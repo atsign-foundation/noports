@@ -179,7 +179,8 @@ install_single_binary() {
 }
 
 # Installs $src as $dest/$1 by copying it into $dest and renaming the copy
-# over $dest/$1, after keeping a copy of the file it replaces as $1.old.
+# over $dest/$1, after keeping a copy of the file it replaces as $1.old. A
+# link it replaces points into another installation, so it keeps no copy.
 replace_binary() {
   new="$dest/.$1.new.$$"
   if ! cp -f "$src" "$new" || ! chmod 755 "$new"; then
@@ -187,7 +188,7 @@ replace_binary() {
     echo "Failed to copy $src to $dest - aborting, $dest/$1 is unchanged"
     exit 1
   fi
-  if [ -f "$dest/$1" ]; then
+  if [ -f "$dest/$1" ] && ! [ -L "$dest/$1" ]; then
     if ! rm -f "$dest/$1.old" || ! cp -p "$dest/$1" "$dest/$1.old"; then
       rm -f "$new"
       echo "Failed to copy $dest/$1 to $dest/$1.old - aborting, $dest/$1 is unchanged"
