@@ -140,10 +140,7 @@ install_single_binary() {
   else
     replace_binary "$1"
   fi
-  if
-    is_root &
-    ! [ -f "$user_bin_dir/$1" ]
-  then
+  if is_root && ! [ -f "$user_bin_dir/$1" ]; then
     if ! [ -d "$user_bin_dir" ]; then
       mkdir -p "$user_bin_dir"
     fi
