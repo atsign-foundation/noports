@@ -42,6 +42,10 @@
   <Fragment>
     <!-- Files to install -->
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="atsc" Guid="*">
+        <File Id="atscfile" Source="bin\atsc.exe"
+              Name="atsc.exe" KeyPath="yes" />
+      </Component>
       <Component Id="sshnpd" Guid="*">
         <File Id="sshnpdfile" Source="bin\sshnpd.exe" 
               Name="sshnpd.exe" KeyPath="yes" />
