@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:noports_core/utils.dart';
 import 'package:sshnoports/src/commands/at_activate.dart' as at_activate;
 import 'package:sshnoports/src/commands/noports.dart' as noports;
+import 'package:sshnoports/src/commands/np_admin.dart' as np_admin;
 import 'package:sshnoports/src/commands/npevents.dart' as npevents;
 import 'package:sshnoports/src/commands/npp.dart' as npp;
 import 'package:sshnoports/src/commands/npp_atserver.dart' as npp_atserver;
@@ -16,6 +17,7 @@ import 'package:sshnoports/src/print_version.dart';
 const Map<String, Future<void> Function(List<String>)> _commands = {
   'at_activate': at_activate.main,
   'noports': noports.main,
+  'np_admin': np_admin.main,
   'npevents': npevents.main,
   'npp': npp.main,
   'npp_atserver': npp_atserver.main,

@@ -13,6 +13,7 @@ import 'package:test/test.dart';
 const List<String> subcommands = [
   'at_activate',
   'noports',
+  'np_admin',
   'npevents',
   'npp',
   'npp_atserver',
