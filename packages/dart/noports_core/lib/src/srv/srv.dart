@@ -172,9 +172,10 @@ abstract class Srv<T> {
   }
 
   /// The srv binary in the same directory as [executable] when [executable]
-  /// is atsc, sshnp, sshnpd or npt, or null.
+  /// is an absolute path to atsc, sshnp, sshnpd or npt, or null.
   @visibleForTesting
   static Future<String?> getBinaryPathBeside(String executable) async {
+    if (!File(executable).isAbsolute) return null;
     List<String> binaryNames = ['srv', 'sshrv'];
     for (var name in binaryNames) {
       var binary = await _getBinaryPathByName(executable, name);

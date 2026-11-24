@@ -52,4 +52,26 @@ void main() {
   test('atsc with no srv beside it finds none', () async {
     expect(await Srv.getBinaryPathBeside(place('atsc')), isNull);
   });
+
+  group('Given an srv in the current directory', () {
+    setUp(() {
+      final File srv = File('srv$postfix')..createSync(exclusive: true);
+      addTearDown(srv.deleteSync);
+    });
+
+    test('atsc named by an absolute path runs the srv beside it', () async {
+      place('srv');
+      final String atsc = place('atsc');
+
+      expect(path.isAbsolute(atsc), isTrue);
+      expect(
+        await Srv.getBinaryPathBeside(atsc),
+        File(path.join(installation.path, 'srv$postfix')).absolute.path,
+      );
+    });
+
+    test('atsc named by a relative path finds no srv', () async {
+      expect(await Srv.getBinaryPathBeside('atsc$postfix'), isNull);
+    });
+  });
 }
