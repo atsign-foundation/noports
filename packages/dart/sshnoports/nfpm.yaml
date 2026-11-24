@@ -13,6 +13,8 @@ description: |
 vendor: "Atsign"
 homepage: "http://noports.com"
 contents:
+  - src: ./sshnp/atsc
+    dst: /usr/bin/atsc
   - src: ./sshnp/at_activate
     dst: /usr/bin/at_activate
   - src: ./sshnp/noports
