@@ -3,32 +3,14 @@
 
 namespace WindowsBinaryService
 {
-	public static class ServiceConfig
-	{
-#if SRVD
-        public const string Binary = "srvd.exe";
-        public const string Name = "srvd";
-        public const string DisplayName = "NoPorts Relay";
-#elif SSHNPD
-        public const string Binary = "sshnpd.exe";
-        public const string Name = "sshnpd";
-        public const string DisplayName = "NoPorts Daemon";
-#else
-		public const string Binary = "sshnpd.exe";
-		public const string Name = "sshnpd";
-		public const string DisplayName = "NoPorts Daemon";
-#endif
-	}
-
 	public class Service : BackgroundService
 	{
 
 		private readonly ILogger<Service> _logger;
 #if DEBUG
-		private const string basedir = "C:\\Program Files\\NoPorts";
-		private readonly string _servicePath = Path.Join(basedir, ServiceConfig.Binary);
+		private const string _directory = "C:\\Program Files\\NoPorts";
 #else
-		private readonly string _servicePath = Path.Join(AppContext.BaseDirectory, ServiceConfig.Binary);
+		private readonly string _directory = AppContext.BaseDirectory;
 #endif
 
 		public Service(ILogger<Service> logger)
@@ -41,14 +23,14 @@ namespace WindowsBinaryService
 			Binary service;
 			do
 			{
-				service = new(_servicePath, _logger);
+				service = new(ChildProcess.StartInfo(_directory, Environment.GetCommandLineArgs().Skip(1)), _logger);
 				try
 				{
 					await service.Run(ct);
 				}
 				catch (Exception ex) when (ex is not OperationCanceledException)
 				{
-					_logger.LogError($"Process {ServiceConfig.Binary} exited with error: {ex.Message}");
+					_logger.LogError($"Process {ServiceConfig.Binary} {ServiceConfig.Subcommand} exited with error: {ex.Message}");
 					await service.Stop();
 					// Terminates this process and returns an exit code to the operating system.
 					// This is required to avoid the 'BackgroundServiceExceptionBehavior', which

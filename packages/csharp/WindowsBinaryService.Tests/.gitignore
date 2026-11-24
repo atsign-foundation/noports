@@ -1,0 +1,8 @@
+[Bb]in/
+[Oo]bj/
+[Pp]ublish/
+[Tt]est[Rr]esult*/
+.vs/
+*.user
+*.suo
+*.pdb
