@@ -72,4 +72,26 @@ void main() {
       expect(lines[6], isEmpty);
     });
   });
+
+  group('binaryName', () {
+    test('a name set for the program is used in its help, and clearing it'
+        ' restores the derived name', () {
+      final String derived = binaryName;
+      addTearDown(() => binaryName = null);
+
+      binaryName = 'npt';
+      expect(binaryName, 'npt');
+      expect(
+        formatCliHelp(
+          description: 'Does a thing.',
+          optionsUsage: '',
+        ).split('\n')[0],
+        'Usage: npt [options]',
+      );
+
+      binaryName = null;
+      expect(binaryName, derived);
+      expect(derived, isNot('npt'));
+    });
+  });
 }

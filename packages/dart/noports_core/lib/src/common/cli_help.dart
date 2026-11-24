@@ -1,11 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
 
-/// The file name, without extension, of the currently running program,
-/// derived from [Platform.script]. For example `sshnpd`, whether running the
-/// compiled binary (`/usr/local/bin/sshnpd`) or running from source
-/// (`dart run bin/sshnpd.dart`).
+String? _binaryName;
+
+/// The name of the currently running program: the name last set, or else the
+/// file name, without extension, derived from [Platform.script]. For example
+/// `srv`, whether running the compiled binary (`/usr/local/bin/srv`) or
+/// running from source (`dart run bin/srv.dart`).
 String get binaryName {
+  final String? name = _binaryName;
+  if (name != null) {
+    return name;
+  }
   if (Platform.script.pathSegments.isEmpty) {
     return 'noports';
   }
@@ -13,6 +19,9 @@ String get binaryName {
   final int dotIndex = fileName.indexOf('.');
   return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
 }
+
+/// Sets the name [binaryName] returns; null restores the derived name.
+set binaryName(String? name) => _binaryName = name;
 
 /// Formats a `--help` message in the GNU layout:
 ///
