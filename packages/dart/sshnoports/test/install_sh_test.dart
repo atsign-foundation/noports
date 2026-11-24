@@ -97,8 +97,13 @@ void main() {
       ..createSync();
     final Set<String> linked = {};
     for (final String dir in Platform.environment['PATH']!.split(':')) {
-      if (!Directory(dir).existsSync()) continue;
-      for (final FileSystemEntity entity in Directory(dir).listSync()) {
+      final List<FileSystemEntity> entities;
+      try {
+        entities = Directory(dir).listSync();
+      } on FileSystemException {
+        continue;
+      }
+      for (final FileSystemEntity entity in entities) {
         final String name = path.basename(entity.path);
         if (name == command || !linked.add(name)) continue;
         Link(path.join(without.path, name)).createSync(entity.path);
