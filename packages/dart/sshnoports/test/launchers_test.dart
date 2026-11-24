@@ -70,6 +70,17 @@ void main() {
     expect(names, [...subcommands]..sort());
   });
 
+  test('the old names differ only in their own name, so npt stands for all',
+      () {
+    final String npt = File(path.join(launchers, 'npt')).readAsStringSync();
+    for (final String name in subcommands) {
+      final String launcher =
+          File(path.join(launchers, name)).readAsStringSync();
+
+      expect(launcher.replaceAll(name, 'npt'), npt, reason: name);
+    }
+  });
+
   test('each old name runs atsc with its own name', () async {
     final installation = dir('opt/a');
     standIn(installation, 'atsc in /opt/a');
@@ -194,6 +205,71 @@ void main() {
       expect(result.stderr, contains('run npt by its path'));
       expect(result.exitCode, 127);
     });
+
+    test('and stops with an error when atsc is not beside it', () async {
+      final String alone = install(dir('alone'), 'npt');
+
+      final result = await Process.run(alone, []);
+
+      expect(result.stdout, isEmpty);
+      expect(
+        result.stderr,
+        'npt: cannot find atsc beside ${path.dirname(alone)}; '
+        'keep atsc, srv and the programs together\n',
+      );
+      expect(result.exitCode, 127);
+    });
+
+    test('and stops with an error when it cannot follow a link to it',
+        () async {
+      final links = dir('home/.local/bin');
+      standIn(links, 'atsc beside the link');
+      final String link = path.join(links.path, 'npt');
+      Link(link).createSync(path.join(installation.path, 'npt'));
+      final noReadlink = dir('no_readlink');
+
+      final result = await Process.run(
+        link,
+        [],
+        environment: {'PATH': noReadlink.path},
+        includeParentEnvironment: false,
+      );
+
+      expect(result.stdout, isEmpty);
+      expect(
+        result.stderr,
+        endsWith('$link: cannot follow the symbolic link $link\n'),
+      );
+      expect(result.exitCode, 127);
+    });
+
+    test('and stops with an error on a loop of symbolic links', () async {
+      final links = dir('loop');
+      standIn(links, 'atsc beside the loop');
+      final String a = path.join(links.path, 'a');
+      Link(a).createSync('b');
+      Link(path.join(links.path, 'b')).createSync('a');
+
+      // NOTE: the kernel will not run a loop, so the script is sourced with
+      // the loop as its \$0.
+      final process = await Process.start('/bin/sh', [
+        '-c',
+        '. "\$1"',
+        a,
+        path.join(installation.path, 'npt'),
+      ]);
+      addTearDown(() => process.kill(ProcessSignal.sigkill));
+      final stdout = process.stdout.transform(systemEncoding.decoder).join();
+      final stderr = process.stderr.transform(systemEncoding.decoder).join();
+      final int exitCode = await process.exitCode.timeout(
+        Duration(seconds: 20),
+        onTimeout: () => fail('the launcher is still following the loop'),
+      );
+
+      expect(await stdout, isEmpty);
+      expect(await stderr, '$a: too many symbolic links\n');
+      expect(exitCode, 127);
+    });
   });
 
   group('the debug srvd runs the debug build of atsc', () {
@@ -243,8 +319,39 @@ void main() {
         [],
       );
 
-      expect(result.stdout, isNot(contains('production atsc')));
-      expect(result.exitCode, isNot(0));
+      expect(result.stdout, isEmpty);
+      expect(
+        result.stderr,
+        'debug_srvd: cannot find debug_atsc beside ${bin.path}; '
+        'keep debug_atsc, srv and the programs together\n',
+      );
+      expect(result.exitCode, 127);
+    });
+
+    test('and stops with an error when it cannot follow a link to it',
+        () async {
+      final bin = dir('usr/local/bin');
+      standIn(bin, 'debug atsc', name: 'debug_atsc');
+      final String debugSrvd = install(bin, 'debug/srvd', name: 'debug_srvd');
+      final links = dir('home/.local/bin');
+      standIn(links, 'debug atsc beside the link', name: 'debug_atsc');
+      final String link = path.join(links.path, 'debug_srvd');
+      Link(link).createSync(debugSrvd);
+      final noReadlink = dir('no_readlink');
+
+      final result = await Process.run(
+        link,
+        [],
+        environment: {'PATH': noReadlink.path},
+        includeParentEnvironment: false,
+      );
+
+      expect(result.stdout, isEmpty);
+      expect(
+        result.stderr,
+        endsWith('$link: cannot follow the symbolic link $link\n'),
+      );
+      expect(result.exitCode, 127);
     });
   });
 }
