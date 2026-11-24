@@ -1,4 +1,4 @@
-FROM dart:3.13.7@sha256:854f3c50b1cbd4a5a54c9fa67d4f5b6702ac49b4a26d21a80e7712a72528b215 AS buildimage
+FROM dart:3.14.0@sha256:c78970229c8944bd6076caf4e5977ef569ba66750d301a2149f63b41a6725cec AS buildimage
 
 ENV REPO_DIR=/app/repo
 ENV OUTPUT_DIR=/output
@@ -20,7 +20,7 @@ RUN set -eux ; \
     dart compile exe bin/srvd.dart -o ${OUTPUT_DIR}/srvd ; \
     dart compile exe bin/npevents.dart -o ${OUTPUT_DIR}/npevents
 
-FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:f6e93726f6cea3d269dfac1085d585b62559efa595315ff60e0a943f6cd8ba4c AS runtime
+FROM atsigncompany/noports_e2e_all_base_runtime:latest@sha256:f7db929a1bd44fbcdfb71ca3d4b58cbb58a197318d6b78e54647543c90879e74 AS runtime
 
 ENV USER=atsign
 ENV HOMEDIR=/${USER}
