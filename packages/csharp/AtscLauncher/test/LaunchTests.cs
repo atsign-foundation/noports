@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using Xunit;
 
 namespace AtscLauncher.Tests;
@@ -35,65 +33,41 @@ public class LaunchTests
         Assert.Equal(name, Launch.NameFromPath(path));
     }
 
-    [Fact]
-    public void TheTableHoldsTheElevenAtscSubcommands()
-    {
-        Assert.Equal(
-            new[]
-            {
-                "at_activate", "noports", "np_admin", "npevents", "npp", "npp_atserver",
-                "npp_file", "npt", "srvd", "sshnp", "sshnpd",
-            },
-            Launch.Commands);
-    }
-
-    [Fact]
-    public void TheTableMatchesAtscsOwnDispatchTable()
-    {
-        string atscDart = FindUpwards(Path.GetDirectoryName(ThisFile())!, "packages/dart/sshnoports/bin/atsc.dart");
-        string source = File.ReadAllText(atscDart);
-        int start = source.IndexOf("_commands = {", StringComparison.Ordinal);
-        Assert.True(start >= 0, $"no _commands table in {atscDart}");
-        int end = source.IndexOf("};", start, StringComparison.Ordinal);
-        Assert.True(end > start, $"no end to the _commands table in {atscDart}");
-        string[] dartNames = Regex.Matches(source.Substring(start, end - start), @"'([a-z_]+)':")
-            .Select(m => m.Groups[1].Value)
-            .OrderBy(n => n, StringComparer.Ordinal)
-            .ToArray();
-        Assert.Equal(Launch.Commands.OrderBy(n => n, StringComparer.Ordinal).ToArray(), dartNames);
-    }
-
-    [Theory]
-    [MemberData(nameof(EveryCommand))]
-    public void EveryTableNameIsAcceptedAndRunsAtscBesideIt(string command)
-    {
-        string path = $@"C:\Program Files\NoPorts\{command}.exe";
-        string? error = Launch.TryPlan(path, path, $"{command} -h", out string planned, out string atscPath, out string child);
-        Assert.Null(error);
-        Assert.Equal(command, planned);
-        Assert.Equal(AtscPath, atscPath);
-        Assert.Equal(Q($"`{AtscPath}` {command} -h"), child);
-        Assert.Matches("^[a-z_]+$", command);
-    }
-
-    public static IEnumerable<object[]> EveryCommand() => Launch.Commands.Select(c => new object[] { c });
-
     [Theory]
     [InlineData(@"C:\NoPorts\atsc.exe")]
-    [InlineData(@"C:\NoPorts\srv.exe")]
-    [InlineData(@"C:\NoPorts\sshnpdService.exe")]
-    [InlineData(@"C:\NoPorts\npt2.exe")]
-    [InlineData(@"C:\NoPorts\.exe")]
-    [InlineData(@"C:\NoPorts\npt .exe")]
-    [InlineData("C:\\NoPorts\\at_act\u0130vate.exe")]
-    [InlineData("C:\\NoPorts\\\uFF4E\uFF50\uFF54.exe")]
-    public void ANameOutsideTheTableIsRefused(string modulePath)
+    [InlineData(@"C:\NoPorts\ATSC.EXE")]
+    [InlineData(@"C:\NoPorts\atsc")]
+    public void ALauncherNamedAtscRefusesToRun(string modulePath)
     {
-        string? error = Launch.TryPlan(modulePath, modulePath, "x -d y", out _, out string atscPath, out string child);
-        Assert.NotNull(error);
-        Assert.Contains("is not a NoPorts command", error);
+        string? error = Launch.TryPlan(modulePath, modulePath, "atsc -d y", out _, out string atscPath, out string child);
+
+        Assert.Equal("a launcher named atsc.exe would run itself; name it after a NoPorts program", error);
         Assert.Equal("", atscPath);
         Assert.Equal("", child);
+    }
+
+    [Theory]
+    [InlineData("npt.exe", "npt")]
+    [InlineData("srvd.exe", "srvd")]
+    [InlineData("srv.exe", "srv")]
+    [InlineData("sshnpdService.exe", "sshnpdservice")]
+    [InlineData("npt2.exe", "npt2")]
+    [InlineData("my npt.exe", "my npt")]
+    [InlineData("npt\t.exe", "npt\t")]
+    [InlineData(".exe", "")]
+    [InlineData("--help.exe", "--help")]
+    [InlineData("at_act\u0130vate.exe", "at_act\u0130vate")]
+    [InlineData("\uFF4E\uFF50\uFF54.exe", "\uFF4E\uFF50\uFF54")]
+    public void AnyOtherNameReachesAtscAsItsFirstArgument(string fileName, string name)
+    {
+        string path = @"C:\Program Files\NoPorts\" + fileName;
+
+        string? error = Launch.TryPlan(path, path, Q("x -d `my device`"), out string command, out string atscPath, out string child);
+
+        Assert.Null(error);
+        Assert.Equal(name, command);
+        Assert.Equal(AtscPath, atscPath);
+        Assert.Equal(new[] { AtscPath, name, "-d", "my device" }, WindowsArgv.Split(child));
     }
 
     [Theory]
@@ -405,21 +379,5 @@ public class LaunchTests
         {
             Steps.Add($"terminate {exitCode}");
         }
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
-
-    private static string FindUpwards(string start, string relative)
-    {
-        for (string? dir = start; dir != null; dir = Path.GetDirectoryName(dir))
-        {
-            string candidate = Path.Combine(dir, relative);
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        throw new FileNotFoundException($"no {relative} above {start}");
     }
 }

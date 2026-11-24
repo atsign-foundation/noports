@@ -16,25 +16,9 @@ internal interface ISuspendedChild
     void Terminate(int exitCode);
 }
 
-/// <summary>Decides which atsc.exe command line a launcher named after an atsc subcommand runs.</summary>
+/// <summary>Decides the atsc.exe command line a launcher runs: its own name, then its arguments.</summary>
 internal static class Launch
 {
-    /// <summary>The atsc subcommands a launcher may be named after.</summary>
-    internal static readonly string[] Commands =
-    {
-        "at_activate",
-        "noports",
-        "np_admin",
-        "npevents",
-        "npp",
-        "npp_atserver",
-        "npp_file",
-        "npt",
-        "srvd",
-        "sshnp",
-        "sshnpd",
-    };
-
     internal const string AtscFileName = "atsc.exe";
 
     /// <summary>The exit code for the launcher's own failures, the one the Unix launchers use.</summary>
@@ -64,10 +48,9 @@ internal static class Launch
         }
 
         string name = NameFromPath(startedPath);
-        if (Array.IndexOf(Commands, name) < 0)
+        if (name == "atsc")
         {
-            return $"\"{name}\" is not a NoPorts command; this launcher must be named one of: "
-                + string.Join(", ", Commands);
+            return $"a launcher named {AtscFileName} would run itself; name it after a NoPorts program";
         }
 
         command = name;
@@ -170,7 +153,9 @@ internal static class Launch
     /// <summary>Builds the command line that runs atsc at <paramref name="atscPath"/> as <paramref name="command"/> with <paramref name="tail"/>.</summary>
     internal static string ChildCommandLine(string atscPath, string command, string tail)
     {
-        string head = "\"" + atscPath + "\" " + command;
+        // NOTE: a Windows file name holds no double quote, so quoting needs no escapes.
+        bool quote = command.Length == 0 || command.IndexOfAny(new[] { ' ', '\t' }) >= 0;
+        string head = "\"" + atscPath + "\" " + (quote ? "\"" + command + "\"" : command);
         return tail.Length == 0 ? head : head + " " + tail;
     }
 
