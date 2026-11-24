@@ -86,7 +86,7 @@ $(./sshnp -f @myclient -t @myserver -d mymachine -h @myrz -s id_ed25519.pub)
 
 Atsign provides a srvd service but if you want to run your own `srvd` you will need a machine that has an internet IP and all ports 1024-65535 unfirewalled and an atSign for the daemon to use.
 
-To run your own rendezvous service, simply run the `srvd` binary.  You may omit the manager atSign to allow all atSigns to use your rendezvous service. There are also flags like `-s` to snoop on traffic passing through the service. 
+To run your own rendezvous service, simply run the `srvd` script, which runs `atsc srvd`.  You may omit the manager atSign to allow all atSigns to use your rendezvous service. To snoop on traffic passing through the service, run `debug/srvd` with `--snoop` (`-s`): only the debug build of `atsc` has that flag. 
 ```
 ./srvd --atsign <@your_srvd_atsign> --manager <@manager_atsign> --ip <FQDN/IP address sent to clients>  
 ```

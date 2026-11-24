@@ -12,7 +12,7 @@ To upgrade, follow the [installation guide](../advanced-installation-guides/clie
 
 ### Verify the Upgrade
 
-To check the current version of sshnp installed on your machine simply execute the binary:
+To check the current version of sshnp installed on your machine simply run it:
 
 {% tabs %}
 {% tab title="Linux" %}
@@ -57,13 +57,13 @@ If you continue to get an old version number, it's likely that there's an old bi
 
 {% tabs %}
 {% tab title="Linux" %}
-First, use this command to locate the sshnp binary:
+First, use this command to locate sshnp:
 
 ```bash
 command -v sshnp
 ```
 
-The command should output the location of the binary which is on the `PATH`. Try deleting this binary then rerunning the installer.
+The command should output the location of the sshnp which is on the `PATH`. Try deleting it then rerunning the installer.
 
 ```sh
 rm "$(command -v sshnp)"
@@ -71,13 +71,13 @@ rm "$(command -v sshnp)"
 {% endtab %}
 
 {% tab title="macOS" %}
-First, use this command to locate the sshnp binary:
+First, use this command to locate sshnp:
 
 ```bash
 command -v sshnp
 ```
 
-The command should output the location of the binary which is on the `PATH`. Try deleting this binary then rerunning the installer.
+The command should output the location of the sshnp which is on the `PATH`. Try deleting it then rerunning the installer.
 
 ```sh
 rm "$(command -v sshnp)"
