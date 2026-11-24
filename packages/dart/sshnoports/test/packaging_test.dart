@@ -30,9 +30,8 @@ void main() {
   test(
       'every file the deb and rpm take is in the archive multibuild builds '
       'for Linux', () async {
-    final Map workflow =
-        loadYaml(File('../../../.github/workflows/multibuild.yaml')
-            .readAsStringSync());
+    final Map workflow = loadYaml(
+        File('../../../.github/workflows/multibuild.yaml').readAsStringSync());
     final Map job = workflow['jobs']['main_build'];
     final Map<String, bool> onLinux = {
       "\${{ matrix.platform != 'windows' }}": true,
@@ -144,11 +143,11 @@ void main() {
       multiLine: true,
       dotAll: true,
     ).firstMatch(universal)!.group(1)!;
-    final List<String> removed = RegExp(r'^ *binaries="([^"]*)"$',
-            multiLine: true)
-        .firstMatch(cleanup)!
-        .group(1)!
-        .split(' ');
+    final List<String> removed =
+        RegExp(r'^ *binaries="([^"]*)"$', multiLine: true)
+            .firstMatch(cleanup)!
+            .group(1)!
+            .split(' ');
     final String install =
         File(path.join('bundles', 'shell', 'install.sh')).readAsStringSync();
     final Set<String> installed = {

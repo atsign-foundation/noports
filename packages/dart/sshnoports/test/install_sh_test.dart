@@ -62,8 +62,7 @@ void main() {
         environment: {
           'HOME': home.path,
           'USER': 'tester',
-          'PATH':
-              searchPath ?? '${shims.path}:${Platform.environment['PATH']}',
+          'PATH': searchPath ?? '${shims.path}:${Platform.environment['PATH']}',
         },
         includeParentEnvironment: false,
       );
@@ -71,7 +70,8 @@ void main() {
   /// Runs install.sh as root would run it, with `id` and `uname` shims, into
   /// [prefix] with [args].
   Future<ProcessResult> installAsRoot(List<String> args, {String? umask}) {
-    shim('id', 'if [ "\$1" = -u ]; then echo 0; else exec /usr/bin/id "\$@"; fi\n');
+    shim('id',
+        'if [ "\$1" = -u ]; then echo 0; else exec /usr/bin/id "\$@"; fi\n');
     shim('uname', 'echo Linux\n');
     return install(['-b', prefix.path, ...args], umask: umask ?? '022');
   }

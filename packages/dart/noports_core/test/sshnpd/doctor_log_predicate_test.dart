@@ -13,8 +13,7 @@ void main() {
   final bool hasCompiler =
       Process.runSync('cc', ['--version'], runInShell: true).exitCode == 0;
 
-  test(
-      "the doctor's macOS log predicate finds sshnpd run as atsc, or under "
+  test("the doctor's macOS log predicate finds sshnpd run as atsc, or under "
       'its own name', () async {
     final Directory dir = Directory(
       Directory.systemTemp
