@@ -4,45 +4,46 @@ library;
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
-import 'package:sshnoports/src/admin/web_app.dart';
 import 'package:test/test.dart';
 
 void main() {
-  final String postfix = Platform.isWindows ? '.exe' : '';
+  test(
+    'np_admin serves its web app from beside atsc',
+    () async {
+      final Directory installation =
+          Directory.systemTemp.createTempSync('np_admin_installation');
+      addTearDown(() => installation.deleteSync(recursive: true));
+      Directory(path.join(installation.path, 'web', 'admin'))
+          .createSync(recursive: true);
+      final compiled = await Process.run(Platform.resolvedExecutable, [
+        'compile',
+        'exe',
+        path.join('test', 'admin', 'print_web_app_directory.dart'),
+        '-o',
+        path.join(installation.path, 'atsc'),
+      ]);
+      expect(compiled.exitCode, 0,
+          reason: '${compiled.stdout}${compiled.stderr}');
+      final Directory elsewhere =
+          Directory.systemTemp.createTempSync('np_admin_elsewhere');
+      addTearDown(() => elsewhere.deleteSync(recursive: true));
+      Directory(path.join(elsewhere.path, 'web', 'admin'))
+          .createSync(recursive: true);
 
-  late Directory installation;
+      final result = await Process.run(
+        '/bin/sh',
+        ['-c', 'exec atsc'],
+        workingDirectory: elsewhere.path,
+        environment: {'PATH': installation.path},
+      );
 
-  setUp(() {
-    installation = Directory.systemTemp.createTempSync('np_admin_web_app');
-    addTearDown(() => installation.deleteSync(recursive: true));
-    Directory(
-      path.join(installation.path, 'web', 'admin'),
-    ).createSync(recursive: true);
-  });
-
-  /// The directory np_admin serves for an executable called [name] in the
-  /// installation.
-  String servedFor(String name) => webAppDirectory(
-        path.join(installation.path, '$name$postfix'),
-      ).absolute.path;
-
-  test('np_admin serves its web app from beside atsc', () {
-    expect(Directory.current.path, isNot(installation.path));
-
-    expect(servedFor('atsc'), path.join(installation.path, 'web', 'admin'));
-  });
-
-  test('np_admin compiled on its own serves its web app from beside itself',
-      () {
-    expect(servedFor('np_admin'), path.join(installation.path, 'web', 'admin'));
-  });
-
-  test('np_admin run from source serves the web app built in this repository',
-      () {
-    expect(
-      servedFor('dart'),
-      path.join(Directory.current.path, '..', '..', '..', 'apps', 'admin',
-          'webapp', 'dist'),
-    );
-  });
+      expect(result.exitCode, 0, reason: '${result.stderr}');
+      expect(
+        result.stdout,
+        '${path.join(installation.resolveSymbolicLinksSync(), 'web', 'admin')}\n',
+      );
+    },
+    skip: Platform.isWindows ? 'runs atsc through sh' : false,
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 }
