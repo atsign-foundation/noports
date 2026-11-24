@@ -136,6 +136,10 @@ install_single_binary() {
   fi
   mkdir -p "$dest"
   if cmp -s "$src" "$dest/$1"; then
+    if ! chmod 755 "$dest/$1"; then
+      echo "Failed to make $dest/$1 readable and executable by all - aborting"
+      exit 1
+    fi
     echo "=> $dest/$1 is already up to date"
   else
     replace_binary "$1"
@@ -148,7 +152,6 @@ install_single_binary() {
     if [ -f "$dest/$1" ]; then
       ln -sf "$dest/$1" "$user_bin_dir/$1"
       chown root:wheel "$dest/$1" 2>/dev/null || chown root:root "$dest/$1" 2>/dev/null || chown root "$dest/$1" 2>/dev/null
-      chmod o+x "$dest/$1"
 
       echo "=> Linked $user_bin_dir/$1 to $dest/$1"
     else
@@ -158,25 +161,28 @@ install_single_binary() {
   fi
 }
 
+# Installs $src as $dest/$1 by copying it into $dest and renaming the copy
+# over $dest/$1, after keeping a copy of the file it replaces as $1.old.
 replace_binary() {
-  if test -f "$dest/$1"; then
-    if test -f "$dest/$1.old"; then
-      if rm -f "$dest/$1.old"; then
-        echo "=> Removed $dest/$1.old"
-      else
-        echo "Failed to remove $dest/$1.old - aborting"
-        exit 1
-      fi
-    fi
-    if mv "$dest/$1" "$dest/$1.old"; then
-      echo "=> Renamed existing binary $dest/$1 to $dest/$1.old"
-    else
-      echo "Failed to rename $dest/$1 to $dest/$1.old - aborting"
+  new="$dest/.$1.new.$$"
+  if ! cp -f "$src" "$new" || ! chmod 755 "$new"; then
+    rm -f "$new"
+    echo "Failed to copy $src to $dest - aborting, $dest/$1 is unchanged"
+    exit 1
+  fi
+  if [ -f "$dest/$1" ]; then
+    if ! rm -f "$dest/$1.old" || ! cp -p "$dest/$1" "$dest/$1.old"; then
+      rm -f "$new"
+      echo "Failed to copy $dest/$1 to $dest/$1.old - aborting, $dest/$1 is unchanged"
       exit 1
     fi
+    echo "=> Copied existing binary $dest/$1 to $dest/$1.old"
   fi
-  cp -f "$src" "$dest/$1"
-
+  if ! mv -f "$new" "$dest/$1"; then
+    rm -f "$new"
+    echo "Failed to rename $new to $dest/$1 - aborting, $dest/$1 is unchanged"
+    exit 1
+  fi
   echo "=> Installed $1 to $dest"
 }
 
