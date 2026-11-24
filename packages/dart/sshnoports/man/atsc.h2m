@@ -1,0 +1,14 @@
+[NAME]
+atsc \- NoPorts command-line programs in one binary
+[EXAMPLES]
+.nf
+atsc sshnpd -a @alice_device -m @alice_client -d my_server
+atsc npt --help
+.fi
+[SEE ALSO]
+at_activate(1), noports(1), np_admin(1), npevents(1), npp(1),
+npp_atserver(1), npp_file(1), npt(1), srv(1), srvd(1), sshnp(1), sshnpd(1)
+.PP
+Full documentation at <https://docs.noports.com/>
+[REPORTING BUGS]
+Report bugs at <https://github.com/atsign-foundation/noports/issues>
