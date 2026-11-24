@@ -20,7 +20,7 @@ class ServiceStatusCheck extends DiagnosticCheck {
     final serviceName = 'sshnpd';
 
     // 1. Check Process (Is the binary executing?)
-    bool processRunning = await _platform.isProcessRunning(serviceName);
+    bool processRunning = await _platform.isDaemonRunning(serviceName);
 
     // 2. Check Service (Is it registered with systemd/launchd/Windows Service?)
     bool serviceInstalled = await _platform.isServiceInstalled(serviceName);

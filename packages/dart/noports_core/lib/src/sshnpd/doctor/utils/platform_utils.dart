@@ -52,9 +52,10 @@ abstract class PlatformUtils {
   /// Check if a command is available (e.g. 'curl', 'ssh')
   Future<bool> isCommandAvailable(String command);
 
-  /// Whether another process runs the daemon [processName], as
-  /// `processName ...` or `atsc processName ...`, other than a `--doctor` run.
-  Future<bool> isProcessRunning(String processName);
+  /// Whether another process runs the daemon [daemonName], as
+  /// `daemonName ...` or `atsc daemonName ...`, other than a `--doctor` run;
+  /// a run from source, such as `dart run bin/sshnpd.dart`, is not counted.
+  Future<bool> isDaemonRunning(String daemonName);
 
   /// Get list of potential config file paths
   List<String> getPotentialConfigPaths();
@@ -93,7 +94,7 @@ class MacOSUtils implements PlatformUtils {
   }
 
   @override
-  Future<bool> isProcessRunning(String processName) async {
+  Future<bool> isDaemonRunning(String daemonName) async {
     final names = await Process.run(
       macOSCommandNameListing.first,
       macOSCommandNameListing.sublist(1),
@@ -104,7 +105,7 @@ class MacOSUtils implements PlatformUtils {
     );
     return isDaemonListed(
       parsePsListing(names.stdout.toString(), arguments.stdout.toString()),
-      processName,
+      daemonName,
       selfPid: pid,
       windows: false,
     );
@@ -250,10 +251,10 @@ class LinuxUtils implements PlatformUtils {
   }
 
   @override
-  Future<bool> isProcessRunning(String processName) async {
+  Future<bool> isDaemonRunning(String daemonName) async {
     return isDaemonListed(
       await listProcDirectory(Directory(linuxProcDirectory)),
-      processName,
+      daemonName,
       selfPid: pid,
       windows: false,
     );
@@ -366,17 +367,14 @@ class WindowsUtils implements PlatformUtils {
   }
 
   @override
-  Future<bool> isProcessRunning(String processName) async {
-    final result = await Process.run('powershell', [
-      '-NoProfile',
-      '-NonInteractive',
-      '-Command',
-      'ConvertTo-Json -Compress -InputObject @(Get-CimInstance'
-          ' -ClassName Win32_Process | Select-Object ProcessId, Name, CommandLine)',
-    ]);
+  Future<bool> isDaemonRunning(String daemonName) async {
+    final result = await Process.run(
+      windowsProcessListing.first,
+      windowsProcessListing.sublist(1),
+    );
     return isDaemonListed(
       parseWin32ProcessListing(result.stdout.toString()),
-      processName,
+      daemonName,
       selfPid: pid,
       windows: true,
     );

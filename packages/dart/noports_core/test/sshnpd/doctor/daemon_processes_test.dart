@@ -157,6 +157,7 @@ void main() {
             (6004, ['/bin/bash', '/home/u/.local/bin/sshnpd.sh']),
             (6005, ['/usr/bin/atsc', 'npt', '-t', '@device', '-d', 'sshnpd']),
             (6006, ['/usr/bin/sshnpd-helper', '-a', '@device']),
+            (6007, ['dart', 'run', 'bin/sshnpd.dart', '-a', '@device']),
           ]),
           isFalse,
           reason: 'only the program position names the daemon',
@@ -417,7 +418,7 @@ void main() {
     });
   });
 
-  group('Given PowerShell output as Windows PowerShell 5.1 prints it', () {
+  group('Given a Win32_Process JSON listing', () {
     test('when it is parsed, then each process keeps its pid and arguments', () {
       const output =
           '[{"ProcessId":0,"Name":"System Idle Process",'
@@ -454,5 +455,24 @@ void main() {
         expect(parseWin32ProcessListing(output), isEmpty, reason: output);
       }
     });
+  });
+
+  group('Given the platform listing commands', () {
+    test(
+      'when they are read, then they are the commands the parsers expect',
+      () {
+        expect(linuxProcDirectory, '/proc');
+        expect(macOSCommandNameListing, ['ps', '-A', '-o', 'pid=,comm=']);
+        expect(macOSArgumentsListing, ['ps', '-A', '-o', 'pid=,args=']);
+        expect(windowsProcessListing, [
+          'powershell',
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          'ConvertTo-Json -Compress -InputObject @(Get-CimInstance -ClassName'
+              ' Win32_Process | Select-Object ProcessId, Name, CommandLine)',
+        ]);
+      },
+    );
   });
 }

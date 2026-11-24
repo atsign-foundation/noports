@@ -16,7 +16,9 @@ class ListedProcess {
 /// daemon [name] as `name ...` or `atsc name ...` without `--doctor`.
 ///
 /// The program is the first argument with its directory removed; on
-/// [windows] it is compared ignoring case and any `.exe` suffix.
+/// [windows] it is compared ignoring case and any `.exe` suffix. A run from
+/// source, such as `dart run bin/sshnpd.dart`, is not counted: its program
+/// is `dart`.
 bool isDaemonListed(
   Iterable<ListedProcess> processes,
   String name, {
@@ -58,6 +60,17 @@ const macOSCommandNameListing = ['ps', '-A', '-o', 'pid=,comm='];
 /// The macOS command listing each process's pid and arguments joined by
 /// spaces.
 const macOSArgumentsListing = ['ps', '-A', '-o', 'pid=,args='];
+
+/// The Windows command listing each process's pid, image name and command
+/// line as a JSON array.
+const windowsProcessListing = [
+  'powershell',
+  '-NoProfile',
+  '-NonInteractive',
+  '-Command',
+  'ConvertTo-Json -Compress -InputObject @(Get-CimInstance'
+      ' -ClassName Win32_Process | Select-Object ProcessId, Name, CommandLine)',
+];
 
 /// Lists the processes in [proc], laid out as Linux's `/proc`, each by the
 /// exact arguments in its NUL-separated `cmdline`; a process that exits or

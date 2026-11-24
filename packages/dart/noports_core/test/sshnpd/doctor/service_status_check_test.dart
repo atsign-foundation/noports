@@ -14,7 +14,7 @@ Future<CheckResult> runCheck({
 }) {
   final platform = MockPlatformUtils();
   when(
-    () => platform.isProcessRunning('sshnpd'),
+    () => platform.isDaemonRunning('sshnpd'),
   ).thenAnswer((_) async => processVisible);
   when(
     () => platform.isServiceInstalled('sshnpd'),
