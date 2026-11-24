@@ -32,7 +32,6 @@ Future<void> main(List<String> args) async {
     exit(0);
   }
   if (args.isNotEmpty && args[0] == '--version') {
-    binaryName = 'atsc';
     printVersion();
     exit(0);
   }
