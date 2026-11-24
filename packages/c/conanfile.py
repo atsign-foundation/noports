@@ -44,8 +44,8 @@ class at_cRecipe(ConanFile):
         tc.generate()
 
     def requirements(self):
-        self.requires("at_c/0.4.3")
-        self.requires("mbedtls/3.6.7", override=True)
+        self.requires("at_c/0.4.4")
+        self.requires("mbedtls/3.6.8", override=True)
         self.requires("libcurl/8.23.0")
 
     def configure(self):
