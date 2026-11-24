@@ -116,5 +116,44 @@ void main() {
       final run = await Process.run(path.join(prefix.path, 'debug_srvd'), []);
       expect(run.stdout, 'debug atsc\n[srvd]\n');
     });
+
+    test('a missing ~/.profile is created with ~/.local/bin on its PATH',
+        () async {
+      final result = await install(['-b', prefix.path, 'npt']);
+
+      expect(result.stderr, isEmpty);
+      expect(
+        File(path.join(home.path, '.profile')).readAsStringSync(),
+        'PATH="\$PATH:\$HOME/.local/bin"\n',
+      );
+    });
+
+    test('a ~/.profile that puts ~/.local/bin on the PATH is left alone',
+        () async {
+      final profile = File(path.join(home.path, '.profile'))
+        ..writeAsStringSync('export PATH="\$HOME/.local/bin:\$PATH"\n');
+
+      final result = await install(['-b', prefix.path, 'npt']);
+
+      expect(result.stderr, isEmpty);
+      expect(
+        profile.readAsStringSync(),
+        'export PATH="\$HOME/.local/bin:\$PATH"\n',
+      );
+    });
+
+    test('a ~/.profile without ~/.local/bin on the PATH has it added',
+        () async {
+      final profile = File(path.join(home.path, '.profile'))
+        ..writeAsStringSync('umask 022\n');
+
+      final result = await install(['-b', prefix.path, 'npt']);
+
+      expect(result.stderr, isEmpty);
+      expect(
+        profile.readAsStringSync(),
+        'umask 022\nPATH="\$PATH:\$HOME/.local/bin"\n',
+      );
+    });
   }, skip: isRoot ? 'install.sh installs differently as root' : false);
 }

@@ -522,11 +522,12 @@ tmux() {
 }
 
 add_home_local_bin_to_path() {
-  if grep 'PATH=' <"$user_home/.profile" | grep -q -e "$user_home/.local/bin" -e '$HOME/.local/bin'; then
+  if [ -f "$user_home/.profile" ] &&
+    grep 'PATH=' <"$user_home/.profile" | grep -q -e "$user_home/.local/bin" -e '$HOME/.local/bin'; then
     return 0
   fi
 
-  if ! [ -d "$user_home/.profile" ]; then
+  if ! [ -f "$user_home/.profile" ]; then
     touch "$user_home/.profile"
     chown $user:$user "$user_home/.profile" 2>/dev/null || chown $user "$user_home/.profile" 2>/dev/null
   fi
