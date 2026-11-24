@@ -124,11 +124,13 @@ void main() {
     executable(atsc);
     final process = await Process.start(install(installation, 'sshnpd'), []);
     addTearDown(() => process.kill(ProcessSignal.sigkill));
-    for (int i = 0; i < 200 && !File(pidFile).existsSync(); i++) {
+    String pid = '';
+    for (int i = 0; i < 200 && !pid.endsWith('\n'); i++) {
       await Future.delayed(Duration(milliseconds: 50));
+      if (File(pidFile).existsSync()) pid = File(pidFile).readAsStringSync();
     }
 
-    expect(int.parse(File(pidFile).readAsStringSync().trim()), process.pid);
+    expect(int.parse(pid.trim()), process.pid);
     final String running = Process.runSync('ps', [
       '-o',
       'args=',
