@@ -9,23 +9,11 @@ import 'package:path/path.dart' as path;
 import 'package:sshnoports/src/version.dart' as binaries;
 import 'package:test/test.dart';
 
-/// Every program atsc runs as a subcommand.
-const List<String> subcommands = [
-  'at_activate',
-  'noports',
-  'np_admin',
-  'npevents',
-  'npp',
-  'npp_atserver',
-  'npp_file',
-  'npt',
-  'srvd',
-  'sshnp',
-  'sshnpd',
-];
+import 'subcommands.dart';
 
 void main() {
   late Directory snapshots;
+  late Directory installation;
 
   /// Compiles bin/[name].dart to a kernel snapshot called [name].dill, from
   /// whose name the program derives its own, as a compiled binary does.
@@ -46,6 +34,10 @@ void main() {
         [path.join(snapshots.path, '$name.dill'), ...args],
       );
 
+  /// Runs the old name [name] from the installation with [args].
+  Future<ProcessResult> runOldName(String name, List<String> args) =>
+      Process.run(path.join(installation.path, name), args);
+
   /// What `--version` prints for the program called [name].
   String versionOf(String name) =>
       '$name ${binaries.packageVersion} (core ${core.packageVersion})\n';
@@ -61,9 +53,25 @@ void main() {
 
   setUpAll(() async {
     snapshots = Directory.systemTemp.createTempSync('atsc_test');
-    for (final String name in ['atsc', 'srv', ...subcommands]) {
+    for (final String name in ['atsc', 'srv', 'npt']) {
       await compile(name);
     }
+    if (Platform.isWindows) return;
+    installation = Directory(path.join(snapshots.path, 'installation'))
+      ..createSync();
+    File(path.join(installation.path, 'atsc')).writeAsStringSync(
+      "#!/bin/sh\nexec '${Platform.resolvedExecutable}'"
+      " '${path.join(snapshots.path, 'atsc.dill')}' \"\$@\"\n",
+    );
+    for (final String name in subcommands) {
+      File(path.join('launchers', name))
+          .copySync(path.join(installation.path, name));
+    }
+    final chmod = await Process.run('chmod', [
+      '+x',
+      ...['atsc', ...subcommands].map((n) => path.join(installation.path, n)),
+    ]);
+    expect(chmod.exitCode, 0, reason: '${chmod.stderr}');
   });
 
   tearDownAll(() => snapshots.deleteSync(recursive: true));
@@ -72,16 +80,25 @@ void main() {
     for (final String program in subcommands) {
       test(program, () async {
         final viaAtsc = await run('atsc', [program, '--help']);
-        final direct = await run(program, ['--help']);
+        final oldName = await runOldName(program, ['--help']);
 
-        expect('${direct.stdout}${direct.stderr}', isNotEmpty);
-        expect(viaAtsc.stdout, direct.stdout);
-        expect(viaAtsc.stderr, direct.stderr);
-        expect(direct.exitCode, 0);
+        expect('${viaAtsc.stdout}${viaAtsc.stderr}', isNotEmpty);
+        expect(oldName.stdout, viaAtsc.stdout);
+        expect(oldName.stderr, viaAtsc.stderr);
         expect(viaAtsc.exitCode, 0);
+        expect(oldName.exitCode, 0);
       });
     }
-  });
+  }, testOn: '!windows');
+
+  test("an old name exits with the program's exit code", () async {
+    final oldName = await runOldName('npt', ['--no-such-option']);
+    final viaAtsc = await run('atsc', ['npt', '--no-such-option']);
+
+    expect(viaAtsc.exitCode, isNot(0));
+    expect(oldName.exitCode, viaAtsc.exitCode);
+    expect(oldName.stderr, viaAtsc.stderr);
+  }, testOn: '!windows');
 
   test('a program names itself by its old name', () async {
     final version = await run('atsc', ['npt', '--version']);
