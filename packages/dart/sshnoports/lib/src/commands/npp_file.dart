@@ -11,7 +11,8 @@ import 'package:yaml/yaml.dart';
 const String _description =
     'NoPorts policy service which reads its policy data from a YAML file.';
 
-void main(List<String> args) async {
+/// Runs npp_file with the command-line arguments [args].
+Future<void> main(List<String> args) async {
   ArgParser parser = NPAParams.parser;
   parser.addOption(
     'yaml',

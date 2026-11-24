@@ -11,7 +11,8 @@ const String _description =
     'NoPorts SSH daemon: accepts SSH sessions from authorized NoPorts'
     ' clients without this device having any open ports.';
 
-void main(List<String> args) async {
+/// Runs sshnpd with the command-line arguments [args].
+Future<void> main(List<String> args) async {
   AtSignLogger.root_level = 'SEVERE';
   AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
   late final Sshnpd sshnpd;

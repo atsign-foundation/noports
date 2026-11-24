@@ -27,6 +27,7 @@ enum NoPortsCommand {
   }
 }
 
+/// Runs noports with the command-line arguments [args].
 Future<void> main(List<String> args) async {
   // Don't emit ANSI escape sequences when output is not going to a terminal,
   // e.g. when help2man is generating man pages from the --help output.

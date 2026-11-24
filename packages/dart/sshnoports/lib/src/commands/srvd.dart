@@ -12,7 +12,8 @@ const String _description =
     'NoPorts relay daemon: the rendezvous service via which NoPorts clients'
     ' and daemons exchange end-to-end encrypted traffic.';
 
-void main(List<String> args) async {
+/// Runs srvd with the command-line arguments [args].
+Future<void> main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
   Srvd? srvd;

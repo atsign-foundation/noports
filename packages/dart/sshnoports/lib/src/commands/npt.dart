@@ -20,7 +20,8 @@ const String _description =
     'NoPorts TCP client: opens an encrypted TCP tunnel to a service on a'
     ' remote device which has no open ports.';
 
-void main(List<String> args) async {
+/// Runs npt with the command-line arguments [args].
+Future<void> main(List<String> args) async {
   const int keepAliveDefaultTimeoutHours = 24;
   const int neverTimeoutDays = 365;
 

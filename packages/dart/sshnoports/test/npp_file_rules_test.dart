@@ -1,8 +1,7 @@
 import 'package:at_client/at_client.dart';
+import 'package:sshnoports/src/commands/npp_file.dart' show FileBasedPolicy;
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
-
-import '../bin/npp_file.dart' show FileBasedPolicy;
 
 void main() {
   group('Given npp_file rules', () {

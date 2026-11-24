@@ -15,7 +15,8 @@ const String _description =
     'NoPorts policy service which stores its policy data on the policy'
     " atSign's atServer.";
 
-void main(List<String> args) async {
+/// Runs npp_atserver with the command-line arguments [args].
+Future<void> main(List<String> args) async {
   try {
     final parsedArgs = NPAParams.parser.parse(args);
     if (parsedArgs['help'] == true) {

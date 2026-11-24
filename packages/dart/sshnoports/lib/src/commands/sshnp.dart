@@ -23,7 +23,8 @@ const String _description =
     'NoPorts SSH client: opens an SSH session to a remote device which has'
     ' no open ports.';
 
-void main(List<String> args) async {
+/// Runs sshnp with the command-line arguments [args].
+Future<void> main(List<String> args) async {
   AtSignLogger.root_level = 'SHOUT';
   AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
 

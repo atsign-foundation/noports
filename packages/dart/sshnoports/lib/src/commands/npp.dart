@@ -16,6 +16,7 @@ const String _description =
     'NoPorts policy service: makes authorization decisions for NoPorts'
     ' daemons which delegate access control to a policy atSign.';
 
+/// Runs npp with the command-line arguments [args].
 Future<void> main(List<String> args) async {
   // 1. Parse if --help or --version was called
   try {

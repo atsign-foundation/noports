@@ -21,7 +21,7 @@ const String _description =
 /// Minimal implementation of a NoPorts session events listener.
 ///
 /// Listens for NoPorts session events, writes to stdout
-void main(List<String> args) async {
+Future<void> main(List<String> args) async {
   AtSignLogger.defaultLoggingHandler = StdErrLoggingHandler();
 
   ArgParser parser = CLIBase.createArgsParser(namespace: DefaultArgs.namespace);
