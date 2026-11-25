@@ -607,6 +607,42 @@ void main() {
           expect(File(job).existsSync(), isTrue, reason: '$user');
         }
       });
+
+      test(
+          'when it installs a headless or tmux job, then the job runs the '
+          'programs from the directory they were installed into', () async {
+        await expectShimsFirst();
+        final String jobs = path.join(home.path, '.local', 'bin');
+
+        for (final (String kind, String job, List<String> into, String dir) in [
+          ('headless', 'sshnpd', <String>[], jobs),
+          ('headless', 'srvd', ['-b', prefix.path], prefix.path),
+          ('tmux', 'sshnpd', ['-b', 'prefix'], prefix.path),
+          ('tmux', 'srvd', <String>[], jobs),
+        ]) {
+          final String script = path.join(jobs, '$job.sh');
+          for (final File file in [File(script), crontab]) {
+            if (file.existsSync()) file.deleteSync();
+          }
+
+          final result = await install(
+            [...into, kind, job],
+            workingDirectory: root.path,
+          );
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$kind $job $into: ${result.stdout}${result.stderr}',
+          );
+          expect(File(path.join(dir, job)).existsSync(), isTrue);
+          expect(
+            File(script).readAsLinesSync(),
+            contains('binary_path="$dir"'),
+            reason: '$kind $job $into',
+          );
+        }
+      });
     });
 
     group('Given links left in the chosen directory by an earlier root install',

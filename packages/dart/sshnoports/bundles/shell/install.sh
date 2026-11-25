@@ -400,6 +400,11 @@ post_headless_message() {
   echo "or use a cron job to call logrotate on these log files if systemd is not available"
 }
 
+# Points the job script $1 at the directory the programs were installed into.
+set_binary_path() {
+  sedi "s|^binary_path=\".*\"$|binary_path=\"$(CDPATH='' cd -- "$(install_dir)" && pwd)\"|g" "$1"
+}
+
 install_headless_job() {
   job_name=$1
   mkdir -p "$user_bin_dir"
@@ -408,9 +413,7 @@ install_headless_job() {
   dest="$user_bin_dir/$job_name.sh"
   if ! [ -f "$dest" ]; then
     cp "$script_dir/headless/$job_name.sh" "$dest"
-    if is_root; then
-      sedi "s|^binary_path=\".*\"$|binary_path=\"$bin_dir\"|g" "$dest"
-    fi
+    set_binary_path "$dest"
   fi
 
   log_file="$user_sshnpd_dir/logs/$job_name.log"
@@ -491,9 +494,7 @@ install_tmux_service() {
   # Only copy the "$service_name".sh script if it's not already there
   if ! [ -f "$dest" ]; then
     cp "$script_dir/headless/$service_name.sh" "$dest"
-    if is_root; then
-      sedi "s|^binary_path=\".*\"$|binary_path=\"$bin_dir\"|g" "$dest"
-    fi
+    set_binary_path "$dest"
   fi
 
   command="tmux new-session -d -s $service_name && tmux send-keys -t $service_name $dest C-m"
