@@ -2168,7 +2168,8 @@ void main() {
         final again = await install(['headless', 'sshnpd']);
 
         expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
-        expect(again.stdout, contains('=> Stopped the running sshnpd.sh job\n'));
+        expect(
+            again.stdout, contains('=> Stopped the running sshnpd.sh job\n'));
         expect(
           await started.first.exitCode.timeout(const Duration(seconds: 5)),
           -ProcessSignal.sigterm.signalNumber,
@@ -2199,7 +2200,8 @@ void main() {
         const String firstSleep =
             'sleep 10 # allow machine to bring up network\n';
         expect(firstSleep.allMatches(source).length, 1);
-        template.writeAsStringSync(source.replaceFirst(firstSleep, 'sleep 0\n'));
+        template
+            .writeAsStringSync(source.replaceFirst(firstSleep, 'sleep 0\n'));
         File(path.join(bundle.path, 'atsc')).writeAsStringSync(
           '#!/bin/sh\n'
           'if [ "\$1" = sshnpd ]; then while :; do sleep 1; done; fi\n'
@@ -2320,7 +2322,8 @@ void main() {
           );
         }
         expect(again.stdout, contains('=> Installing cron job: @reboot '));
-        expect(again.stdout, contains('=> Stopped the running sshnpd.sh job\n'));
+        expect(
+            again.stdout, contains('=> Stopped the running sshnpd.sh job\n'));
       });
     });
 
