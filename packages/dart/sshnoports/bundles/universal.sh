@@ -197,7 +197,8 @@ parse_env() {
   *)
     >&2 echo "Detected an unsupported platform: $(uname)"
     >&2 echo "Please open an issue at: $repo_url"
-    >&2 echo "and provide the following information: $(uname -a)" exit 1
+    >&2 echo "and provide the following information: $(uname -a)"
+    exit 1
     ;;
   esac
 
@@ -334,7 +335,8 @@ parse_args() {
       install_type=$(norm_install_type "$install_type_input")
       if ! is_valid_install_type "$install_type"; then
         >&2 echo "Invalid install type: $install_type_input"
-        >&2 echo "Valid options are: (device, client)" exit 1
+        >&2 echo "Valid options are: (device, client)"
+        exit 1
       fi
       ;;
     --local)
@@ -383,7 +385,8 @@ parse_args() {
       device_type=$(norm_device_type "$device_type_input")
       if ! is_valid_device_type "$device_type"; then
         >&2 echo "Invalid device type: $device_type_input"
-        >&2 echo "Valid options are: (launchd, systemd, tmux, headless)" exit 1
+        >&2 echo "Valid options are: (launchd, systemd, tmux, headless)"
+        exit 1
       fi
       ;;
     --no-sudo)
