@@ -163,8 +163,9 @@ check_job_paths() {
   if [ -n "$in_sshnpd" ]; then
     echo "$in_sshnpd"
   fi
-  echo "To clean up an earlier install, first have an admin remove its root cron job with:"
+  echo "To clean up an earlier install, first have an admin remove its root cron job and stop it with:"
   echo "  sudo sh -c 'crontab -l | grep -v -F -- \"\$1\" | crontab -' sh $(quote "$script")"
+  printf '%s\n' "  sudo sh -c 'for p in \$(pgrep -u 0 -f -- \"^[^ ]*sh \$1\\\$\"); do pkill -P \"\$p\"; kill \"\$p\"; done' sh $(quote "$(ere "$script")")"
   echo "then move these aside and copy them back, as $account, with:"
   top=$(first_not_owned "$user_home/.local" "$user_bin_dir")
   if [ -n "$top" ]; then
@@ -230,6 +231,12 @@ usage() {
 # Prints $1 quoted for the shell.
 quote() {
   printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
+}
+
+# Prints $1 with a backslash before each character that is special in an
+# extended regular expression.
+ere() {
+  printf '%s\n' "$1" | sed 's/[[\.*^$+?(){|]/\\&/g'
 }
 
 setup_authorized_keys() {

@@ -18,6 +18,8 @@ A headless or tmux job runs as the user who installs it, so `./install.sh headle
 
 ```sh
 sudo sh -c 'crontab -l | grep -v -F -- "$1" | crontab -' sh "$HOME/.local/bin/sshnpd.sh"
+script=$(printf '%s\n' "$HOME/.local/bin/sshnpd.sh" | sed 's/[[\.*^$+?(){|]/\\&/g')
+sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do pkill -P "$p"; kill "$p"; done' sh "$script"
 mv "$HOME/.local" "$HOME/.local.old" && cp -R "$HOME/.local.old" "$HOME/.local"
 mv "$HOME/.sshnpd" "$HOME/.sshnpd.old" && cp -R "$HOME/.sshnpd.old" "$HOME/.sshnpd"
 ```
@@ -25,16 +27,19 @@ mv "$HOME/.sshnpd" "$HOME/.sshnpd.old" && cp -R "$HOME/.sshnpd.old" "$HOME/.sshn
 Run them as the user who will run the daemon:
 
 * the first, which needs an admin who can use `sudo`, removes the job's line from root's crontab;
+* the next two stop the job that root started from that line, and the sshnpd it runs: the `script=` line writes the job script's path as a pattern that matches only that path, and the `sudo` line stops each root process running that script, and its child, leaving your own processes alone (the installer prints this step with the pattern written out);
 * the others move each directory aside and copy it back, so that you own the copy (a tmux job has no `~/.sshnpd`, so leave that line out).
 
 When only `~/.local/bin`, the job script or `~/.sshnpd/logs` belongs to root, the installer prints the same steps for that path instead, and when a `.old` name is taken it uses the next free one, such as `.old.2`. Then run the installer again.
 
 ### Headless or tmux jobs installed with universal.sh and sudo
 
-If you installed a headless or tmux job by running an earlier `universal.sh` with `sudo` on a host without systemd, the job is started from root's crontab, and the installer cannot see that line. Before you run the installer, remove it as the user who will run the daemon:
+If you installed a headless or tmux job by running an earlier `universal.sh` with `sudo` on a host without systemd, the job is started from root's crontab, and the installer cannot see that line. Before you run the installer, remove that line and stop the job root started from it, as the user who will run the daemon:
 
 ```sh
 sudo sh -c 'crontab -l | grep -v -F -- "$1" | crontab -' sh "$HOME/.local/bin/sshnpd.sh"
+script=$(printf '%s\n' "$HOME/.local/bin/sshnpd.sh" | sed 's/[[\.*^$+?(){|]/\\&/g')
+sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do pkill -P "$p"; kill "$p"; done' sh "$script"
 ```
 
 Then run the installer without `sudo`.

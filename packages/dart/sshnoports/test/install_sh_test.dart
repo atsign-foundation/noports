@@ -85,6 +85,17 @@ void main() {
   /// The commands the shims were run with, in order.
   List<String> callsMade() => calls.existsSync() ? calls.readAsLinesSync() : [];
 
+  /// The step that stops an earlier root job, up to the quoted pattern for
+  /// its script.
+  const String stopStep = r"""  sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do pkill -P "$p"; kill "$p"; done' sh '""";
+
+  /// [text] with a backslash before each character that is special in an
+  /// extended regular expression.
+  String ereEscaped(String text) => text.replaceAllMapped(
+        RegExp(r'[\[\\.*^$+?(){|]'),
+        (Match match) => '\\${match[0]}',
+      );
+
   /// Writes [entries] as the passwd file that install.sh reads.
   void passwd(String entries) =>
       File(path.join(root.path, 'passwd')).writeAsStringSync(entries);
@@ -1804,9 +1815,10 @@ void main() {
             'not own:\n'
             '${listed.map((String p) => '  $p\n').join()}'
             'To clean up an earlier install, first have an admin remove its '
-            'root cron job with:\n'
+            'root cron job and stop it with:\n'
             "  sudo sh -c 'crontab -l | grep -v -F -- \"\$1\" | crontab -' sh "
             "'$script'\n"
+            '$stopStep${ereEscaped(script)}\'\n'
             'then move these aside and copy them back, as $account, with:\n'
             '$moves'
             'and run install.sh again.\n',
@@ -1817,6 +1829,54 @@ void main() {
           expect(changes(homeBefore, snapshot(home)), isEmpty, reason: reason);
         }
         expect(crontab.existsSync(), isFalse);
+      });
+    });
+
+    group(
+        'Given a job script whose path has characters that are special in an '
+        'extended regular expression', () {
+      test(
+          'when install.sh prints the step that stops an earlier root job, '
+          'then its pattern selects only that script run by a shell', () async {
+        await expectShimsFirst();
+        const String name = r'h.o+m*e?(1)[2]{3}|^$';
+        final odd = Directory(path.join(root.path, name))..createSync();
+        final String bin = path.join(odd.path, '.local', 'bin');
+        Directory(bin).createSync(recursive: true);
+        final String script = path.join(bin, 'sshnpd.sh');
+        Link(script).createSync('/etc/hosts');
+
+        final result = await install(['headless', 'sshnpd'], homeDir: odd);
+
+        expect(result.exitCode, 1, reason: '${result.stdout}${result.stderr}');
+        final String step = (result.stdout as String)
+            .split('\n')
+            .singleWhere((String line) => line.startsWith(stopStep));
+        expect(step, endsWith("'"));
+        final String pattern =
+            '^[^ ]*sh ${step.substring(stopStep.length, step.length - 1)}\$';
+        for (final (String line, bool selected) in [
+          ('/bin/sh $script', true),
+          ('sh $script', true),
+          ('/usr/bin/bash $script', true),
+          ('/bin/sh ${script.replaceAll('.', 'x')}', false),
+          for (final String char in name.split('').toSet())
+            if (!RegExp(r'[a-z0-9]').hasMatch(char))
+              ('/bin/sh ${script.replaceFirst(name, name.replaceAll(char, ''))}',
+                  false),
+          ('/bin/sh $script -v', false),
+          ('sudo sh $script', false),
+          ('sh -c kill sh $script', false),
+        ]) {
+          final grep = await Process.run('/bin/sh', [
+            '-c',
+            'printf "%s\\n" "\$2" | grep -E -q -- "\$1"',
+            'sh',
+            pattern,
+            line,
+          ]);
+          expect(grep.exitCode, selected ? 0 : 1, reason: line);
+        }
       });
     });
 
