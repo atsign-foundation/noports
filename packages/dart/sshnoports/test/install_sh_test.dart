@@ -1368,6 +1368,112 @@ void main() {
       });
     });
 
+    group('Given install.sh runs as root from a root login', () {
+      test(
+          "when root's tmux server is running with another HOME, or none, "
+          'then installing the tmux job refuses before changing anything, '
+          'naming the HOME the server has and saying to restart it from a '
+          'root login', () async {
+        await expectShimsFirst();
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        for (final (String serverHome, String has) in [
+          (alice.path, 'HOME=${alice.path}'),
+          ('', 'no HOME'),
+        ]) {
+          tmuxServer(serverHome: serverHome, sessions: ['sshnpd']);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await installAsRoot(['npt', 'tmux', 'sshnpd']);
+
+          expect(result.exitCode, 1, reason: '$has: ${result.stderr}');
+          expect(
+            result.stdout,
+            "Error: root's tmux server is running with $has, not "
+            'HOME=${home.path}\n'
+            "Restart root's tmux server from a root login, then run "
+            'install.sh again.\n',
+            reason: has,
+          );
+          expect(
+            callsMade().where((String call) => call.startsWith('tmux ')),
+            ['tmux list-sessions', 'tmux show-environment -g HOME'],
+            reason: has,
+          );
+          expect(prefix.existsSync(), isFalse, reason: has);
+          expect(crontab.existsSync(), isFalse, reason: has);
+        }
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+
+      test(
+          "when root's tmux server is running with root's home, then "
+          "installing the tmux job restarts the job's session in that server, "
+          "where the job sees root's home", () async {
+        await expectShimsFirst();
+
+        for (final String serverHome in [home.path, '${home.path}/']) {
+          tmuxServer(serverHome: serverHome, sessions: ['other', 'sshnpd']);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result =
+              await installAsRoot(['tmux', 'sshnpd'], homeDir: alice);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$serverHome: ${result.stdout}${result.stderr}',
+          );
+          expect(
+            callsMade().where((String call) => call.startsWith(
+                  RegExp('tmux (kill|new|send)|job runs|tmux reads'),
+                )),
+            [
+              'tmux kill-session -t sshnpd',
+              'tmux new-session -d -s sshnpd',
+              'tmux send-keys -t sshnpd '
+                  '${path.join(home.path, '.local', 'bin', 'sshnpd.sh')} C-m',
+              'job runs with HOME=$serverHome',
+            ],
+            reason: serverHome,
+          );
+        }
+      });
+
+      test(
+          "when root's tmux server is not running, then it installs the tmux "
+          "job, and the command it prints starts the job with root's home",
+          () async {
+        await expectShimsFirst();
+        tmuxServer();
+
+        final result = await installAsRoot(['tmux', 'sshnpd'], homeDir: alice);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        final List<String> lines = (result.stdout as String).split('\n');
+        final int at = lines.indexOf('To start the service immediately:');
+        expect(at, isNot(-1), reason: '${result.stdout}');
+        final String command = lines[at + 1];
+        expect(command, endsWith(' &'));
+        if (calls.existsSync()) calls.deleteSync();
+
+        final started = await Process.run(
+          '/bin/sh',
+          ['-c', command.substring(0, command.length - 2)],
+          environment: {
+            'HOME': alice.path,
+            'PATH': '${shims.path}:${Platform.environment['PATH']}',
+          },
+          includeParentEnvironment: false,
+        );
+
+        expect(started.exitCode, 0, reason: '${started.stderr}');
+        expect(callsMade(), contains('job runs with HOME=${home.path}'));
+      });
+    });
+
     group('Given /etc/passwd has no entry for root with uid 0', () {
       test(
           'when install.sh runs as root from a root login, then it refuses '

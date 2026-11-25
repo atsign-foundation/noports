@@ -746,6 +746,25 @@ post_tmux_message() {
   echo "Make sure your system is configured so that tmux sessions can linger, or disown the tmux process before logging out"
 }
 
+check_tmux_server() {
+  if ! is_root || ! command tmux list-sessions >/dev/null 2>&1; then
+    return
+  fi
+  found=$(command tmux show-environment -g HOME 2>/dev/null)
+  case $found in
+  HOME=?*)
+    if [ "${found%/}" = "HOME=${user_home%/}" ]; then
+      return
+    fi
+    has=$found
+    ;;
+  *) has='no HOME' ;;
+  esac
+  printf '%s\n' "Error: root's tmux server is running with $has, not HOME=$user_home"
+  echo "Restart root's tmux server from a root login, then run install.sh again."
+  exit 1
+}
+
 install_tmux_service() {
   service_name=$1
   mkdir -p "$user_bin_dir"
@@ -796,6 +815,7 @@ tmux() {
     no_root_for_others "tmux $1"
     check_job_paths tmux "$1"
     check_binary_path
+    check_tmux_server
     ;;
   *)
     echo "Unknown tmux service: $1"
