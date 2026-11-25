@@ -67,20 +67,62 @@ void main() {
         'exit 127\n',
       );
 
-  void tmuxWithSessions() {
-    final String session = path.join(root.path, 'session_home');
+  /// Writes a `tmux` stand-in with a server that, as tmux's does, keeps the
+  /// environment it started with and gives it to every session it later
+  /// starts, and stops when its last session ends. Given [serverHome], the
+  /// server is running with [sessions] and with that HOME, or with no HOME
+  /// when it is empty. A starting server reads `.tmux.conf` in its HOME.
+  void tmuxServer({String? serverHome, List<String> sessions = const []}) {
+    final state = Directory(path.join(root.path, 'tmux_server'))..createSync();
+    final String server = path.join(state.path, 'server');
+    final String names = path.join(state.path, 'sessions');
+    File(names).writeAsStringSync(sessions.map((s) => '$s\n').join());
+    if (serverHome != null) {
+      File(server).writeAsStringSync(
+        serverHome.isEmpty ? '' : 'HOME=$serverHome\n',
+      );
+    }
     shim(
       'tmux',
       '${record('tmux')}'
+          "server='$server'\n"
+          "names='$names'\n"
+          'running() {\n'
+          '  if [ -f "\$server" ]; then return 0; fi\n'
+          '  echo "no server running on /tmp/tmux-0/default" >&2\n'
+          '  return 1\n'
+          '}\n'
           'case "\$1" in\n'
-          'has-session) exit 0 ;;\n'
+          'list-sessions) running && cat "\$names" ;;\n'
+          'show-environment)\n'
+          '  running || exit 1\n'
+          '  while IFS= read -r line; do\n'
+          '    case "\$line" in HOME=*) echo "\$line"; exit 0 ;; esac\n'
+          '  done < "\$server"\n'
+          '  echo "unknown variable: HOME" >&2\n'
+          '  exit 1 ;;\n'
+          'has-session)\n'
+          '  [ -f "\$server" ] || exit 1\n'
+          '  while IFS= read -r s; do [ "\$s" = "\$3" ] && exit 0; done '
+          '< "\$names"\n'
+          '  exit 1 ;;\n'
+          'kill-session)\n'
+          '  left=\$(while IFS= read -r s; do [ "\$s" = "\$3" ] || '
+          'echo "\$s"; done < "\$names")\n'
+          '  if [ -n "\$left" ]; then printf "%s\\n" "\$left" > "\$names"; '
+          'else : > "\$names"; rm -f "\$server"; fi ;;\n'
           'new-session)\n'
-          '  if [ -f "\$HOME/.tmux.conf" ]; then\n'
-          "    echo \"tmux reads \$HOME/.tmux.conf\" >> '${calls.path}'\n"
+          '  if ! [ -f "\$server" ]; then\n'
+          '    if [ -n "\${HOME+set}" ]; then echo "HOME=\$HOME"; fi '
+          '> "\$server"\n'
+          '    if [ -f "\$HOME/.tmux.conf" ]; then\n'
+          "      echo \"tmux reads \$HOME/.tmux.conf\" >> '${calls.path}'\n"
+          '    fi\n'
           '  fi\n'
-          "  printf '%s' \"\$HOME\" > '$session' ;;\n"
+          '  echo "\$4" >> "\$names" ;;\n'
           'send-keys)\n'
-          "  echo \"job runs with HOME=\$(cat '$session')\" >> '${calls.path}' ;;\n"
+          '  home=\$(sed -n "s/^HOME=//p" "\$server")\n'
+          "  echo \"job runs with HOME=\$home\" >> '${calls.path}' ;;\n"
           'esac\n',
     );
   }
@@ -994,7 +1036,7 @@ void main() {
           "that account's home, and prints a start command that sets HOME to "
           "root's home", () async {
         await expectShimsFirst();
-        tmuxWithSessions();
+        tmuxServer(serverHome: home.path, sessions: ['sshnpd']);
         final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
         for (final Directory dir in [alice, home]) {
           File(path.join(dir.path, '.tmux.conf')).writeAsStringSync('\n');
@@ -2210,7 +2252,7 @@ exec sh -c "kill() { echo \"kill \$*\" >> \"\$CALLS\"; }; $body" "$@"
           "runs with the user's own HOME, and the start command it prints sets "
           'no HOME', () async {
         await expectShimsFirst();
-        tmuxWithSessions();
+        tmuxServer(serverHome: alice.path, sessions: ['sshnpd']);
         final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
 
         final result =
