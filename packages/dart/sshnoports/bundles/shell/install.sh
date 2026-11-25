@@ -516,9 +516,13 @@ install_headless_job() {
 
 headless() {
   case "$1" in
-  --help | '')
+  --help)
     usage
     exit 0
+    ;;
+  '')
+    usage
+    exit 1
     ;;
   sshnpd | srvd)
     no_root_for_others "headless $1"
@@ -591,9 +595,13 @@ install_tmux_service() {
 
 tmux() {
   case "$1" in
-  --help | '')
+  --help)
     usage
     exit 0
+    ;;
+  '')
+    usage
+    exit 1
     ;;
   sshnpd | srvd)
     no_root_for_others "tmux $1"

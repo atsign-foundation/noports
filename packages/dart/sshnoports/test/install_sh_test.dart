@@ -1304,6 +1304,32 @@ void main() {
       });
     });
 
+    group('Given a headless or tmux command with no job name', () {
+      test(
+          'when install.sh runs it, then it prints the usage text and exits 1 '
+          'having installed nothing, and with --help it exits 0', () async {
+        final homeBefore = snapshot(home);
+
+        for (final String kind in ['headless', 'tmux']) {
+          final help = await install([kind, '--help']);
+          expect(help.exitCode, 0, reason: '$kind --help: ${help.stderr}');
+          expect(help.stdout, contains('headless <job>'), reason: kind);
+
+          for (final List<String> args in [
+            [kind],
+            ['npt', kind],
+          ]) {
+            final result = await install(args);
+
+            expect(result.exitCode, 1, reason: '$args: ${result.stderr}');
+            expect(result.stdout, help.stdout, reason: '$args');
+          }
+        }
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+        expect(callsMade(), isEmpty);
+      });
+    });
+
     group(
         'Given install.sh runs as a regular user who cannot set up '
         '~/.ssh/authorized_keys', () {
