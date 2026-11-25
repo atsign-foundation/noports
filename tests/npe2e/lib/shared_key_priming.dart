@@ -57,13 +57,24 @@ Future<void> primeSharedKeys({
       rootDomain: rootDomain,
       storageDirectory: Directory(path.join(runStorage.path, sharer)),
     );
-    for (final String receiver in receivers) {
-      await _putThrowawayRecord(
-        client: client,
-        sharer: sharer,
-        receiver: receiver,
-      );
-      print('    $sharer -> $receiver');
+    try {
+      for (final String receiver in receivers) {
+        await _putThrowawayRecord(
+          client: client,
+          sharer: sharer,
+          receiver: receiver,
+        );
+        print('    $sharer -> $receiver');
+      }
+    } catch (_) {
+      await client
+          .stop()
+          .timeout(_primingStepTimeout)
+          .catchError(
+            (Object e) =>
+                print('    could not stop the client for $sharer: $e'),
+          );
+      rethrow;
     }
     await client.stop();
   }
