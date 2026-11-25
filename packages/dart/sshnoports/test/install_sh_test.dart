@@ -95,14 +95,10 @@ void main() {
         workingDirectory: workingDirectory,
       );
 
-  /// Runs install.sh as root would run it on Linux, with `id`, `uname`,
-  /// `chown` and `sed` shims and with its `mkdir`, `touch` and `chmod` calls
-  /// recorded, into [prefix] with [args].
-  Future<ProcessResult> installAsRoot(
-    List<String> args, {
-    String? umask,
-    String? sudoUser,
-  }) {
+  /// Writes the `id`, `uname`, `chown` and `sed` shims that make install.sh
+  /// run as root would run it on Linux, and records its `mkdir`, `touch` and
+  /// `chmod` calls.
+  void shimRoot() {
     shim('id',
         'if [ "\$1" = -u ]; then echo 0; else exec /usr/bin/id "\$@"; fi\n');
     shim('uname', 'echo Linux\n');
@@ -122,6 +118,16 @@ void main() {
     for (final String name in ['mkdir', 'touch', 'chmod']) {
       passThrough(name);
     }
+  }
+
+  /// Runs install.sh as root would run it on Linux, into [prefix] with
+  /// [args].
+  Future<ProcessResult> installAsRoot(
+    List<String> args, {
+    String? umask,
+    String? sudoUser,
+  }) {
+    shimRoot();
     return install(
       ['-b', prefix.path, ...args],
       umask: umask ?? '022',
@@ -495,6 +501,103 @@ void main() {
         );
         expect(changes(aliceBefore, snapshot(alice)), isEmpty);
         expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs as root with no -b', () {
+      test(
+          'when it installs npt, then atsc, srv and npt are installed into '
+          '/usr/local/bin', () async {
+        const String usrLocalBin = '/usr/local/bin';
+        const List<String> writers = [
+          'chmod', 'cp', 'ln', 'mkdir', 'mv', 'rm', 'touch', //
+        ];
+        shimRoot();
+        for (final String name in writers) {
+          shim(
+            name,
+            '${record(name)}'
+            'case "\$*" in *$usrLocalBin*) exit 0 ;; esac\n'
+            'for d in /bin /usr/bin; do\n'
+            '  if [ -x "\$d/$name" ]; then exec "\$d/$name" "\$@"; fi\n'
+            'done\n'
+            'exit 127\n',
+          );
+        }
+        final probe = await Process.run(
+          '/bin/sh',
+          ['-c', 'for c in "\$@"; do command -v \$c; done', 'sh', ...writers],
+          environment: {
+            'PATH': '${shims.path}:${Platform.environment['PATH']}',
+          },
+          includeParentEnvironment: false,
+        );
+        expect(
+          probe.stdout,
+          writers.map((name) => '${path.join(shims.path, name)}\n').join(),
+        );
+        final String atsc = path.join(bundle.path, 'atsc');
+        final String fenced = path.join(root.path, 'fence$usrLocalBin');
+        for (final List<String> args in [
+          ['chmod', '755', fenced],
+          ['cp', '-f', atsc, fenced],
+          ['ln', '-s', atsc, fenced],
+          ['mkdir', '-p', fenced],
+          ['mv', '-f', atsc, fenced],
+          ['rm', '-f', atsc, fenced],
+          ['touch', fenced],
+        ]) {
+          final result = Process.runSync(
+            path.join(shims.path, args.first),
+            args.sublist(1),
+          );
+          expect(result.exitCode, 0, reason: '$args: ${result.stderr}');
+        }
+        expect(
+          Directory(path.join(root.path, 'fence')).existsSync(),
+          isFalse,
+          reason: 'the shims run nothing on paths in $usrLocalBin',
+        );
+        expect(File(atsc).existsSync(), isTrue);
+        final String outside = path.join(root.path, 'outside');
+        expect(
+          Process.runSync(path.join(shims.path, 'mkdir'), [outside]).exitCode,
+          0,
+        );
+        expect(
+          Directory(outside).existsSync(),
+          isTrue,
+          reason: 'the shims run the command on other paths',
+        );
+        if (calls.existsSync()) calls.deleteSync();
+        final List<String> namesBefore = namesIn(usrLocalBin);
+
+        final result = await install(['npt'], sudoUser: 'alice');
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        for (final String name in ['atsc', 'srv', 'npt']) {
+          final String file = '$usrLocalBin/$name';
+          expect(
+            callsMade(),
+            containsAllInOrder([
+              matches(RegExp('^mv -f $usrLocalBin/\\.$name\\.new\\.\\d+ '
+                  '${RegExp.escape(file)}\$')),
+              startsWith('chown -h root'),
+            ]),
+            reason: name,
+          );
+          expect(
+            result.stdout,
+            contains('=> Installed $name to $usrLocalBin\n'),
+          );
+        }
+        final String actors = [...writers, 'chown'].join('|');
+        expect(
+          callsMade().where((String call) => call.contains(usrLocalBin)),
+          everyElement(matches(RegExp('^($actors) '))),
+          reason: 'only the shims act on $usrLocalBin',
+        );
+        expect(namesIn(usrLocalBin), namesBefore);
       });
     });
 
