@@ -81,6 +81,25 @@ abstract class PlatformUtils {
 
 /// MacOS Implementation
 class MacOSUtils implements PlatformUtils {
+  /// Creates the macOS utilities; [listProcesses] lists the running
+  /// processes, by default from `ps`.
+  MacOSUtils({Future<List<ListedProcess>> Function()? listProcesses})
+    : _listProcesses = listProcesses ?? _listFromPs;
+
+  final Future<List<ListedProcess>> Function() _listProcesses;
+
+  static Future<List<ListedProcess>> _listFromPs() async {
+    final names = await Process.run(
+      macOSCommandNameListing.first,
+      macOSCommandNameListing.sublist(1),
+    );
+    final arguments = await Process.run(
+      macOSArgumentsListing.first,
+      macOSArgumentsListing.sublist(1),
+    );
+    return parsePsListing(names.stdout.toString(), arguments.stdout.toString());
+  }
+
   @override
   String get name => 'MacOS';
 
@@ -95,16 +114,8 @@ class MacOSUtils implements PlatformUtils {
 
   @override
   Future<bool> isDaemonRunning(String daemonName) async {
-    final names = await Process.run(
-      macOSCommandNameListing.first,
-      macOSCommandNameListing.sublist(1),
-    );
-    final arguments = await Process.run(
-      macOSArgumentsListing.first,
-      macOSArgumentsListing.sublist(1),
-    );
     return isDaemonListed(
-      parsePsListing(names.stdout.toString(), arguments.stdout.toString()),
+      await _listProcesses(),
       daemonName,
       selfPid: pid,
       windows: false,
@@ -238,6 +249,16 @@ class MacOSUtils implements PlatformUtils {
 
 /// Linux Implementation (Very similar to MacOS)
 class LinuxUtils implements PlatformUtils {
+  /// Creates the Linux utilities; [listProcesses] lists the running
+  /// processes, by default from `/proc`.
+  LinuxUtils({Future<List<ListedProcess>> Function()? listProcesses})
+    : _listProcesses = listProcesses ?? _listFromProc;
+
+  final Future<List<ListedProcess>> Function() _listProcesses;
+
+  static Future<List<ListedProcess>> _listFromProc() =>
+      listProcDirectory(Directory(linuxProcDirectory));
+
   @override
   String get name => 'Linux';
 
@@ -253,7 +274,7 @@ class LinuxUtils implements PlatformUtils {
   @override
   Future<bool> isDaemonRunning(String daemonName) async {
     return isDaemonListed(
-      await listProcDirectory(Directory(linuxProcDirectory)),
+      await _listProcesses(),
       daemonName,
       selfPid: pid,
       windows: false,
@@ -353,6 +374,21 @@ class LinuxUtils implements PlatformUtils {
 
 /// Windows Implementation
 class WindowsUtils implements PlatformUtils {
+  /// Creates the Windows utilities; [listProcesses] lists the running
+  /// processes, by default from PowerShell's `Win32_Process`.
+  WindowsUtils({Future<List<ListedProcess>> Function()? listProcesses})
+    : _listProcesses = listProcesses ?? _listFromPowerShell;
+
+  final Future<List<ListedProcess>> Function() _listProcesses;
+
+  static Future<List<ListedProcess>> _listFromPowerShell() async {
+    final result = await Process.run(
+      windowsProcessListing.first,
+      windowsProcessListing.sublist(1),
+    );
+    return parseWin32ProcessListing(result.stdout.toString());
+  }
+
   @override
   String get name => 'Windows';
 
@@ -368,12 +404,8 @@ class WindowsUtils implements PlatformUtils {
 
   @override
   Future<bool> isDaemonRunning(String daemonName) async {
-    final result = await Process.run(
-      windowsProcessListing.first,
-      windowsProcessListing.sublist(1),
-    );
     return isDaemonListed(
-      parseWin32ProcessListing(result.stdout.toString()),
+      await _listProcesses(),
       daemonName,
       selfPid: pid,
       windows: true,
