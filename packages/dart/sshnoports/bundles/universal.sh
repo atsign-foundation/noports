@@ -790,7 +790,7 @@ client() {
 }
 
 # DEVICE INSTALLATION #
-device() {
+get_device_install_type() {
   if is_container; then
     >&2 echo "Error: Device installation cannot succeed inside a container because"
     >&2 echo "there is no init process to run the daemon."
@@ -827,6 +827,18 @@ device() {
     device_install_type=$device_type
   fi
 
+  case "$device_install_type" in
+  tmux | headless)
+    if is_root; then
+      >&2 echo "Error: a $device_install_type device installation runs as the user who will run the daemon."
+      >&2 echo "Run this script again without sudo, as that user."
+      exit 1
+    fi
+    ;;
+  esac
+}
+
+device() {
   if [ "$used_package_manager" = false ]; then
     if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ]; then
       cleanup_old_installation
@@ -1359,6 +1371,11 @@ main() {
     exit 1
   fi
 
+  get_user_inputs
+  if [ "$install_type" = "device" ]; then
+    get_device_install_type
+  fi
+
   if [ -n "$local_archive" ]; then
     echo "Using local archive: $local_archive"
     cp "$local_archive" "$archive_path"
@@ -1391,7 +1408,6 @@ main() {
     unpack_archive
   fi
 
-  get_user_inputs
   case "$install_type" in
   client) client ;;
   device) device ;;
