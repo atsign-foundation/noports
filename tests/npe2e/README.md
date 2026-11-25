@@ -139,6 +139,25 @@ same commit:
 
 Either clear both, or pass a fresh `--test-run-id`.
 
+## Shared keys on a fresh VE
+
+Before any daemon or relay starts, core and relay create every shared key
+among their atSigns. For each atSign in turn they open a client with its
+atKeys from `~/.atsign/keys/<atSign>_key.atKeys`, where `setup_ve.sh` puts
+them, and put one short-lived record, in a namespace of its own, to each of
+the others. Each shared key is then created once, by one writer.
+
+Priming is there because released daemons for one atSign, started together,
+can each create the same shared key at once, and a client may then be unable
+to read some of their replies. So a primed run does not cover first contact
+between atSigns: that scenario belongs with the fix for that race.
+`--no-prime-shared-keys` runs a pack without priming.
+
+Start each run from a fresh VE. Priming does not repair shared keys an
+earlier run left behind, because a client that finds a shared key on its
+atServer uses it, and `setup_ve.sh` reuses a VE that is already running, so
+run `tests/tools/ve/teardown_ve.sh` first.
+
 ## Arguments
 
 | Argument | Default | Notes |
@@ -154,6 +173,7 @@ Either clear both, or pass a fresh `--test-run-id`.
 | `--max-retries` | `3` | Retries for a failing test |
 | `--test-timeout-seconds` | `300` | Per-test timeout before fail/retry |
 | `--test-run-id` | short git hash | Overrides the run directory name |
+| `--[no-]prime-shared-keys` | `true` | Core and relay only. Creates every shared key among the pack's atSigns before any daemon starts; see [Shared keys on a fresh VE](#shared-keys-on-a-fresh-ve) |
 | `--verbose` | `false` | Unmutes the at_client SDK logger (`AtSignLogger` at `INFO` instead of `SEVERE`). Stage narration and failure detail are always on. Currently wired for `policy_tests` only. |
 
 ## Reading a failed policy_tests run
