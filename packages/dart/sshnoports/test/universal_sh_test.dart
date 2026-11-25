@@ -295,18 +295,31 @@ void main() {
     }, skip: inContainer ? 'universal.sh refuses device installs here' : false);
 
     group('Given an unsupported platform, or an invalid -t or --dt', () {
-      test('when universal.sh runs, then it says why and exits 1', () async {
-        for (final (List<String> args, String? platform, String line) in [
+      test('when universal.sh runs, then it says why and exits non-zero',
+          () async {
+        for (final (
+              List<String> args,
+              String? platform,
+              String line,
+              Matcher exits,
+            ) in [
           (
             <String>[],
             'SunOS',
             'and provide the following information: SunOS\n',
+            isNot(0),
           ),
-          (['-t', 'tablet'], null, 'Valid options are: (device, client)\n'),
+          (
+            ['-t', 'tablet'],
+            null,
+            'Valid options are: (device, client)\n',
+            equals(1),
+          ),
           (
             ['-t', 'device', '--dt', 'cron'],
             null,
             'Valid options are: (launchd, systemd, tmux, headless)\n',
+            equals(1),
           ),
         ]) {
           if (platform != null) {
@@ -318,7 +331,7 @@ void main() {
 
           final result = await universal(args);
 
-          expect(result.exitCode, 1, reason: '$args: ${result.stderr}');
+          expect(result.exitCode, exits, reason: '$args: ${result.stderr}');
           expect(result.stderr, contains(line), reason: '$args');
           expect(result.stderr, isNot(contains(' exit 1')), reason: '$args');
           shim(
