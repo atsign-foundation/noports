@@ -93,9 +93,8 @@ class CoreTestsParams {
     );
     argParser.addOption(
       'root-domain',
-      mandatory: false,
-      defaultsTo: 'root.atsign.org:64', // TODO make into a constant somewhere
-      help: 'Host and port of atDirectory server',
+      mandatory: true,
+      help: 'atDirectory host[:port], e.g. vip.ve.atsign.zone for the VE',
     );
     argParser.addFlag('verbose', defaultsTo: false, help: 'More logging');
     argParser.addOption(

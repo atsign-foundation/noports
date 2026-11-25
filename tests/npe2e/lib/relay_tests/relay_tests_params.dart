@@ -79,8 +79,8 @@ class RelayTestsParams {
     parser.addOption(
       'root-domain',
       abbr: 'r',
-      defaultsTo: 'root.atsign.org:64',
-      help: 'Root domain to use',
+      mandatory: true,
+      help: 'atDirectory host[:port], e.g. vip.ve.atsign.zone for the VE',
     );
     parser.addFlag(
       'verbose',
