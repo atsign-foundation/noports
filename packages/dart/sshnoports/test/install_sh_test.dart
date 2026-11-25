@@ -46,8 +46,20 @@ void main() {
   }
 
   /// A line of `sh` which appends [name] and the arguments of the script it
-  /// is in to [calls].
-  String record(String name) => 'echo "$name \$*" >> \'${calls.path}\'\n';
+  /// is in to [calls], after the account the `sudo` shim runs it as, if any.
+  String record(String name) =>
+      'echo "\${SHIM_ACCOUNT:+\$SHIM_ACCOUNT: }$name \$*" >> \'${calls.path}\'\n';
+
+  /// Writes a shim called [name] which records each call and then runs the
+  /// [name] in /bin or /usr/bin.
+  void passThrough(String name) => shim(
+        name,
+        '${record(name)}'
+        'for d in /bin /usr/bin; do\n'
+        '  if [ -x "\$d/$name" ]; then exec "\$d/$name" "\$@"; fi\n'
+        'done\n'
+        'exit 127\n',
+      );
 
   /// The commands the shims were run with, in order.
   List<String> callsMade() => calls.existsSync() ? calls.readAsLinesSync() : [];
@@ -84,7 +96,8 @@ void main() {
       );
 
   /// Runs install.sh as root would run it, with `id`, `uname` and `chown`
-  /// shims, into [prefix] with [args].
+  /// shims and with its `mkdir`, `touch` and `chmod` calls recorded, into
+  /// [prefix] with [args].
   Future<ProcessResult> installAsRoot(
     List<String> args, {
     String? umask,
@@ -94,6 +107,9 @@ void main() {
         'if [ "\$1" = -u ]; then echo 0; else exec /usr/bin/id "\$@"; fi\n');
     shim('uname', 'echo Linux\n');
     shim('chown', record('chown'));
+    for (final String name in ['mkdir', 'touch', 'chmod']) {
+      passThrough(name);
+    }
     return install(
       ['-b', prefix.path, ...args],
       umask: umask ?? '022',
@@ -228,13 +244,15 @@ void main() {
     shim(
       'sudo',
       '${record('sudo')}'
-          'if [ "\$1 \$3 \$4 \$5" = "-u sh -c echo \\\$HOME" ]; then\n'
-          '  case "\$2" in\n'
-          "  alice) echo '${alice.path}'; exit 0 ;;\n"
-          "  bob) echo '${bob.path}'; exit 0 ;;\n"
-          '  esac\n'
-          'fi\n'
-          'exit 1\n',
+          'case "\$1 \$2" in\n'
+          "'-u alice') home='${alice.path}' ;;\n"
+          "'-u bob') home='${bob.path}' ;;\n"
+          '*) exit 1 ;;\n'
+          'esac\n'
+          'HOME=\$home SHIM_ACCOUNT=\$2\n'
+          'export HOME SHIM_ACCOUNT\n'
+          'shift 2\n'
+          'exec "\$@"\n',
     );
   });
 
@@ -484,7 +502,7 @@ void main() {
           ['.', '.ssh', path.join('.ssh', 'authorized_keys')],
         );
         expect(File(keys).existsSync(), isTrue);
-        expect(callsMade(), contains('chown alice:alice $keys'));
+        expect(callsMade(), contains('alice: touch $keys'));
         expect(changes(homeBefore, snapshot(home)), isEmpty);
       });
 
@@ -535,12 +553,61 @@ void main() {
         expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
         expect(File(keys).existsSync(), isTrue);
         expect(modeOf(keys), '644');
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs as root with -u naming another account', () {
+      test(
+          'when it installs the sshnpd systemd unit, then that account\'s '
+          '~/.ssh/authorized_keys is created by that account', () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(bob.path, '.ssh', 'authorized_keys');
+
+        final result = await installAsRoot(
+          ['-u', 'bob', 'systemd', 'sshnpd'],
+          umask: '077',
+          sudoUser: 'alice',
+        );
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
         expect(
-          callsMade(),
-          containsAll([
-            'chown bob:bob ${path.dirname(keys)}',
-            'chown bob:bob $keys',
-          ]),
+          callsMade().where((String call) => call.contains(bob.path)),
+          [
+            'bob: mkdir -p ${path.dirname(keys)}',
+            'bob: touch $keys',
+            'bob: chmod 644 $keys',
+          ],
+          reason: "each step in bob's home runs as bob, through sudo -u bob",
+        );
+        expect(modeOf(keys), '644');
+      });
+
+      test(
+          'when it installs the sshnpd systemd unit, then nothing in the '
+          "invoking user's home is created or changed", () async {
+        expectSystemdUnitsUnwritable();
+        final aliceKeys = File(path.join(alice.path, '.ssh', 'authorized_keys'))
+          ..createSync(recursive: true)
+          ..writeAsStringSync('ssh-ed25519 AAAA alice\n');
+        expect(Process.runSync('chmod', ['600', aliceKeys.path]).exitCode, 0);
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        final result = await installAsRoot(
+          ['-u', 'bob', 'systemd', 'sshnpd'],
+          sudoUser: 'alice',
+        );
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade().where(
+            (String call) =>
+                call.contains(alice.path) || call.contains(home.path),
+          ),
+          isEmpty,
+          reason: "nothing runs on the invoking user's paths",
         );
         expect(changes(aliceBefore, snapshot(alice)), isEmpty);
         expect(changes(homeBefore, snapshot(home)), isEmpty);

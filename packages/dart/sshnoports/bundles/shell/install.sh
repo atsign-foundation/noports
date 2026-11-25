@@ -125,6 +125,11 @@ usage() {
 # SETUP AUTHORIZED KEYS #
 
 setup_authorized_keys() {
+  if is_root && [ "$user" != root ]; then
+    # NOTE steps in another account's home run as that account
+    sudo -u "$user" sh -c 'mkdir -p "$HOME/.ssh" && touch "$HOME/.ssh/authorized_keys" && chmod 644 "$HOME/.ssh/authorized_keys"'
+    return
+  fi
   mkdir -p "$user_ssh_dir"
   if is_root; then
     chown $user:$user "$user_ssh_dir" 2>/dev/null || chown $user "$user_ssh_dir" 2>/dev/null
