@@ -234,8 +234,6 @@ quote() {
   printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
 }
 
-# Prints $1 with a backslash before each character that is special in an
-# extended regular expression.
 ere() {
   printf '%s\n' "$1" | sed 's/[[\.*^$+?(){|]/\\&/g'
 }
@@ -276,10 +274,6 @@ install_dir() {
   fi
 }
 
-# Prints what is wrong, for root to install into the directory $1, with it:
-# that root does not own it, or that its group or others can write to it. When
-# $2 is true, $1 is a directory above the one installed into, which can be a
-# sticky one of root's, as /tmp is.
 dir_problem() {
   ls -ldn -- "$1" | {
     read -r mode _ owner _
@@ -300,9 +294,6 @@ dir_problem() {
   }
 }
 
-# As root, sets binary_dir to the physical path of the -b directory $1, and
-# refuses it unless only root can change it and the directories above it. A
-# part of it that does not exist yet is checked as the first one that does.
 check_binary_dir() {
   if ! is_root; then
     return
@@ -573,7 +564,6 @@ launchd() {
 
 # HEADLESS SERVICES #
 
-# Prints $command, which starts the job, with HOME set to root's home as root.
 start_command() {
   if is_root; then
     printf '%s\n' "HOME=$(quote "$user_home") $command"
