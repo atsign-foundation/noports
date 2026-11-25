@@ -809,7 +809,7 @@ get_device_install_type() {
       if check_cmd tmux; then
         device_install_type="tmux"
       else
-        if ! check_cmd cron; then
+        if ! check_cmd crontab; then
           >&2 echo "ERROR: crontab not available"
           >&2 echo "Please install cron and make it available on the PATH"
           exit 1

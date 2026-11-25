@@ -278,5 +278,43 @@ void main() {
         expect(snapshot(home), homeBefore);
       });
     });
+
+    group(
+        'Given universal.sh runs as a regular user on a host without systemd '
+        'or tmux', () {
+      test(
+          'when crontab is on the PATH, then a device install uses a headless '
+          'job', () async {
+        File(path.join(shims.path, 'tmux')).deleteSync();
+        shim('nohup', 'exec "\$@"\n');
+        final probe = await Process.run(
+          '/bin/sh',
+          ['-c', 'command -v cron; command -v crontab'],
+          environment: {'PATH': '${shims.path}:${tools.path}'},
+          includeParentEnvironment: false,
+        );
+        expect(probe.stdout, '${path.join(shims.path, 'crontab')}\n');
+
+        final result = await universal([
+          ...['--local', archive, '-t', 'device'],
+          ...['-c', '@a', '-d', '@b', '-n', 'dev1'],
+        ]);
+
+        expect(result.stderr, isNot(contains('crontab not available')));
+        expect(
+          callsMade(),
+          contains(
+            'install.sh -b ${path.join(home.path, '.local', 'bin')} -u tester '
+            'headless sshnpd',
+          ),
+          reason: '${result.stdout}${result.stderr}',
+        );
+      });
+    },
+        skip: inContainer
+            ? 'universal.sh refuses device installs here'
+            : hasSystemd
+                ? 'universal.sh suggests systemd here'
+                : false);
   }, skip: isRoot ? 'universal.sh installs as root' : false);
 }
