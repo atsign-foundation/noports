@@ -647,6 +647,26 @@ void main() {
       });
     });
 
+    group('Given install.sh runs as root with no sudo user', () {
+      test(
+          'when it installs the sshnpd systemd unit, then it sets up root\'s '
+          '~/.ssh/authorized_keys without sudo', () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(home.path, '.ssh', 'authorized_keys');
+
+        final result = await installAsRoot(['systemd', 'sshnpd']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade().where((String call) => call.startsWith('sudo')),
+          isEmpty,
+          reason: "root's own steps run without sudo",
+        );
+        expect(callsMade(), contains('touch $keys'));
+        expect(modeOf(keys), '644');
+      });
+    });
+
     group(
         'Given install.sh runs as root with -u naming an account whose home '
         'it cannot find', () {
