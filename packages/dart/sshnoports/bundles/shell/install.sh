@@ -638,9 +638,6 @@ set_binary_path() {
 
 stop_job() {
   job_state=unknown
-  if ! command -v pgrep >/dev/null 2>&1; then
-    return
-  fi
   pids=$(pgrep -u "$(id -u)" -f -- "^[^ ]*sh $(ere "$1")\$" 2>&1)
   case $? in
   0 | 1) ;;
@@ -693,7 +690,7 @@ install_headless_job() {
   stop_job "$dest"
   case $job_state in
   stopped) echo "=> Stopped the running $job_name.sh job" ;;
-  unknown) echo "=> Could not check for a running $job_name.sh job: pgrep is missing or does not accept -u" ;;
+  unknown) echo "=> Could not check for a running $job_name.sh job: pgrep is missing, does not accept -u, or failed" ;;
   esac
 
   echo ""

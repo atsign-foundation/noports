@@ -2370,29 +2370,39 @@ void main() {
       });
     });
 
-    group('Given pgrep is missing or does not accept -u', () {
+    group('Given pgrep is missing, does not accept -u or fails', () {
       const String couldNotCheck = '=> Could not check for a running sshnpd.sh '
-          'job: pgrep is missing or does not accept -u\n';
+          'job: pgrep is missing, does not accept -u, or failed\n';
+      const List<String> broken = [
+        'pgrep without -u',
+        'pgrep that fails with no output',
+        'no pgrep',
+      ];
 
-      /// Leaves install.sh no pgrep when [missing], or else a pgrep that
-      /// refuses -u as BusyBox's does, and returns the PATH to run it with.
-      Future<String?> breakPgrep(bool missing) async {
+      /// Leaves install.sh the [broken] pgrep named by [how], a pgrep that
+      /// refuses -u as BusyBox's does, one that exits 2 with no output, or
+      /// none, and returns the PATH to run it with.
+      Future<String?> breakPgrep(String how) async {
         final String pgrep = path.join(shims.path, 'pgrep');
-        if (!missing) {
-          shim(
-            'pgrep',
-            '${record('pgrep')}'
-                'for a in "\$@"; do\n'
-                '  if [ "\$a" = -u ]; then\n'
-                "    echo 'pgrep: unrecognized option: u' >&2\n"
-                "    echo 'Usage: pgrep [-flanovx] [-s SID|-P PPID|PATTERN]' "
-                '>&2\n'
-                '    exit 1\n'
-                '  fi\n'
-                'done\n'
-                'exit 1\n',
-          );
-          return null;
+        switch (how) {
+          case 'pgrep without -u':
+            shim(
+              'pgrep',
+              '${record('pgrep')}'
+                  'for a in "\$@"; do\n'
+                  '  if [ "\$a" = -u ]; then\n'
+                  "    echo 'pgrep: unrecognized option: u' >&2\n"
+                  "    echo 'Usage: pgrep [-flanovx] [-s SID|-P PPID|PATTERN]' "
+                  '>&2\n'
+                  '    exit 1\n'
+                  '  fi\n'
+                  'done\n'
+                  'exit 1\n',
+            );
+            return null;
+          case 'pgrep that fails with no output':
+            shim('pgrep', '${record('pgrep')}exit 2\n');
+            return null;
         }
         if (File(pgrep).existsSync()) File(pgrep).deleteSync();
         final String searchPath = '${shims.path}:${pathWithout('pgrep')}';
@@ -2413,42 +2423,37 @@ void main() {
         await expectShimsFirst();
         recordKills();
 
-        for (final bool missing in [false, true]) {
+        for (final String how in broken) {
           for (final File file in [crontab, calls]) {
             if (file.existsSync()) file.deleteSync();
           }
           shim('pgrep', '${record('pgrep')}exit 1\n');
           final first = await install(['headless', 'sshnpd']);
           expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
-          final String? searchPath = await breakPgrep(missing);
+          final String? searchPath = await breakPgrep(how);
 
           final again = await install(
             ['headless', 'sshnpd'],
             searchPath: searchPath,
           );
 
-          final String reason = missing ? 'no pgrep' : 'pgrep without -u';
           expect(
             again.exitCode,
             0,
-            reason: '$reason: ${again.stdout}${again.stderr}',
+            reason: '$how: ${again.stdout}${again.stderr}',
           );
-          expect(again.stdout, contains(couldNotCheck), reason: reason);
+          expect(again.stdout, contains(couldNotCheck), reason: how);
           expect(
             again.stdout,
             contains('If the job is running, stop it before you start it '
                 'again\n'),
-            reason: reason,
+            reason: how,
           );
-          expect(
-            again.stdout,
-            isNot(contains('immediately')),
-            reason: reason,
-          );
+          expect(again.stdout, isNot(contains('immediately')), reason: how);
           expect(
             callsMade().where((String call) => call.startsWith('kill ')),
             isEmpty,
-            reason: reason,
+            reason: how,
           );
         }
       });
@@ -2461,27 +2466,26 @@ void main() {
         final String logs = path.join(home.path, '.sshnpd', 'logs');
         final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
 
-        for (final bool missing in [false, true]) {
+        for (final String how in broken) {
           if (crontab.existsSync()) crontab.deleteSync();
-          final String? searchPath = await breakPgrep(missing);
+          final String? searchPath = await breakPgrep(how);
 
           final result = await install(
             ['headless', 'sshnpd'],
             searchPath: searchPath,
           );
 
-          final String reason = missing ? 'no pgrep' : 'pgrep without -u';
           expect(
             result.exitCode,
             0,
-            reason: '$reason: ${result.stdout}${result.stderr}',
+            reason: '$how: ${result.stdout}${result.stderr}',
           );
-          expect(result.stdout, contains(couldNotCheck), reason: reason);
+          expect(result.stdout, contains(couldNotCheck), reason: how);
           expect(
             result.stdout,
             contains('To start the job immediately:\n'
                 '  nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err &\n'),
-            reason: reason,
+            reason: how,
           );
         }
       });
