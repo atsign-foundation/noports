@@ -541,17 +541,35 @@ void main() {
             'exit 127\n',
           );
         }
+        for (final String name in ['cmp', 'dirname', 'readlink', 'sh']) {
+          shim(
+            name,
+            'for d in /bin /usr/bin; do\n'
+            '  if [ -x "\$d/$name" ]; then exec "\$d/$name" "\$@"; fi\n'
+            'done\n'
+            'exit 127\n',
+          );
+        }
         final probe = await Process.run(
           '/bin/sh',
           ['-c', 'for c in "\$@"; do command -v \$c; done', 'sh', ...writers],
-          environment: {
-            'PATH': '${shims.path}:${Platform.environment['PATH']}',
-          },
+          environment: {'PATH': shims.path},
           includeParentEnvironment: false,
         );
         expect(
           probe.stdout,
           writers.map((name) => '${path.join(shims.path, name)}\n').join(),
+        );
+        final unshimmed = await Process.run(
+          '/bin/sh',
+          ['-c', 'command -v dd || command -v install || command -v tee'],
+          environment: {'PATH': shims.path},
+          includeParentEnvironment: false,
+        );
+        expect(
+          unshimmed.exitCode,
+          isNot(0),
+          reason: 'install.sh finds only the stand-ins: ${unshimmed.stdout}',
         );
         final String atsc = path.join(bundle.path, 'atsc');
         final String fenced = path.join(root.path, 'fence$usrLocalBin');
@@ -589,7 +607,11 @@ void main() {
         if (calls.existsSync()) calls.deleteSync();
         final List<String> namesBefore = namesIn(usrLocalBin);
 
-        final result = await install(['npt'], sudoUser: 'alice');
+        final result = await install(
+          ['npt'],
+          searchPath: shims.path,
+          sudoUser: 'alice',
+        );
 
         expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
         for (final String name in ['atsc', 'srv', 'npt']) {
