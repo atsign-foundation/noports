@@ -252,6 +252,7 @@ void main() {
           'HOME=\$home SHIM_ACCOUNT=\$2\n'
           'export HOME SHIM_ACCOUNT\n'
           'shift 2\n'
+          'umask 0002\n'
           'exec "\$@"\n',
     );
   });
@@ -611,6 +612,37 @@ void main() {
         );
         expect(changes(aliceBefore, snapshot(alice)), isEmpty);
         expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+
+      test(
+          "when it creates that account's ~/.ssh, then the directory gets the "
+          "mode root's umask gives it", () async {
+        expectSystemdUnitsUnwritable();
+        final dir = Directory(path.join(bob.path, '.ssh'));
+
+        for (final (String umask, String mode) in [
+          ('022', '755'),
+          ('077', '700'),
+        ]) {
+          if (dir.existsSync()) dir.deleteSync(recursive: true);
+
+          final result = await installAsRoot(
+            ['-u', 'bob', 'systemd', 'sshnpd'],
+            umask: umask,
+            sudoUser: 'alice',
+          );
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$umask: ${result.stdout}${result.stderr}',
+          );
+          expect(
+            modeOf(dir.path),
+            mode,
+            reason: "~/.ssh gets the mode root's umask $umask gives it",
+          );
+        }
       });
     });
 
