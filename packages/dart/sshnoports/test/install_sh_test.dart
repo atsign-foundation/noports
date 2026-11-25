@@ -7,8 +7,10 @@ import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
 void main() {
-  final bool isRoot =
-      Process.runSync('id', ['-u']).stdout.toString().trim() == '0';
+  final int uid =
+      int.parse(Process.runSync('id', ['-u']).stdout.toString().trim());
+  final bool isRoot = uid == 0;
+  final int bobUid = uid + 1;
 
   late Directory root;
   late Directory bundle;
@@ -19,6 +21,12 @@ void main() {
   late Directory shims;
   late File calls;
   late File crontab;
+  late File owners;
+
+  /// Makes the `ls` that install.sh runs as root report [dir] as owned by
+  /// [owner].
+  void ownedBy(String dir, int owner) =>
+      owners.writeAsStringSync('$owner $dir\n', mode: FileMode.append);
 
   /// Makes [file] executable.
   void executable(String file) {
@@ -167,13 +175,30 @@ void main() {
         workingDirectory: workingDirectory,
       );
 
-  /// Writes the `id`, `uname`, `chown` and `sed` shims that make install.sh
-  /// run as root would run it on Linux, and records its `mkdir`, `touch` and
-  /// `chmod` calls.
+  /// Writes the `id`, `uname`, `chown`, `sed` and `ls` shims that make
+  /// install.sh run as root would run it on Linux, and records its `mkdir`,
+  /// `touch` and `chmod` calls. The `ls` shim reports what this process owns
+  /// as owned by root, and what [ownedBy] names as owned by that account.
   void shimRoot() {
     shim('id',
         'if [ "\$1" = -u ]; then echo 0; else exec /usr/bin/id "\$@"; fi\n');
     shim('uname', 'echo Linux\n');
+    shim(
+      'ls',
+      'for a in "\$@"; do last=\$a; done\n'
+          'line=\$(/bin/ls "\$@") || exit\n'
+          'owner=\$(printf "%s\\n" "\$line" | { read -r _ _ o _; echo "\$o"; })\n'
+          'if [ "\$owner" = $uid ]; then owner=0; fi\n'
+          "if [ -f '${owners.path}' ]; then\n"
+          '  while read -r o p; do\n'
+          '    if [ "\$p" = "\$last" ]; then owner=\$o; fi\n'
+          "  done < '${owners.path}'\n"
+          'fi\n'
+          'printf "%s\\n" "\$line" | {\n'
+          '  read -r mode links _ rest\n'
+          '  printf "%s %s %s %s\\n" "\$mode" "\$links" "\$owner" "\$rest"\n'
+          '}\n',
+    );
     shim('chown', record('chown'));
     shim(
       'sed',
@@ -312,6 +337,7 @@ void main() {
     shims = Directory(path.join(root.path, 'shims'))..createSync();
     calls = File(path.join(root.path, 'calls'));
     crontab = File(path.join(root.path, 'crontab'));
+    owners = File(path.join(root.path, 'owners'));
     const String passwdLine = 'passwd_file=/etc/passwd\n';
     final String source =
         File(path.join('bundles', 'shell', 'install.sh')).readAsStringSync();
@@ -590,12 +616,13 @@ void main() {
     group('Given install.sh runs as root with no -b', () {
       test(
           'when it installs npt, then atsc, srv and npt are installed into '
-          '/usr/local/bin', () async {
+          '/usr/local/bin, whichever account owns it', () async {
         const String usrLocalBin = '/usr/local/bin';
         const List<String> writers = [
           'chmod', 'cp', 'ln', 'mkdir', 'mv', 'rm', 'touch', //
         ];
         shimRoot();
+        ownedBy(usrLocalBin, bobUid);
         for (final String name in writers) {
           shim(
             name,
@@ -703,6 +730,121 @@ void main() {
           reason: 'only the shims act on $usrLocalBin',
         );
         expect(namesIn(usrLocalBin), namesBefore);
+      });
+    });
+
+    group('Given install.sh runs as root with -b', () {
+      late String bobs;
+      late String writable;
+      late String sticky;
+
+      setUp(() {
+        bobs = path.join(root.path, 'bobs');
+        writable = path.join(root.path, 'writable');
+        sticky = path.join(root.path, 'sticky');
+        for (final (String dir, String mode) in [
+          (bobs, '755'),
+          (path.join(bobs, 'bin'), '755'),
+          (writable, '775'),
+          (path.join(writable, 'bin'), '755'),
+          (sticky, '1777'),
+          (path.join(sticky, 'bin'), '755'),
+        ]) {
+          Directory(dir).createSync();
+          expect(Process.runSync('chmod', [mode, dir]).exitCode, 0);
+        }
+        ownedBy(bobs, bobUid);
+        shimRoot();
+      });
+
+      test(
+          'when the -b directory, or a directory above it, can be changed by '
+          'an account other than root, then it refuses before changing '
+          'anything, with an error naming that directory and what is wrong '
+          'with it', () async {
+        await expectShimsFirst();
+        final victim = File(path.join(root.path, 'victim'))
+          ..writeAsStringSync('root data\n');
+        expect(Process.runSync('chmod', ['600', victim.path]).exitCode, 0);
+        const String notRoot = 'is not owned by root';
+        const String others = 'can be written by its group or by others';
+
+        for (final (List<String> args, String given, String dir, String what)
+            in [
+          (['-b', bobs, 'npt'], bobs, bobs, notRoot),
+          (['-b', '$bobs/bin', 'npt'], '$bobs/bin', bobs, notRoot),
+          (['-b', writable, 'npt'], writable, writable, others),
+          (['-b', '$writable/bin', 'npt'], '$writable/bin', writable, others),
+          (['-b', sticky, 'npt'], sticky, sticky, others),
+          (['-b', '$sticky/new/bin', 'npt'], '$sticky/new/bin', sticky, others),
+          (['npt', '-b', bobs, 'srv'], bobs, bobs, notRoot),
+          (['-b', bobs, 'headless', '--help'], bobs, bobs, notRoot),
+        ]) {
+          final String reason = '$args';
+          final before = snapshot(root);
+
+          final result = await install(args);
+
+          expect(result.exitCode, 1, reason: '$reason: ${result.stderr}');
+          expect(
+            result.stdout,
+            'Error: -b $given: $dir $what\n'
+            'As root, install.sh installs only into a directory that only root '
+            'can change.\n',
+            reason: reason,
+          );
+          expect(changes(before, snapshot(root)), isEmpty, reason: reason);
+        }
+        expect(victim.readAsStringSync(), 'root data\n');
+        expect(modeOf(victim.path), '600');
+      });
+
+      test(
+          "when the -b directory is root's and only root can change it or the "
+          "directories above it, one of them root's and sticky, then it "
+          'installs into it', () async {
+        final String bin = path.join(sticky, 'bin');
+
+        final result = await install(['-b', bin, 'npt']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(namesIn(bin), ['atsc', 'npt', 'srv']);
+      });
+
+      test(
+          "when the -b directory is root's, reached through a link in another "
+          "account's directory, then it installs into it by its own path",
+          () async {
+        prefix.createSync();
+        expect(Process.runSync('chmod', ['755', prefix.path]).exitCode, 0);
+        final String link = path.join(bobs, 'link');
+        Link(link).createSync(prefix.path);
+
+        final result = await install(['-b', link, 'npt']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(namesIn(prefix.path), ['atsc', 'npt', 'srv']);
+        expect(
+          result.stdout,
+          contains('=> Installed npt to ${prefix.path}\n'),
+        );
+        expect(result.stdout, isNot(contains(bobs)));
+        expect(
+          callsMade().where((String call) => call.contains(bobs)),
+          isEmpty,
+        );
+      });
+
+      test(
+          'when -b names /usr/bin, then it accepts it as it does no -b',
+          () async {
+        final without = await install(['headless', '--help']);
+        expect(without.exitCode, 0, reason: '${without.stderr}');
+
+        final result = await install(['-b', '/usr/bin', 'headless', '--help']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(result.stdout, without.stdout);
       });
     });
 

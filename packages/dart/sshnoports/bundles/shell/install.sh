@@ -219,7 +219,8 @@ usage() {
   echo "                  available services: [sshnpd, srvd]"
   echo ""
   echo "Options:"
-  echo "-b <dir>        - override the directory in which the binaries are written to"
+  echo "-b <dir>        - override the directory in which the binaries are written to;"
+  echo "                  as root, a directory that only root can change"
   echo "-u <username>   - install for <username>: as root, set up its ~/.ssh/authorized_keys"
   echo "                  for a systemd unit; otherwise, install into its ~/.local/bin"
   echo ""
@@ -273,6 +274,69 @@ install_dir() {
   else
     printf '%s\n' "$user_bin_dir"
   fi
+}
+
+# Prints what is wrong, for root to install into the directory $1, with it:
+# that root does not own it, or that its group or others can write to it. When
+# $2 is true, $1 is a directory above the one installed into, which can be a
+# sticky one of root's, as /tmp is.
+dir_problem() {
+  ls -ldn -- "$1" | {
+    read -r mode _ owner _
+    if [ "$owner" != 0 ]; then
+      echo "is not owned by root"
+      return
+    fi
+    case "$mode" in
+    ?????????[tT]*)
+      if $2; then
+        return
+      fi
+      ;;
+    esac
+    case "$mode" in
+    ?????w* | ????????w*) echo "can be written by its group or by others" ;;
+    esac
+  }
+}
+
+# As root, sets binary_dir to the physical path of the -b directory $1, and
+# refuses it unless only root can change it and the directories above it. A
+# part of it that does not exist yet is checked as the first one that does.
+check_binary_dir() {
+  if ! is_root; then
+    return
+  fi
+  dir=$1
+  rest=''
+  while ! [ -d "$dir" ]; do
+    rest="/$(basename -- "$dir")$rest"
+    dir=$(dirname -- "$dir")
+  done
+  if ! physical=$(CDPATH='' cd -P -- "$dir" && pwd -P); then
+    printf '%s\n' "Error: -b $1: cannot find the directory $dir"
+    exit 1
+  fi
+  dir=$physical
+  if [ -n "$rest" ]; then
+    binary_dir=${dir%/}$rest
+  else
+    binary_dir=$dir
+  fi
+  above=false
+  while :; do
+    problem=$(dir_problem "$dir" "$above")
+    if [ -n "$problem" ]; then
+      printf '%s\n' "Error: -b $1: $dir $problem"
+      echo "As root, install.sh installs only into a directory that only root can change."
+      exit 1
+    fi
+    if [ "$dir" = / ]; then
+      return
+    fi
+    dir=$(dirname -- "$dir")
+    above=true
+  done
 }
 
 # Whether the files $1 and $2 both exist with the same contents.
@@ -779,6 +843,7 @@ run_args() {
         exit 1
       fi
       binary_dir="$2"
+      check_binary_dir "$2"
       unfollowed=${unfollowed:-"-b $2"}
       shift
       ;;

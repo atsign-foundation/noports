@@ -24,7 +24,8 @@ Run the following command to view full usage information of sshnpd:
 `install.sh headless sshnpd` installs the binaries to `~/.local/bin`, or to the
 directory given with `-b`, and adds the job to the crontab of the user who runs
 it. Run it without `sudo`, as the user who will run sshnpd. From a root login it
-installs the binaries to `/usr/local/bin` and the job to root's crontab.
+installs the binaries to `/usr/local/bin`, or to a directory given with `-b`
+that only root can change, and the job to root's crontab.
 
 ### Usage
 
@@ -62,7 +63,8 @@ Run the following command to view full usage information of srvd:
 `install.sh headless srvd` installs the binaries to `~/.local/bin`, or to the
 directory given with `-b`, and adds the job to the crontab of the user who runs
 it. Run it without `sudo`, as the user who will run srvd. From a root login it
-installs the binaries to `/usr/local/bin` and the job to root's crontab.
+installs the binaries to `/usr/local/bin`, or to a directory given with `-b`
+that only root can change, and the job to root's crontab.
 
 ### Usage
 
