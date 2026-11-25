@@ -353,11 +353,19 @@ same_contents() {
   fi
 }
 
+create_install_dir() {
+  if is_root; then
+    (umask 022 && mkdir -p "$1")
+  else
+    mkdir -p "$1"
+  fi
+}
+
 # Installs $2 (default $1) from this bundle as $1.
 install_single_binary() {
   src="$script_dir/${2:-$1}"
   dest=$(install_dir)
-  if ! mkdir -p "$dest"; then
+  if ! create_install_dir "$dest"; then
     printf '%s\n' "Error: could not create $dest"
     exit 1
   fi

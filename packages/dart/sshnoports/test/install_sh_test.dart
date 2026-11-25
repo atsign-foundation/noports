@@ -497,6 +497,18 @@ void main() {
       });
 
       test(
+          'when it creates the directory under umask 077, then the directory '
+          'gets the mode that umask gives it', () async {
+        final String dir = path.join(prefix.path, 'bin');
+
+        final result = await install(['-b', dir, 'npt'], umask: '077');
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(modeOf(prefix.path), '700');
+        expect(modeOf(dir), '700');
+      });
+
+      test(
           'when it cannot create the directory, then it stops with an error '
           'naming the directory, having installed nothing', () async {
         final locked = Directory(path.join(root.path, 'locked'))..createSync();
@@ -1004,6 +1016,32 @@ void main() {
         expect(Directory(later).existsSync(), isFalse);
         expect(callsMade(), isEmpty);
         expect(changes(before, snapshot(root)), isEmpty);
+      });
+
+      test(
+          'when it creates the -b directory and the directories above it that '
+          'do not exist yet, under any umask, then it creates each of them '
+          'with mode 755', () async {
+        for (final String umask in ['000', '077']) {
+          final String top = path.join(owned, 'u$umask');
+          final List<String> created = [
+            top,
+            path.join(top, 'opt'),
+            path.join(top, 'opt', 'bin'),
+          ];
+
+          final result =
+              await install(['-b', created.last, 'npt'], umask: umask);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$umask: ${result.stdout}${result.stderr}',
+          );
+          for (final String dir in created) {
+            expect(modeOf(dir), '755', reason: '$dir under umask $umask');
+          }
+        }
       });
 
       test(
