@@ -52,6 +52,8 @@ jobs:
     permissions:
       id-token: write # For OIDC token used by Azure signing
     runs-on: ${{ matrix.os }}
+    # azure-signing (Windows) and apple-signing (macOS) hold the signing
+    # secrets and require a reviewer's approval before the job gets them.
     environment: ${{ matrix.environment }}
     defaults:
       run:
@@ -90,6 +92,7 @@ jobs:
             bundle: "shell"
             platform: "linux"
           - os: macos-15-intel
+            environment: apple-signing
             output-name: sshnp-macos-x64
             arch: "amd64"
             cross: ""
@@ -97,6 +100,7 @@ jobs:
             bundle: "shell"
             platform: "macos"
           - os: macos-latest
+            environment: apple-signing
             output-name: sshnp-macos-arm64
             arch: "arm64"
             cross: ""
