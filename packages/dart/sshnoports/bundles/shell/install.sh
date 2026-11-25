@@ -201,11 +201,11 @@ setup_authorized_keys() {
 # The directory that programs are installed into.
 install_dir() {
   if [ -n "$binary_dir" ]; then
-    echo "$binary_dir"
+    printf '%s\n' "$binary_dir"
   elif is_root; then
-    echo "$bin_dir"
+    printf '%s\n' "$bin_dir"
   else
-    echo "$user_bin_dir"
+    printf '%s\n' "$user_bin_dir"
   fi
 }
 
@@ -456,7 +456,8 @@ post_headless_message() {
 
 # Points the job script $1 at the directory the programs were installed into.
 set_binary_path() {
-  sedi "s|^binary_path=\".*\"$|binary_path=\"$(CDPATH='' cd -- "$(install_dir)" && pwd)\"|g" "$1"
+  dir=$(CDPATH='' cd -- "$(install_dir)" && pwd | sed 's/[\\&|]/\\&/g')
+  sedi "s|^binary_path=\".*\"$|binary_path=\"$dir\"|g" "$1"
 }
 
 install_headless_job() {

@@ -892,6 +892,34 @@ void main() {
           }
         }
       });
+
+      test(
+          'when it installs a headless or tmux job into a directory whose name '
+          'has \\, & or |, then the job runs the programs from that directory',
+          () async {
+        await expectShimsFirst();
+        final String dir = path.join(root.path, r'a\b&c|d');
+        final String script =
+            path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+
+        for (final String kind in ['headless', 'tmux']) {
+          if (File(script).existsSync()) File(script).deleteSync();
+
+          final result = await install(['-b', dir, kind, 'sshnpd']);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$kind: ${result.stdout}${result.stderr}',
+          );
+          expect(File(path.join(dir, 'sshnpd')).existsSync(), isTrue);
+          expect(
+            File(script).readAsLinesSync(),
+            contains('binary_path="$dir"'),
+            reason: kind,
+          );
+        }
+      });
     });
 
     group(
