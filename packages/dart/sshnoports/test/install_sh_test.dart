@@ -725,6 +725,49 @@ void main() {
     });
 
     group(
+        "Given install.sh runs as root and cannot set up an account's "
+        '~/.ssh/authorized_keys as that account', () {
+      test(
+          'when it installs the sshnpd systemd unit, then it stops with an '
+          'error naming the chown to run, and exits non-zero', () async {
+        expectSystemdUnitsUnwritable();
+
+        for (final (List<String> args, String account, Directory dir) in [
+          (<String>[], 'alice', alice),
+          (['-u', 'bob'], 'bob', bob),
+        ]) {
+          final ssh = Directory(path.join(dir.path, '.ssh'))..createSync();
+          expect(Process.runSync('chmod', ['500', ssh.path]).exitCode, 0);
+          addTearDown(() => Process.runSync('chmod', ['700', ssh.path]));
+          final before = snapshot(dir);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await installAsRoot(
+            [...args, 'systemd', 'sshnpd'],
+            sudoUser: 'alice',
+          );
+
+          expect(result.exitCode, 1, reason: '$account: ${result.stdout}');
+          expect(
+            result.stdout,
+            allOf(
+              contains('Error: could not set up ~/.ssh/authorized_keys as '
+                  '$account\n'),
+              contains("  sudo chown -h '$account' '${ssh.path}'\n"),
+            ),
+            reason: account,
+          );
+          expect(
+            callsMade().where((String call) => call.contains(dir.path)),
+            everyElement(startsWith('$account: ')),
+            reason: "only $account acts in $account's home",
+          );
+          expect(changes(before, snapshot(dir)), isEmpty, reason: account);
+        }
+      });
+    });
+
+    group(
         'Given install.sh runs as root with -u naming an account whose home '
         'it cannot find', () {
       test(
