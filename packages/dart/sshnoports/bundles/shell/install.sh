@@ -39,7 +39,7 @@ define_env() {
 }
 
 # Sets user_home to the home directory in the entry for root, with uid 0, in
-# $passwd_file, or stops when there is none.
+# $passwd_file, or stops when there is none. As root, it sets HOME to it too.
 define_root_home() {
   user_home=$(while IFS=: read -r name _ uid _ _ home _ || [ -n "$name" ]; do
     if [ "$name" = root ] && [ "$uid" = 0 ]; then
@@ -50,6 +50,9 @@ define_root_home() {
   if [ -z "$user_home" ]; then
     echo "Error: could not find root's home directory in $passwd_file"
     exit 1
+  fi
+  if is_root; then
+    export HOME="$user_home"
   fi
 }
 
@@ -499,13 +502,22 @@ launchd() {
 
 # HEADLESS SERVICES #
 
+# Prints $command, which starts the job, with HOME set to root's home as root.
+start_command() {
+  if is_root; then
+    printf '%s\n' "HOME=$(quote "$user_home") $command"
+  else
+    printf '%s\n' "$command"
+  fi
+}
+
 post_headless_message() {
   echo "Headless job installed, make sure to configure the job by editing $dest"
   echo "Learn more in $script_dir/headless/README.md"
   echo ""
   echo "The job will start upon next system boot"
   echo "To start the job immediately:"
-  echo "  $command &"
+  echo "  $(start_command) &"
   echo ""
   echo "Warning: logs stored at $log_file and $err_file have unlimited potential size"
   echo "In a production environment, it's recommended that you install via systemd"
@@ -610,7 +622,7 @@ post_tmux_message() {
   echo "Learn more in $script_dir/headless/README.md"
   echo ""
   echo "To start the service immediately:"
-  echo "  $command &"
+  echo "  $(start_command) &"
   echo ""
   echo "Warning: sometimes tmux is not set to linger which will kill the tmux session on logout"
   echo "Make sure your system is configured so that tmux sessions can linger, or disown the tmux process before logging out"

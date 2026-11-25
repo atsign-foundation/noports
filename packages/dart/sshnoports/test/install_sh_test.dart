@@ -61,6 +61,27 @@ void main() {
         'exit 127\n',
       );
 
+  /// Writes a `tmux` shim which has a session of every name. A new session
+  /// records the `~/.tmux.conf` that tmux would read from its HOME, and the
+  /// command sent to it records that it runs with that HOME.
+  void tmuxWithSessions() {
+    final String session = path.join(root.path, 'session_home');
+    shim(
+      'tmux',
+      '${record('tmux')}'
+          'case "\$1" in\n'
+          'has-session) exit 0 ;;\n'
+          'new-session)\n'
+          '  if [ -f "\$HOME/.tmux.conf" ]; then\n'
+          "    echo \"tmux reads \$HOME/.tmux.conf\" >> '${calls.path}'\n"
+          '  fi\n'
+          "  printf '%s' \"\$HOME\" > '$session' ;;\n"
+          'send-keys)\n'
+          "  echo \"job runs with HOME=\$(cat '$session')\" >> '${calls.path}' ;;\n"
+          'esac\n',
+    );
+  }
+
   /// The commands the shims were run with, in order.
   List<String> callsMade() => calls.existsSync() ? calls.readAsLinesSync() : [];
 
@@ -756,7 +777,55 @@ void main() {
           crontab.readAsStringSync(),
           '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
         );
+        expect(
+          result.stdout,
+          contains('To start the job immediately:\n'
+              "  HOME='${home.path}' nohup $job > $logs/sshnpd.log 2> "
+              '$logs/sshnpd.err &\n'),
+        );
         expect(File(job).existsSync(), isTrue);
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+      });
+
+      test(
+          'when it installs a tmux job whose session exists, then it restarts '
+          "the session with root's home, reading no tmux configuration in "
+          "that account's home, and prints a start command that sets HOME to "
+          "root's home", () async {
+        await expectShimsFirst();
+        tmuxWithSessions();
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        for (final Directory dir in [alice, home]) {
+          File(path.join(dir.path, '.tmux.conf')).writeAsStringSync('\n');
+        }
+        final aliceBefore = snapshot(alice);
+
+        final result = await installAsRoot(['tmux', 'sshnpd'], homeDir: alice);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade(),
+          containsAllInOrder([
+            'tmux kill-session -t sshnpd',
+            'tmux reads ${home.path}/.tmux.conf',
+            'job runs with HOME=${home.path}',
+          ]),
+        );
+        expect(
+          callsMade().where((String call) => call.contains(alice.path)),
+          isEmpty,
+        );
+        expect(
+          crontab.readAsStringSync(),
+          '\n@reboot tmux new-session -d -s sshnpd && tmux send-keys -t sshnpd '
+          '$job C-m\n',
+        );
+        expect(
+          result.stdout,
+          contains('To start the service immediately:\n'
+              "  HOME='${home.path}' tmux new-session -d -s sshnpd && tmux "
+              'send-keys -t sshnpd $job C-m &\n'),
+        );
         expect(changes(aliceBefore, snapshot(alice)), isEmpty);
       });
 
@@ -1772,6 +1841,29 @@ void main() {
           'PATH="\$PATH:\$HOME/.local/bin"\n',
         );
         expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs as a regular user with -u root', () {
+      test(
+          'when it installs a tmux job whose session exists, then the session '
+          "runs with the user's own HOME, and the start command it prints sets "
+          'no HOME', () async {
+        await expectShimsFirst();
+        tmuxWithSessions();
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+
+        final result =
+            await install(['-u', 'root', 'tmux', 'sshnpd'], homeDir: alice);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(callsMade(), contains('job runs with HOME=${alice.path}'));
+        expect(
+          result.stdout,
+          contains('To start the service immediately:\n'
+              '  tmux new-session -d -s sshnpd && tmux send-keys -t sshnpd '
+              '$job C-m &\n'),
+        );
       });
     });
 
