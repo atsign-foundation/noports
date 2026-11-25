@@ -1524,6 +1524,62 @@ void main() {
       });
     });
 
+    group('Given an account whose ~/.ssh/authorized_keys cannot be set up', () {
+      test(
+          'when install.sh installs srvd as a headless job, a tmux job or a '
+          'systemd unit, then it installs it', () async {
+        await expectShimsFirst();
+        expectSystemdUnitsUnwritable();
+
+        for (final (List<String> args, bool asRoot, String? sudoUser) in [
+          (['headless', 'srvd'], false, null),
+          (['tmux', 'srvd'], false, null),
+          (['systemd', 'srvd'], true, null),
+          (['systemd', 'srvd'], true, 'alice'),
+        ]) {
+          final String reason = '$args, root $asRoot, sudo user $sudoUser';
+          final Directory dir = sudoUser == 'alice' ? alice : home;
+          final ssh = Directory(path.join(dir.path, '.ssh'))..createSync();
+          expect(Process.runSync('chmod', ['500', ssh.path]).exitCode, 0);
+          addTearDown(() => Process.runSync('chmod', ['700', ssh.path]));
+          final sshBefore = snapshot(ssh);
+          for (final File file in [crontab, calls]) {
+            if (file.existsSync()) file.deleteSync();
+          }
+
+          final result = asRoot
+              ? await installAsRoot(args, sudoUser: sudoUser)
+              : await install(args);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$reason: ${result.stdout}${result.stderr}',
+          );
+          final String bin =
+              asRoot ? prefix.path : path.join(home.path, '.local', 'bin');
+          expect(
+            File(path.join(bin, 'srvd')).existsSync(),
+            isTrue,
+            reason: reason,
+          );
+          expect(
+            callsMade(),
+            asRoot
+                ? contains('systemctl daemon-reload')
+                : containsAllInOrder(['crontab -l', 'crontab -']),
+            reason: reason,
+          );
+          expect(
+            callsMade().where((String call) => call.contains('.ssh')),
+            isEmpty,
+            reason: reason,
+          );
+          expect(changes(sshBefore, snapshot(ssh)), isEmpty, reason: reason);
+        }
+      });
+    });
+
     group(
         'Given install.sh runs as a regular user whose job script or log '
         'directory belongs to another account', () {

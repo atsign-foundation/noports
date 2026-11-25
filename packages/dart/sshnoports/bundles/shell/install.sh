@@ -442,7 +442,9 @@ systemd() {
   if $checking; then
     return
   fi
-  setup_authorized_keys
+  if [ "$1" = sshnpd ]; then
+    setup_authorized_keys
+  fi
   install_program "$1"
   install_systemd_unit "$1.service"
 }
@@ -590,7 +592,9 @@ headless() {
   if $checking; then
     return
   fi
-  setup_authorized_keys
+  if [ "$1" = sshnpd ]; then
+    setup_authorized_keys
+  fi
   install_program "$1"
   install_headless_job "$1"
 }
@@ -670,7 +674,9 @@ tmux() {
   if $checking; then
     return
   fi
-  setup_authorized_keys
+  if [ "$1" = sshnpd ]; then
+    setup_authorized_keys
+  fi
   install_program "$1"
   install_tmux_service "$1"
 }
