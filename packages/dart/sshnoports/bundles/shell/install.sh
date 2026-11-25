@@ -41,7 +41,7 @@ define_env() {
 # Sets user_home to the home directory in the entry for root, with uid 0, in
 # $passwd_file, or stops when there is none.
 define_root_home() {
-  user_home=$(while IFS=: read -r name _ uid _ _ home _; do
+  user_home=$(while IFS=: read -r name _ uid _ _ home _ || [ -n "$name" ]; do
     if [ "$name" = root ] && [ "$uid" = 0 ]; then
       printf '%s\n' "$home"
       break

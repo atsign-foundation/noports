@@ -842,6 +842,38 @@ void main() {
       });
     });
 
+    group(
+        "Given root's entry is the last line of /etc/passwd, with no newline "
+        'after it', () {
+      test(
+          'when install.sh runs as root from a root login, then it finds '
+          "root's home there", () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(home.path, '.ssh', 'authorized_keys');
+
+        for (final String entries in [
+          'root:*:0:0:root:${home.path}:/bin/sh',
+          'daemon:*:1:1:daemon:/var/root:/bin/sh\n'
+              'root:*:0:0:root:${home.path}:/bin/sh',
+        ]) {
+          passwd(entries);
+          final Directory ssh = Directory(path.dirname(keys));
+          if (ssh.existsSync()) ssh.deleteSync(recursive: true);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result =
+              await installAsRoot(['systemd', 'sshnpd'], homeDir: alice);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$entries: ${result.stdout}${result.stderr}',
+          );
+          expect(callsMade(), contains('touch $keys'), reason: entries);
+        }
+      });
+    });
+
     group('Given install.sh runs as root with -u bob', () {
       test(
           "when it installs the sshnpd systemd unit, then it sets up bob's "
