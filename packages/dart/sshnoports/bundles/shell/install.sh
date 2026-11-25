@@ -301,9 +301,20 @@ check_binary_dir() {
   dir=$1
   rest=''
   while ! [ -d "$dir" ]; do
+    if [ -e "$dir" ] || [ -L "$dir" ]; then
+      printf '%s\n' "Error: -b $1: $dir exists and is not a directory"
+      exit 1
+    fi
     rest="/$(basename -- "$dir")$rest"
     dir=$(dirname -- "$dir")
   done
+  case "$rest/" in
+  */../*)
+    missing=${rest#/}
+    printf '%s\n' "Error: -b $1: .. cannot come after ${dir%/}/${missing%%/*}, which does not exist yet"
+    exit 1
+    ;;
+  esac
   if ! physical=$(CDPATH='' cd -P -- "$dir" && pwd -P); then
     printf '%s\n' "Error: -b $1: cannot find the directory $dir"
     exit 1
@@ -346,7 +357,10 @@ same_contents() {
 install_single_binary() {
   src="$script_dir/${2:-$1}"
   dest=$(install_dir)
-  mkdir -p "$dest"
+  if ! mkdir -p "$dest"; then
+    printf '%s\n' "Error: could not create $dest"
+    exit 1
+  fi
   if ! [ -L "$dest/$1" ] && same_contents "$src" "$dest/$1"; then
     if ! chmod 755 "$dest/$1"; then
       echo "Failed to make $dest/$1 readable and executable by all - aborting"

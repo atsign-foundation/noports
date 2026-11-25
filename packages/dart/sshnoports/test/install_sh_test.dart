@@ -495,6 +495,21 @@ void main() {
         final run = await Process.run(path.join(prefix.path, 'debug_srvd'), []);
         expect(run.stdout, 'debug atsc\n[srvd]\n');
       });
+
+      test(
+          'when it cannot create the directory, then it stops with an error '
+          'naming the directory, having installed nothing', () async {
+        final locked = Directory(path.join(root.path, 'locked'))..createSync();
+        expect(Process.runSync('chmod', ['555', locked.path]).exitCode, 0);
+        addTearDown(() => Process.runSync('chmod', ['755', locked.path]));
+        final String dir = path.join(locked.path, 'bin');
+
+        final result = await install(['-b', dir, 'npt']);
+
+        expect(result.exitCode, 1, reason: '${result.stderr}');
+        expect(result.stdout, 'Error: could not create $dir\n');
+        expect(namesIn(locked.path), isEmpty);
+      });
     });
 
     group('Given atsc is already installed in the chosen directory', () {
@@ -800,11 +815,13 @@ void main() {
       late String bobs;
       late String writable;
       late String sticky;
+      late String owned;
 
       setUp(() {
         bobs = path.join(root.path, 'bobs');
         writable = path.join(root.path, 'writable');
         sticky = path.join(root.path, 'sticky');
+        owned = path.join(root.path, 'owned');
         for (final (String dir, String mode) in [
           (bobs, '755'),
           (path.join(bobs, 'bin'), '755'),
@@ -812,6 +829,7 @@ void main() {
           (path.join(writable, 'bin'), '755'),
           (sticky, '1777'),
           (path.join(sticky, 'bin'), '755'),
+          (owned, '755'),
         ]) {
           Directory(dir).createSync();
           expect(Process.runSync('chmod', [mode, dir]).exitCode, 0);
@@ -891,6 +909,120 @@ void main() {
           callsMade().where((String call) => call.contains(bobs)),
           isEmpty,
         );
+      });
+
+      test(
+          'when the part of the -b directory that does not exist yet has .., '
+          'then it refuses before creating anything, naming the first '
+          'directory that does not exist', () async {
+        await expectShimsFirst();
+        final String missing = path.join(owned, 'new');
+
+        for (final (String given, String reached) in [
+          ('$owned/new/../../bobs/bin', path.join(bobs, 'bin')),
+          ('$owned/new/../../sticky/new/bin', path.join(sticky, 'new', 'bin')),
+          ('$owned/new/..', owned),
+        ]) {
+          final before = snapshot(root);
+
+          final result = await install(['-b', given, 'npt']);
+
+          expect(result.exitCode, 1, reason: '$given: ${result.stderr}');
+          expect(
+            result.stdout,
+            'Error: -b $given: .. cannot come after $missing, which does not '
+            'exist yet\n',
+            reason: given,
+          );
+          expect(changes(before, snapshot(root)), isEmpty, reason: given);
+          expect(namesIn(reached), isNot(contains('npt')), reason: given);
+        }
+      });
+
+      test(
+          'when a directory on the -b path exists but is not a directory, '
+          'then it refuses before creating anything, naming it', () async {
+        await expectShimsFirst();
+        final String link = path.join(owned, 'link');
+        Link(link).createSync(path.join(bobs, 'later'));
+        final String file = path.join(owned, 'file');
+        File(file).writeAsStringSync('\n');
+
+        for (final (String given, String named) in [
+          ('$link/bin', link),
+          (link, link),
+          ('$file/bin', file),
+          ('$file/new/bin', file),
+        ]) {
+          final before = snapshot(root);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await install(['-b', given, 'npt']);
+
+          expect(result.exitCode, 1, reason: '$given: ${result.stderr}');
+          expect(
+            result.stdout,
+            'Error: -b $given: $named exists and is not a directory\n',
+            reason: given,
+          );
+          expect(changes(before, snapshot(root)), isEmpty, reason: given);
+          expect(callsMade(), isEmpty, reason: given);
+        }
+      });
+
+      test(
+          "when a link on the -b path points to a directory another account "
+          'makes only after the check, then it refuses before creating '
+          'anything', () async {
+        final String later = path.join(bobs, 'later');
+        final String link = path.join(owned, 'link');
+        Link(link).createSync(later);
+        ownedBy(later, bobUid);
+        shim(
+          'mkdir',
+          '${record('mkdir')}'
+              "if ! [ -d '$later' ]; then\n"
+              "  echo 'bob makes $later' >> '${calls.path}'\n"
+              '  for d in /bin /usr/bin; do\n'
+              "    if [ -x \"\$d/mkdir\" ]; then \"\$d/mkdir\" '$later'; break; fi\n"
+              '  done\n'
+              'fi\n'
+              'for d in /bin /usr/bin; do\n'
+              '  if [ -x "\$d/mkdir" ]; then exec "\$d/mkdir" "\$@"; fi\n'
+              'done\n'
+              'exit 127\n',
+        );
+        final before = snapshot(root);
+
+        final result = await install(['-b', '$link/bin', 'npt']);
+
+        expect(result.exitCode, 1, reason: '${result.stdout}${result.stderr}');
+        expect(
+          result.stdout,
+          'Error: -b $link/bin: $link exists and is not a directory\n',
+        );
+        expect(Directory(later).existsSync(), isFalse);
+        expect(callsMade(), isEmpty);
+        expect(changes(before, snapshot(root)), isEmpty);
+      });
+
+      test(
+          'when the -b directory has . in it, or .. after a directory that '
+          'exists, then it installs into it', () async {
+        for (final (String given, String dir) in [
+          ('$owned/./bin', path.join(owned, 'bin')),
+          ('$owned/new/./bin', path.join(owned, 'new', 'bin')),
+          ('$owned/../owned/other', path.join(owned, 'other')),
+        ]) {
+          final result = await install(['-b', given, 'npt']);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$given: ${result.stdout}${result.stderr}',
+          );
+          expect(namesIn(dir), ['atsc', 'npt', 'srv'], reason: given);
+        }
       });
 
       test('when -b names /usr/bin, then it accepts it as it does no -b',
