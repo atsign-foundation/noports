@@ -191,34 +191,38 @@ void main() {
         final aliceBefore = snapshot(alice);
         final homeBefore = snapshot(home);
 
-        for (final (List<String> chosen, String type) in [
-          (['--dt', 'headless'], 'headless'),
-          (['--dt', 'tmux'], 'tmux'),
-          // NOTE as root universal.sh picks systemd where systemd is running.
-          if (!hasSystemd) (<String>[], 'tmux'),
-        ]) {
-          final result =
-              await universal([...device, ...chosen], sudoUser: 'alice');
+        for (final String? sudoUser in ['alice']) {
+          for (final (List<String> chosen, String type) in [
+            (['--dt', 'headless'], 'headless'),
+            (['--dt', 'tmux'], 'tmux'),
+            // NOTE as root universal.sh picks systemd where systemd is running.
+            if (!hasSystemd) (<String>[], 'tmux'),
+          ]) {
+            final String reason = '$chosen, sudo user $sudoUser';
+            final result =
+                await universal([...device, ...chosen], sudoUser: sudoUser);
 
-          expect(result.exitCode, 1, reason: '$chosen');
-          expect(
-            result.stderr,
-            contains('Error: a $type device installation runs as the user who '
-                'will run the daemon.\n'
-                'Run this script again without sudo, as that user.\n'),
-            reason: '$chosen',
-          );
-          expect(
-            result.stdout,
-            isNot(contains('Using local archive')),
-            reason: '$chosen',
-          );
-          expect(
-            callsMade(),
-            ['sudo -u alice sh -c echo \$HOME'],
-            reason: '$chosen',
-          );
-          calls.deleteSync();
+            expect(result.exitCode, 1, reason: reason);
+            expect(
+              result.stderr,
+              contains('Error: a $type device installation runs as the user '
+                  'who will run the daemon.\n'
+                  'Run this script again as that user, not as root and '
+                  'without sudo.\n'),
+              reason: reason,
+            );
+            expect(
+              result.stdout,
+              isNot(contains('Using local archive')),
+              reason: reason,
+            );
+            expect(
+              callsMade(),
+              [if (sudoUser != null) 'sudo -u alice sh -c echo \$HOME'],
+              reason: reason,
+            );
+            if (calls.existsSync()) calls.deleteSync();
+          }
         }
 
         expect(snapshot(alice), aliceBefore);

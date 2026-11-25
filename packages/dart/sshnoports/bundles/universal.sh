@@ -831,7 +831,7 @@ get_device_install_type() {
   tmux | headless)
     if is_root; then
       >&2 echo "Error: a $device_install_type device installation runs as the user who will run the daemon."
-      >&2 echo "Run this script again without sudo, as that user."
+      >&2 echo "Run this script again as that user, not as root and without sudo."
       exit 1
     fi
     ;;

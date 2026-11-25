@@ -95,9 +95,9 @@ void main() {
         workingDirectory: workingDirectory,
       );
 
-  /// Runs install.sh as root would run it, with `id`, `uname` and `chown`
-  /// shims and with its `mkdir`, `touch` and `chmod` calls recorded, into
-  /// [prefix] with [args].
+  /// Runs install.sh as root would run it on Linux, with `id`, `uname`,
+  /// `chown` and `sed` shims and with its `mkdir`, `touch` and `chmod` calls
+  /// recorded, into [prefix] with [args].
   Future<ProcessResult> installAsRoot(
     List<String> args, {
     String? umask,
@@ -107,6 +107,18 @@ void main() {
         'if [ "\$1" = -u ]; then echo 0; else exec /usr/bin/id "\$@"; fi\n');
     shim('uname', 'echo Linux\n');
     shim('chown', record('chown'));
+    shim(
+      'sed',
+      'if [ "\$1" = -i ] && [ -n "\$2" ] && [ "\$(/usr/bin/uname)" = Darwin ]; '
+          'then\n'
+          '  shift\n'
+          '  exec /usr/bin/sed -i "" "\$@"\n'
+          'fi\n'
+          'for d in /bin /usr/bin; do\n'
+          '  if [ -x "\$d/sed" ]; then exec "\$d/sed" "\$@"; fi\n'
+          'done\n'
+          'exit 127\n',
+    );
     for (final String name in ['mkdir', 'touch', 'chmod']) {
       passThrough(name);
     }
@@ -509,38 +521,77 @@ void main() {
         expect(callsMade(), contains('alice: touch $keys'));
         expect(changes(homeBefore, snapshot(home)), isEmpty);
       });
+    });
 
+    group(
+        'Given install.sh runs as root for another account, through sudo or '
+        'with -u', () {
       test(
           'when it is asked to install a headless or tmux job, then it refuses '
           'before changing anything and says to run it without sudo, as the '
           'user who will run the daemon', () async {
         await expectShimsFirst();
         final aliceBefore = snapshot(alice);
+        final bobBefore = snapshot(bob);
         final homeBefore = snapshot(home);
 
-        for (final (List<String> args, String refused) in [
+        for (final (String? sudoUser, List<String> args, String refused) in [
           for (final String kind in ['headless', 'tmux'])
             for (final String job in ['sshnpd', 'srvd'])
-              ([kind, job], '$kind $job'),
-          (['npt', 'headless', 'sshnpd'], 'headless sshnpd'),
+              ('alice', [kind, job], '$kind $job'),
+          ('alice', ['npt', 'headless', 'sshnpd'], 'headless sshnpd'),
+          (null, ['-u', 'bob', 'headless', 'sshnpd'], 'headless sshnpd'),
+          (null, ['-u', 'bob', 'tmux', 'srvd'], 'tmux srvd'),
+          ('alice', ['-u', 'bob', 'tmux', 'sshnpd'], 'tmux sshnpd'),
         ]) {
-          final result = await installAsRoot(args, sudoUser: 'alice');
+          final String reason = '$args, sudo user $sudoUser';
+          final result = await installAsRoot(args, sudoUser: sudoUser);
 
-          expect(result.exitCode, 1, reason: '$args');
+          expect(result.exitCode, 1, reason: reason);
           expect(
             result.stdout,
             'Error: run install.sh $refused without sudo, as the user who '
             'will run the daemon\n',
-            reason: '$args',
+            reason: reason,
           );
-          expect(prefix.existsSync(), isFalse, reason: '$args');
+          expect(prefix.existsSync(), isFalse, reason: reason);
         }
 
-        expect(
-            callsMade(), List.filled(5, 'sudo -H -u alice sh -c echo \$HOME'));
+        expect(callsMade(), everyElement(endsWith(' sh -c echo \$HOME')));
         expect(crontab.existsSync(), isFalse);
         expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(bobBefore, snapshot(bob)), isEmpty);
         expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs as root from a root login without -u', () {
+      test(
+          "when it installs a headless job, then the job is in root's crontab "
+          "and runs from root's home", () async {
+        await expectShimsFirst();
+        final String logs = path.join(home.path, '.sshnpd', 'logs');
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+
+        final result = await installAsRoot(['headless', 'sshnpd']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade().where((String call) => call.startsWith(
+                RegExp('(sudo|crontab) '),
+              )),
+          ['crontab -l', 'crontab -'],
+          reason: 'root installs the job in its own crontab, without sudo',
+        );
+        expect(
+          crontab.readAsStringSync(),
+          '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
+        );
+        expect(
+          File(job).readAsLinesSync(),
+          contains('binary_path="${prefix.path}"'),
+        );
+        expect(File(path.join(prefix.path, 'sshnpd')).existsSync(), isTrue);
       });
     });
 

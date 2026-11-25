@@ -72,8 +72,9 @@ root_only() {
   fi
 }
 
-no_root() {
-  if is_root; then
+# Refuses the job $1 when root would install it for another account.
+no_root_for_others() {
+  if is_root && [ "$user" != root ]; then
     echo "Error: run install.sh $1 without sudo, as the user who will run the daemon"
     exit 1
   fi
@@ -444,7 +445,7 @@ headless() {
     usage
     exit 0
     ;;
-  sshnpd | srvd) no_root "headless $1" ;;
+  sshnpd | srvd) no_root_for_others "headless $1" ;;
   *)
     echo "Error: Unknown headless job: $1"
     usage
@@ -516,7 +517,7 @@ tmux() {
     usage
     exit 0
     ;;
-  sshnpd | srvd) no_root "tmux $1" ;;
+  sshnpd | srvd) no_root_for_others "tmux $1" ;;
   *)
     echo "Unknown tmux service: $1"
     usage
