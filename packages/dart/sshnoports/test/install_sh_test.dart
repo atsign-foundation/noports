@@ -800,7 +800,11 @@ void main() {
             isNot(contains(startsWith('sudo -H -u root '))),
             reason: reason,
           );
-          expect(changes(aliceBefore, snapshot(alice)), isEmpty, reason: reason);
+          expect(
+            changes(aliceBefore, snapshot(alice)),
+            isEmpty,
+            reason: reason,
+          );
         }
       });
     });
@@ -1387,8 +1391,7 @@ void main() {
       });
     });
 
-    group(
-        'Given a -b directory whose name has ", \$, `, \\ or a newline', () {
+    group('Given a -b directory whose name has ", \$, `, \\ or a newline', () {
       test(
           'when install.sh installs a headless or tmux job into it, then it '
           'refuses before installing anything, with an error naming -b',
@@ -1512,12 +1515,12 @@ void main() {
         }
 
         for (final (
-          List<String> args,
-          Map<String, String> links,
-          Map<String, String?> taken,
-          List<String> listed,
-          String moves,
-        ) in [
+              List<String> args,
+              Map<String, String> links,
+              Map<String, String?> taken,
+              List<String> listed,
+              String moves,
+            ) in [
           (
             ['headless', 'sshnpd'],
             {'.local/bin/sshnpd.sh': '/etc/hosts'},
