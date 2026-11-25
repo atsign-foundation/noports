@@ -34,15 +34,6 @@ atSigns another job or person uses: CI starts an EE
 (`tests/tools/ee/setup_ee.sh`) with its own atSigns, and a local run names its
 own.
 
-**Each npe2e pack runs on its own atSign set in CI.** `core_tests` takes
-client01/daemon01, `policy_tests` takes client02/daemon02 plus policy01/policy02,
-`relay_tests` takes client03/daemon03 plus relay01–06
-(`.github/workflows/e2e_all.yaml:90-132`). The matrix runs `fail-fast: false`,
-so the three legs are concurrent; sharing one atSign pair across packs would
-double-book APKAM device enrolments and cross-deliver notifications. Rejected:
-one pair plus a serialized matrix — that trades a correctness property for
-3× wall-clock.
-
 **`testRunId` is derived per run+attempt in CI, not from the git hash.** The
 default is the short git hash (`lib/core_tests/core_tests.dart:68`,
 `lib/policy_tests/policy_tests.dart:56`,
@@ -56,7 +47,7 @@ the run directory and container names, which is what you want while iterating.
 
 **Every CI job runs its pack against an atStack of its own.** Core, relay and
 policy each start a VE and a relay on their own runner, and revocation an EE,
-so concurrent workflow runs share no atServer, atSign or relay.
+so concurrent workflow runs share no atServer, Atsign or relay.
 
 **The npp and npp_atServer policy flows run sequentially.**
 `lib/policy_tests/policy_tests.dart:252-272`. Both flows build their admin

@@ -7,8 +7,8 @@ import 'package:npe2e/docker_instance.dart';
 import 'package:npe2e/language.dart';
 import 'package:npe2e/noports_version.dart';
 
-// Local-run aid: when the npe2e tests run against atServers on the developer's
-// own machine (reached via `/etc/hosts` overrides such as
+// When the npe2e tests run against atServers on the host, as they do on the
+// VE in CI and locally (reached via `/etc/hosts` overrides such as
 // `127.0.0.1 vip.ve.atsign.zone`), mirror those overrides into the containers
 // (daemon / relay / policy server / containerised client). A container can't
 // reach the host on 127.0.0.1, so each mapped name is re-pointed at

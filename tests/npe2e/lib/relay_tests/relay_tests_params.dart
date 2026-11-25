@@ -132,7 +132,7 @@ class RelayTestsParams {
       'prime-shared-keys',
       defaultsTo: true,
       help:
-          'Create every shared key among the atSigns, one at a time, before any daemon or relay starts',
+          'Create every shared key among the atSigns, one at a time, before the pack starts any daemon or relay; needs every atSign\'s keyfile in ~/.atsign/keys',
     );
     parser.addOption(
       'test-run-id',
