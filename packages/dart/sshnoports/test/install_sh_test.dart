@@ -777,7 +777,7 @@ void main() {
           (['-b', '$writable/bin', 'npt'], '$writable/bin', writable, others),
           (['-b', sticky, 'npt'], sticky, sticky, others),
           (['-b', '$sticky/new/bin', 'npt'], '$sticky/new/bin', sticky, others),
-          (['npt', '-b', bobs, 'srv'], bobs, bobs, notRoot),
+          (['-b', prefix.path, 'npt', '-b', bobs, 'srv'], bobs, bobs, notRoot),
           (['-b', bobs, 'headless', '--help'], bobs, bobs, notRoot),
         ]) {
           final String reason = '$args';
