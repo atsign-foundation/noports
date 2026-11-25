@@ -873,15 +873,24 @@ void main() {
           expect(result.exitCode, 1, reason: '$account: ${result.stdout}');
           expect(
             result.stdout,
-            endsWith('Error: could not set up ~/.ssh/authorized_keys as '
-                '$account\n'
-                "Move $account's ~/.ssh aside, as $account, with:\n"
-                "  sudo -H -u '$account' sh -c 'mv ~/.ssh ~/.ssh.old'\n"
-                'then run install.sh again, and copy back, as $account, any keys '
-                'in ~/.ssh.old/authorized_keys that are still needed.\n'),
+            'Error: could not set up ~/.ssh/authorized_keys as $account\n'
+            "Move $account's ~/.ssh aside, as $account, with:\n"
+            "  sudo -H -u '$account' sh -c 'mv ~/.ssh ~/.ssh.old'\n"
+            'then run install.sh again, and copy back, as $account, any keys '
+            'in ~/.ssh.old/authorized_keys that are still needed.\n',
             reason: account,
           );
           expect(result.stdout, isNot(contains('chown')), reason: account);
+          expect(
+            callsMade(),
+            isNot(contains('systemctl daemon-reload')),
+            reason: '$account: the unit is not installed',
+          );
+          expect(
+            prefix.existsSync(),
+            isFalse,
+            reason: '$account: no program is installed',
+          );
           expect(
             callsMade().where((String call) => call.contains(dir.path)),
             everyElement(startsWith('$account: ')),

@@ -387,9 +387,9 @@ systemd() {
   if $checking; then
     return
   fi
+  setup_authorized_keys
   install_program "$1"
   install_systemd_unit "$1.service"
-  setup_authorized_keys
 }
 
 # LAUNCHD SERVICES #
