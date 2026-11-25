@@ -29,6 +29,7 @@ void main() {
 
   final bool inContainer = universalSays('is_container');
   final bool hasSystemd = universalSays('is_systemd_available');
+  final bool isDebianLike = universalSays('is_debian_like');
 
   late Directory root;
   late Directory home;
@@ -278,6 +279,44 @@ void main() {
         expect(snapshot(home), homeBefore);
       });
     });
+
+    group('Given universal.sh runs as a regular user on a host with apt', () {
+      test('when a device install uses tmux, then it is not told to use sudo',
+          () async {
+        for (final String name in ['apt', 'apt-get', 'curl', 'wget']) {
+          shim(name, '${record(name)}exit 1\n');
+        }
+
+        for (final List<String> chosen in [
+          ['--dt', 'tmux'],
+          // NOTE without --dt universal.sh picks tmux where systemd is not running.
+          if (!hasSystemd) <String>[],
+        ]) {
+          final result = await universal([
+            ...['-t', 'device', '-c', '@a', '-d', '@b', '-n', 'dev1'],
+            ...chosen,
+          ]);
+
+          expect(result.exitCode, isNot(0), reason: '$chosen');
+          expect(
+            '${result.stdout}${result.stderr}',
+            isNot(contains('re-run this script with sudo')),
+            reason: '$chosen',
+          );
+          expect(
+            callsMade(),
+            [startsWith('curl -sSfL https://api.github.com/')],
+            reason: '$chosen: it downloads the release instead of using apt',
+          );
+          if (calls.existsSync()) calls.deleteSync();
+        }
+      });
+    },
+        skip: inContainer
+            ? 'universal.sh refuses device installs here'
+            : isDebianLike
+                ? false
+                : 'universal.sh uses apt only on a Debian-like host');
 
     group(
         'Given universal.sh runs as a regular user on a host without systemd '

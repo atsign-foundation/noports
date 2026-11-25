@@ -87,6 +87,14 @@ is_darwin() {
   [ "$(uname)" = 'Darwin' ]
 }
 
+# Whether this is a device installation as a headless or tmux job.
+is_job_install() {
+  case "${device_install_type:-}" in
+  headless | tmux) return 0 ;;
+  *) return 1 ;;
+  esac
+}
+
 is_systemd_available() {
   # https://superuser.com/questions/1017959/how-to-know-if-i-am-using-systemd-on-linux
   [ -d /run/systemd/system ]
@@ -1386,9 +1394,9 @@ main() {
     echo "Using local archive: $local_archive"
     cp "$local_archive" "$archive_path"
     unpack_archive
-  elif [ "${device_type:-}" != "headless" ] && ! $no_sudo && [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
+  elif ! is_job_install && ! $no_sudo && [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
     install_via_apt
-  elif [ "${device_type:-}" != "headless" ] && ! $no_sudo && [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
+  elif ! is_job_install && ! $no_sudo && [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
     install_via_rpm
   elif [ "$platform_name" = "macos" ] && check_cmd brew; then
     if [ "$quiet" = true ]; then
