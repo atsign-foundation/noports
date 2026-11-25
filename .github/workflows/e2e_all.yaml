@@ -165,6 +165,7 @@ jobs:
         if: always()
         run: |
           tests/tools/ve/stop_srvd.sh
+          mkdir -p "$LOGS_DIR" && cp /tmp/ve_srvd/srvd.log "$LOGS_DIR/srvd.log" || true
 
       - name: Teardown VE
         if: always()
@@ -264,6 +265,7 @@ jobs:
         if: always()
         run: |
           tests/tools/ve/stop_srvd.sh
+          mkdir -p "$LOGS_DIR" && cp /tmp/ve_srvd/srvd.log "$LOGS_DIR/srvd.log" || true
 
       - name: Teardown VE
         if: always()
@@ -428,6 +430,7 @@ jobs:
         if: always()
         run: |
           tests/tools/ve/stop_srvd.sh
+          mkdir -p "$LOGS_DIR" && cp /tmp/ve_srvd/srvd.log "$LOGS_DIR/srvd.log" || true
 
       - name: Teardown VE
         if: always()
