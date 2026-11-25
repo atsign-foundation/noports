@@ -434,9 +434,9 @@ launchd() {
   if $checking; then
     return
   fi
+  setup_authorized_keys
   install_program "sshnpd"
   install_launchd_unit "com.atsign.sshnpd.plist"
-  setup_authorized_keys
 }
 
 # HEADLESS SERVICES #
@@ -515,9 +515,9 @@ headless() {
   if $checking; then
     return
   fi
+  setup_authorized_keys
   install_program "$1"
   install_headless_job "$1"
-  setup_authorized_keys
 }
 
 # TMUX SESSION #
@@ -590,9 +590,9 @@ tmux() {
   if $checking; then
     return
   fi
+  setup_authorized_keys
   install_program "$1"
   install_tmux_service "$1"
-  setup_authorized_keys
 }
 
 add_home_local_bin_to_path() {

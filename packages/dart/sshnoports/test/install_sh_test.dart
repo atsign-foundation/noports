@@ -1187,6 +1187,41 @@ void main() {
     });
 
     group(
+        'Given install.sh runs as a regular user who cannot set up '
+        '~/.ssh/authorized_keys', () {
+      test(
+          'when it installs a headless job, a tmux job or a launchd unit, then '
+          'it exits 1 having installed nothing', () async {
+        await expectShimsFirst();
+        final ssh = Directory(path.join(home.path, '.ssh'))..createSync();
+        expect(Process.runSync('chmod', ['500', ssh.path]).exitCode, 0);
+        addTearDown(() => Process.runSync('chmod', ['700', ssh.path]));
+        final homeBefore = snapshot(home);
+
+        for (final (List<String> args, String system) in [
+          (['headless', 'sshnpd'], 'Linux'),
+          (['tmux', 'sshnpd'], 'Linux'),
+          (['launchd', 'sshnpd'], 'Darwin'),
+        ]) {
+          shim('uname', 'echo $system\n');
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await install(args);
+
+          expect(result.exitCode, 1, reason: '$args: ${result.stderr}');
+          expect(
+            result.stdout,
+            'Error: could not set up ${ssh.path}/authorized_keys\n',
+            reason: '$args',
+          );
+          expect(changes(homeBefore, snapshot(home)), isEmpty, reason: '$args');
+          expect(callsMade(), isEmpty, reason: '$args');
+        }
+        expect(crontab.existsSync(), isFalse);
+      });
+    });
+
+    group(
         'Given install.sh runs as a regular user whose job script or log '
         'directory belongs to another account', () {
       test(
