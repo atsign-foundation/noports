@@ -129,7 +129,7 @@ void main() {
   Future<void> expectShimsFirst() async {
     final probe = await Process.run(
       '/bin/sh',
-      ['-c', 'command -v crontab tmux systemctl'],
+      ['-c', 'for c in crontab tmux systemctl; do command -v \$c; done'],
       environment: {'PATH': '${shims.path}:${Platform.environment['PATH']}'},
       includeParentEnvironment: false,
     );
