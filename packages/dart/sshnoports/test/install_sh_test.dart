@@ -1370,60 +1370,141 @@ void main() {
         'directory belongs to another account', () {
       test(
           'when it installs a headless or tmux job, then it stops before '
-          'changing anything and prints the commands to clean up the earlier '
-          'install', () async {
+          'changing anything and prints the steps that the user runs to move '
+          'the topmost of them in each tree aside and copy it back', () async {
         await expectShimsFirst();
+        final String account =
+            Process.runSync('id', ['-un']).stdout.toString().trim();
         final String local = path.join(home.path, '.local');
+        final String bin = path.join(local, 'bin');
         final String sshnpd = path.join(home.path, '.sshnpd');
+        final String nowhere = path.join(root.path, 'nowhere');
 
-        for (final (List<String> args, String linked, String target) in [
-          (['headless', 'sshnpd'], '.local/bin/sshnpd.sh', '/etc/hosts'),
-          (['npt', 'headless', 'sshnpd'], '.local/bin/sshnpd.sh', '/etc/hosts'),
-          (['headless', 'srvd'], '.sshnpd/logs', '/usr'),
-          (['tmux', 'sshnpd'], '.local/bin', '/usr'),
+        /// The step that moves [p] aside to [old], or else to `<p>.old`, and
+        /// copies it back with [cp].
+        String move(String cp, String p, [String? old]) {
+          old ??= '$p.old';
+          return "  mv '$p' '$old' && $cp '$old' '$p'\n";
+        }
+
+        for (final (
+          List<String> args,
+          Map<String, String> links,
+          Map<String, String?> taken,
+          List<String> listed,
+          String moves,
+        ) in [
+          (
+            ['headless', 'sshnpd'],
+            {'.local/bin/sshnpd.sh': '/etc/hosts'},
+            {},
+            [path.join(bin, 'sshnpd.sh')],
+            move('cp', path.join(bin, 'sshnpd.sh')),
+          ),
+          (
+            ['npt', 'headless', 'sshnpd'],
+            {'.local/bin/sshnpd.sh': '/etc/hosts'},
+            {},
+            [path.join(bin, 'sshnpd.sh')],
+            move('cp', path.join(bin, 'sshnpd.sh')),
+          ),
+          (
+            ['headless', 'srvd'],
+            {'.sshnpd/logs': '/usr'},
+            {},
+            [path.join(sshnpd, 'logs')],
+            move('cp -R', path.join(sshnpd, 'logs')),
+          ),
+          (
+            ['tmux', 'sshnpd'],
+            {'.local/bin': '/usr'},
+            {},
+            [bin],
+            move('cp -R', bin),
+          ),
+          (
+            ['headless', 'sshnpd'],
+            {'.local': '/usr'},
+            {},
+            [local, bin],
+            move('cp -R', local),
+          ),
+          (
+            ['headless', 'sshnpd'],
+            {'.local': '/usr', '.sshnpd': '/usr'},
+            {},
+            [local, bin, sshnpd],
+            move('cp -R', local) + move('cp -R', sshnpd),
+          ),
+          (
+            ['headless', 'sshnpd'],
+            {'.local': '/usr'},
+            {'.local.old': null, '.local.old.2': nowhere},
+            [local, bin],
+            move('cp -R', local, '$local.old.3'),
+          ),
+          (
+            ['tmux', 'sshnpd'],
+            {'.local/bin/sshnpd.sh': '/etc/hosts'},
+            {'.local/bin/sshnpd.sh.old': null},
+            [path.join(bin, 'sshnpd.sh')],
+            move(
+              'cp',
+              path.join(bin, 'sshnpd.sh'),
+              path.join(bin, 'sshnpd.sh.old.2'),
+            ),
+          ),
         ]) {
-          for (final String dir in [local, sshnpd]) {
-            if (Directory(dir).existsSync()) {
-              Directory(dir).deleteSync(recursive: true);
+          final String reason = '$args, $links, $taken';
+          for (final FileSystemEntity entity
+              in home.listSync(followLinks: false)) {
+            entity.deleteSync(recursive: true);
+          }
+          for (final MapEntry(:String key, :String value) in links.entries) {
+            final String link = path.join(home.path, key);
+            Directory(path.dirname(link)).createSync(recursive: true);
+            Link(link).createSync(value);
+            expect(
+              Process.runSync('/bin/sh', ['-c', '[ -O "\$1" ]', 'sh', link])
+                  .exitCode,
+              1,
+              reason: 'this process owns $value',
+            );
+          }
+          for (final MapEntry(:String key, :String? value) in taken.entries) {
+            final String name = path.join(home.path, key);
+            if (value == null) {
+              Directory(name).createSync(recursive: true);
+            } else {
+              Link(name).createSync(value);
             }
           }
-          final String link = path.join(home.path, linked);
-          Directory(path.dirname(link)).createSync(recursive: true);
-          Link(link).createSync(target);
-          expect(
-            Process.runSync('/bin/sh', ['-c', '[ -O "\$1" ]', 'sh', link])
-                .exitCode,
-            1,
-            reason: 'this process owns $target',
-          );
           final String job = args.last;
-          final String script = path.join(local, 'bin', '$job.sh');
-          final bool hasScript = File(script).existsSync();
-          final String owner = linked.startsWith('.local') ? local : sshnpd;
+          final String script = path.join(bin, '$job.sh');
           final homeBefore = snapshot(home);
           if (calls.existsSync()) calls.deleteSync();
 
           final result = await install(args);
 
           final String kindJob = args.sublist(args.length - 2).join(' ');
-          expect(result.exitCode, 1, reason: '$args: ${result.stderr}');
+          expect(result.exitCode, 1, reason: '$reason: ${result.stderr}');
           expect(
             result.stdout,
-            'Error: install.sh $kindJob writes to these, which tester does not '
-            'own:\n'
-            '  $link\n'
-            'To clean up an earlier install as root, run:\n'
+            'Error: install.sh $kindJob writes to these, which $account does '
+            'not own:\n'
+            '${listed.map((String p) => '  $p\n').join()}'
+            'To clean up an earlier install, first have an admin remove its '
+            'root cron job with:\n'
             "  sudo sh -c 'crontab -l | grep -v -F -- \"\$1\" | crontab -' sh "
             "'$script'\n"
-            "  sudo chown -R -h 'tester' '$owner'\n"
-            '${hasScript ? 'then copy any settings you need from $script and '
-                'remove it with:\n'
-                "  rm -f '$script'\n" : ''}'
+            'then move these aside and copy them back, as $account, with:\n'
+            '$moves'
             'and run install.sh again.\n',
-            reason: '$args',
+            reason: reason,
           );
-          expect(callsMade(), isEmpty, reason: '$args');
-          expect(changes(homeBefore, snapshot(home)), isEmpty, reason: '$args');
+          expect(result.stdout, isNot(contains('chown')), reason: reason);
+          expect(callsMade(), isEmpty, reason: reason);
+          expect(changes(homeBefore, snapshot(home)), isEmpty, reason: reason);
         }
         expect(crontab.existsSync(), isFalse);
       });

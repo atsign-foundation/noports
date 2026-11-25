@@ -109,6 +109,34 @@ not_owned() {
   done
 }
 
+# Prints the first of the paths given that exists and is not owned by the
+# account running install.sh.
+first_not_owned() {
+  for entry in "$@"; do
+    if [ -e "$entry" ] && ! [ -O "$entry" ]; then
+      printf '%s\n' "$entry"
+      return
+    fi
+  done
+}
+
+# Prints the first of $1.old, $1.old.2, $1.old.3 and so on that does not exist.
+free_old_name() {
+  old="$1.old"
+  n=1
+  while [ -e "$old" ] || [ -L "$old" ]; do
+    n=$((n + 1))
+    old="$1.old.$n"
+  done
+  printf '%s\n' "$old"
+}
+
+# Prints the command that moves $2 aside and copies it back with $1.
+print_move_aside() {
+  old=$(free_old_name "$2")
+  echo "  mv $(quote "$2") $(quote "$old") && $1 $(quote "$old") $(quote "$2")"
+}
+
 # Stops before the $1 job $2 is installed when a path in the home that it
 # writes to is not owned by the account running install.sh.
 check_job_paths() {
@@ -124,22 +152,25 @@ check_job_paths() {
   if [ -z "$in_local$in_sshnpd" ]; then
     return
   fi
-  dirs=''
-  echo "Error: install.sh $1 $2 writes to these, which $user does not own:"
+  account=$(id -un)
+  echo "Error: install.sh $1 $2 writes to these, which $account does not own:"
   if [ -n "$in_local" ]; then
     echo "$in_local"
-    dirs=" $(quote "$user_home/.local")"
   fi
   if [ -n "$in_sshnpd" ]; then
     echo "$in_sshnpd"
-    dirs="$dirs $(quote "$user_sshnpd_dir")"
   fi
-  echo "To clean up an earlier install as root, run:"
+  echo "To clean up an earlier install, first have an admin remove its root cron job with:"
   echo "  sudo sh -c 'crontab -l | grep -v -F -- \"\$1\" | crontab -' sh $(quote "$script")"
-  echo "  sudo chown -R -h $(quote "$user")$dirs"
-  if [ -e "$script" ]; then
-    echo "then copy any settings you need from $script and remove it with:"
-    echo "  rm -f $(quote "$script")"
+  echo "then move these aside and copy them back, as $account, with:"
+  top=$(first_not_owned "$user_home/.local" "$user_bin_dir")
+  if [ -n "$top" ]; then
+    print_move_aside 'cp -R' "$top"
+  elif [ -n "$in_local" ]; then
+    print_move_aside cp "$script"
+  fi
+  if [ -n "$in_sshnpd" ]; then
+    print_move_aside 'cp -R' "$(first_not_owned "$user_sshnpd_dir" "$user_log_dir")"
   fi
   echo "and run install.sh again."
   exit 1
