@@ -34,6 +34,7 @@ class CoreTestsParams {
   late int batchSize;
   late int maxRetries;
   late int testTimeoutSeconds;
+  late bool primeSharedKeys;
 
   // Case 2b - run-time defaults
   late String? testRunId;
@@ -59,6 +60,7 @@ class CoreTestsParams {
     e2eAllV2Params.testTimeoutSeconds = int.parse(
       argResults['test-timeout-seconds'],
     );
+    e2eAllV2Params.primeSharedKeys = argResults['prime-shared-keys'];
     e2eAllV2Params.testRunId = argResults['test-run-id'];
     return e2eAllV2Params;
   }
@@ -135,6 +137,12 @@ class CoreTestsParams {
       defaultsTo: '300',
       help:
           'Timeout in seconds for each individual test before it is failed and retried',
+    );
+    argParser.addFlag(
+      'prime-shared-keys',
+      defaultsTo: true,
+      help:
+          'Create every shared key among the atSigns, one at a time, before any daemon starts',
     );
     argParser.addOption(
       'test-run-id',

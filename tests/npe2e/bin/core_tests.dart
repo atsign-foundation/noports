@@ -79,4 +79,5 @@ void _printLoadedParameters(CoreTestsParams params) {
   print('    batch-size: ${params.batchSize}');
   print('    max-retries: ${params.maxRetries}');
   print('    test-timeout-seconds: ${params.testTimeoutSeconds}');
+  print('    prime-shared-keys: ${params.primeSharedKeys}');
 }

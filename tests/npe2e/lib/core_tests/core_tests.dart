@@ -26,6 +26,7 @@ import 'package:npe2e/docker_image.dart';
 import 'package:npe2e/docker_instance.dart';
 import 'package:npe2e/language.dart';
 import 'package:npe2e/noports_version.dart';
+import 'package:npe2e/shared_key_priming.dart';
 import 'package:npe2e/ssh_key_utils.dart';
 import 'package:npe2e/test_result.dart';
 import 'package:npe2e/utils.dart';
@@ -200,6 +201,19 @@ Future<void> _coreTests(
     print('    ${dockerImage.fullImageName}');
   }
   print('');
+
+  if (params.primeSharedKeys) {
+    await primeSharedKeys(
+      atsigns: [
+        params.clientAtsign,
+        params.daemonAtsign,
+        params.relayAtsign,
+        params.unauthorizedAtsign,
+      ],
+      rootDomain: params.rootDomain,
+      storageDirectory: Directory('${baseDirectory.path}/atClientStorage'),
+    );
+  }
 
   // Flow 3: Start Docker daemon instances
   print('Starting docker daemon instances...');
