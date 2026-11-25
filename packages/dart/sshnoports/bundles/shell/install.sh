@@ -24,7 +24,7 @@ define_env() {
       exit 1
     fi
     user="$SUDO_USER"
-    if [ -z "$user" ]; then
+    if [ -z "$user" ] || [ "$user" = root ]; then
       user="root"
       define_root_home
     else

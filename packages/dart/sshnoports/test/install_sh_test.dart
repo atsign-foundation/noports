@@ -438,6 +438,7 @@ void main() {
           'case "\$1 \$2" in\n'
           "'-u alice') home='${alice.path}' ;;\n"
           "'-u bob') home='${bob.path}' ;;\n"
+          "'-u root') home='${home.path}' ;;\n"
           '*) exit 1 ;;\n'
           'esac\n'
           'if \$set_home; then HOME=\$home; fi\n'
@@ -1118,6 +1119,55 @@ void main() {
             reason: reason,
           );
         }
+      });
+    });
+
+    group(
+        "Given install.sh runs as root through sudo from root, with HOME set "
+        "to another account's home", () {
+      test(
+          'when it installs a tmux job whose session exists, then the tmux '
+          "steps and the job see root's home, and the start command it prints "
+          "sets HOME to root's home", () async {
+        await expectShimsFirst();
+        tmuxServer(serverHome: home.path, sessions: ['sshnpd']);
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        for (final Directory dir in [alice, home]) {
+          File(path.join(dir.path, '.tmux.conf')).writeAsStringSync('\n');
+        }
+        final aliceBefore = snapshot(alice);
+
+        final result = await installAsRoot(
+          ['tmux', 'sshnpd'],
+          homeDir: alice,
+          sudoUser: 'root',
+        );
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade(),
+          containsAllInOrder([
+            'tmux kill-session -t sshnpd',
+            'tmux reads ${home.path}/.tmux.conf',
+            'job runs with HOME=${home.path}',
+          ]),
+        );
+        expect(
+          callsMade().where((String call) => call.contains(alice.path)),
+          isEmpty,
+        );
+        expect(
+          callsMade().where((String call) => call.startsWith('sudo')),
+          isEmpty,
+          reason: "root's own steps run without sudo",
+        );
+        expect(
+          result.stdout,
+          contains('To start the service immediately:\n'
+              "  HOME='${home.path}' tmux new-session -d -s sshnpd && tmux "
+              'send-keys -t sshnpd $job C-m &\n'),
+        );
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
       });
     });
 
