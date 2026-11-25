@@ -165,7 +165,7 @@ check_job_paths() {
   fi
   echo "To clean up an earlier install, first have an admin remove its root cron job and stop it with:"
   echo "  sudo sh -c 'crontab -l | grep -v -F -- \"\$1\" | crontab -' sh $(quote "$script")"
-  printf '%s\n' "  sudo sh -c 'for p in \$(pgrep -u 0 -f -- \"^[^ ]*sh \$1\\\$\"); do pkill -P \"\$p\"; kill \"\$p\"; done' sh $(quote "$(ere "$script")")"
+  printf '%s\n' "  sudo sh -c 'for p in \$(pgrep -u 0 -f -- \"^[^ ]*sh \$1\\\$\"); do c=\$(pgrep -P \"\$p\"); kill \"\$p\"; [ -z \"\$c\" ] || kill \$c; done' sh $(quote "$(ere "$script")")"
   echo "then move these aside and copy them back, as $account, with:"
   top=$(first_not_owned "$user_home/.local" "$user_bin_dir")
   if [ -n "$top" ]; then
@@ -599,8 +599,12 @@ post_headless_message() {
   echo "Learn more in $script_dir/headless/README.md"
   echo ""
   echo "The job will start upon next system boot"
-  echo "To start the job immediately:"
-  echo "  $(start_command) &"
+  if [ "$job_state" = unknown ]; then
+    echo "If the job is running, stop it before you start it again"
+  else
+    echo "To start the job immediately:"
+    echo "  $(start_command) &"
+  fi
   echo ""
   echo "Warning: logs stored at $log_file and $err_file have unlimited potential size"
   echo "In a production environment, it's recommended that you install via systemd"
@@ -629,6 +633,31 @@ set_binary_path() {
   sedi "s|^binary_path=\".*\"$|binary_path=\"$dir\"|g" "$1"
 }
 
+stop_job() {
+  job_state=unknown
+  if ! command -v pgrep >/dev/null 2>&1; then
+    return
+  fi
+  pids=$(pgrep -u "$(id -u)" -f -- "^[^ ]*sh $(ere "$1")\$" 2>&1)
+  case $? in
+  0 | 1) ;;
+  *) return ;;
+  esac
+  for p in $pids; do
+    case $p in
+    *[!0-9]*) return ;;
+    esac
+  done
+  job_state=none
+  for p in $pids; do
+    # NOTE the loop's children are listed before it is stopped and stopped after it
+    c=$(pgrep -P "$p")
+    kill "$p"
+    [ -z "$c" ] || kill $c
+    job_state=stopped
+  done
+}
+
 install_headless_job() {
   job_name=$1
   mkdir -p "$user_bin_dir"
@@ -647,12 +676,13 @@ install_headless_job() {
   cron_entry="@reboot $command"
   crontab_contents=$(crontab -l 2>/dev/null)
 
+  job_state=none
   if echo "$crontab_contents" | grep -Fxq "$cron_entry"; then
     echo "=> cron job already installed, killing any old $job_name.sh processes"
-    for p in $(pgrep -u "$(id -u)" -f -- "^[^ ]*sh $(ere "$dest")\$"); do
-      pkill -P "$p"
-      kill "$p"
-    done
+    stop_job "$dest"
+    if [ "$job_state" = unknown ]; then
+      echo "=> Could not check for a running $job_name.sh job: pgrep is missing or does not accept -u"
+    fi
   else
     echo "=> Installing cron job: $cron_entry"
     (

@@ -161,7 +161,7 @@ void main() {
   }
 
   const String stopStep =
-      r"""  sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do pkill -P "$p"; kill "$p"; done' sh '""";
+      r"""  sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do c=$(pgrep -P "$p"); kill "$p"; [ -z "$c" ] || kill $c; done' sh '""";
 
   String ereEscaped(String text) => text.replaceAllMapped(
         RegExp(r'[\[\\.*^$+?(){|]'),
@@ -172,32 +172,59 @@ void main() {
   // has one.
   const int firstPid = 5000000;
 
-  void pgrepOver(List<(int, String)> processes) {
+  /// Writes a `pgrep` stand-in over a table of [processes], each an owner and
+  /// a command line, with pids from [firstPid] in order. A process in
+  /// [parents] is a child of the process at the index it maps to.
+  void pgrepOver(
+    List<(int, String)> processes, {
+    Map<int, int> parents = const {},
+  }) {
     final table = File(path.join(root.path, 'processes'))
       ..writeAsStringSync([
         for (int i = 0; i < processes.length; i++)
-          '${firstPid + i} ${processes[i].$1} ${processes[i].$2}\n',
+          '${firstPid + i} ${processes[i].$1} '
+              '${parents.containsKey(i) ? firstPid + parents[i]! : 1} '
+              '${processes[i].$2}\n',
       ].join());
     shim(
       'pgrep',
       '${record('pgrep')}'
           "uid=''\n"
+          "parent=''\n"
           'while :; do\n'
           '  case "\$1" in\n'
           '  -u) uid=\$2; shift 2 ;;\n'
+          '  -P) parent=\$2; shift 2 ;;\n'
           '  -f) shift ;;\n'
           '  --) shift; break ;;\n'
           '  *) break ;;\n'
           '  esac\n'
           'done\n'
-          'while read -r pid owner line; do\n'
+          'found=1\n'
+          'while read -r pid owner ppid line; do\n'
           '  if [ -n "\$uid" ] && [ "\$owner" != "\$uid" ]; then continue; fi\n'
-          '  if printf "%s\\n" "\$line" | grep -E -q -- "\$1"; then\n'
-          '    echo "\$pid"\n'
+          '  if [ -n "\$parent" ]; then\n'
+          '    if [ "\$ppid" != "\$parent" ]; then continue; fi\n'
+          '  elif ! printf "%s\\n" "\$line" | grep -E -q -- "\$1"; then\n'
+          '    continue\n'
           '  fi\n'
-          "done < '${table.path}'\n",
+          '  echo "\$pid"\n'
+          '  found=0\n'
+          "done < '${table.path}'\n"
+          'exit \$found\n',
     );
-    shim('pkill', record('pkill'));
+  }
+
+  /// Makes the copy of install.sh in the bundle record each `kill` it runs
+  /// in [calls] instead of sending the signal.
+  void recordKills() {
+    final script = File(path.join(bundle.path, 'install.sh'));
+    final String source = script.readAsStringSync();
+    expect(source.startsWith('#!/bin/sh\n'), isTrue);
+    script.writeAsStringSync(source.replaceFirst(
+      '#!/bin/sh\n',
+      "#!/bin/sh\nkill() { echo \"kill \$*\" >> '${calls.path}'; }\n",
+    ));
   }
 
   /// Writes [entries] as the passwd file that install.sh reads.
@@ -2037,15 +2064,27 @@ void main() {
     });
 
     group(
-        "Given the user's headless job is in its crontab, and a process of "
-        'another account runs its job script', () {
+        "Given the user's headless job is in its crontab, and processes of the "
+        'user and of another account run its job script', () {
       test(
-          'when install.sh installs the job again, then it stops only the '
-          "user's own process", () async {
+          "when install.sh installs the job again, then for each of the user's "
+          'own processes it lists the children, stops the process and then '
+          'those children', () async {
         final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
         final first = await install(['headless', 'sshnpd']);
         expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
-        pgrepOver([(bobUid, '/bin/sh $job'), (uid, '/bin/sh $job')]);
+        pgrepOver(
+          [
+            (bobUid, '/bin/sh $job'),
+            (bobUid, 'sleep 10'),
+            (uid, '/bin/sh $job'),
+            (uid, '/home/tester/.local/bin/atsc sshnpd -a @device'),
+            (uid, 'sleep 10'),
+            (uid, 'sh $job'),
+          ],
+          parents: {1: 0, 3: 2, 4: 2},
+        );
+        recordKills();
         final int callsBefore = callsMade().length;
 
         final again = await install(['headless', 'sshnpd']);
@@ -2054,9 +2093,98 @@ void main() {
         expect(
           callsMade()
               .skip(callsBefore)
-              .where((String call) => call.startsWith('pkill ')),
-          ['pkill -P ${firstPid + 1}'],
+              .where((String call) => call.startsWith(RegExp('(pgrep|kill) '))),
+          [
+            'pgrep -u $uid -f -- ^[^ ]*sh ${ereEscaped(job)}\$',
+            'pgrep -P ${firstPid + 2}',
+            'kill ${firstPid + 2}',
+            'kill ${firstPid + 3} ${firstPid + 4}',
+            'pgrep -P ${firstPid + 5}',
+            'kill ${firstPid + 5}',
+          ],
         );
+      });
+    });
+
+    group(
+        "Given the user's headless job is in its crontab, and pgrep is missing "
+        'or does not accept -u', () {
+      test(
+          'when install.sh installs the job again, then it says it could not '
+          'check for a running job and prints no command to start it',
+          () async {
+        await expectShimsFirst();
+        recordKills();
+        final String pgrep = path.join(shims.path, 'pgrep');
+
+        for (final bool missing in [false, true]) {
+          for (final File file in [crontab, calls]) {
+            if (file.existsSync()) file.deleteSync();
+          }
+          shim('pgrep', '${record('pgrep')}exit 1\n');
+          final first = await install(['headless', 'sshnpd']);
+          expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
+          String? searchPath;
+          if (missing) {
+            File(pgrep).deleteSync();
+            searchPath = '${shims.path}:${pathWithout('pgrep')}';
+            final probe = await Process.run(
+              '/bin/sh',
+              ['-c', 'command -v pgrep'],
+              environment: {'PATH': searchPath},
+              includeParentEnvironment: false,
+            );
+            expect(probe.exitCode, isNot(0), reason: '${probe.stdout}');
+          } else {
+            shim(
+              'pgrep',
+              '${record('pgrep')}'
+                  'for a in "\$@"; do\n'
+                  '  if [ "\$a" = -u ]; then\n'
+                  "    echo 'pgrep: unrecognized option: u' >&2\n"
+                  "    echo 'Usage: pgrep [-flanovx] [-s SID|-P PPID|PATTERN]' "
+                  '>&2\n'
+                  '    exit 1\n'
+                  '  fi\n'
+                  'done\n'
+                  'exit 1\n',
+            );
+          }
+
+          final again = await install(
+            ['headless', 'sshnpd'],
+            searchPath: searchPath,
+          );
+
+          final String reason = missing ? 'no pgrep' : 'pgrep without -u';
+          expect(
+            again.exitCode,
+            0,
+            reason: '$reason: ${again.stdout}${again.stderr}',
+          );
+          expect(
+            again.stdout,
+            contains('=> Could not check for a running sshnpd.sh job: pgrep '
+                'is missing or does not accept -u\n'),
+            reason: reason,
+          );
+          expect(
+            again.stdout,
+            contains('If the job is running, stop it before you start it '
+                'again\n'),
+            reason: reason,
+          );
+          expect(
+            again.stdout,
+            isNot(contains('immediately')),
+            reason: reason,
+          );
+          expect(
+            callsMade().where((String call) => call.startsWith('kill ')),
+            isEmpty,
+            reason: reason,
+          );
+        }
       });
     });
 
@@ -2369,7 +2497,8 @@ void main() {
       test(
           'when install.sh prints the step that stops an earlier root job, '
           "then the step stops only root's processes that run that script "
-          'with a shell, and their children', () async {
+          'with a shell, each after listing its children, and then those '
+          'children', () async {
         await expectShimsFirst();
         const String name = r'h.o+m*e?(1)[2]{3}|^$';
         final odd = Directory(path.join(root.path, name))..createSync();
@@ -2400,11 +2529,29 @@ void main() {
           (0, '/bin/sh $script -v', false),
           (0, 'sudo sh $script', false),
           (0, 'sh -c kill sh $script', false),
+          (0, 'sleep 10', false),
+          (0, '/usr/bin/atsc sshnpd -a @device', false),
+          (0, 'sleep 10', false),
+          (bobUid, 'sleep 10', false),
         ];
-        pgrepOver([
-          for (final (int, String, bool) process in processes)
-            (process.$1, process.$2),
-        ]);
+        final int last = processes.length - 1;
+        final Map<int, int> parents = {
+          last - 3: 0,
+          last - 2: 0,
+          last - 1: 1,
+          last: 3,
+        };
+        final Map<int, List<int>> children = {};
+        for (final MapEntry(:int key, :int value) in parents.entries) {
+          children.putIfAbsent(value, () => []).add(key);
+        }
+        pgrepOver(
+          [
+            for (final (int, String, bool) process in processes)
+              (process.$1, process.$2),
+          ],
+          parents: parents,
+        );
         shim('sudo', r'''
 if [ "$1 $2" != 'sh -c' ]; then exit 1; fi
 shift 2
@@ -2424,14 +2571,15 @@ exec sh -c "kill() { echo \"kill \$*\" >> \"\$CALLS\"; }; $body" "$@"
 
         expect(stop.exitCode, 0, reason: '${stop.stdout}${stop.stderr}');
         expect(
-          callsMade()
-              .skip(callsBefore)
-              .where((String call) => !call.startsWith('pgrep ')),
+          callsMade().skip(callsBefore),
           [
+            'pgrep -u 0 -f -- ^[^ ]*sh ${ereEscaped(script)}\$',
             for (int i = 0; i < processes.length; i++)
               if (processes[i].$3) ...[
-                'pkill -P ${firstPid + i}',
+                'pgrep -P ${firstPid + i}',
                 'kill ${firstPid + i}',
+                if (children.containsKey(i))
+                  'kill ${children[i]!.map((int c) => firstPid + c).join(' ')}',
               ],
           ],
           reason: [

@@ -19,7 +19,7 @@ A headless or tmux job runs as the user who installs it, so `./install.sh headle
 ```sh
 sudo sh -c 'crontab -l | grep -v -F -- "$1" | crontab -' sh "$HOME/.local/bin/sshnpd.sh"
 script=$(printf '%s\n' "$HOME/.local/bin/sshnpd.sh" | sed 's/[[\.*^$+?(){|]/\\&/g')
-sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do pkill -P "$p"; kill "$p"; done' sh "$script"
+sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do c=$(pgrep -P "$p"); kill "$p"; [ -z "$c" ] || kill $c; done' sh "$script"
 mv "$HOME/.local" "$HOME/.local.old" && cp -R "$HOME/.local.old" "$HOME/.local"
 mv "$HOME/.sshnpd" "$HOME/.sshnpd.old" && cp -R "$HOME/.sshnpd.old" "$HOME/.sshnpd"
 ```
@@ -39,7 +39,7 @@ If you installed a headless or tmux job by running an earlier `universal.sh` wit
 ```sh
 sudo sh -c 'crontab -l | grep -v -F -- "$1" | crontab -' sh "$HOME/.local/bin/sshnpd.sh"
 script=$(printf '%s\n' "$HOME/.local/bin/sshnpd.sh" | sed 's/[[\.*^$+?(){|]/\\&/g')
-sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do pkill -P "$p"; kill "$p"; done' sh "$script"
+sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do c=$(pgrep -P "$p"); kill "$p"; [ -z "$c" ] || kill $c; done' sh "$script"
 ```
 
 Then run the installer without `sudo`.
