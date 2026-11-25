@@ -65,4 +65,27 @@ void main() {
       },
     );
   });
+
+  group('Given a process listing showing SSHNPD', () {
+    test(
+      'when each platform checks whether sshnpd is running, then only Windows counts it',
+      () async {
+        final process = ListedProcess(pid + 1, ['/opt/noports/SSHNPD']);
+        for (final (listing, counted) in [
+          (linuxListing, false),
+          (macOSListing, false),
+          (windowsListing, true),
+        ]) {
+          final platform = listing(process);
+          expect(
+            await platform.isDaemonRunning('sshnpd'),
+            counted,
+            reason:
+                '${platform.name} ${counted ? 'counts' : 'does not count'}'
+                ' SSHNPD as sshnpd',
+          );
+        }
+      },
+    );
+  });
 }
