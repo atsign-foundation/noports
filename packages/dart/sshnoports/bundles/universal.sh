@@ -521,16 +521,20 @@ unpack_archive() {
 
 cleanup() {
   # These should be in the tmp directory, attempt to remove them anyway
-  rm -f "$archive_path"
-  rm -rf "$extract_path"
+  if [ -n "${archive_path:-}" ]; then
+    rm -f "$archive_path"
+  fi
+  if [ -n "${extract_path:-}" ]; then
+    rm -rf "$extract_path"
+  fi
 
-  if $as_root; then
-    $is_dotlocal_created || chown_dir $user_home/.local
-    $is_dotlocalbin_created || chown_dir $user_home/.local/bin
-    $is_dotssh_created || chown_dir $user_home/.ssh/
-    $is_dotsshnp_created || chown_dir $user_home/.sshnp/
-    $is_dotatsign_created || chown_dir $user_home/.atsign/
-    $is_dotatsignkeys_created || chown_dir $user_home/.atsign/keys/
+  if ${as_root:-false}; then
+    ${is_dotlocal_created:-true} || chown_dir $user_home/.local
+    ${is_dotlocalbin_created:-true} || chown_dir $user_home/.local/bin
+    ${is_dotssh_created:-true} || chown_dir $user_home/.ssh/
+    ${is_dotsshnp_created:-true} || chown_dir $user_home/.sshnp/
+    ${is_dotatsign_created:-true} || chown_dir $user_home/.atsign/
+    ${is_dotatsignkeys_created:-true} || chown_dir $user_home/.atsign/keys/
   fi
 }
 

@@ -307,7 +307,7 @@ void main() {
             <String>[],
             'SunOS',
             'and provide the following information: SunOS\n',
-            isNot(0),
+            equals(1),
           ),
           (
             ['-t', 'tablet'],
@@ -334,11 +334,47 @@ void main() {
           expect(result.exitCode, exits, reason: '$args: ${result.stderr}');
           expect(result.stderr, contains(line), reason: '$args');
           expect(result.stderr, isNot(contains(' exit 1')), reason: '$args');
+          expect(
+            result.stderr,
+            allOf(
+              isNot(contains('parameter not set')),
+              isNot(contains('unbound variable')),
+            ),
+            reason: '$args',
+          );
           shim(
             'uname',
             'if [ "\$1" = -m ]; then echo x86_64; else echo Linux; fi\n',
           );
         }
+      });
+    });
+
+    group(
+        "Given universal.sh runs as root through sudo and cannot find the sudo "
+        "user's home", () {
+      test('when universal.sh runs, then it exits with the error of sudo',
+          () async {
+        shim(
+          'id',
+          'if [ "\$1" = -u ]; then echo 0; else exec \'${which('id')}\' "\$@"; '
+              'fi\n',
+        );
+
+        final result = await universal(
+          ['-t', 'device', '-c', '@a', '-d', '@b', '-n', 'dev1'],
+          sudoUser: 'bob',
+        );
+
+        expect(result.exitCode, 1, reason: '${result.stderr}');
+        expect(callsMade(), ['sudo -u bob sh -c echo \$HOME']);
+        expect(
+          result.stderr,
+          allOf(
+            isNot(contains('parameter not set')),
+            isNot(contains('unbound variable')),
+          ),
+        );
       });
     });
 
