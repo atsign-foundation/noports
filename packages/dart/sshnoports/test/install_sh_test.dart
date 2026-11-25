@@ -720,6 +720,102 @@ void main() {
       });
     });
 
+    group('Given an option after a command', () {
+      test(
+          'when install.sh installs npt and then, after -b, srv, then npt is '
+          'installed into the default directory and srv into the -b '
+          'directory', () async {
+        final result = await install(['npt', '-b', prefix.path, 'srv']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          namesIn(path.join(home.path, '.local', 'bin')),
+          ['atsc', 'npt', 'srv'],
+        );
+        expect(namesIn(prefix.path), ['srv']);
+      });
+
+      test(
+          'when install.sh runs as root through sudo and -u bob follows a '
+          'headless job, then it refuses before installing anything', () async {
+        final bobBefore = snapshot(bob);
+
+        final result = await installAsRoot(
+          ['npt', 'headless', 'sshnpd', '-u', 'bob'],
+          sudoUser: 'alice',
+        );
+
+        expect(result.exitCode, 1, reason: '${result.stdout}');
+        expect(
+          result.stdout,
+          'Error: run install.sh headless sshnpd without sudo, as the user who '
+          'will run the daemon\n',
+        );
+        expect(prefix.existsSync(), isFalse);
+        expect(crontab.existsSync(), isFalse);
+        expect(changes(bobBefore, snapshot(bob)), isEmpty);
+      });
+
+      test(
+          'when install.sh runs as root from a root login and -u bob follows a '
+          "headless job, then it installs npt and the job for root, and "
+          "nothing in bob's home", () async {
+        await expectShimsFirst();
+        final String logs = path.join(home.path, '.sshnpd', 'logs');
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        final bobBefore = snapshot(bob);
+
+        final result =
+            await installAsRoot(['npt', 'headless', 'sshnpd', '-u', 'bob']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(namesIn(prefix.path), ['atsc', 'npt', 'srv', 'sshnpd']);
+        expect(
+          crontab.readAsStringSync(),
+          '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
+        );
+        expect(changes(bobBefore, snapshot(bob)), isEmpty);
+      });
+
+      test(
+          'when install.sh runs as root and -u bob follows the sshnpd systemd '
+          'unit, then it sets up the keys of the account it uses without -u, '
+          "not bob's", () async {
+        expectSystemdUnitsUnwritable();
+
+        for (final (String? sudoUser, Directory dir) in [
+          ('alice', alice),
+          (null, home),
+        ]) {
+          final String keys = path.join(dir.path, '.ssh', 'authorized_keys');
+          final bobBefore = snapshot(bob);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await installAsRoot(
+            ['systemd', 'sshnpd', '-u', 'bob'],
+            sudoUser: sudoUser,
+          );
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$sudoUser: ${result.stdout}${result.stderr}',
+          );
+          expect(File(keys).existsSync(), isTrue, reason: '$sudoUser');
+          expect(
+            callsMade(),
+            contains(endsWith('touch $keys')),
+            reason: '$sudoUser',
+          );
+          expect(
+            changes(bobBefore, snapshot(bob)),
+            isEmpty,
+            reason: '$sudoUser',
+          );
+        }
+      });
+    });
+
     group('Given install.sh runs as root with -u naming another account', () {
       test(
           'when it installs the sshnpd systemd unit, then that account\'s '

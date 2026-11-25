@@ -10,6 +10,7 @@ is_darwin() {
 }
 
 unset binary_dir
+homes=''
 user_home=$HOME
 define_env() {
   script_dir="$(dirname -- "$(readlink -f -- "$0")")"
@@ -626,6 +627,30 @@ install_binaries() {
   esac
 }
 
+# Sets user_home to the home directory of $user. The checking pass looks it up
+# and keeps it in $homes, where the install pass finds it.
+find_user_home() {
+  if ! $checking; then
+    user_home=$(printf '%s\n' "$homes" | while IFS=: read -r name home; do
+      if [ "$name" = "$user" ]; then
+        printf '%s\n' "$home"
+        break
+      fi
+    done)
+    return
+  fi
+  if ! command -v sudo >/dev/null 2>&1; then
+    echo "Error: could not find the home directory of $user: sudo is not installed"
+    exit 1
+  fi
+  user_home=$(sudo -H -u "$user" sh -c 'echo $HOME')
+  if [ -z "$user_home" ] || ! [ -d "$user_home" ]; then
+    echo "Error: could not find the home directory of $user"
+    exit 1
+  fi
+  homes=$(printf '%s\n%s:%s' "$homes" "$user" "$user_home")
+}
+
 # Runs the options and commands in the arguments in order. While $checking it
 # applies the options and refuses any command that cannot run, installing
 # nothing.
@@ -643,15 +668,7 @@ run_args() {
     -u)
       if [ "$2" != "$user" ]; then
         user="$2"
-        if ! command -v sudo >/dev/null 2>&1; then
-          echo "Error: could not find the home directory of $user: sudo is not installed"
-          exit 1
-        fi
-        user_home=$(sudo -H -u "$user" sh -c 'echo $HOME')
-        if [ -z "$user_home" ] || ! [ -d "$user_home" ]; then
-          echo "Error: could not find the home directory of $user"
-          exit 1
-        fi
+        find_user_home
         define_user_paths
       fi
       shift
@@ -680,9 +697,15 @@ run_args() {
 main() {
   arg_zero=$0
   define_env
+  env_user=$user
+  env_user_home=$user_home
   checking=true
   run_args "$@"
   checking=false
+  unset binary_dir
+  user=$env_user
+  user_home=$env_user_home
+  define_user_paths
   run_args "$@"
 }
 
