@@ -218,6 +218,8 @@ usage() {
   echo "-b <dir>        - override the directory in which the binaries are written to"
   echo "-u <username>   - install for <username>: as root, set up its ~/.ssh/authorized_keys"
   echo "                  for a systemd unit; otherwise, install into its ~/.local/bin"
+  echo ""
+  echo "An option applies to the commands after it, and a command must follow it."
 }
 
 # SETUP AUTHORIZED KEYS #
@@ -743,8 +745,9 @@ find_user_home() {
 
 # Runs the options and commands in the arguments in order. While $checking it
 # applies the options and refuses any command that cannot run, installing
-# nothing.
+# nothing. It refuses an option with no value, or that no command follows.
 run_args() {
+  unfollowed=''
   while [ $# -gt 0 ]; do
     case "$1" in
     -h)
@@ -752,24 +755,36 @@ run_args() {
       exit 0
       ;;
     -b)
+      if [ -z "$2" ]; then
+        echo "Error: -b needs a directory"
+        exit 1
+      fi
       binary_dir="$2"
+      unfollowed=${unfollowed:-"-b $2"}
       shift
       ;;
     -u)
+      if [ -z "$2" ]; then
+        echo "Error: -u needs an account name"
+        exit 1
+      fi
       if [ "$2" != "$user" ]; then
         user="$2"
         find_user_home
         define_user_paths
       fi
+      unfollowed=${unfollowed:-"-u $2"}
       shift
       ;;
     atsc | srv | at_activate | npt | sshnp | sshnpd | srvd | binaries | debug_srvd | debug | all)
+      unfollowed=''
       if ! $checking; then
         install_binaries "$1"
         add_home_local_bin_to_path
       fi
       ;;
     systemd | launchd | headless | tmux)
+      unfollowed=''
       command=$1
       shift 1
       $command "$@"
@@ -782,6 +797,10 @@ run_args() {
     esac
     shift
   done
+  if [ -n "$unfollowed" ]; then
+    printf '%s\n' "Error: $unfollowed is not followed by a command"
+    exit 1
+  fi
 }
 
 main() {

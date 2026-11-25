@@ -933,61 +933,87 @@ void main() {
       });
 
       test(
-          'when install.sh runs as root from a root login and -u bob follows a '
-          "headless job, then it installs npt and the job for root, and "
-          "nothing in bob's home", () async {
+          'when no command follows an option, or an option has no value, then '
+          'install.sh refuses before changing anything, with an error naming '
+          'the option', () async {
         await expectShimsFirst();
-        final String logs = path.join(home.path, '.sshnpd', 'logs');
-        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
-        final bobBefore = snapshot(bob);
-
-        final result =
-            await installAsRoot(['npt', 'headless', 'sshnpd', '-u', 'bob']);
-
-        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
-        expect(namesIn(prefix.path), ['atsc', 'npt', 'srv', 'sshnpd']);
-        expect(
-          crontab.readAsStringSync(),
-          '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
-        );
-        expect(changes(bobBefore, snapshot(bob)), isEmpty);
-      });
-
-      test(
-          'when install.sh runs as root and -u bob follows the sshnpd systemd '
-          'unit, then it sets up the keys of the account it uses without -u, '
-          "not bob's", () async {
         expectSystemdUnitsUnwritable();
+        const String noValueB = 'Error: -b needs a directory';
+        const String noValueU = 'Error: -u needs an account name';
 
-        for (final (String? sudoUser, Directory dir) in [
-          ('alice', alice),
-          (null, home),
+        for (final (
+              List<String> args,
+              bool asRoot,
+              String? sudoUser,
+              String error,
+            ) in [
+          (
+            ['npt', '-b', prefix.path],
+            false,
+            null,
+            'Error: -b ${prefix.path} is not followed by a command',
+          ),
+          (
+            ['npt', '-u', 'bob'],
+            false,
+            null,
+            'Error: -u bob is not followed by a command',
+          ),
+          (
+            ['-b', prefix.path, '-u', 'bob'],
+            false,
+            null,
+            'Error: -b ${prefix.path} is not followed by a command',
+          ),
+          (
+            ['npt', 'headless', 'sshnpd', '-u', 'bob'],
+            true,
+            null,
+            'Error: -u bob is not followed by a command',
+          ),
+          (
+            ['systemd', 'sshnpd', '-u', 'bob'],
+            true,
+            null,
+            'Error: -u bob is not followed by a command',
+          ),
+          (
+            ['systemd', 'sshnpd', '-u', 'bob'],
+            true,
+            'alice',
+            'Error: -u bob is not followed by a command',
+          ),
+          (['npt', '-b'], false, null, noValueB),
+          (['-b', '', 'npt'], false, null, noValueB),
+          (['npt', '-u'], false, null, noValueU),
+          (['-u', '', 'npt'], false, null, noValueU),
         ]) {
-          final String keys = path.join(dir.path, '.ssh', 'authorized_keys');
+          final String reason = '$args, root $asRoot, sudo user $sudoUser';
+          final homeBefore = snapshot(home);
+          final aliceBefore = snapshot(alice);
           final bobBefore = snapshot(bob);
           if (calls.existsSync()) calls.deleteSync();
 
-          final result = await installAsRoot(
-            ['systemd', 'sshnpd', '-u', 'bob'],
-            sudoUser: sudoUser,
-          );
+          final result = asRoot
+              ? await installAsRoot(args, sudoUser: sudoUser)
+              : await install(args);
 
-          expect(
-            result.exitCode,
-            0,
-            reason: '$sudoUser: ${result.stdout}${result.stderr}',
-          );
-          expect(File(keys).existsSync(), isTrue, reason: '$sudoUser');
+          expect(result.exitCode, 1, reason: '$reason: ${result.stderr}');
+          expect(result.stdout, '$error\n', reason: reason);
+          expect(prefix.existsSync(), isFalse, reason: reason);
+          expect(crontab.existsSync(), isFalse, reason: reason);
           expect(
             callsMade(),
-            contains(endsWith('touch $keys')),
-            reason: '$sudoUser',
+            everyElement(endsWith(' sh -c echo \$HOME')),
+            reason: reason,
           );
+          expect(changes(homeBefore, snapshot(home)), isEmpty, reason: reason);
           expect(
-            changes(bobBefore, snapshot(bob)),
+            changes(aliceBefore, snapshot(alice)),
             isEmpty,
-            reason: '$sudoUser',
+            reason: reason,
           );
+          expect(changes(bobBefore, snapshot(bob)), isEmpty, reason: reason);
         }
       });
     });
