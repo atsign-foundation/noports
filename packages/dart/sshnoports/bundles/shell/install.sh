@@ -161,20 +161,8 @@ install_single_binary() {
   else
     replace_binary "$1"
   fi
-  if is_root && ! [ -f "$user_bin_dir/$1" ]; then
-    if ! [ -d "$user_bin_dir" ]; then
-      mkdir -p "$user_bin_dir"
-    fi
-
-    if [ -f "$dest/$1" ]; then
-      ln -sf "$dest/$1" "$user_bin_dir/$1"
-      chown root:wheel "$dest/$1" 2>/dev/null || chown root:root "$dest/$1" 2>/dev/null || chown root "$dest/$1" 2>/dev/null
-
-      echo "=> Linked $user_bin_dir/$1 to $dest/$1"
-    else
-      echo "Failed to link $user_bin_dir/$1 to $dest/$1:"
-      echo "  $dest/$1 does not exist"
-    fi
+  if is_root; then
+    chown root:wheel "$dest/$1" 2>/dev/null || chown root:root "$dest/$1" 2>/dev/null || chown root "$dest/$1" 2>/dev/null
   fi
 }
 
@@ -546,7 +534,7 @@ tmux() {
 }
 
 add_home_local_bin_to_path() {
-  if ! is_root && [ "$(install_dir)" != "$user_bin_dir" ]; then
+  if is_root || [ "$(install_dir)" != "$user_bin_dir" ]; then
     return 0
   fi
   if [ -f "$user_home/.profile" ] &&

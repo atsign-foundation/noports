@@ -13,8 +13,12 @@ void main() {
   late Directory root;
   late Directory bundle;
   late Directory home;
+  late Directory alice;
+  late Directory bob;
   late Directory prefix;
   late Directory shims;
+  late File calls;
+  late File crontab;
 
   /// Makes [file] executable.
   void executable(String file) {
@@ -41,13 +45,23 @@ void main() {
     executable(file);
   }
 
+  /// A line of `sh` which appends [name] and the arguments of the script it
+  /// is in to [calls].
+  String record(String name) => 'echo "$name \$*" >> \'${calls.path}\'\n';
+
+  /// The commands the shims were run with, in order.
+  List<String> callsMade() => calls.existsSync() ? calls.readAsLinesSync() : [];
+
   /// Runs install.sh from the bundle with [args] under [umask], as a user
   /// whose home is [home], with [searchPath] as its PATH, or else the shims
-  /// in front of the PATH of this process.
+  /// in front of the PATH of this process. A [sudoUser] is the account sudo
+  /// was run from, and a [workingDirectory] the directory it runs in.
   Future<ProcessResult> install(
     List<String> args, {
     String umask = '022',
     String? searchPath,
+    String? sudoUser,
+    String? workingDirectory,
   }) =>
       Process.run(
         '/bin/sh',
@@ -63,17 +77,62 @@ void main() {
           'HOME': home.path,
           'USER': 'tester',
           'PATH': searchPath ?? '${shims.path}:${Platform.environment['PATH']}',
+          if (sudoUser != null) 'SUDO_USER': sudoUser,
         },
         includeParentEnvironment: false,
+        workingDirectory: workingDirectory,
       );
 
-  /// Runs install.sh as root would run it, with `id` and `uname` shims, into
-  /// [prefix] with [args].
-  Future<ProcessResult> installAsRoot(List<String> args, {String? umask}) {
+  /// Runs install.sh as root would run it, with `id`, `uname` and `chown`
+  /// shims, into [prefix] with [args].
+  Future<ProcessResult> installAsRoot(
+    List<String> args, {
+    String? umask,
+    String? sudoUser,
+  }) {
     shim('id',
         'if [ "\$1" = -u ]; then echo 0; else exec /usr/bin/id "\$@"; fi\n');
     shim('uname', 'echo Linux\n');
-    return install(['-b', prefix.path, ...args], umask: umask ?? '022');
+    shim('chown', record('chown'));
+    return install(
+      ['-b', prefix.path, ...args],
+      umask: umask ?? '022',
+      sudoUser: sudoUser,
+    );
+  }
+
+  /// Each path under [dir], relative to it, with its type, permissions,
+  /// modification time and, for a file, its contents.
+  Map<String, String> snapshot(Directory dir) => {
+        for (final FileSystemEntity entity in [
+          dir,
+          ...dir.listSync(recursive: true, followLinks: false),
+        ])
+          path.relative(entity.path, from: dir.path): [
+            if (entity is Link) 'link ${entity.targetSync()}',
+            entity.statSync().type,
+            entity.statSync().modeString(),
+            entity.statSync().modified.microsecondsSinceEpoch,
+            if (entity is File) entity.readAsStringSync(),
+          ].join(' '),
+      };
+
+  /// The paths that [after] adds to [before], removes from it or changes.
+  List<String> changes(Map<String, String> before, Map<String, String> after) =>
+      {...before.keys, ...after.keys}
+          .where((String key) => before[key] != after[key])
+          .toList()
+        ..sort();
+
+  /// Fails unless this process is unable to write /etc/systemd/system, where
+  /// install.sh writes systemd units.
+  void expectSystemdUnitsUnwritable() {
+    final probe = Process.runSync('/bin/sh', [
+      '-c',
+      'd=/etc/systemd/system; while ! [ -e "\$d" ]; do d=\$(dirname "\$d"); '
+          'done; [ -w "\$d" ]',
+    ]);
+    expect(probe.exitCode, 1, reason: 'this process can write systemd units');
   }
 
   /// The names in [dir], sorted, or none when it does not exist.
@@ -122,15 +181,44 @@ void main() {
     bundle = Directory(path.join(root.path, 'sshnp'))..createSync();
     Directory(path.join(bundle.path, 'debug')).createSync();
     home = Directory(path.join(root.path, 'home'))..createSync();
+    alice = Directory(path.join(root.path, 'alice'))..createSync();
+    bob = Directory(path.join(root.path, 'bob'))..createSync();
     prefix = Directory(path.join(root.path, 'prefix'));
     shims = Directory(path.join(root.path, 'shims'))..createSync();
+    calls = File(path.join(root.path, 'calls'));
+    crontab = File(path.join(root.path, 'crontab'));
     File(path.join('bundles', 'shell', 'install.sh'))
         .copySync(path.join(bundle.path, 'install.sh'));
-    final copy = Process.runSync('cp', ['-R', 'launchers/.', bundle.path]);
-    expect(copy.exitCode, 0, reason: '${copy.stderr}');
+    for (final String from in ['launchers/.', 'bundles/shell/headless']) {
+      final copy = Process.runSync('cp', ['-R', from, bundle.path]);
+      expect(copy.exitCode, 0, reason: '${copy.stderr}');
+    }
     standIn(path.join(bundle.path, 'atsc'), 'atsc 1');
     standIn(path.join(bundle.path, 'srv'), 'srv');
     standIn(path.join(bundle.path, 'debug', 'atsc'), 'debug atsc');
+    shim(
+      'crontab',
+      '${record('crontab')}'
+          'case "\$1" in\n'
+          "-l) cat '${crontab.path}' 2>/dev/null ;;\n"
+          "-) cat > '${crontab.path}' ;;\n"
+          '*) exit 1 ;;\n'
+          'esac\n',
+    );
+    shim('tmux', '${record('tmux')}exit 1\n');
+    shim('systemctl', record('systemctl'));
+    shim('pgrep', '${record('pgrep')}exit 1\n');
+    shim(
+      'sudo',
+      '${record('sudo')}'
+          'if [ "\$1 \$3 \$4 \$5" = "-u sh -c echo \\\$HOME" ]; then\n'
+          '  case "\$2" in\n'
+          "  alice) echo '${alice.path}'; exit 0 ;;\n"
+          "  bob) echo '${bob.path}'; exit 0 ;;\n"
+          '  esac\n'
+          'fi\n'
+          'exit 1\n',
+    );
   });
 
   group('install.sh', () {
@@ -325,24 +413,62 @@ void main() {
       });
     });
 
-    group('Given install.sh runs as root', () {
+    group('Given install.sh runs as root through sudo from the account alice',
+        () {
       test(
-          'when it installs a program, then the user it links each program for '
-          'can read and run it', () async {
-        final String links = path.join(home.path, '.local', 'bin');
+          'when it installs npt, then atsc, srv and npt are in /usr/local/bin '
+          "and nothing in alice's home is created or changed", () async {
+        File(path.join(alice.path, '.profile'))
+            .writeAsStringSync('umask 022\n');
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
 
-        final result = await installAsRoot(['sshnpd'], umask: '027');
+        final result =
+            await installAsRoot(['npt'], umask: '027', sudoUser: 'alice');
 
         expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
-        for (final String name in ['atsc', 'srv', 'sshnpd']) {
+        expect(callsMade(), contains('sudo -u alice sh -c echo \$HOME'));
+        expect(namesIn(prefix.path), ['atsc', 'npt', 'srv']);
+        for (final String name in ['atsc', 'srv', 'npt']) {
           final String file = path.join(prefix.path, name);
           expect(modeOf(file), '755', reason: name);
-          expect(Link(path.join(links, name)).targetSync(), file, reason: name);
+          expect(
+            callsMade(),
+            contains(allOf(startsWith('chown root'), endsWith(' $file'))),
+            reason: name,
+          );
         }
         expect(
-          await output(path.join(links, 'sshnpd'), ['-x']),
-          'atsc 1\n[sshnpd]\n[-x]\n',
+          await output(path.join(prefix.path, 'npt'), ['-x']),
+          'atsc 1\n[npt]\n[-x]\n',
         );
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs as root', () {
+      test(
+          'when it installs the sshnpd systemd unit for alice, then the only '
+          "thing it writes in alice's home is ~/.ssh/authorized_keys, owned by "
+          'alice', () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(alice.path, '.ssh', 'authorized_keys');
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        final result =
+            await installAsRoot(['systemd', 'sshnpd'], sudoUser: 'alice');
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(callsMade(), contains('systemctl daemon-reload'));
+        expect(
+          changes(aliceBefore, snapshot(alice)),
+          ['.', '.ssh', path.join('.ssh', 'authorized_keys')],
+        );
+        expect(File(keys).existsSync(), isTrue);
+        expect(callsMade(), contains('chown alice:alice $keys'));
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
       });
     });
 
