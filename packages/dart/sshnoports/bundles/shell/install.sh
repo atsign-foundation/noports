@@ -222,7 +222,7 @@ usage() {
   echo "-b <dir>        - override the directory in which the binaries are written to;"
   echo "                  as root, a directory that only root can change"
   echo "-u <username>   - install for <username>: as root, set up its ~/.ssh/authorized_keys"
-  echo "                  for a systemd unit; otherwise, install into its ~/.local/bin"
+  echo "                  for the sshnpd systemd unit; otherwise, install into its ~/.local/bin"
   echo ""
   echo "An option applies to the commands after it, and a command must follow it."
 }
