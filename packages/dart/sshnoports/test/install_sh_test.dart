@@ -863,6 +863,35 @@ void main() {
           );
         }
       });
+
+      test(
+          'when it installs a headless or tmux job again into another '
+          'directory, then the job runs the programs from that directory',
+          () async {
+        await expectShimsFirst();
+        final String first = path.join(root.path, 'first');
+        final String second = path.join(root.path, 'second');
+
+        for (final String kind in ['headless', 'tmux']) {
+          final String script =
+              path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+          if (File(script).existsSync()) File(script).deleteSync();
+          for (final String dir in [first, second]) {
+            final result = await install(['-b', dir, kind, 'sshnpd']);
+
+            expect(
+              result.exitCode,
+              0,
+              reason: '$kind $dir: ${result.stdout}${result.stderr}',
+            );
+            expect(
+              File(script).readAsLinesSync(),
+              contains('binary_path="$dir"'),
+              reason: '$kind $dir',
+            );
+          }
+        }
+      });
     });
 
     group(

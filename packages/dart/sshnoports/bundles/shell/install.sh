@@ -467,8 +467,8 @@ install_headless_job() {
   dest="$user_bin_dir/$job_name.sh"
   if ! [ -f "$dest" ]; then
     cp "$script_dir/headless/$job_name.sh" "$dest"
-    set_binary_path "$dest"
   fi
+  set_binary_path "$dest"
 
   log_file="$user_sshnpd_dir/logs/$job_name.log"
   err_file="$user_sshnpd_dir/logs/$job_name.err"
@@ -543,8 +543,8 @@ install_tmux_service() {
   # Only copy the "$service_name".sh script if it's not already there
   if ! [ -f "$dest" ]; then
     cp "$script_dir/headless/$service_name.sh" "$dest"
-    set_binary_path "$dest"
   fi
+  set_binary_path "$dest"
 
   command="tmux new-session -d -s $service_name && tmux send-keys -t $service_name $dest C-m"
   cron_entry="@reboot $command"
