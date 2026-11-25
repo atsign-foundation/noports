@@ -1371,6 +1371,12 @@ main() {
     exit 1
   fi
 
+  if $as_root && [ "$platform_name" = "macos" ]; then
+    >&2 echo "Error: installing as root is not available on macOS."
+    >&2 echo "Run this script again as the user who will run NoPorts, not as root and without sudo."
+    exit 1
+  fi
+
   get_user_inputs
   if [ "$install_type" = "device" ]; then
     get_device_install_type

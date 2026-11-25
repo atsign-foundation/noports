@@ -229,5 +229,54 @@ void main() {
         expect(snapshot(home), homeBefore);
       });
     }, skip: inContainer ? 'universal.sh refuses device installs here' : false);
+
+    group('Given universal.sh runs as root on macOS', () {
+      test(
+          'when it is asked to install, then it refuses before downloading '
+          'anything', () async {
+        shim(
+          'uname',
+          'if [ "\$1" = -m ]; then echo arm64; else echo Darwin; fi\n',
+        );
+        shim(
+          'id',
+          'if [ "\$1" = -u ]; then echo 0; else exec \'${which('id')}\' "\$@"; '
+              'fi\n',
+        );
+        for (final String name in ['curl', 'wget']) {
+          shim(name, '${record(name)}exit 1\n');
+        }
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        for (final String? sudoUser in ['alice', null]) {
+          for (final List<String> args in [
+            ['-t', 'device', '-c', '@a', '-d', '@b', '-n', 'dev1'],
+            ['-t', 'client', '-c', '@a', '-d', '@b', '-r', '@rv'],
+          ]) {
+            final String reason = '$args, sudo user $sudoUser';
+            final result = await universal(args, sudoUser: sudoUser);
+
+            expect(result.exitCode, 1, reason: reason);
+            expect(
+              result.stderr,
+              contains('Error: installing as root is not available on macOS.\n'
+                  'Run this script again as the user who will run NoPorts, '
+                  'not as root and without sudo.\n'),
+              reason: reason,
+            );
+            expect(
+              callsMade(),
+              [if (sudoUser != null) 'sudo -u alice sh -c echo \$HOME'],
+              reason: reason,
+            );
+            if (calls.existsSync()) calls.deleteSync();
+          }
+        }
+
+        expect(snapshot(alice), aliceBefore);
+        expect(snapshot(home), homeBefore);
+      });
+    });
   }, skip: isRoot ? 'universal.sh installs as root' : false);
 }
