@@ -9,7 +9,7 @@ SSH No Ports suite.
 
 The `sshnpd.sh` file should be placed in `~/.local/bin`.
 
-Modify the `sshnpd.sh` unit to use the appropriate host and client atSigns,
+Modify the `sshnpd.sh` unit to use the appropriate host and client Atsigns,
 (The boilerplate uses $device_atsign $manager_atsign) as well as the devicename.
 Also make sure that username running sshnpd has the .atkeys file in place at
 '~/.atsign/keys'.
@@ -48,7 +48,7 @@ crontab -e
 
 The `srvd.sh` file should be placed in `~/.local/bin`.
 
-Modify the `srvd.sh` script to use the appropriate atSign,
+Modify the `srvd.sh` script to use the appropriate Atsign,
 (The boilerplate uses @my_rvd) as well as the internet address.
 Also make sure that the user running srvd has the .atkeys file in place at
 '~/.atsign/keys'.
