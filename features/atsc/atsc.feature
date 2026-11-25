@@ -117,6 +117,10 @@ Feature: atsc runs every NoPorts command-line program
     Then it serves the web app from "/opt/a/web/admin"
 
   Scenario: the debug srvd runs the debug build of atsc
+    The debug relay is a debug build of all of atsc, not of srvd alone, so
+    that relay telemetry names it srvd: atsc names the program srvd, where a
+    binary of its own takes its name from its file, such as debug_srvd.
+
     Given the debug relay is installed beside the production atsc
     When the debug srvd runs
     Then it runs srvd from the debug build of atsc, never the production one
