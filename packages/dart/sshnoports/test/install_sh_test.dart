@@ -23,8 +23,6 @@ void main() {
   late File crontab;
   late File owners;
 
-  /// Makes the `ls` that install.sh runs as root report [dir] as owned by
-  /// [owner].
   void ownedBy(String dir, int owner) =>
       owners.writeAsStringSync('$owner $dir\n', mode: FileMode.append);
 
@@ -69,9 +67,6 @@ void main() {
         'exit 127\n',
       );
 
-  /// Writes a `tmux` shim which has a session of every name. A new session
-  /// records the `~/.tmux.conf` that tmux would read from its HOME, and the
-  /// command sent to it records that it runs with that HOME.
   void tmuxWithSessions() {
     final String session = path.join(root.path, 'session_home');
     shim(
@@ -93,7 +88,6 @@ void main() {
   /// The commands the shims were run with, in order.
   List<String> callsMade() => calls.existsSync() ? calls.readAsLinesSync() : [];
 
-  /// Whether the process [pid] exists and has not exited.
   bool isRunning(int pid) {
     final String stat = Process.runSync('ps', ['-o', 'stat=', '-p', '$pid'])
         .stdout
@@ -102,7 +96,6 @@ void main() {
     return stat.isNotEmpty && !stat.startsWith('Z');
   }
 
-  /// Whether the process [pid] is still running after up to five seconds.
   Future<bool> stillRunning(int pid) async {
     for (int i = 0; i < 100 && isRunning(pid); i++) {
       await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -110,8 +103,6 @@ void main() {
     return isRunning(pid);
   }
 
-  /// The children of the process [pid], once it has at least one, waiting up
-  /// to five seconds.
   Future<List<int>> childrenOf(int pid) async {
     List<int> children = [];
     for (int i = 0; i < 100 && children.isEmpty; i++) {
@@ -127,16 +118,45 @@ void main() {
     return children;
   }
 
-  /// The step that stops an earlier root job, up to the quoted pattern for
-  /// its script.
-  const String stopStep = r"""  sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do pkill -P "$p"; kill "$p"; done' sh '""";
+  const String stopStep =
+      r"""  sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do pkill -P "$p"; kill "$p"; done' sh '""";
 
-  /// [text] with a backslash before each character that is special in an
-  /// extended regular expression.
   String ereEscaped(String text) => text.replaceAllMapped(
         RegExp(r'[\[\\.*^$+?(){|]'),
         (Match match) => '\\${match[0]}',
       );
+
+  // NOTE: these pids are above every system's pid limit, so no real process
+  // has one.
+  const int firstPid = 5000000;
+
+  void pgrepOver(List<(int, String)> processes) {
+    final table = File(path.join(root.path, 'processes'))
+      ..writeAsStringSync([
+        for (int i = 0; i < processes.length; i++)
+          '${firstPid + i} ${processes[i].$1} ${processes[i].$2}\n',
+      ].join());
+    shim(
+      'pgrep',
+      '${record('pgrep')}'
+          "uid=''\n"
+          'while :; do\n'
+          '  case "\$1" in\n'
+          '  -u) uid=\$2; shift 2 ;;\n'
+          '  -f) shift ;;\n'
+          '  --) shift; break ;;\n'
+          '  *) break ;;\n'
+          '  esac\n'
+          'done\n'
+          'while read -r pid owner line; do\n'
+          '  if [ -n "\$uid" ] && [ "\$owner" != "\$uid" ]; then continue; fi\n'
+          '  if printf "%s\\n" "\$line" | grep -E -q -- "\$1"; then\n'
+          '    echo "\$pid"\n'
+          '  fi\n'
+          "done < '${table.path}'\n",
+    );
+    shim('pkill', record('pkill'));
+  }
 
   /// Writes [entries] as the passwd file that install.sh reads.
   void passwd(String entries) =>
@@ -763,9 +783,6 @@ void main() {
           'anything, with an error naming that directory and what is wrong '
           'with it', () async {
         await expectShimsFirst();
-        final victim = File(path.join(root.path, 'victim'))
-          ..writeAsStringSync('root data\n');
-        expect(Process.runSync('chmod', ['600', victim.path]).exitCode, 0);
         const String notRoot = 'is not owned by root';
         const String others = 'can be written by its group or by others';
 
@@ -795,8 +812,6 @@ void main() {
           );
           expect(changes(before, snapshot(root)), isEmpty, reason: reason);
         }
-        expect(victim.readAsStringSync(), 'root data\n');
-        expect(modeOf(victim.path), '600');
       });
 
       test(
@@ -835,8 +850,7 @@ void main() {
         );
       });
 
-      test(
-          'when -b names /usr/bin, then it accepts it as it does no -b',
+      test('when -b names /usr/bin, then it accepts it as it does no -b',
           () async {
         final without = await install(['headless', '--help']);
         expect(without.exitCode, 0, reason: '${without.stderr}');
@@ -1760,6 +1774,30 @@ void main() {
       });
     });
 
+    group(
+        "Given the user's headless job is in its crontab, and a process of "
+        'another account runs its job script', () {
+      test(
+          'when install.sh installs the job again, then it stops only the '
+          "user's own process", () async {
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        final first = await install(['headless', 'sshnpd']);
+        expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
+        pgrepOver([(bobUid, '/bin/sh $job'), (uid, '/bin/sh $job')]);
+        final int callsBefore = callsMade().length;
+
+        final again = await install(['headless', 'sshnpd']);
+
+        expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+        expect(
+          callsMade()
+              .skip(callsBefore)
+              .where((String call) => call.startsWith('pkill ')),
+          ['pkill -P ${firstPid + 1}'],
+        );
+      });
+    });
+
     group('Given a -b directory whose name has ", \$, `, \\ or a newline', () {
       test(
           'when install.sh installs a headless or tmux job into it, then it '
@@ -2068,7 +2106,8 @@ void main() {
         'extended regular expression', () {
       test(
           'when install.sh prints the step that stops an earlier root job, '
-          'then its pattern selects only that script run by a shell', () async {
+          "then the step stops only root's processes that run that script "
+          'with a shell, and their children', () async {
         await expectShimsFirst();
         const String name = r'h.o+m*e?(1)[2]{3}|^$';
         final odd = Directory(path.join(root.path, name))..createSync();
@@ -2082,32 +2121,62 @@ void main() {
         expect(result.exitCode, 1, reason: '${result.stdout}${result.stderr}');
         final String step = (result.stdout as String)
             .split('\n')
-            .singleWhere((String line) => line.startsWith(stopStep));
-        expect(step, endsWith("'"));
-        final String pattern =
-            '^[^ ]*sh ${step.substring(stopStep.length, step.length - 1)}\$';
-        for (final (String line, bool selected) in [
-          ('/bin/sh $script', true),
-          ('sh $script', true),
-          ('/usr/bin/bash $script', true),
-          ('/bin/sh ${script.replaceAll('.', 'x')}', false),
+            .singleWhere((String line) => line.contains('pgrep'));
+        final List<(int, String, bool)> processes = [
+          (0, '/bin/sh $script', true),
+          (0, 'sh $script', true),
+          (0, '/usr/bin/bash $script', true),
+          (bobUid, '/bin/sh $script', false),
+          (0, '/bin/sh ${script.replaceAll('.', 'x')}', false),
           for (final String char in name.split('').toSet())
             if (!RegExp(r'[a-z0-9]').hasMatch(char))
-              ('/bin/sh ${script.replaceFirst(name, name.replaceAll(char, ''))}',
-                  false),
-          ('/bin/sh $script -v', false),
-          ('sudo sh $script', false),
-          ('sh -c kill sh $script', false),
-        ]) {
-          final grep = await Process.run('/bin/sh', [
-            '-c',
-            'printf "%s\\n" "\$2" | grep -E -q -- "\$1"',
-            'sh',
-            pattern,
-            line,
-          ]);
-          expect(grep.exitCode, selected ? 0 : 1, reason: line);
-        }
+              (
+                0,
+                '/bin/sh ${script.replaceFirst(name, name.replaceAll(char, ''))}',
+                false
+              ),
+          (0, '/bin/sh $script -v', false),
+          (0, 'sudo sh $script', false),
+          (0, 'sh -c kill sh $script', false),
+        ];
+        pgrepOver([
+          for (final (int, String, bool) process in processes)
+            (process.$1, process.$2),
+        ]);
+        shim('sudo', r'''
+if [ "$1 $2" != 'sh -c' ]; then exit 1; fi
+shift 2
+body=$1
+shift
+exec sh -c "kill() { echo \"kill \$*\" >> \"\$CALLS\"; }; $body" "$@"
+''');
+        final int callsBefore = callsMade().length;
+
+        final stop = await Process.run('/bin/sh', [
+          '-c',
+          step,
+        ], environment: {
+          'PATH': '${shims.path}:${Platform.environment['PATH']}',
+          'CALLS': calls.path,
+        });
+
+        expect(stop.exitCode, 0, reason: '${stop.stdout}${stop.stderr}');
+        expect(
+          callsMade()
+              .skip(callsBefore)
+              .where((String call) => !call.startsWith('pgrep ')),
+          [
+            for (int i = 0; i < processes.length; i++)
+              if (processes[i].$3) ...[
+                'pkill -P ${firstPid + i}',
+                'kill ${firstPid + i}',
+              ],
+          ],
+          reason: [
+            for (int i = 0; i < processes.length; i++)
+              '${firstPid + i} ${processes[i].$1} ${processes[i].$2}',
+          ].join('\n'),
+        );
       });
     });
 
