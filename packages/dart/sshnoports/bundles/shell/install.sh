@@ -12,6 +12,8 @@ is_darwin() {
 unset binary_dir
 homes=''
 user_home=$HOME
+# NOTE root's home is read from this file, never from the environment
+passwd_file=/etc/passwd
 define_env() {
   script_dir="$(dirname -- "$(readlink -f -- "$0")")"
   bin_dir="/usr/local/bin"
@@ -24,6 +26,7 @@ define_env() {
     user="$SUDO_USER"
     if [ -z "$user" ]; then
       user="root"
+      define_root_home
     else
       # we are root, but via sudo
       # so get home directory of SUDO_USER
@@ -33,6 +36,21 @@ define_env() {
     user="$USER"
   fi
   define_user_paths
+}
+
+# Sets user_home to the home directory in the entry for root, with uid 0, in
+# $passwd_file, or stops when there is none.
+define_root_home() {
+  user_home=$(while IFS=: read -r name _ uid _ _ home _; do
+    if [ "$name" = root ] && [ "$uid" = 0 ]; then
+      printf '%s\n' "$home"
+      break
+    fi
+  done <"$passwd_file")
+  if [ -z "$user_home" ]; then
+    echo "Error: could not find root's home directory in $passwd_file"
+    exit 1
+  fi
 }
 
 # Sets the paths in $user_home, the home directory of $user.
@@ -639,14 +657,18 @@ find_user_home() {
     done)
     return
   fi
-  if ! command -v sudo >/dev/null 2>&1; then
-    echo "Error: could not find the home directory of $user: sudo is not installed"
-    exit 1
-  fi
-  user_home=$(sudo -H -u "$user" sh -c 'echo $HOME')
-  if [ -z "$user_home" ] || ! [ -d "$user_home" ]; then
-    echo "Error: could not find the home directory of $user"
-    exit 1
+  if [ "$user" = root ]; then
+    define_root_home
+  else
+    if ! command -v sudo >/dev/null 2>&1; then
+      echo "Error: could not find the home directory of $user: sudo is not installed"
+      exit 1
+    fi
+    user_home=$(sudo -H -u "$user" sh -c 'echo $HOME')
+    if [ -z "$user_home" ] || ! [ -d "$user_home" ]; then
+      echo "Error: could not find the home directory of $user"
+      exit 1
+    fi
   fi
   homes=$(printf '%s\n%s:%s' "$homes" "$user" "$user_home")
 }

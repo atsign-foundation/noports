@@ -64,13 +64,19 @@ void main() {
   /// The commands the shims were run with, in order.
   List<String> callsMade() => calls.existsSync() ? calls.readAsLinesSync() : [];
 
-  /// Runs install.sh from the bundle with [args] under [umask], as a user
-  /// whose home is [home], with [searchPath] as its PATH, or else the shims
-  /// in front of the PATH of this process. A [sudoUser] is the account sudo
-  /// was run from, and a [workingDirectory] the directory it runs in.
+  /// Writes [entries] as the passwd file that install.sh reads.
+  void passwd(String entries) =>
+      File(path.join(root.path, 'passwd')).writeAsStringSync(entries);
+
+  /// Runs install.sh from the bundle with [args] under [umask], with
+  /// [homeDir], or else [home], as its HOME, and [searchPath] as its PATH, or
+  /// else the shims in front of the PATH of this process. A [sudoUser] is the
+  /// account sudo was run from, and a [workingDirectory] the directory it
+  /// runs in.
   Future<ProcessResult> install(
     List<String> args, {
     String umask = '022',
+    Directory? homeDir,
     String? searchPath,
     String? sudoUser,
     String? workingDirectory,
@@ -86,7 +92,7 @@ void main() {
           ...args,
         ],
         environment: {
-          'HOME': home.path,
+          'HOME': (homeDir ?? home).path,
           'USER': 'tester',
           'PATH': searchPath ?? '${shims.path}:${Platform.environment['PATH']}',
           if (sudoUser != null) 'SUDO_USER': sudoUser,
@@ -125,12 +131,14 @@ void main() {
   Future<ProcessResult> installAsRoot(
     List<String> args, {
     String? umask,
+    Directory? homeDir,
     String? sudoUser,
   }) {
     shimRoot();
     return install(
       ['-b', prefix.path, ...args],
       umask: umask ?? '022',
+      homeDir: homeDir,
       sudoUser: sudoUser,
     );
   }
@@ -238,8 +246,17 @@ void main() {
     shims = Directory(path.join(root.path, 'shims'))..createSync();
     calls = File(path.join(root.path, 'calls'));
     crontab = File(path.join(root.path, 'crontab'));
-    File(path.join('bundles', 'shell', 'install.sh'))
-        .copySync(path.join(bundle.path, 'install.sh'));
+    const String passwdLine = 'passwd_file=/etc/passwd\n';
+    final String source =
+        File(path.join('bundles', 'shell', 'install.sh')).readAsStringSync();
+    expect(passwdLine.allMatches(source).length, 1);
+    File(path.join(bundle.path, 'install.sh')).writeAsStringSync(
+      source.replaceFirst(
+        passwdLine,
+        "passwd_file='${path.join(root.path, 'passwd')}'\n",
+      ),
+    );
+    passwd('root:*:0:0:System Administrator:${home.path}:/bin/sh\n');
     for (final String from in ['launchers/.', 'bundles/shell/headless']) {
       final copy = Process.runSync('cp', ['-R', from, bundle.path]);
       expect(copy.exitCode, 0, reason: '${copy.stderr}');
@@ -695,6 +712,107 @@ void main() {
           contains('binary_path="${prefix.path}"'),
         );
         expect(File(path.join(prefix.path, 'sshnpd')).existsSync(), isTrue);
+      });
+    });
+
+    group(
+        "Given install.sh runs as root from a root login whose HOME is another "
+        "account's home", () {
+      test(
+          "when it installs a headless job, then the job is in root's crontab "
+          "and runs from the home in root's entry in /etc/passwd", () async {
+        await expectShimsFirst();
+        final String logs = path.join(home.path, '.sshnpd', 'logs');
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        final aliceBefore = snapshot(alice);
+
+        final result =
+            await installAsRoot(['headless', 'sshnpd'], homeDir: alice);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          crontab.readAsStringSync(),
+          '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
+        );
+        expect(File(job).existsSync(), isTrue);
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+      });
+
+      test(
+          'when it installs the sshnpd systemd unit, with or without -u root, '
+          "then it sets up root's keys and touches nothing in that account's "
+          'home', () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(home.path, '.ssh', 'authorized_keys');
+
+        for (final (String? sudoUser, List<String> args) in [
+          (null, <String>[]),
+          (null, ['-u', 'root']),
+          ('alice', ['-u', 'root']),
+        ]) {
+          final String reason = '$args, sudo user $sudoUser';
+          final aliceBefore = snapshot(alice);
+          final Directory ssh = Directory(path.dirname(keys));
+          if (ssh.existsSync()) ssh.deleteSync(recursive: true);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await installAsRoot(
+            [...args, 'systemd', 'sshnpd'],
+            homeDir: alice,
+            sudoUser: sudoUser,
+          );
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$reason: ${result.stdout}${result.stderr}',
+          );
+          expect(callsMade(), contains('touch $keys'), reason: reason);
+          expect(
+            callsMade().where((String call) => call.contains(alice.path)),
+            isEmpty,
+            reason: reason,
+          );
+          expect(
+            callsMade(),
+            isNot(contains(startsWith('sudo -H -u root '))),
+            reason: reason,
+          );
+          expect(changes(aliceBefore, snapshot(alice)), isEmpty, reason: reason);
+        }
+      });
+    });
+
+    group('Given /etc/passwd has no entry for root with uid 0', () {
+      test(
+          'when install.sh runs as root from a root login, then it refuses '
+          'before changing anything', () async {
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        for (final String entries in [
+          'daemon:*:1:1:daemon:/var/root:/bin/sh\n',
+          'root:*:501:20:root:${home.path}:/bin/sh\n'
+              'toor:*:0:0:toor:${home.path}:/bin/sh\n',
+        ]) {
+          passwd(entries);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result =
+              await installAsRoot(['systemd', 'sshnpd'], homeDir: alice);
+
+          expect(result.exitCode, 1, reason: entries);
+          expect(
+            result.stdout,
+            "Error: could not find root's home directory in "
+            '${path.join(root.path, 'passwd')}\n',
+            reason: entries,
+          );
+          expect(callsMade(), isEmpty, reason: entries);
+          expect(prefix.existsSync(), isFalse, reason: entries);
+        }
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
       });
     });
 
