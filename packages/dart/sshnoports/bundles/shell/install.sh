@@ -231,10 +231,15 @@ setup_authorized_keys() {
   if is_root && [ "$user" != root ]; then
     # NOTE steps in another account's home run as that account
     if ! sudo -H -u "$user" sh -c 'umask "$1" && mkdir -p "$HOME/.ssh" && touch "$HOME/.ssh/authorized_keys" && chmod 644 "$HOME/.ssh/authorized_keys"' sh "$(umask)"; then
+      if ! sudo -H -u "$user" sh -c '[ -e "$HOME/.ssh" ] || [ -L "$HOME/.ssh" ]'; then
+        echo "Error: $user could not create ~/.ssh; check that $user owns its home directory and can write to it"
+        exit 1
+      fi
+      old=$(sudo -H -u "$user" sh -c 'n=1; old=.ssh.old; while [ -e "$HOME/$old" ] || [ -L "$HOME/$old" ]; do n=$((n + 1)); old=.ssh.old.$n; done; echo "$old"')
       echo "Error: could not set up ~/.ssh/authorized_keys as $user"
       echo "Move $user's ~/.ssh aside, as $user, with:"
-      echo "  sudo -H -u $(quote "$user") sh -c 'mv ~/.ssh ~/.ssh.old'"
-      echo "then run install.sh again, and copy back, as $user, any keys in ~/.ssh.old/authorized_keys that are still needed."
+      echo "  sudo -H -u $(quote "$user") sh -c 'mv ~/.ssh ~/$old'"
+      echo "then run install.sh again, and copy back, as $user, anything in ~/$old that is still needed, such as the keys in ~/$old/authorized_keys."
       exit 1
     fi
     return

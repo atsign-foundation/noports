@@ -1090,8 +1090,9 @@ void main() {
             'Error: could not set up ~/.ssh/authorized_keys as $account\n'
             "Move $account's ~/.ssh aside, as $account, with:\n"
             "  sudo -H -u '$account' sh -c 'mv ~/.ssh ~/.ssh.old'\n"
-            'then run install.sh again, and copy back, as $account, any keys '
-            'in ~/.ssh.old/authorized_keys that are still needed.\n',
+            'then run install.sh again, and copy back, as $account, anything '
+            'in ~/.ssh.old that is still needed, such as the keys in '
+            '~/.ssh.old/authorized_keys.\n',
             reason: account,
           );
           expect(result.stdout, isNot(contains('chown')), reason: account);
@@ -1110,6 +1111,66 @@ void main() {
             everyElement(startsWith('$account: ')),
             reason: "only $account acts in $account's home",
           );
+          expect(changes(before, snapshot(dir)), isEmpty, reason: account);
+        }
+      });
+
+      test(
+          'when ~/.ssh.old is taken, then the move step and the last line name '
+          'the first free one of ~/.ssh.old.2, ~/.ssh.old.3 and so on',
+          () async {
+        expectSystemdUnitsUnwritable();
+        final ssh = Directory(path.join(alice.path, '.ssh'))..createSync();
+        expect(Process.runSync('chmod', ['500', ssh.path]).exitCode, 0);
+        addTearDown(() => Process.runSync('chmod', ['700', ssh.path]));
+        Directory(path.join(alice.path, '.ssh.old')).createSync();
+        Link(path.join(alice.path, '.ssh.old.2'))
+            .createSync(path.join(root.path, 'nowhere'));
+        final before = snapshot(alice);
+
+        final result =
+            await installAsRoot(['systemd', 'sshnpd'], sudoUser: 'alice');
+
+        expect(result.exitCode, 1, reason: '${result.stdout}');
+        expect(
+          result.stdout,
+          'Error: could not set up ~/.ssh/authorized_keys as alice\n'
+          "Move alice's ~/.ssh aside, as alice, with:\n"
+          "  sudo -H -u 'alice' sh -c 'mv ~/.ssh ~/.ssh.old.3'\n"
+          'then run install.sh again, and copy back, as alice, anything in '
+          '~/.ssh.old.3 that is still needed, such as the keys in '
+          '~/.ssh.old.3/authorized_keys.\n',
+        );
+        expect(prefix.existsSync(), isFalse);
+        expect(changes(before, snapshot(alice)), isEmpty);
+      });
+
+      test(
+          'when the account has no ~/.ssh and cannot create one, then the error '
+          'says to check its home directory, with no move step', () async {
+        expectSystemdUnitsUnwritable();
+
+        for (final (List<String> args, String account, Directory dir) in [
+          (<String>[], 'alice', alice),
+          (['-u', 'bob'], 'bob', bob),
+        ]) {
+          expect(Process.runSync('chmod', ['500', dir.path]).exitCode, 0);
+          addTearDown(() => Process.runSync('chmod', ['700', dir.path]));
+          final before = snapshot(dir);
+
+          final result = await installAsRoot(
+            [...args, 'systemd', 'sshnpd'],
+            sudoUser: 'alice',
+          );
+
+          expect(result.exitCode, 1, reason: '$account: ${result.stdout}');
+          expect(
+            result.stdout,
+            'Error: $account could not create ~/.ssh; check that $account owns '
+            'its home directory and can write to it\n',
+            reason: account,
+          );
+          expect(prefix.existsSync(), isFalse, reason: account);
           expect(changes(before, snapshot(dir)), isEmpty, reason: account);
         }
       });
