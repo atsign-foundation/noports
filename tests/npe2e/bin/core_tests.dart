@@ -47,6 +47,8 @@ Future<void> main(List<String> args) async {
       exit(0);
     }
   } catch (e) {
+    print('Error parsing arguments: $e');
+    print('');
     CoreTestsParams.printUsage();
     exit(1);
   }
