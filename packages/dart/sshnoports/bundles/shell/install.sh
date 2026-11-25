@@ -31,6 +31,11 @@ define_env() {
   else
     user="$USER"
   fi
+  define_user_paths
+}
+
+# Sets the paths in $user_home, the home directory of $user.
+define_user_paths() {
   launchd_dir="$user_home/Library/LaunchAgents"
   user_bin_dir="$user_home/.local/bin"
   user_sshnpd_dir="$user_home/.sshnpd"
@@ -580,8 +585,15 @@ main() {
       shift
       ;;
     -u)
-      user="$2"
-      user_home=$(sudo -u "$user" sh -c 'echo $HOME')
+      if [ "$2" != "$user" ]; then
+        user="$2"
+        user_home=$(sudo -u "$user" sh -c 'echo $HOME')
+        if [ -z "$user_home" ]; then
+          echo "Error: could not find the home directory of $user"
+          exit 1
+        fi
+        define_user_paths
+      fi
       shift
       ;;
     atsc | srv)

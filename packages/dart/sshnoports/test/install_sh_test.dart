@@ -518,6 +518,64 @@ void main() {
       });
     });
 
+    group('Given install.sh runs as root with -u bob', () {
+      test(
+          "when it installs the sshnpd systemd unit, then it sets up bob's "
+          '~/.ssh/authorized_keys', () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(bob.path, '.ssh', 'authorized_keys');
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        final result = await installAsRoot(
+          ['-u', 'bob', 'systemd', 'sshnpd'],
+          sudoUser: 'alice',
+        );
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(File(keys).existsSync(), isTrue);
+        expect(modeOf(keys), '644');
+        expect(
+          callsMade(),
+          containsAll([
+            'chown bob:bob ${path.dirname(keys)}',
+            'chown bob:bob $keys',
+          ]),
+        );
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group(
+        'Given install.sh runs as root with -u naming an account whose home '
+        'it cannot find', () {
+      test(
+          'when it installs the sshnpd systemd unit, then it refuses before '
+          'changing anything', () async {
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        final result = await installAsRoot(
+          ['-u', 'nobody', 'systemd', 'sshnpd'],
+          sudoUser: 'alice',
+        );
+
+        expect(result.exitCode, 1);
+        expect(
+          result.stdout,
+          'Error: could not find the home directory of nobody\n',
+        );
+        expect(callsMade(), [
+          'sudo -u alice sh -c echo \$HOME',
+          'sudo -u nobody sh -c echo \$HOME',
+        ]);
+        expect(prefix.existsSync(), isFalse);
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
     group('Given install.sh runs as a regular user', () {
       test(
           "when it installs a headless job, then the job is in that user's "
@@ -526,15 +584,28 @@ void main() {
         final String logs = path.join(home.path, '.sshnpd', 'logs');
         final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
 
-        final result = await install(['headless', 'sshnpd']);
+        for (final List<String> user in [
+          <String>[],
+          ['-u', 'tester'],
+        ]) {
+          for (final File file in [crontab, calls]) {
+            if (file.existsSync()) file.deleteSync();
+          }
+          final result = await install([...user, 'headless', 'sshnpd']);
 
-        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
-        expect(callsMade(), ['crontab -l', 'crontab -']);
-        expect(
-          crontab.readAsStringSync(),
-          '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
-        );
-        expect(File(job).existsSync(), isTrue);
+          expect(
+            result.exitCode,
+            0,
+            reason: '$user: ${result.stdout}${result.stderr}',
+          );
+          expect(callsMade(), ['crontab -l', 'crontab -'], reason: '$user');
+          expect(
+            crontab.readAsStringSync(),
+            '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
+            reason: '$user',
+          );
+          expect(File(job).existsSync(), isTrue, reason: '$user');
+        }
       });
     });
 
