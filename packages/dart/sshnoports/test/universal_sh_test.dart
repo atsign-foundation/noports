@@ -233,8 +233,9 @@ void main() {
 
     group('Given install.sh fails when universal.sh installs sshnpd', () {
       test(
-          'when universal.sh makes a device install, then it prints what '
-          'install.sh printed and exits non-zero', () async {
+          'when universal.sh makes a device install, with or without -q, then '
+          'it prints what install.sh printed to stderr and exits non-zero',
+          () async {
         final String installer = path.join(root.path, 'failing', 'sshnp');
         Directory(installer).createSync(recursive: true);
         File(path.join(installer, 'install.sh')).writeAsStringSync(
@@ -276,20 +277,26 @@ void main() {
                   '"\$@"; fi\n',
             );
           }
-          if (calls.existsSync()) calls.deleteSync();
+          for (final List<String> quiet in [
+            <String>[],
+            ['-q'],
+          ]) {
+            final String reason = '$type $quiet';
+            if (calls.existsSync()) calls.deleteSync();
 
-          final result = await universal(
-            [...device, '--dt', type],
-            sudoUser: asRoot ? 'alice' : null,
-          );
+            final result = await universal(
+              [...device, ...quiet, '--dt', type],
+              sudoUser: asRoot ? 'alice' : null,
+            );
 
-          expect(result.exitCode, isNot(0), reason: type);
-          expect(
-            result.stdout,
-            contains('install.sh stand-in: sshnpd not installed\n'),
-            reason: '$type: ${result.stdout}${result.stderr}',
-          );
-          expect(callsMade().last, call, reason: type);
+            expect(result.exitCode, isNot(0), reason: reason);
+            expect(
+              result.stderr,
+              contains('install.sh stand-in: sshnpd not installed\n'),
+              reason: '$reason: ${result.stdout}${result.stderr}',
+            );
+            expect(callsMade().last, call, reason: reason);
+          }
         }
       });
     }, skip: inContainer ? 'universal.sh refuses device installs here' : false);

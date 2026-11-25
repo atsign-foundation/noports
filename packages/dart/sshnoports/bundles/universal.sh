@@ -866,7 +866,7 @@ device() {
     # If systemd, we want to use the new style
     if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ]; then
       if ! install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnpd); then
-        printf '%s\n' "$install_output"
+        printf '%s\n' "$install_output" >&2
         exit 1
       fi
       # Manually install the nfpm style systemd unit
@@ -887,7 +887,7 @@ device() {
       secure_config_file
     else
       if ! install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd); then
-        printf '%s\n' "$install_output"
+        printf '%s\n' "$install_output" >&2
         exit 1
       fi
     fi
