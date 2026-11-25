@@ -236,7 +236,7 @@ install_single_binary() {
     replace_binary "$1"
   fi
   if is_root; then
-    chown root:wheel "$dest/$1" 2>/dev/null || chown root:root "$dest/$1" 2>/dev/null || chown root "$dest/$1" 2>/dev/null
+    chown -h root:wheel "$dest/$1" 2>/dev/null || chown -h root:root "$dest/$1" 2>/dev/null || chown -h root "$dest/$1" 2>/dev/null
   fi
 }
 

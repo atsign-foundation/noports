@@ -485,7 +485,7 @@ void main() {
           expect(modeOf(file), '755', reason: name);
           expect(
             callsMade(),
-            contains(allOf(startsWith('chown root'), endsWith(' $file'))),
+            contains(allOf(startsWith('chown -h root'), endsWith(' $file'))),
             reason: name,
           );
         }
