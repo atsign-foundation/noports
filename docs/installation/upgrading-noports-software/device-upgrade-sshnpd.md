@@ -10,6 +10,24 @@ Upgrading to the latest version of sshnpd follows the same process as installati
 
 To upgrade, follow the [installation guide](../advanced-installation-guides/device-installation-sshnpd/) up to **Step 3**, then return to this page to complete the process.
 
+### Headless or tmux jobs installed with sudo
+
+A headless or tmux job runs as the user who installs it, so `./install.sh headless sshnpd` and `./install.sh tmux sshnpd` run without `sudo`. If the job was installed earlier with `sudo`, the job script, its log directory or `~/.local/bin` can belong to root, and the job is in root's crontab. The installer then stops before changing anything and prints the commands to clean up that install. For sshnpd they are:
+
+```sh
+sudo sh -c 'crontab -l | grep -v -F -- "$1" | crontab -' sh "$HOME/.local/bin/sshnpd.sh"
+sudo chown -R -h "$(id -un)" "$HOME/.local" "$HOME/.sshnpd"
+rm -f "$HOME/.local/bin/sshnpd.sh"
+```
+
+Run them as the user who will run the daemon:
+
+* the first removes the job's line from root's crontab;
+* the second makes you the owner of `~/.local` and `~/.sshnpd` (a tmux job has no `~/.sshnpd`, so leave it out);
+* the third removes the old job script, so copy any settings you need from it first.
+
+Then run the installer again.
+
 ### Verify the Upgrade
 
 To check the current version of sshnpd installed on your machine, simply run it:
@@ -36,12 +54,6 @@ Version : x.x.x
 {% tab title="macOS" %}
 ```sh
 $HOME/.local/bin/sshnpd
-```
-
-Or if you installed as root:
-
-```
-/usr/local/bin/sshnpd
 ```
 
 The first line of output should contain the version information:
