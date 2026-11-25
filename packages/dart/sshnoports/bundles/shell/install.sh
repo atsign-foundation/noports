@@ -127,7 +127,7 @@ usage() {
 setup_authorized_keys() {
   if is_root && [ "$user" != root ]; then
     # NOTE steps in another account's home run as that account
-    sudo -u "$user" sh -c 'umask "$1" && mkdir -p "$HOME/.ssh" && touch "$HOME/.ssh/authorized_keys" && chmod 644 "$HOME/.ssh/authorized_keys"' sh "$(umask)"
+    sudo -H -u "$user" sh -c 'umask "$1" && mkdir -p "$HOME/.ssh" && touch "$HOME/.ssh/authorized_keys" && chmod 644 "$HOME/.ssh/authorized_keys"' sh "$(umask)"
     return
   fi
   mkdir -p "$user_ssh_dir"

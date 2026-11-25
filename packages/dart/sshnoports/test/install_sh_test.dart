@@ -244,6 +244,7 @@ void main() {
     shim(
       'sudo',
       '${record('sudo')}'
+          'if [ "\$1" = -H ]; then shift; fi\n'
           'case "\$1 \$2" in\n'
           "'-u alice') home='${alice.path}' ;;\n"
           "'-u bob') home='${bob.path}' ;;\n"
