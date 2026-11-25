@@ -119,6 +119,8 @@
   or `atsc sshnpd` without `--doctor`, never itself
 - fix: the sshnpd doctor warns that a running service's process may be
   restarting or hidden, instead of reporting it stopped
+- fix: `sshnpd --doctor` reports a check it cannot complete as a warning
+  naming the error, and runs the remaining checks
 
 # 6.16.0
 
