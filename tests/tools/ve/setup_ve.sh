@@ -98,7 +98,8 @@ for atsign in "${VE_ATSIGNS[@]}"; do
   if curl -sSfL -o "$dest" "$url" 2>/dev/null; then
     echo "  @${atsign}: downloaded"
   else
-    echo "  @${atsign}: FAILED to download from $url"
+    echo "ERROR: @${atsign}: FAILED to download from $url"
+    exit 1
   fi
 done
 
