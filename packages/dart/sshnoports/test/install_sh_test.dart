@@ -124,6 +124,23 @@ void main() {
           .toList()
         ..sort();
 
+  /// Fails unless `crontab`, `tmux` and `systemctl` are the shims on the PATH
+  /// that [install] gives install.sh.
+  Future<void> expectShimsFirst() async {
+    final probe = await Process.run(
+      '/bin/sh',
+      ['-c', 'command -v crontab tmux systemctl'],
+      environment: {'PATH': '${shims.path}:${Platform.environment['PATH']}'},
+      includeParentEnvironment: false,
+    );
+    expect(
+      probe.stdout,
+      ['crontab', 'tmux', 'systemctl']
+          .map((name) => '${path.join(shims.path, name)}\n')
+          .join(),
+    );
+  }
+
   /// Fails unless this process is unable to write /etc/systemd/system, where
   /// install.sh writes systemd units.
   void expectSystemdUnitsUnwritable() {
@@ -469,6 +486,55 @@ void main() {
         expect(File(keys).existsSync(), isTrue);
         expect(callsMade(), contains('chown alice:alice $keys'));
         expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+
+      test(
+          'when it is asked to install a headless or tmux job, then it refuses '
+          'before changing anything and says to run it without sudo, as the '
+          'user who will run the daemon', () async {
+        await expectShimsFirst();
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        for (final String kind in ['headless', 'tmux']) {
+          for (final String job in ['sshnpd', 'srvd']) {
+            final result = await installAsRoot([kind, job], sudoUser: 'alice');
+
+            expect(result.exitCode, 1, reason: '$kind $job');
+            expect(
+              result.stdout,
+              'Error: run install.sh $kind $job without sudo, as the user who '
+              'will run the daemon\n',
+              reason: '$kind $job',
+            );
+            expect(prefix.existsSync(), isFalse, reason: '$kind $job');
+          }
+        }
+
+        expect(callsMade(), List.filled(4, 'sudo -u alice sh -c echo \$HOME'));
+        expect(crontab.existsSync(), isFalse);
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs as a regular user', () {
+      test(
+          "when it installs a headless job, then the job is in that user's "
+          'crontab', () async {
+        await expectShimsFirst();
+        final String logs = path.join(home.path, '.sshnpd', 'logs');
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+
+        final result = await install(['headless', 'sshnpd']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(callsMade(), ['crontab -l', 'crontab -']);
+        expect(
+          crontab.readAsStringSync(),
+          '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
+        );
+        expect(File(job).existsSync(), isTrue);
       });
     });
 

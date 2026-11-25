@@ -67,6 +67,13 @@ root_only() {
   fi
 }
 
+no_root() {
+  if is_root; then
+    echo "Error: run install.sh $1 without sudo, as the user who will run the daemon"
+    exit 1
+  fi
+}
+
 # USAGE #
 
 usage() {
@@ -427,11 +434,13 @@ install_headless_job() {
 }
 
 install_headless_sshnpd() {
+  no_root "headless sshnpd"
   install_program "sshnpd"
   install_headless_job "sshnpd"
 }
 
 install_headless_srvd() {
+  no_root "headless srvd"
   install_program "srvd"
   install_headless_job "srvd"
 }
@@ -507,11 +516,13 @@ install_tmux_service() {
 }
 
 install_tmux_sshnpd() {
+  no_root "tmux sshnpd"
   install_program "sshnpd"
   install_tmux_service "sshnpd"
 }
 
 install_tmux_srvd() {
+  no_root "tmux srvd"
   install_program "srvd"
   install_tmux_service "srvd"
 }
