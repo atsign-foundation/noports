@@ -47,18 +47,16 @@ one pair plus a serialized matrix — that trades a correctness property for
 default is the short git hash (`lib/core_tests/core_tests.dart:67`,
 `lib/policy_tests/policy_tests.dart:56`,
 `lib/relay_tests/relay_tests.dart:74`); CI overrides it with
-`md5(run_id-run_attempt)` truncated to 8 chars
-(`.github/workflows/e2e_all.yaml:180-184`), because re-runs of the same commit
-otherwise collide on the same APKAM device enrolment against the shared atSigns.
+`md5(run_id-run_attempt)` truncated to 8 chars (`TEST_RUN_ID` in
+`.github/workflows/e2e_all.yaml`), so each run and attempt gets its own run
+directory, device names and container names.
 Local runs deliberately keep the git-hash default — re-running one commit reuses
 the run directory and container names, which is what you want while iterating.
 `tests/npe2e/README.md` documents the two bits of state to clear first.
 
-**`needs: npe2e` on the `e2e_all` job is a lock, not a build dependency.** Both
-jobs authenticate as `@npe2e_org_*` atSigns, so the `needs:` serializes them to
-avoid double-booking within a run; `if: !cancelled()`
-(`.github/workflows/e2e_all.yaml:27-33`) keeps `e2e_all` running when an npe2e
-leg fails, so flaky shared infra cannot silently skip it.
+**Every CI job runs its pack against an atStack of its own.** Core, relay and
+policy each start a VE and a relay on their own runner, and revocation an EE,
+so concurrent workflow runs share no atServer, atSign or relay.
 
 **The npp and npp_atServer policy flows run sequentially.**
 `lib/policy_tests/policy_tests.dart:252-272`. Both flows build their admin
@@ -117,11 +115,6 @@ starts by 1s, and retry on either a timeout or a failed status.
 - **The three runners are near-identical copies.** All three result types extend
   `TestResult` (`lib/test_result.dart:3`), so one generic runner is possible;
   each copy exists only because it is typed on the pack's result class.
-- **No `concurrency:` group in `.github/workflows/e2e_all.yaml`.** Overlapping
-  workflow runs
-  double-book the fixed `@npe2e_org_*` atSigns. CI run-history analysis put the
-  effect at the edge of noise (most policy failures occurred with no other
-  policy job active), so this is knowingly unfixed.
 - **`core_tests` and `policy_tests` leave their containers running on exit.**
   Containers start with `--rm` (`lib/docker_instance.dart:78-91`) so they vanish
   once stopped, but only `relay_tests` stops them, via

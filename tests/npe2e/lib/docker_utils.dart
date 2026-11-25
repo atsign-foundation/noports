@@ -16,9 +16,7 @@ import 'package:npe2e/noports_version.dart';
 //
 // Scoped to `*.atsign.zone` names mapped to 127.0.0.1: that covers the atsign
 // test domains without touching unrelated /etc/hosts entries, and it leaves
-// deliberate black-holes (e.g. `127.1.1.1 unreachable.atsign.zone`) alone. On a
-// clean CI checkout there are no such entries, so this returns nothing (the
-// harness normally runs against the public root.atsign.org).
+// deliberate black-holes (e.g. `127.1.1.1 unreachable.atsign.zone`) alone.
 List<String> hostGatewayAddHostArgs() {
   final File hostsFile = File('/etc/hosts');
   if (!hostsFile.existsSync()) {

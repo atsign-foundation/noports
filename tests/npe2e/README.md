@@ -6,19 +6,20 @@ enrols APKAM keys for the client and daemon atSigns, starts each daemon in its
 own container, then runs the client (`npt` / `sshnp`) on the host against those
 containerised daemons through a relay (`srvd`).
 
-In CI, core and relay run against the public atDirectory (`root.atsign.org`),
-policy against the virtual environment (VE, `tests/tools/ve/setup_ve.sh`), and
-revocation against an ephemeral environment (EE, `tests/tools/ee/setup_ee.sh`)
-with atSigns created for the run. This README covers running them **locally
-against a local atStack** — the usual reason being to test an atServer that has
-not been released to production yet.
+In CI, core, relay and policy run against the virtual environment (VE,
+`tests/tools/ve/setup_ve.sh`) with a relay started by
+`tests/tools/ve/start_srvd.sh`, and revocation against an ephemeral environment
+(EE, `tests/tools/ee/setup_ee.sh`) with atSigns created for the run. No pack
+runs against production atServers or the production atDirectory, and every
+pack requires `--root-domain`. This README covers running them **locally
+against a local atStack**.
 
 There are four test packs, each with its own entrypoint under `bin/`:
 
 | Pack | Entrypoint | Runs on in CI |
 | --- | --- | --- |
-| core | `bin/core_tests.dart` | `root.atsign.org` |
-| relay | `bin/relay_tests.dart` | `root.atsign.org` |
+| core | `bin/core_tests.dart` | VE |
+| relay | `bin/relay_tests.dart` | VE |
 | policy | `bin/policy_tests.dart` | VE |
 | revocation | `bin/revocation_tests.dart` | EE |
 
@@ -145,7 +146,7 @@ Either clear both, or pass a fresh `--test-run-id`.
 | `--client-atsign` | (required) | Client atSign used in tests |
 | `--daemon-atsign` | (required) | Daemon atSign used in tests |
 | `--relay-atsign` | (required) | Relay atSign used in tests |
-| `--root-domain` | `root.atsign.org:64` | atDirectory host:port; set to your local domain |
+| `--root-domain` | (required) | atDirectory host[:port], port 64 when omitted; e.g. `vip.ve.atsign.zone` for the VE |
 | `--base-directory` | `npe2e_core_tests` | Where run artefacts (binaries, keys, logs) are written |
 | `--client-versions` | `d:v5.9.4,d:v5.11.2,d:v5.13.0,d:current` | Comma-separated `language:version` |
 | `--daemon-versions` | `d:v5.9.4,d:v5.11.2,d:v5.13.0,d:current,c:current` | Comma-separated `language:version` |
