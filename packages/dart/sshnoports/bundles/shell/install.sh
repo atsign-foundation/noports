@@ -508,6 +508,22 @@ post_headless_message() {
   echo "or use a cron job to call logrotate on these log files if systemd is not available"
 }
 
+# Refuses a -b directory that set_binary_path cannot write into a job script.
+check_binary_path() {
+  case "$binary_dir" in
+  '') return ;;
+  /*) dir=$binary_dir ;;
+  *) dir="$PWD/$binary_dir" ;;
+  esac
+  case "$dir" in
+  *'"'* | *'$'* | *'`'* | *\\* | *'
+'*)
+    printf '%s\n' "Error: the directory given with -b cannot contain \", \$, \`, \\ or a newline: $dir"
+    exit 1
+    ;;
+  esac
+}
+
 # Points the job script $1 at the directory the programs were installed into.
 set_binary_path() {
   dir=$(CDPATH='' cd -- "$(install_dir)" && pwd | sed 's/[\\&|]/\\&/g')
@@ -563,6 +579,7 @@ headless() {
   sshnpd | srvd)
     no_root_for_others "headless $1"
     check_job_paths headless "$1"
+    check_binary_path
     ;;
   *)
     echo "Error: Unknown headless job: $1"
@@ -642,6 +659,7 @@ tmux() {
   sshnpd | srvd)
     no_root_for_others "tmux $1"
     check_job_paths tmux "$1"
+    check_binary_path
     ;;
   *)
     echo "Unknown tmux service: $1"

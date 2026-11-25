@@ -1360,10 +1360,10 @@ void main() {
 
       test(
           'when it installs a headless or tmux job into a directory whose name '
-          'has \\, & or |, then the job runs the programs from that directory',
+          'has & or |, then the job runs the programs from that directory',
           () async {
         await expectShimsFirst();
-        final String dir = path.join(root.path, r'a\b&c|d');
+        final String dir = path.join(root.path, 'a&b|c');
         final String script =
             path.join(home.path, '.local', 'bin', 'sshnpd.sh');
 
@@ -1384,6 +1384,47 @@ void main() {
             reason: kind,
           );
         }
+      });
+    });
+
+    group(
+        'Given a -b directory whose name has ", \$, `, \\ or a newline', () {
+      test(
+          'when install.sh installs a headless or tmux job into it, then it '
+          'refuses before installing anything, with an error naming -b',
+          () async {
+        final homeBefore = snapshot(home);
+
+        for (final String char in ['"', r'$', '`', r'\', '\n']) {
+          final String dir = path.join(root.path, 'a${char}b');
+          for (final List<String> args in [
+            ['-b', dir, 'headless', 'sshnpd'],
+            ['-b', dir, 'npt', 'tmux', 'srvd'],
+          ]) {
+            final result = await install(args);
+
+            expect(result.exitCode, 1, reason: '$args: ${result.stderr}');
+            expect(
+              result.stdout,
+              'Error: the directory given with -b cannot contain ", \$, `, \\ '
+              'or a newline: $dir\n',
+              reason: '$args',
+            );
+            expect(Directory(dir).existsSync(), isFalse, reason: '$args');
+          }
+        }
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+        expect(callsMade(), isEmpty);
+      });
+
+      test('when install.sh installs npt into it, then it installs npt',
+          () async {
+        final String dir = path.join(root.path, r'a$b');
+
+        final result = await install(['-b', dir, 'npt']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(namesIn(dir), ['atsc', 'npt', 'srv']);
       });
     });
 
