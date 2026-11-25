@@ -10,23 +10,34 @@ Upgrading to the latest version of sshnpd follows the same process as installati
 
 To upgrade, follow the [installation guide](../advanced-installation-guides/device-installation-sshnpd/) up to **Step 3**, then return to this page to complete the process.
 
+For a headless or tmux job, each install sets `binary_path` in the job script to the directory it installs the programs into, replacing any value you set there by hand.
+
 ### Headless or tmux jobs installed with sudo
 
-A headless or tmux job runs as the user who installs it, so `./install.sh headless sshnpd` and `./install.sh tmux sshnpd` run without `sudo`. If the job was installed earlier with `sudo`, the job script, its log directory or `~/.local/bin` can belong to root, and the job is in root's crontab. The installer then stops before changing anything and prints the commands to clean up that install. For sshnpd they are:
+A headless or tmux job runs as the user who installs it, so `./install.sh headless sshnpd` and `./install.sh tmux sshnpd` run without `sudo`. If the job was installed earlier with `sudo`, the job script, its log directory or `~/.local` can belong to root, and the job is in root's crontab. The installer then stops before changing anything, lists what you do not own, and prints the steps to clean up that install. When `~/.local` and `~/.sshnpd` belong to root, the steps for sshnpd are:
 
 ```sh
 sudo sh -c 'crontab -l | grep -v -F -- "$1" | crontab -' sh "$HOME/.local/bin/sshnpd.sh"
-sudo chown -R -h "$(id -un)" "$HOME/.local" "$HOME/.sshnpd"
-rm -f "$HOME/.local/bin/sshnpd.sh"
+mv "$HOME/.local" "$HOME/.local.old" && cp -R "$HOME/.local.old" "$HOME/.local"
+mv "$HOME/.sshnpd" "$HOME/.sshnpd.old" && cp -R "$HOME/.sshnpd.old" "$HOME/.sshnpd"
 ```
 
 Run them as the user who will run the daemon:
 
-* the first removes the job's line from root's crontab;
-* the second makes you the owner of `~/.local` and `~/.sshnpd` (a tmux job has no `~/.sshnpd`, so leave it out);
-* the third removes the old job script, so copy any settings you need from it first.
+* the first, which needs an admin who can use `sudo`, removes the job's line from root's crontab;
+* the others move each directory aside and copy it back, so that you own the copy (a tmux job has no `~/.sshnpd`, so leave that line out).
 
-Then run the installer again.
+When only `~/.local/bin`, the job script or `~/.sshnpd/logs` belongs to root, the installer prints the same steps for that path instead, and when a `.old` name is taken it uses the next free one, such as `.old.2`. Then run the installer again.
+
+### Headless or tmux jobs installed with universal.sh and sudo
+
+If you installed a headless or tmux job by running an earlier `universal.sh` with `sudo` on a host without systemd, the job is started from root's crontab, and the installer cannot see that line. Before you run the installer, remove it as the user who will run the daemon:
+
+```sh
+sudo sh -c 'crontab -l | grep -v -F -- "$1" | crontab -' sh "$HOME/.local/bin/sshnpd.sh"
+```
+
+Then run the installer without `sudo`.
 
 ### Verify the Upgrade
 
