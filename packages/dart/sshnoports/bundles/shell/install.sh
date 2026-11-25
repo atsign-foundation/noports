@@ -26,7 +26,7 @@ define_env() {
     else
       # we are root, but via sudo
       # so get home directory of SUDO_USER
-      user_home=$(sudo -u "$user" sh -c 'echo $HOME')
+      user_home=$(sudo -H -u "$user" sh -c 'echo $HOME')
     fi
   else
     user="$USER"
@@ -580,7 +580,7 @@ run_args() {
     -u)
       if [ "$2" != "$user" ]; then
         user="$2"
-        user_home=$(sudo -u "$user" sh -c 'echo $HOME')
+        user_home=$(sudo -H -u "$user" sh -c 'echo $HOME')
         if [ -z "$user_home" ]; then
           echo "Error: could not find the home directory of $user"
           exit 1

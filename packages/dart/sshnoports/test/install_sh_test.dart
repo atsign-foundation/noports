@@ -244,13 +244,15 @@ void main() {
     shim(
       'sudo',
       '${record('sudo')}'
-          'if [ "\$1" = -H ]; then shift; fi\n'
+          'set_home=false\n'
+          'if [ "\$1" = -H ]; then set_home=true; shift; fi\n'
           'case "\$1 \$2" in\n'
           "'-u alice') home='${alice.path}' ;;\n"
           "'-u bob') home='${bob.path}' ;;\n"
           '*) exit 1 ;;\n'
           'esac\n'
-          'HOME=\$home SHIM_ACCOUNT=\$2\n'
+          'if \$set_home; then HOME=\$home; fi\n'
+          'SHIM_ACCOUNT=\$2\n'
           'export HOME SHIM_ACCOUNT\n'
           'shift 2\n'
           'umask 0002\n'
@@ -464,7 +466,7 @@ void main() {
             await installAsRoot(['npt'], umask: '027', sudoUser: 'alice');
 
         expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
-        expect(callsMade(), contains('sudo -u alice sh -c echo \$HOME'));
+        expect(callsMade(), contains('sudo -H -u alice sh -c echo \$HOME'));
         expect(namesIn(prefix.path), ['atsc', 'npt', 'srv']);
         for (final String name in ['atsc', 'srv', 'npt']) {
           final String file = path.join(prefix.path, name);
@@ -534,7 +536,8 @@ void main() {
           expect(prefix.existsSync(), isFalse, reason: '$args');
         }
 
-        expect(callsMade(), List.filled(5, 'sudo -u alice sh -c echo \$HOME'));
+        expect(
+            callsMade(), List.filled(5, 'sudo -H -u alice sh -c echo \$HOME'));
         expect(crontab.existsSync(), isFalse);
         expect(changes(aliceBefore, snapshot(alice)), isEmpty);
         expect(changes(homeBefore, snapshot(home)), isEmpty);
@@ -690,8 +693,8 @@ void main() {
           'Error: could not find the home directory of nobody\n',
         );
         expect(callsMade(), [
-          'sudo -u alice sh -c echo \$HOME',
-          'sudo -u nobody sh -c echo \$HOME',
+          'sudo -H -u alice sh -c echo \$HOME',
+          'sudo -H -u nobody sh -c echo \$HOME',
         ]);
         expect(prefix.existsSync(), isFalse);
         expect(changes(aliceBefore, snapshot(alice)), isEmpty);
@@ -765,6 +768,30 @@ void main() {
             reason: '$kind $job $into',
           );
         }
+      });
+    });
+
+    group(
+        'Given install.sh runs as a regular user with -u naming another '
+        'account', () {
+      test(
+          "when it installs npt, then npt is in that account's ~/.local/bin "
+          "and nothing in the user's own home is created or changed", () async {
+        final homeBefore = snapshot(home);
+
+        final result = await install(['-u', 'bob', 'npt']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(callsMade(), ['sudo -H -u bob sh -c echo \$HOME']);
+        expect(
+          namesIn(path.join(bob.path, '.local', 'bin')),
+          ['atsc', 'npt', 'srv'],
+        );
+        expect(
+          File(path.join(bob.path, '.profile')).readAsStringSync(),
+          'PATH="\$PATH:\$HOME/.local/bin"\n',
+        );
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
       });
     });
 
