@@ -138,7 +138,7 @@ sudo journalctl -u sshnpd.service -f
 
 There are a number of fiddly things to get in place for ssh to work. The first is the `~/.ssh/authorized_keys`file of the user being used to run the systemd unit.
 
-The installer sets up `~/.ssh/authorized_keys` for the user who ran `sudo ./install.sh systemd sshnpd`, or for the account named with `-u`. It runs these steps as that user, creating the file if it is missing, so that user owns it, and it sets the file's mode to 644 (`-rw-r--r--`). If it cannot, it stops before installing anything, with an error that gives the command to move that user's `~/.ssh` aside as that user, so that a second run can create it afresh.
+The installer sets up `~/.ssh/authorized_keys` for the user who ran `sudo ./install.sh systemd sshnpd`, or for the account named with `-u`. It runs these steps as that user, creating the file if it is missing, so that user owns it, and it sets the file's mode to 644 (`-rw-r--r--`). If it cannot, it stops before installing the unit, with an error. For an account other than root, the error gives the command to move that account's `~/.ssh` aside as that account, so that a second run can create it afresh, or, if the account has no `~/.ssh` and cannot create one, says to check that it owns its home directory. For root, the error names the file it could not set up.
 
 The file needs to be owned by the user running the systemd unit, and writable only by that owner, else `sshd` will not allow logins. Check it with `ls -l`. If it is owned by someone else, correct it with `chown`, substituting `debian` for your username and group, and correct its mode with `chmod`.
 
