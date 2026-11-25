@@ -17,7 +17,7 @@ class ServiceLogsCheck extends DiagnosticCheck {
     
     if (!serviceInstalled) {
        // If service is not installed, but process is running, we should hint the user
-       bool processRunning = await PlatformUtils.instance.isProcessRunning('sshnpd');
+       bool processRunning = await PlatformUtils.instance.isDaemonRunning('sshnpd');
        if (processRunning) {
          return CheckResult(
           checkName: name,
