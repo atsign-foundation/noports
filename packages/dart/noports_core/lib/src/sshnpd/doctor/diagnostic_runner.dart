@@ -7,7 +7,8 @@ class DiagnosticRunner {
 
   DiagnosticRunner({required this.checks, this.verbose = false});
 
-  /// Run all tests and return results
+  /// Run all tests and return results; a check that throws is reported as a
+  /// warning naming the error, and the remaining checks still run.
   Future<List<CheckResult>> runAll() async {
     final results = <CheckResult>[];
     final context = <String, dynamic>{};
@@ -18,7 +19,7 @@ class DiagnosticRunner {
         print('   ${check.description}');
       }
 
-      final result = await check.run(context);
+      final result = await _run(check, context);
       results.add(result);
 
       if (verbose) {
@@ -29,6 +30,23 @@ class DiagnosticRunner {
     }
 
     return results;
+  }
+
+  Future<CheckResult> _run(
+    DiagnosticCheck check,
+    Map<String, dynamic> context,
+  ) async {
+    final stopwatch = Stopwatch()..start();
+    try {
+      return await check.run(context);
+    } catch (e) {
+      return CheckResult(
+        checkName: check.name,
+        status: CheckStatus.warning,
+        message: 'Could not complete this check: $e',
+        duration: stopwatch.elapsed,
+      );
+    }
   }
 
   /// Generate a summary report (simplified version for sshnpd)
