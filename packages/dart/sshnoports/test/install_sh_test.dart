@@ -516,22 +516,25 @@ void main() {
         final aliceBefore = snapshot(alice);
         final homeBefore = snapshot(home);
 
-        for (final String kind in ['headless', 'tmux']) {
-          for (final String job in ['sshnpd', 'srvd']) {
-            final result = await installAsRoot([kind, job], sudoUser: 'alice');
+        for (final (List<String> args, String refused) in [
+          for (final String kind in ['headless', 'tmux'])
+            for (final String job in ['sshnpd', 'srvd'])
+              ([kind, job], '$kind $job'),
+          (['npt', 'headless', 'sshnpd'], 'headless sshnpd'),
+        ]) {
+          final result = await installAsRoot(args, sudoUser: 'alice');
 
-            expect(result.exitCode, 1, reason: '$kind $job');
-            expect(
-              result.stdout,
-              'Error: run install.sh $kind $job without sudo, as the user who '
-              'will run the daemon\n',
-              reason: '$kind $job',
-            );
-            expect(prefix.existsSync(), isFalse, reason: '$kind $job');
-          }
+          expect(result.exitCode, 1, reason: '$args');
+          expect(
+            result.stdout,
+            'Error: run install.sh $refused without sudo, as the user who '
+            'will run the daemon\n',
+            reason: '$args',
+          );
+          expect(prefix.existsSync(), isFalse, reason: '$args');
         }
 
-        expect(callsMade(), List.filled(4, 'sudo -u alice sh -c echo \$HOME'));
+        expect(callsMade(), List.filled(5, 'sudo -u alice sh -c echo \$HOME'));
         expect(crontab.existsSync(), isFalse);
         expect(changes(aliceBefore, snapshot(alice)), isEmpty);
         expect(changes(homeBefore, snapshot(home)), isEmpty);

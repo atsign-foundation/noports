@@ -310,18 +310,6 @@ install_systemd_unit() {
   post_systemd_message
 }
 
-install_systemd_sshnpd() {
-  root_only
-  install_program "sshnpd"
-  install_systemd_unit "sshnpd.service"
-}
-
-install_systemd_srvd() {
-  root_only
-  install_program "srvd"
-  install_systemd_unit "srvd.service"
-}
-
 systemd() {
   if is_darwin; then
     echo "systemd is not supported on MacOS"
@@ -333,14 +321,18 @@ systemd() {
     usage
     exit 0
     ;;
-  sshnpd) install_systemd_sshnpd ;;
-  srvd) install_systemd_srvd ;;
+  sshnpd | srvd) root_only ;;
   *)
     echo "Unknown systemd unit: $1"
     usage
     exit 1
     ;;
   esac
+  if $checking; then
+    return
+  fi
+  install_program "$1"
+  install_systemd_unit "$1.service"
   setup_authorized_keys
 }
 
@@ -364,11 +356,6 @@ install_launchd_unit() {
   post_launchd_message
 }
 
-install_launchd_sshnpd() {
-  install_program "sshnpd"
-  install_launchd_unit "com.atsign.sshnpd.plist"
-}
-
 launchd() {
   if ! is_darwin; then
     echo "Unknown command: launchd"
@@ -380,13 +367,18 @@ launchd() {
     usage
     exit 0
     ;;
-  sshnpd) install_launchd_sshnpd ;;
+  sshnpd) ;;
   *)
     echo "Unknown launchd unit: $1"
     usage
     exit 1
     ;;
   esac
+  if $checking; then
+    return
+  fi
+  install_program "sshnpd"
+  install_launchd_unit "com.atsign.sshnpd.plist"
   setup_authorized_keys
 }
 
@@ -446,32 +438,24 @@ install_headless_job() {
   post_headless_message
 }
 
-install_headless_sshnpd() {
-  no_root "headless sshnpd"
-  install_program "sshnpd"
-  install_headless_job "sshnpd"
-}
-
-install_headless_srvd() {
-  no_root "headless srvd"
-  install_program "srvd"
-  install_headless_job "srvd"
-}
-
 headless() {
   case "$1" in
   --help | '')
     usage
     exit 0
     ;;
-  sshnpd) install_headless_sshnpd ;;
-  srvd) install_headless_srvd ;;
+  sshnpd | srvd) no_root "headless $1" ;;
   *)
     echo "Error: Unknown headless job: $1"
     usage
     exit 1
     ;;
   esac
+  if $checking; then
+    return
+  fi
+  install_program "$1"
+  install_headless_job "$1"
   setup_authorized_keys
 }
 
@@ -526,32 +510,24 @@ install_tmux_service() {
   post_tmux_message
 }
 
-install_tmux_sshnpd() {
-  no_root "tmux sshnpd"
-  install_program "sshnpd"
-  install_tmux_service "sshnpd"
-}
-
-install_tmux_srvd() {
-  no_root "tmux srvd"
-  install_program "srvd"
-  install_tmux_service "srvd"
-}
-
 tmux() {
   case "$1" in
   --help | '')
     usage
     exit 0
     ;;
-  sshnpd) install_tmux_sshnpd ;;
-  srvd) install_tmux_srvd ;;
+  sshnpd | srvd) no_root "tmux $1" ;;
   *)
     echo "Unknown tmux service: $1"
     usage
     exit 1
     ;;
   esac
+  if $checking; then
+    return
+  fi
+  install_program "$1"
+  install_tmux_service "$1"
   setup_authorized_keys
 }
 
@@ -575,11 +551,22 @@ add_home_local_bin_to_path() {
 
 # MAIN #
 
-main() {
-  arg_zero=$0
+# Installs the programs that the command $1 names.
+install_binaries() {
+  case "$1" in
+  atsc | srv) install_single_binary "$1" ;;
+  at_activate | npt | sshnp | sshnpd | srvd) install_program "$1" ;;
+  binaries) install_base_binaries ;;
+  debug_srvd) install_debug_binary "srvd" ;;
+  debug) install_debug_binaries ;;
+  all) install_all_binaries ;;
+  esac
+}
 
-  define_env
-
+# Runs the options and commands in the arguments in order. While $checking it
+# applies the options and refuses any command that cannot run, installing
+# nothing.
+run_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
     -h)
@@ -602,29 +589,11 @@ main() {
       fi
       shift
       ;;
-    atsc | srv)
-      install_single_binary "$1"
-      add_home_local_bin_to_path
-      ;;
-    at_activate | npt | sshnp | sshnpd | srvd)
-      install_program "$1"
-      add_home_local_bin_to_path
-      ;;
-    binaries)
-      install_base_binaries
-      add_home_local_bin_to_path
-      ;;
-    debug_srvd)
-      install_debug_binary "${1#"debug_"}"
-      add_home_local_bin_to_path
-      ;; # strips debug_ prefix from the command input
-    debug)
-      install_debug_binaries
-      add_home_local_bin_to_path
-      ;;
-    all)
-      install_all_binaries
-      add_home_local_bin_to_path
+    atsc | srv | at_activate | npt | sshnp | sshnpd | srvd | binaries | debug_srvd | debug | all)
+      if ! $checking; then
+        install_binaries "$1"
+        add_home_local_bin_to_path
+      fi
       ;;
     systemd | launchd | headless | tmux)
       command=$1
@@ -639,7 +608,15 @@ main() {
     esac
     shift
   done
+}
 
+main() {
+  arg_zero=$0
+  define_env
+  checking=true
+  run_args "$@"
+  checking=false
+  run_args "$@"
 }
 
 main "$@"
