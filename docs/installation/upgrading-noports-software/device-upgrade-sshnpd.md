@@ -100,81 +100,10 @@ The installer automatically restarts your tmux session, no other steps required!
 
 ### Headless (cron + nohup)
 
-#### Retrieve the Process ID
-
-To safely restart the headless service, we must be slightly more careful with the headless installation. First we must grab the process id of sshnpd:
+The installer stops the running job and its sshnpd. Start the job again with the command the installer prints, which is the command in Step 4 of the [headless installation guide](../advanced-installation-guides/device-installation-sshnpd/headless.md):
 
 ```bash
-pgrep -f '/(atsc )?sshnpd '
+nohup $HOME/.local/bin/sshnpd.sh > $HOME/.sshnpd/logs/sshnpd.log 2> $HOME/.sshnpd/logs/sshnpd.err &
 ```
 
-<details>
-
-<summary>If you're curious how this command works</summary>
-
-`pgrep -f` finds each process whose full command line matches a pattern.
-The `sshnpd` that the sshnpd.sh service runs is a short script that runs
-`atsc sshnpd` with the same arguments, so the daemon's command line is
-`<directory>/atsc sshnpd <arguments>`. Releases before atsc ran
-`<directory>/sshnpd <arguments>` instead. The pattern `/(atsc )?sshnpd `
-matches either, but not the sshnpd.sh service itself.
-
-</details>
-
-You should get a single number as output, this is the process ID of the sshnpd process.
-
-**Example:**
-
-```
-atsign@sshnpd-test:~# pgrep -f '/(atsc )?sshnpd '
-289
-```
-
-#### Verify the Process ID
-
-Before we continue, it is good practice to make sure that we have the correct ID:
-
-```bash
-ps -fp <process ID>
-```
-
-**Example:**
-
-```
-atsign@sshnpd-test:~# ps -fp 289
-UID            PID    PPID  C STIME TTY          TIME CMD
-atsign         289     114  0 11:10 ?        00:00:00 /home/atsign/.local/bin/atsc sshnpd -a @atsign_device -m @atsign_client -d mydevice -suv
-```
-
-As you can see, under `CMD` we have `/home/atsign/.local/bin/atsc sshnpd -a @atsign_device -m @atsign_client -d mydevice -suv`. This is the sshnpd that our sshnpd.sh service started: `/home/atsign/.local/bin/sshnpd` runs `atsc sshnpd` with the arguments it is given. A daemon started by a release before atsc shows `/home/atsign/.local/bin/sshnpd -a ...` here instead. This is the correct process that we want to kill in order to restart sshnpd.
-
-#### Killing the process
-
-Now that we have retrieved and verified the process ID, we can use the kill command to kill the process:
-
-```bash
-kill -9 <process ID>
-```
-
-Example:
-
-```
-root@sshnpd-test:~# kill -9 289
-```
-
-#### Verify the Process has been killed
-
-Use the same verification command from before:
-
-```bash
-ps -fp <process ID>
-```
-
-**Example:**
-
-```
-root@sshnpd-test:~# ps -fp 289
-UID          PID    PPID  C STIME TTY          TIME CMD
-```
-
-As you can see, there are no entries anymore. This means process 289 has been killed, sshnpd should automatically restart under a new process ID.
+Sessions that are already open are not ended.

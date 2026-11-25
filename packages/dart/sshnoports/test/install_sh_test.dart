@@ -1884,8 +1884,9 @@ void main() {
 
     group('Given install.sh runs as a regular user', () {
       test(
-          "when it installs a headless job, then the job is in that user's "
-          'crontab', () async {
+          'when it installs a headless job and none is running, then the job '
+          "is in that user's crontab and it prints the command that starts "
+          'the job', () async {
         await expectShimsFirst();
         final String logs = path.join(home.path, '.sshnpd', 'logs');
         final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
@@ -1904,13 +1905,29 @@ void main() {
             0,
             reason: '$user: ${result.stdout}${result.stderr}',
           );
-          expect(callsMade(), ['crontab -l', 'crontab -'], reason: '$user');
+          expect(
+            callsMade(),
+            [
+              'crontab -l',
+              'crontab -',
+              'pgrep -u $uid -f -- ^[^ ]*sh ${ereEscaped(job)}\$',
+            ],
+            reason: '$user',
+          );
           expect(
             crontab.readAsStringSync(),
             '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
             reason: '$user',
           );
           expect(File(job).existsSync(), isTrue, reason: '$user');
+          expect(
+            result.stdout,
+            contains('The job will start upon next system boot\n'
+                'To start the job immediately:\n'
+                '  nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err &\n'),
+            reason: '$user',
+          );
+          expect(result.stdout, isNot(contains('stop')), reason: '$user');
         }
       });
 
@@ -2045,6 +2062,7 @@ void main() {
         final again = await install(['headless', 'sshnpd']);
 
         expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+        expect(again.stdout, contains('=> Stopped the running sshnpd.sh job\n'));
         expect(
           await started.first.exitCode.timeout(const Duration(seconds: 5)),
           -ProcessSignal.sigterm.signalNumber,
@@ -2060,6 +2078,143 @@ void main() {
         for (final Process other in started.skip(1)) {
           expect(isRunning(other.pid), isTrue, reason: 'pid ${other.pid}');
         }
+      });
+
+      test(
+          'when install.sh installs the job again, then no loop of the job '
+          'script runs, it says the job was stopped, and the command it '
+          'prints starts exactly one loop and one sshnpd', () async {
+        await expectShimsFirst();
+        File(path.join(shims.path, 'pgrep')).deleteSync();
+        final String bin = path.join(home.path, '.local', 'bin');
+        final String job = path.join(bin, 'sshnpd.sh');
+        final template = File(path.join(bundle.path, 'headless', 'sshnpd.sh'));
+        final String source = template.readAsStringSync();
+        const String firstSleep =
+            'sleep 10 # allow machine to bring up network\n';
+        expect(firstSleep.allMatches(source).length, 1);
+        template.writeAsStringSync(source.replaceFirst(firstSleep, 'sleep 0\n'));
+        File(path.join(bundle.path, 'atsc')).writeAsStringSync(
+          '#!/bin/sh\n'
+          'if [ "\$1" = sshnpd ]; then while :; do sleep 1; done; fi\n'
+          "echo 'atsc 1'\n",
+        );
+        final String loops = '^[^ ]*sh ${ereEscaped(job)}\$';
+        final String daemons =
+            '^[^ ]*sh ${ereEscaped(path.join(bin, 'atsc'))} sshnpd ';
+        addTearDown(() {
+          for (final String pattern in [loops, daemons]) {
+            Process.runSync('pkill', ['-f', '--', pattern]);
+          }
+        });
+
+        Future<int> count(String pattern) async =>
+            (await Process.run('pgrep', ['-f', '--', pattern]))
+                .stdout
+                .toString()
+                .split('\n')
+                .where((String line) => line.isNotEmpty)
+                .length;
+
+        Future<(int, int)> settle((int, int) wanted) async {
+          (int, int) seen = (-1, -1);
+          for (int i = 0; i < 100; i++) {
+            seen = (await count(loops), await count(daemons));
+            if (seen == wanted) break;
+            await Future<void>.delayed(const Duration(milliseconds: 50));
+          }
+          return seen;
+        }
+
+        Future<void> start(ProcessResult installed) async {
+          final List<String> lines = (installed.stdout as String).split('\n');
+          final int at = lines.indexOf('To start the job immediately:');
+          expect(at, isNot(-1), reason: '${installed.stdout}');
+          final started = await Process.run(
+            '/bin/sh',
+            ['-c', lines[at + 1]],
+            environment: {
+              'HOME': home.path,
+              'USER': 'tester',
+              'PATH': Platform.environment['PATH']!,
+            },
+            includeParentEnvironment: false,
+          );
+          expect(started.exitCode, 0, reason: '${started.stderr}');
+        }
+
+        final first = await install(['headless', 'sshnpd']);
+        expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
+        await start(first);
+        expect(await settle((1, 1)), (1, 1), reason: 'the job is running');
+
+        final again = await install(['headless', 'sshnpd']);
+
+        expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+        expect(await settle((0, 0)), (0, 0), reason: 'loops and sshnpds left');
+        expect(
+          again.stdout,
+          contains('=> cron job already installed\n'
+              '=> Stopped the running sshnpd.sh job\n'),
+        );
+        expect(
+          again.stdout,
+          contains('The running job was stopped; start it again with the '
+              'command below\n'
+              'To start the job immediately:\n'),
+        );
+        await start(again);
+        expect(await settle((1, 1)), (1, 1), reason: 'loops and sshnpds');
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+        expect(
+          (await count(loops), await count(daemons)),
+          (1, 1),
+          reason: 'loops and sshnpds after 1.5 seconds',
+        );
+      });
+    });
+
+    group("Given the user's headless job is running and not in its crontab",
+        () {
+      test(
+          'when install.sh installs the job, then it adds the job to the '
+          'crontab and stops the running job and its child', () async {
+        await expectShimsFirst();
+        File(path.join(shims.path, 'pgrep')).deleteSync();
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        final first = await install(['headless', 'sshnpd']);
+        expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
+        crontab.deleteSync();
+        final Process loop = await Process.start('/bin/sh', [job]);
+        addTearDown(() {
+          Process.runSync('pkill', ['-P', '${loop.pid}']);
+          loop.kill();
+        });
+        final List<int> children = await childrenOf(loop.pid);
+        expect(children, isNotEmpty, reason: 'the job script runs a child');
+
+        final again = await install(['headless', 'sshnpd']);
+
+        expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+        expect(
+          await stillRunning(loop.pid),
+          isFalse,
+          reason: 'the job script is stopped',
+        );
+        expect(
+          await loop.exitCode.timeout(const Duration(seconds: 5)),
+          -ProcessSignal.sigterm.signalNumber,
+          reason: 'the job script is stopped by SIGTERM',
+        );
+        for (final int child in children) {
+          expect(
+            await stillRunning(child),
+            isFalse,
+            reason: 'the child $child of the job script is stopped',
+          );
+        }
+        expect(again.stdout, contains('=> Installing cron job: @reboot '));
+        expect(again.stdout, contains('=> Stopped the running sshnpd.sh job\n'));
       });
     });
 
@@ -2106,16 +2261,48 @@ void main() {
       });
     });
 
-    group(
-        "Given the user's headless job is in its crontab, and pgrep is missing "
-        'or does not accept -u', () {
+    group('Given pgrep is missing or does not accept -u', () {
+      const String couldNotCheck = '=> Could not check for a running sshnpd.sh '
+          'job: pgrep is missing or does not accept -u\n';
+
+      /// Leaves install.sh no pgrep when [missing], or else a pgrep that
+      /// refuses -u as BusyBox's does, and returns the PATH to run it with.
+      Future<String?> breakPgrep(bool missing) async {
+        final String pgrep = path.join(shims.path, 'pgrep');
+        if (!missing) {
+          shim(
+            'pgrep',
+            '${record('pgrep')}'
+                'for a in "\$@"; do\n'
+                '  if [ "\$a" = -u ]; then\n'
+                "    echo 'pgrep: unrecognized option: u' >&2\n"
+                "    echo 'Usage: pgrep [-flanovx] [-s SID|-P PPID|PATTERN]' "
+                '>&2\n'
+                '    exit 1\n'
+                '  fi\n'
+                'done\n'
+                'exit 1\n',
+          );
+          return null;
+        }
+        if (File(pgrep).existsSync()) File(pgrep).deleteSync();
+        final String searchPath = '${shims.path}:${pathWithout('pgrep')}';
+        final probe = await Process.run(
+          '/bin/sh',
+          ['-c', 'command -v pgrep'],
+          environment: {'PATH': searchPath},
+          includeParentEnvironment: false,
+        );
+        expect(probe.exitCode, isNot(0), reason: '${probe.stdout}');
+        return searchPath;
+      }
+
       test(
-          'when install.sh installs the job again, then it says it could not '
-          'check for a running job and prints no command to start it',
-          () async {
+          "when install.sh installs the user's headless job again, then it "
+          'says it could not check for a running job and prints no command to '
+          'start it', () async {
         await expectShimsFirst();
         recordKills();
-        final String pgrep = path.join(shims.path, 'pgrep');
 
         for (final bool missing in [false, true]) {
           for (final File file in [crontab, calls]) {
@@ -2124,32 +2311,7 @@ void main() {
           shim('pgrep', '${record('pgrep')}exit 1\n');
           final first = await install(['headless', 'sshnpd']);
           expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
-          String? searchPath;
-          if (missing) {
-            File(pgrep).deleteSync();
-            searchPath = '${shims.path}:${pathWithout('pgrep')}';
-            final probe = await Process.run(
-              '/bin/sh',
-              ['-c', 'command -v pgrep'],
-              environment: {'PATH': searchPath},
-              includeParentEnvironment: false,
-            );
-            expect(probe.exitCode, isNot(0), reason: '${probe.stdout}');
-          } else {
-            shim(
-              'pgrep',
-              '${record('pgrep')}'
-                  'for a in "\$@"; do\n'
-                  '  if [ "\$a" = -u ]; then\n'
-                  "    echo 'pgrep: unrecognized option: u' >&2\n"
-                  "    echo 'Usage: pgrep [-flanovx] [-s SID|-P PPID|PATTERN]' "
-                  '>&2\n'
-                  '    exit 1\n'
-                  '  fi\n'
-                  'done\n'
-                  'exit 1\n',
-            );
-          }
+          final String? searchPath = await breakPgrep(missing);
 
           final again = await install(
             ['headless', 'sshnpd'],
@@ -2162,12 +2324,7 @@ void main() {
             0,
             reason: '$reason: ${again.stdout}${again.stderr}',
           );
-          expect(
-            again.stdout,
-            contains('=> Could not check for a running sshnpd.sh job: pgrep '
-                'is missing or does not accept -u\n'),
-            reason: reason,
-          );
+          expect(again.stdout, contains(couldNotCheck), reason: reason);
           expect(
             again.stdout,
             contains('If the job is running, stop it before you start it '
@@ -2182,6 +2339,39 @@ void main() {
           expect(
             callsMade().where((String call) => call.startsWith('kill ')),
             isEmpty,
+            reason: reason,
+          );
+        }
+      });
+
+      test(
+          "when install.sh installs the user's headless job for the first "
+          'time, then it says it could not check for a running job and prints '
+          'the command that starts the job', () async {
+        await expectShimsFirst();
+        final String logs = path.join(home.path, '.sshnpd', 'logs');
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+
+        for (final bool missing in [false, true]) {
+          if (crontab.existsSync()) crontab.deleteSync();
+          final String? searchPath = await breakPgrep(missing);
+
+          final result = await install(
+            ['headless', 'sshnpd'],
+            searchPath: searchPath,
+          );
+
+          final String reason = missing ? 'no pgrep' : 'pgrep without -u';
+          expect(
+            result.exitCode,
+            0,
+            reason: '$reason: ${result.stdout}${result.stderr}',
+          );
+          expect(result.stdout, contains(couldNotCheck), reason: reason);
+          expect(
+            result.stdout,
+            contains('To start the job immediately:\n'
+                '  nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err &\n'),
             reason: reason,
           );
         }

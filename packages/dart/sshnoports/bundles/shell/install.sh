@@ -599,9 +599,12 @@ post_headless_message() {
   echo "Learn more in $script_dir/headless/README.md"
   echo ""
   echo "The job will start upon next system boot"
-  if [ "$job_state" = unknown ]; then
+  if [ "$job_state" = unknown ] && $in_crontab; then
     echo "If the job is running, stop it before you start it again"
   else
+    if [ "$job_state" = stopped ]; then
+      echo "The running job was stopped; start it again with the command below"
+    fi
     echo "To start the job immediately:"
     echo "  $(start_command) &"
   fi
@@ -676,13 +679,10 @@ install_headless_job() {
   cron_entry="@reboot $command"
   crontab_contents=$(crontab -l 2>/dev/null)
 
-  job_state=none
+  in_crontab=false
   if echo "$crontab_contents" | grep -Fxq "$cron_entry"; then
-    echo "=> cron job already installed, killing any old $job_name.sh processes"
-    stop_job "$dest"
-    if [ "$job_state" = unknown ]; then
-      echo "=> Could not check for a running $job_name.sh job: pgrep is missing or does not accept -u"
-    fi
+    echo "=> cron job already installed"
+    in_crontab=true
   else
     echo "=> Installing cron job: $cron_entry"
     (
@@ -690,6 +690,11 @@ install_headless_job() {
       echo "$cron_entry"
     ) | crontab -
   fi
+  stop_job "$dest"
+  case $job_state in
+  stopped) echo "=> Stopped the running $job_name.sh job" ;;
+  unknown) echo "=> Could not check for a running $job_name.sh job: pgrep is missing or does not accept -u" ;;
+  esac
 
   echo ""
   post_headless_message
