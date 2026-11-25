@@ -160,7 +160,7 @@ export PATH="$PATH:$HOME/.local/bin";
 {% endtab %}
 
 {% tab title="macOS" %}
-If you chose not to install as root, you will need to add `~/.local/bin` to your `PATH`.\
+The installer installs the binaries to `~/.local/bin`, so you will need to add `~/.local/bin` to your `PATH`.\
 Add the following line to your shell's rc file:
 
 ```sh
