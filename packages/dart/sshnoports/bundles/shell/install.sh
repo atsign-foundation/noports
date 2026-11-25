@@ -644,8 +644,12 @@ run_args() {
     -u)
       if [ "$2" != "$user" ]; then
         user="$2"
+        if ! command -v sudo >/dev/null 2>&1; then
+          echo "Error: could not find the home directory of $user: sudo is not installed"
+          exit 1
+        fi
         user_home=$(sudo -H -u "$user" sh -c 'echo $HOME')
-        if [ -z "$user_home" ]; then
+        if [ -z "$user_home" ] || ! [ -d "$user_home" ]; then
           echo "Error: could not find the home directory of $user"
           exit 1
         fi

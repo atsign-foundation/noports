@@ -773,26 +773,60 @@ void main() {
       test(
           'when it installs the sshnpd systemd unit, then it refuses before '
           'changing anything', () async {
+        bob.deleteSync();
         final aliceBefore = snapshot(alice);
         final homeBefore = snapshot(home);
 
-        final result = await installAsRoot(
-          ['-u', 'nobody', 'systemd', 'sshnpd'],
-          sudoUser: 'alice',
-        );
+        for (final String account in ['nobody', 'bob']) {
+          if (calls.existsSync()) calls.deleteSync();
 
-        expect(result.exitCode, 1);
-        expect(
-          result.stdout,
-          'Error: could not find the home directory of nobody\n',
-        );
-        expect(callsMade(), [
-          'sudo -H -u alice sh -c echo \$HOME',
-          'sudo -H -u nobody sh -c echo \$HOME',
-        ]);
-        expect(prefix.existsSync(), isFalse);
+          final result = await installAsRoot(
+            ['-u', account, 'systemd', 'sshnpd'],
+            sudoUser: 'alice',
+          );
+
+          expect(result.exitCode, 1, reason: account);
+          expect(
+            result.stdout,
+            'Error: could not find the home directory of $account\n',
+            reason: account,
+          );
+          expect(
+            callsMade(),
+            [
+              'sudo -H -u alice sh -c echo \$HOME',
+              'sudo -H -u $account sh -c echo \$HOME',
+            ],
+            reason: account,
+          );
+          expect(prefix.existsSync(), isFalse, reason: account);
+          expect(bob.existsSync(), isFalse, reason: account);
+        }
         expect(changes(aliceBefore, snapshot(alice)), isEmpty);
         expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs with -u and sudo is not installed', () {
+      test(
+          'when it installs npt, then it refuses before changing anything and '
+          'says that sudo is not installed', () async {
+        final homeBefore = snapshot(home);
+        final bobBefore = snapshot(bob);
+
+        final result = await install(
+          ['-u', 'bob', 'npt'],
+          searchPath: pathWithout('sudo'),
+        );
+
+        expect(result.exitCode, 1, reason: '${result.stderr}');
+        expect(
+          result.stdout,
+          'Error: could not find the home directory of bob: sudo is not '
+          'installed\n',
+        );
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+        expect(changes(bobBefore, snapshot(bob)), isEmpty);
       });
     });
 
