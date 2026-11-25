@@ -825,6 +825,24 @@ void main() {
         expect(callsMade(), contains('touch $keys'));
         expect(modeOf(keys), '644');
       });
+
+      test(
+          "when it cannot set up root's ~/.ssh/authorized_keys, then it stops "
+          'with an error and exits non-zero', () async {
+        expectSystemdUnitsUnwritable();
+        final ssh = Directory(path.join(home.path, '.ssh'))..createSync();
+        expect(Process.runSync('chmod', ['500', ssh.path]).exitCode, 0);
+        addTearDown(() => Process.runSync('chmod', ['700', ssh.path]));
+
+        final result = await installAsRoot(['systemd', 'sshnpd']);
+
+        expect(result.exitCode, 1, reason: '${result.stdout}');
+        expect(
+          result.stdout,
+          endsWith('Error: could not set up ${ssh.path}/authorized_keys\n'),
+        );
+        expect(namesIn(ssh.path), isEmpty);
+      });
     });
 
     group(
