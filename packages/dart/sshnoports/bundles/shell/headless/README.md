@@ -18,12 +18,13 @@ Also make sure that username running sshnpd has the .atkeys file in place at
 starts the `srv` installed there too.
 Run the following command to view full usage information of sshnpd:
 ```sh
-/usr/local/bin/sshnpd
-```
-or if you didn't install the binaries as root:
-```sh
 ~/.local/bin/sshnpd
 ```
+
+`install.sh headless sshnpd` installs the binaries to `~/.local/bin`, or to the
+directory given with `-b`, and adds the job to the crontab of the user who runs
+it. Run it without `sudo`, as the user who will run sshnpd. From a root login it
+installs the binaries to `/usr/local/bin` and the job to root's crontab.
 
 ### Usage
 
@@ -45,22 +46,23 @@ crontab -e
 
 ### Installation
 
-The `srvd.service` file should be placed in `/etc/systemd/system` (as root).
+The `srvd.sh` file should be placed in `~/.local/bin`.
 
-Modify the `srvd.service` unit to use the appropriate atSign,
-(The boilerplate uses @atsign) as well as the internet address.
-Also change the username and make sure that username running srvd has the
-.atkeys file in place at '~/.atsign/keys'.
+Modify the `srvd.sh` script to use the appropriate atSign,
+(The boilerplate uses @my_rvd) as well as the internet address.
+Also make sure that the user running srvd has the .atkeys file in place at
+'~/.atsign/keys'.
 
 `srvd` is a script that runs the `atsc` installed beside it.
 Run the following command to view full usage information of srvd:
 ```sh
-/usr/local/bin/srvd
-```
-or if you didn't install the binaries as root:
-```sh
 ~/.local/bin/srvd
 ```
+
+`install.sh headless srvd` installs the binaries to `~/.local/bin`, or to the
+directory given with `-b`, and adds the job to the crontab of the user who runs
+it. Run it without `sudo`, as the user who will run srvd. From a root login it
+installs the binaries to `/usr/local/bin` and the job to root's crontab.
 
 ### Usage
 

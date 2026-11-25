@@ -166,7 +166,8 @@ usage() {
   echo ""
   echo "Options:"
   echo "-b <dir>        - override the directory in which the binaries are written to"
-  echo "-u <username>   - override the user to install the binaries for"
+  echo "-u <username>   - install for <username>: as root, set up its ~/.ssh/authorized_keys"
+  echo "                  for a systemd unit; otherwise, install into its ~/.local/bin"
 }
 
 # SETUP AUTHORIZED KEYS #
