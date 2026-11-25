@@ -3,7 +3,7 @@
 ## Usage
 
 ```bash
-docker stop $(docker ps -q) 2>/dev/null
+docker rm -f $(docker ps -aq --filter name=^npe2e_) 2>/dev/null
 rm -rf npe2e_core_tests/
 dart run tests/npe2e/bin/core_tests.dart \
     --client-atsign "@colin" \

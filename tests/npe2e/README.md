@@ -134,7 +134,7 @@ same commit:
   hits a `container name ... already in use` conflict. Remove them first:
 
   ```
-  docker rm -f $(docker ps -aq --filter name=npe2e) 2>/dev/null
+  docker rm -f $(docker ps -aq --filter name=^npe2e_) 2>/dev/null
   ```
 
 Either clear both, or pass a fresh `--test-run-id`.
