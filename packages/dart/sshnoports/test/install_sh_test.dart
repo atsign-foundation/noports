@@ -235,25 +235,41 @@ void main() {
         });
       }
 
-      test(
-          'when copying a new atsc fails, then the installed one stays, no '
-          'program is installed and install.sh fails', () async {
-        expect((await install(['-b', prefix.path, 'atsc'])).exitCode, 0);
-        final String newAtsc = path.join(bundle.path, 'atsc');
-        standIn(newAtsc, 'atsc 2');
-        expect(Process.runSync('chmod', ['000', newAtsc]).exitCode, 0);
+      for (final bool partWay in [false, true]) {
+        test(
+            'when copying a new atsc fails${partWay ? ' part way' : ''}, then '
+            'the installed one stays, no program is installed and install.sh '
+            'fails', () async {
+          expect((await install(['-b', prefix.path, 'atsc'])).exitCode, 0);
+          final String newAtsc = path.join(bundle.path, 'atsc');
+          standIn(newAtsc, 'atsc 2');
+          if (partWay) {
+            shim(
+              'cp',
+              'for a in "\$@"; do last=\$a; done\n'
+                  'case \$last in */.atsc.new.*) echo part > "\$last"; '
+                  'exit 1 ;; esac\n'
+                  'for d in /bin /usr/bin; do\n'
+                  '  if [ -x "\$d/cp" ]; then exec "\$d/cp" "\$@"; fi\n'
+                  'done\n'
+                  'exit 127\n',
+            );
+          } else {
+            expect(Process.runSync('chmod', ['000', newAtsc]).exitCode, 0);
+          }
 
-        final result = await install(['-b', prefix.path, 'npt']);
+          final result = await install(['-b', prefix.path, 'npt']);
 
-        expect(result.exitCode, isNot(0));
-        expect(
-          result.stdout,
-          contains('Failed to copy $newAtsc to ${prefix.path} - aborting, '
-              '${prefix.path}/atsc is unchanged\n'),
-        );
-        expect(namesIn(prefix.path), ['atsc']);
-        expect(await output(path.join(prefix.path, 'atsc')), 'atsc 1\n');
-      });
+          expect(result.exitCode, isNot(0));
+          expect(
+            result.stdout,
+            contains('Failed to copy $newAtsc to ${prefix.path} - aborting, '
+                '${prefix.path}/atsc is unchanged\n'),
+          );
+          expect(namesIn(prefix.path), ['atsc']);
+          expect(await output(path.join(prefix.path, 'atsc')), 'atsc 1\n');
+        });
+      }
 
       test(
           'when renaming a new atsc into place fails, then the installed one '
