@@ -37,6 +37,7 @@ void main() {
   late Directory shims;
   late Directory tools;
   late File calls;
+  late File removals;
   late String archive;
 
   /// Makes [file] executable.
@@ -83,6 +84,43 @@ void main() {
         includeParentEnvironment: false,
       );
 
+  /// Writes an archive called [name] whose sshnp/install.sh records its
+  /// arguments and the directory above its own, with that directory's
+  /// `ls -ldn` line, and then runs [then]. Returns the archive's path.
+  String stubArchive(String name, {String then = ''}) {
+    final String installer = path.join(root.path, name, 'sshnp');
+    Directory(installer).createSync(recursive: true);
+    File(path.join(installer, 'install.sh')).writeAsStringSync(
+      '#!/bin/sh\n'
+      '${record('install.sh')}'
+      'work=\$(CDPATH= cd -- "\$(dirname -- "\$0")/.." && pwd -P)\n'
+      "echo \"work \$work \$(ls -ldn \"\$work\")\" >> '${calls.path}'\n"
+      '$then',
+    );
+    executable(path.join(installer, 'install.sh'));
+    final String file = path.join(root.path, '$name.tgz');
+    final tar = Process.runSync('tar', [
+      '-czf',
+      file,
+      '-C',
+      path.join(root.path, name),
+      'sshnp',
+    ]);
+    expect(tar.exitCode, 0, reason: '${tar.stderr}');
+    return file;
+  }
+
+  /// The work directories that install.sh in a [stubArchive] recorded, each
+  /// with its `ls -ldn` line.
+  List<(String, String)> workDirs() => [
+        for (final String call in callsMade())
+          if (call.startsWith('work '))
+            (
+              call.substring(5).split(' ').first,
+              call.substring(5).split(' ').skip(1).join(' '),
+            ),
+      ];
+
   /// Each path under [dir], relative to it, with its type, permissions,
   /// modification time and, for a file, its contents.
   Map<String, String> snapshot(Directory dir) => {
@@ -110,6 +148,7 @@ void main() {
     shims = Directory(path.join(root.path, 'shims'))..createSync();
     tools = Directory(path.join(root.path, 'tools'))..createSync();
     calls = File(path.join(root.path, 'calls'));
+    removals = File(path.join(root.path, 'removals'));
 
     final String installer = path.join(root.path, 'archive', 'sshnp');
     Directory(installer).createSync(recursive: true);
@@ -128,8 +167,8 @@ void main() {
 
     for (final String name in [
       'basename', 'cat', 'chmod', 'chown', 'cp', 'cut', 'date', 'dirname', //
-      'find', 'grep', 'gzip', 'head', 'id', 'ls', 'mkdir', 'mv', 'readlink',
-      'sed', 'seq', 'sleep', 'sort', 'tail', 'touch', 'tr', 'wc',
+      'find', 'grep', 'gzip', 'head', 'id', 'ls', 'mkdir', 'mktemp', 'mv',
+      'readlink', 'sed', 'seq', 'sleep', 'sort', 'tail', 'touch', 'tr', 'wc',
     ]) {
       final String found = which(name);
       if (found.isNotEmpty) {
@@ -138,7 +177,8 @@ void main() {
     }
     shim(
       'rm',
-      'for a in "\$@"; do\n'
+      "echo \"rm \$*\" >> '${removals.path}'\n"
+          'for a in "\$@"; do\n'
           '  case "\$a" in\n'
           "  -* | '${root.path}'/* | /tmp/sshnp-*) ;;\n"
           '  *) ${record('rm refused')}exit 1 ;;\n'
@@ -509,5 +549,134 @@ void main() {
             : hasSystemd
                 ? 'universal.sh suggests systemd here'
                 : false);
+
+    group('Given universal.sh installs a client from a local archive', () {
+      final int uid =
+          int.parse(Process.runSync('id', ['-u']).stdout.toString().trim());
+
+      List<String> client(String archive, String temp) => [
+            ...['--local', archive, '-t', 'client', '-c', '@a', '-d', '@b'],
+            ...['--temp-path', temp],
+          ];
+
+      setUp(() {
+        shim('at_activate', "echo 'returning 0'\n");
+      });
+
+      test(
+          'when names in the parent directory were made first by another '
+          'account, then universal.sh neither uses nor changes them, and works '
+          'in a new directory that only its own account can use', () async {
+        final String stub = stubArchive('stub');
+        final Directory temp = Directory(path.join(root.path, 'temp'))
+          ..createSync();
+        shim('date', 'echo 4000000000\n');
+        final String taken = path.join(temp.path, 'sshnp-4000000000');
+        final String planted = path.join(taken, 'sshnp', 'install.sh');
+        File(planted)
+          ..createSync(recursive: true)
+          ..writeAsStringSync('#!/bin/sh\n${record('planted install.sh')}');
+        executable(planted);
+        final File victim = File(path.join(root.path, 'victim'))
+          ..writeAsStringSync('victim\n');
+        Link('$taken.tgz').createSync(victim.path);
+        final Set<String> before = temp
+            .listSync()
+            .map((FileSystemEntity entity) => entity.path)
+            .toSet();
+        final Map<String, String> takenBefore = snapshot(Directory(taken));
+
+        final result = await universal(client(stub, temp.path));
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade(),
+          isNot(contains(startsWith('planted'))),
+          reason: 'the planted install.sh runs',
+        );
+        expect(victim.readAsStringSync(), 'victim\n');
+        expect(snapshot(Directory(taken)), takenBefore);
+        expect(Link('$taken.tgz').targetSync(), victim.path);
+        final List<(String, String)> works = workDirs();
+        expect(works, hasLength(4));
+        for (final (String work, String listing) in works) {
+          expect(work, works.first.$1);
+          expect(path.dirname(work), temp.path);
+          expect(path.basename(work), startsWith('sshnp-'));
+          expect(before, isNot(contains(work)));
+          final List<String> fields = listing.split(RegExp(r'\s+'));
+          expect(fields[0].substring(0, 10), 'drwx------', reason: listing);
+          expect(fields[2], '$uid', reason: listing);
+        }
+      });
+
+      test(
+          'when --temp-path names a directory that does not exist, then '
+          'universal.sh creates it and works in a new directory inside it, '
+          'which it removes, and only it, when it succeeds and when it fails',
+          () async {
+        for (final bool fails in [false, true]) {
+          final String stub = stubArchive(
+            fails ? 'failing' : 'stub',
+            then: fails ? 'exit 3\n' : '',
+          );
+          final String temp = path.join(root.path, 'new$fails', 'temp');
+          for (final File file in [calls, removals]) {
+            if (file.existsSync()) file.deleteSync();
+          }
+
+          final result = await universal(client(stub, temp));
+
+          final String reason = fails ? 'install.sh fails' : 'it succeeds';
+          expect(
+            result.exitCode,
+            fails ? isNot(0) : 0,
+            reason: '$reason: ${result.stdout}${result.stderr}',
+          );
+          final List<(String, String)> works = workDirs();
+          expect(works, isNotEmpty, reason: reason);
+          final String work = works.first.$1;
+          expect(path.dirname(work), temp, reason: reason);
+          expect(Directory(work).existsSync(), isFalse, reason: reason);
+          expect(Directory(temp).listSync(), isEmpty, reason: reason);
+          expect(
+            removals.readAsLinesSync(),
+            ['rm -rf $work'],
+            reason: reason,
+          );
+        }
+      });
+
+      test(
+          'when it cannot create its work directory, then it stops with an '
+          'error naming the parent, having removed nothing', () async {
+        final String stub = stubArchive('stub');
+        final Directory temp = Directory(path.join(root.path, 'locked'))
+          ..createSync();
+        File(path.join(temp.path, 'kept')).writeAsStringSync('kept\n');
+        expect(Process.runSync('chmod', ['555', temp.path]).exitCode, 0);
+        addTearDown(() => Process.runSync('chmod', ['755', temp.path]));
+        final Map<String, String> tempBefore = snapshot(temp);
+
+        final result = await universal(client(stub, temp.path));
+
+        expect(result.exitCode, 1, reason: '${result.stdout}');
+        expect(
+          result.stderr,
+          contains('Error: could not create a work directory in '
+              '${temp.path}\n'),
+        );
+        expect(
+          result.stderr,
+          allOf(
+            isNot(contains('parameter not set')),
+            isNot(contains('unbound variable')),
+          ),
+        );
+        expect(removals.existsSync(), isFalse, reason: 'nothing is removed');
+        expect(callsMade(), isEmpty);
+        expect(snapshot(temp), tempBefore);
+      });
+    });
   }, skip: isRoot ? 'universal.sh installs as root' : false);
 }

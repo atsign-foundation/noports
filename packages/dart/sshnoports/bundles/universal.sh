@@ -25,7 +25,7 @@ unset script_dir
 unset platform_name
 unset system_arch
 unset archive_ext
-unset time_stamp
+unset extract_path
 unset archive_path
 unset as_root
 unset bin_path
@@ -228,11 +228,7 @@ parse_env() {
     ;;
   esac
 
-  time_stamp=$(date +%s)
-
   tmp_path="/tmp"
-  extract_path="$tmp_path/sshnp-$time_stamp"
-  archive_path="$extract_path.$archive_ext"
   user_home="$HOME"
   if is_root; then
     user="${SUDO_USER:-}"
@@ -519,11 +515,16 @@ unpack_archive() {
   esac
 }
 
-cleanup() {
-  # These should be in the tmp directory, attempt to remove them anyway
-  if [ -n "${archive_path:-}" ]; then
-    rm -f "$archive_path"
+make_work_dir() {
+  if ! work_dir=$(mktemp -d "$tmp_path/sshnp-XXXXXX"); then
+    >&2 echo "Error: could not create a work directory in $tmp_path"
+    exit 1
   fi
+  extract_path=$work_dir
+  archive_path="$extract_path/sshnp.$archive_ext"
+}
+
+cleanup() {
   if [ -n "${extract_path:-}" ]; then
     rm -rf "$extract_path"
   fi
@@ -1386,6 +1387,7 @@ main() {
   parse_env
   print_env
   parse_args "$@"
+  make_work_dir
 
   if $as_root && $no_sudo; then
     >&2 echo "Error: --no-sudo cannot be used when running as root/sudo"
