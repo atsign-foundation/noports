@@ -85,6 +85,40 @@ void main() {
   /// The commands the shims were run with, in order.
   List<String> callsMade() => calls.existsSync() ? calls.readAsLinesSync() : [];
 
+  /// Whether the process [pid] exists and has not exited.
+  bool isRunning(int pid) {
+    final String stat = Process.runSync('ps', ['-o', 'stat=', '-p', '$pid'])
+        .stdout
+        .toString()
+        .trim();
+    return stat.isNotEmpty && !stat.startsWith('Z');
+  }
+
+  /// Whether the process [pid] is still running after up to five seconds.
+  Future<bool> stillRunning(int pid) async {
+    for (int i = 0; i < 100 && isRunning(pid); i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    return isRunning(pid);
+  }
+
+  /// The children of the process [pid], once it has at least one, waiting up
+  /// to five seconds.
+  Future<List<int>> childrenOf(int pid) async {
+    List<int> children = [];
+    for (int i = 0; i < 100 && children.isEmpty; i++) {
+      if (i > 0) await Future<void>.delayed(const Duration(milliseconds: 50));
+      children = (await Process.run('pgrep', ['-P', '$pid']))
+          .stdout
+          .toString()
+          .split('\n')
+          .where((String line) => line.isNotEmpty)
+          .map(int.parse)
+          .toList();
+    }
+    return children;
+  }
+
   /// The step that stops an earlier root job, up to the quoted pattern for
   /// its script.
   const String stopStep = r"""  sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do pkill -P "$p"; kill "$p"; done' sh '""";
@@ -1525,6 +1559,61 @@ void main() {
             contains('binary_path="$dir"'),
             reason: kind,
           );
+        }
+      });
+    });
+
+    group("Given the user's headless job is in its crontab and running", () {
+      test(
+          'when install.sh installs the job again, then it stops the job '
+          'script and its child, and leaves other processes running', () async {
+        await expectShimsFirst();
+        File(path.join(shims.path, 'pgrep')).deleteSync();
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        final first = await install(['headless', 'sshnpd']);
+        expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
+        final String lookalike =
+            path.join(home.path, 'xlocal', 'bin', 'sshnpdxsh');
+        File(lookalike)
+          ..createSync(recursive: true)
+          ..writeAsStringSync('while :; do sleep 1; done\n');
+        final List<Process> started = [
+          for (final List<String> args in [
+            [job],
+            [lookalike],
+            ['-c', 'while :; do sleep 1; done; : $job'],
+          ])
+            await Process.start('/bin/sh', args),
+        ];
+        addTearDown(() {
+          for (final Process process in started) {
+            Process.runSync('pkill', ['-P', '${process.pid}']);
+            process.kill();
+          }
+        });
+        final List<int> children = await childrenOf(started.first.pid);
+        expect(children, isNotEmpty, reason: 'the job script runs a child');
+        for (final Process other in started.skip(1)) {
+          expect(await childrenOf(other.pid), isNotEmpty);
+        }
+
+        final again = await install(['headless', 'sshnpd']);
+
+        expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+        expect(
+          await started.first.exitCode.timeout(const Duration(seconds: 5)),
+          -ProcessSignal.sigterm.signalNumber,
+          reason: 'the job script is stopped',
+        );
+        for (final int child in children) {
+          expect(
+            await stillRunning(child),
+            isFalse,
+            reason: 'the child $child of the job script is stopped',
+          );
+        }
+        for (final Process other in started.skip(1)) {
+          expect(isRunning(other.pid), isTrue, reason: 'pid ${other.pid}');
         }
       });
     });

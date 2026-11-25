@@ -573,10 +573,10 @@ install_headless_job() {
 
   if echo "$crontab_contents" | grep -Fxq "$cron_entry"; then
     echo "=> cron job already installed, killing any old $job_name.sh processes"
-    pids=$(pgrep "$command")
-    if [ -n "$pids" ]; then
-      echo "$pids" | xargs kill
-    fi
+    for p in $(pgrep -u "$(id -u)" -f -- "^[^ ]*sh $(ere "$dest")\$"); do
+      pkill -P "$p"
+      kill "$p"
+    done
   else
     echo "=> Installing cron job: $cron_entry"
     (
