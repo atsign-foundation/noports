@@ -41,7 +41,7 @@ If you've already activated the device atSign skip to [step 2](device.md#step-2-
 #### (3.2) Make an authorization request from your <mark style="color:orange;">device machine</mark>
 
 {% hint style="info" %}
-If you ran the installer on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
 {% endhint %}
 
 {% include "../../.gitbook/includes/apkam-2-unix.md" %}
@@ -89,7 +89,7 @@ If you've already activated the device atSign skip to [step 2](device.md#step-2-
 #### (3.2) Make an authorization request from your <mark style="color:orange;">device machine</mark>
 
 {% hint style="info" %}
-If you ran the installer on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
 {% endhint %}
 
 {% include "../../.gitbook/includes/apkam-2-unix.md" %}
@@ -115,7 +115,7 @@ See the Windows [#cli-client-installation](../windows/#cli-client-installation "
 ### Step 2 : Installing on the <mark style="color:orange;">DEVICE machine</mark>
 
 {% hint style="info" %}
-If you ran the installer on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
 {% endhint %}
 
 {% include "../../.gitbook/includes/apkam-2-unix.md" %}
@@ -207,7 +207,7 @@ Run the following command. It should output a 6-character passcode.
 #### (3.2) Make an authorization request from your <mark style="color:orange;">device machine</mark>
 
 {% hint style="info" %}
-If you ran the installer on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
 {% endhint %}
 
 <pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_device \
@@ -311,7 +311,7 @@ Run the following command. It should output a 6-character passcode.
 #### (3.2) Make an authorization request from your <mark style="color:orange;">device machine</mark>
 
 {% hint style="info" %}
-If you ran the installer on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
 {% endhint %}
 
 <pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_device \
@@ -410,7 +410,7 @@ Wait a few seconds for the OTP to appear then proceed to the next step.
 Run the following command on your remote device.
 
 {% hint style="info" %}
-If you ran the installer on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
 {% endhint %}
 
 <pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_device \
