@@ -226,7 +226,7 @@ parse_env() {
   archive_path="$extract_path.$archive_ext"
   user_home="$HOME"
   if is_root; then
-    user="$SUDO_USER"
+    user="${SUDO_USER:-}"
     as_root=true
     bin_path="/usr/bin"
     if [ -z "$user" ]; then

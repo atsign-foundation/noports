@@ -191,7 +191,7 @@ void main() {
         final aliceBefore = snapshot(alice);
         final homeBefore = snapshot(home);
 
-        for (final String? sudoUser in ['alice']) {
+        for (final String? sudoUser in ['alice', null]) {
           for (final (List<String> chosen, String type) in [
             (['--dt', 'headless'], 'headless'),
             (['--dt', 'tmux'], 'tmux'),
