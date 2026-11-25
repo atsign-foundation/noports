@@ -231,6 +231,69 @@ void main() {
       });
     }, skip: inContainer ? 'universal.sh refuses device installs here' : false);
 
+    group('Given install.sh fails when universal.sh installs sshnpd', () {
+      test(
+          'when universal.sh makes a device install, then it prints what '
+          'install.sh printed and exits non-zero', () async {
+        final String installer = path.join(root.path, 'failing', 'sshnp');
+        Directory(installer).createSync(recursive: true);
+        File(path.join(installer, 'install.sh')).writeAsStringSync(
+          '#!/bin/sh\n'
+          '${record('install.sh')}'
+          'case "\$*" in\n'
+          "*sshnpd) echo 'install.sh stand-in: sshnpd not installed'; "
+          'exit 1 ;;\n'
+          'esac\n',
+        );
+        executable(path.join(installer, 'install.sh'));
+        final String failing = path.join(root.path, 'failing.tgz');
+        final tar = Process.runSync('tar', [
+          '-czf',
+          failing,
+          '-C',
+          path.join(root.path, 'failing'),
+          'sshnp',
+        ]);
+        expect(tar.exitCode, 0, reason: '${tar.stderr}');
+        final List<String> device = [
+          ...['--local', failing, '-t', 'device'],
+          ...['-c', '@a', '-d', '@b', '-n', 'dev1'],
+        ];
+
+        for (final (String type, bool asRoot, String call) in [
+          (
+            'tmux',
+            false,
+            'install.sh -b ${path.join(home.path, '.local', 'bin')} -u tester '
+                'tmux sshnpd',
+          ),
+          ('systemd', true, 'install.sh -b /usr/bin -u alice sshnpd'),
+        ]) {
+          if (asRoot) {
+            shim(
+              'id',
+              'if [ "\$1" = -u ]; then echo 0; else exec \'${which('id')}\' '
+                  '"\$@"; fi\n',
+            );
+          }
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await universal(
+            [...device, '--dt', type],
+            sudoUser: asRoot ? 'alice' : null,
+          );
+
+          expect(result.exitCode, isNot(0), reason: type);
+          expect(
+            result.stdout,
+            contains('install.sh stand-in: sshnpd not installed\n'),
+            reason: '$type: ${result.stdout}${result.stderr}',
+          );
+          expect(callsMade().last, call, reason: type);
+        }
+      });
+    }, skip: inContainer ? 'universal.sh refuses device installs here' : false);
+
     group('Given universal.sh runs as root on macOS', () {
       test(
           'when it is asked to install, then it refuses before downloading '

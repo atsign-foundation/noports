@@ -858,7 +858,10 @@ device() {
     # install sshnpd binary and capture the installer output
     # If systemd, we want to use the new style
     if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ]; then
-      install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnpd)
+      if ! install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnpd); then
+        printf '%s\n' "$install_output"
+        exit 1
+      fi
       # Manually install the nfpm style systemd unit
       mkdir -p /lib/systemd/system
       cp "$extract_path/sshnp/systemd.nfpm/sshnpd.service" /lib/systemd/system/sshnpd.service
@@ -876,7 +879,10 @@ device() {
       migrate_systemd_config_to_yaml
       secure_config_file
     else
-      install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
+      if ! install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd); then
+        printf '%s\n' "$install_output"
+        exit 1
+      fi
     fi
 
     if [ "$verbose" = true ]; then
