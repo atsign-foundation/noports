@@ -849,8 +849,10 @@ void main() {
         "Given install.sh runs as root and cannot set up an account's "
         '~/.ssh/authorized_keys as that account', () {
       test(
-          'when it installs the sshnpd systemd unit, then it stops with an '
-          'error naming the chown to run, and exits non-zero', () async {
+          'when it installs the sshnpd systemd unit, then it stops before '
+          'installing the unit, with an error naming the command that moves '
+          "that account's ~/.ssh aside as that account, and exits non-zero",
+          () async {
         expectSystemdUnitsUnwritable();
 
         for (final (List<String> args, String account, Directory dir) in [
@@ -871,13 +873,15 @@ void main() {
           expect(result.exitCode, 1, reason: '$account: ${result.stdout}');
           expect(
             result.stdout,
-            allOf(
-              contains('Error: could not set up ~/.ssh/authorized_keys as '
-                  '$account\n'),
-              contains("  sudo chown -h '$account' '${ssh.path}'\n"),
-            ),
+            endsWith('Error: could not set up ~/.ssh/authorized_keys as '
+                '$account\n'
+                "Move $account's ~/.ssh aside, as $account, with:\n"
+                "  sudo -H -u '$account' sh -c 'mv ~/.ssh ~/.ssh.old'\n"
+                'then run install.sh again, and copy back, as $account, any keys '
+                'in ~/.ssh.old/authorized_keys that are still needed.\n'),
             reason: account,
           );
+          expect(result.stdout, isNot(contains('chown')), reason: account);
           expect(
             callsMade().where((String call) => call.contains(dir.path)),
             everyElement(startsWith('$account: ')),

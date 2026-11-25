@@ -182,11 +182,9 @@ setup_authorized_keys() {
     # NOTE steps in another account's home run as that account
     if ! sudo -H -u "$user" sh -c 'umask "$1" && mkdir -p "$HOME/.ssh" && touch "$HOME/.ssh/authorized_keys" && chmod 644 "$HOME/.ssh/authorized_keys"' sh "$(umask)"; then
       echo "Error: could not set up ~/.ssh/authorized_keys as $user"
-      echo "Make $user the owner of its ~/.ssh with:"
-      echo "  sudo chown -h $(quote "$user") $(quote "$user_home/.ssh")"
-      echo "then, if $user does not own the authorized_keys in it, replace that file with a copy $user owns:"
-      echo "  sudo -H -u $(quote "$user") sh -c 'cd ~/.ssh && cp authorized_keys authorized_keys.new && mv authorized_keys.new authorized_keys'"
-      echo "and run install.sh again."
+      echo "Move $user's ~/.ssh aside, as $user, with:"
+      echo "  sudo -H -u $(quote "$user") sh -c 'mv ~/.ssh ~/.ssh.old'"
+      echo "then run install.sh again, and copy back, as $user, any keys in ~/.ssh.old/authorized_keys that are still needed."
       exit 1
     fi
     return
