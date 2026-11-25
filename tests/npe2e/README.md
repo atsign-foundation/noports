@@ -27,10 +27,12 @@ There are four test packs, each with its own entrypoint under `bin/`:
 receives, for the hand check in
 [../single_atsign/README.md](../single_atsign/README.md).
 
-The examples below use the core pack; relay and policy take the same
-arguments. The revocation pack starts its own relay and daemons, so it takes
-fewer; [lib/revocation_tests/README.md](lib/revocation_tests/README.md) says
-how to run it on an EE.
+The examples below use the core pack, and the [Arguments](#arguments) table
+is core's. Relay and policy name their Atsigns with options of their own, which
+their READMEs and `--help` list. The revocation pack starts its own relay and
+daemons, so it takes fewer;
+[lib/revocation_tests/README.md](lib/revocation_tests/README.md) says how to
+run it on an EE.
 
 ## Prerequisites
 
@@ -111,6 +113,7 @@ dart run tests/npe2e/bin/core_tests.dart \
   --client-atsign @client \
   --daemon-atsign @service \
   --relay-atsign @relay \
+  --unauthorized-atsign @other \
   --root-domain vip.ve.atsign.zone \
   --base-directory npe2e_core_tests \
   --batch-size 5
@@ -165,6 +168,7 @@ run `tests/tools/ve/teardown_ve.sh` first.
 | `--client-atsign` | (required) | Client atSign used in tests |
 | `--daemon-atsign` | (required) | Daemon atSign used in tests |
 | `--relay-atsign` | (required) | Relay atSign used in tests |
+| `--unauthorized-atsign` | (required) | An Atsign whose atKeys are present but which no daemon lists as a manager, for the rejection tests |
 | `--root-domain` | (required) | atDirectory host[:port], port 64 when omitted; e.g. `vip.ve.atsign.zone` for the VE |
 | `--base-directory` | `npe2e_core_tests` | Where run artefacts (binaries, keys, logs) are written |
 | `--client-versions` | `d:v5.9.4,d:v5.11.2,d:v5.13.0,d:current` | Comma-separated `language:version` |
