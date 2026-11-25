@@ -73,6 +73,8 @@
 * fix: `sshnpd --doctor` no longer counts its own process as the running daemon
 * fix: `sshnpd --doctor` reports a check it cannot complete as a warning
   naming the error, and runs the remaining checks
+* fix: the `sshnpd-slim` Docker image has a writable `/tmp`, so srv, which
+  sshnpd starts for each session, no longer exits at startup
 
 * ci: the Windows release job signs in to Azure only when it is about to
   sign, after every build step, instead of first
