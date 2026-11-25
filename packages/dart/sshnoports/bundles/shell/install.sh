@@ -80,6 +80,52 @@ no_root_for_others() {
   fi
 }
 
+# Prints each of the paths given that exists and is not owned by the account
+# running install.sh.
+not_owned() {
+  for entry in "$@"; do
+    if [ -e "$entry" ] && ! [ -O "$entry" ]; then
+      echo "  $entry"
+    fi
+  done
+}
+
+# Stops before the $1 job $2 is installed when a path in the home that it
+# writes to is not owned by the account running install.sh.
+check_job_paths() {
+  if is_root; then
+    return
+  fi
+  script="$user_bin_dir/$2.sh"
+  in_local=$(not_owned "$user_home/.local" "$user_bin_dir" "$script")
+  in_sshnpd=''
+  if [ "$1" = headless ]; then
+    in_sshnpd=$(not_owned "$user_sshnpd_dir" "$user_log_dir")
+  fi
+  if [ -z "$in_local$in_sshnpd" ]; then
+    return
+  fi
+  dirs=''
+  echo "Error: install.sh $1 $2 writes to these, which $user does not own:"
+  if [ -n "$in_local" ]; then
+    echo "$in_local"
+    dirs=" $(quote "$user_home/.local")"
+  fi
+  if [ -n "$in_sshnpd" ]; then
+    echo "$in_sshnpd"
+    dirs="$dirs $(quote "$user_sshnpd_dir")"
+  fi
+  echo "To clean up an earlier install as root, run:"
+  echo "  sudo sh -c 'crontab -l | grep -v -F -- \"\$1\" | crontab -' sh $(quote "$script")"
+  echo "  sudo chown -R -h $(quote "$user")$dirs"
+  if [ -e "$script" ]; then
+    echo "then copy any settings you need from $script and remove it with:"
+    echo "  rm -f $(quote "$script")"
+  fi
+  echo "and run install.sh again."
+  exit 1
+}
+
 # USAGE #
 
 usage() {
@@ -455,7 +501,10 @@ headless() {
     usage
     exit 0
     ;;
-  sshnpd | srvd) no_root_for_others "headless $1" ;;
+  sshnpd | srvd)
+    no_root_for_others "headless $1"
+    check_job_paths headless "$1"
+    ;;
   *)
     echo "Error: Unknown headless job: $1"
     usage
@@ -527,7 +576,10 @@ tmux() {
     usage
     exit 0
     ;;
-  sshnpd | srvd) no_root_for_others "tmux $1" ;;
+  sshnpd | srvd)
+    no_root_for_others "tmux $1"
+    check_job_paths tmux "$1"
+    ;;
   *)
     echo "Unknown tmux service: $1"
     usage

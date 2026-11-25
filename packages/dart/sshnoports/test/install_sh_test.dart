@@ -866,6 +866,70 @@ void main() {
     });
 
     group(
+        'Given install.sh runs as a regular user whose job script or log '
+        'directory belongs to another account', () {
+      test(
+          'when it installs a headless or tmux job, then it stops before '
+          'changing anything and prints the commands to clean up the earlier '
+          'install', () async {
+        await expectShimsFirst();
+        final String local = path.join(home.path, '.local');
+        final String sshnpd = path.join(home.path, '.sshnpd');
+
+        for (final (List<String> args, String linked, String target) in [
+          (['headless', 'sshnpd'], '.local/bin/sshnpd.sh', '/etc/hosts'),
+          (['npt', 'headless', 'sshnpd'], '.local/bin/sshnpd.sh', '/etc/hosts'),
+          (['headless', 'srvd'], '.sshnpd/logs', '/usr'),
+          (['tmux', 'sshnpd'], '.local/bin', '/usr'),
+        ]) {
+          for (final String dir in [local, sshnpd]) {
+            if (Directory(dir).existsSync()) {
+              Directory(dir).deleteSync(recursive: true);
+            }
+          }
+          final String link = path.join(home.path, linked);
+          Directory(path.dirname(link)).createSync(recursive: true);
+          Link(link).createSync(target);
+          expect(
+            Process.runSync('/bin/sh', ['-c', '[ -O "\$1" ]', 'sh', link])
+                .exitCode,
+            1,
+            reason: 'this process owns $target',
+          );
+          final String job = args.last;
+          final String script = path.join(local, 'bin', '$job.sh');
+          final bool hasScript = File(script).existsSync();
+          final String owner = linked.startsWith('.local') ? local : sshnpd;
+          final homeBefore = snapshot(home);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await install(args);
+
+          final String kindJob = args.sublist(args.length - 2).join(' ');
+          expect(result.exitCode, 1, reason: '$args: ${result.stderr}');
+          expect(
+            result.stdout,
+            'Error: install.sh $kindJob writes to these, which tester does not '
+            'own:\n'
+            '  $link\n'
+            'To clean up an earlier install as root, run:\n'
+            "  sudo sh -c 'crontab -l | grep -v -F -- \"\$1\" | crontab -' sh "
+            "'$script'\n"
+            "  sudo chown -R -h 'tester' '$owner'\n"
+            '${hasScript ? 'then copy any settings you need from $script and '
+                'remove it with:\n'
+                "  rm -f '$script'\n" : ''}'
+            'and run install.sh again.\n',
+            reason: '$args',
+          );
+          expect(callsMade(), isEmpty, reason: '$args');
+          expect(changes(homeBefore, snapshot(home)), isEmpty, reason: '$args');
+        }
+        expect(crontab.existsSync(), isFalse);
+      });
+    });
+
+    group(
         'Given install.sh runs as a regular user with -u naming another '
         'account', () {
       test(
