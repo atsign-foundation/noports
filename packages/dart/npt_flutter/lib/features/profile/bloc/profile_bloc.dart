@@ -23,7 +23,7 @@ typedef NptFactory =
 
 class ProfileBloc extends LoggingBloc<ProfileEvent, ProfileState> {
   /// Matches the retry cadence of the npt binary - see
-  /// `sshnoports/bin/npt.dart`
+  /// `sshnoports/lib/src/commands/npt.dart`
   static const defaultRetryDelay = Duration(seconds: 5);
 
   /// Ceiling for the keep-alive backoff - see [retryDelayAfter].

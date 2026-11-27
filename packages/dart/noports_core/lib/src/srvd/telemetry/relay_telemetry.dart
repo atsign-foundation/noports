@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:at_client/at_client.dart';
 import 'package:at_telemetry/at_telemetry.dart';
+import 'package:meta/meta.dart';
 import 'package:noports_core/src/common/validation_utils.dart'
     show isValidSessionId;
 import 'package:noports_core/src/srvd/session_info.dart';
@@ -78,6 +79,11 @@ class RelayTelemetry {
   Timer? _dropReport;
   int _dropped = 0;
   bool _stopping = false;
+
+  /// The service version in the resource attributes sent with every record.
+  @visibleForTesting
+  Object? get serviceVersion =>
+      _telemetry.resource.attributes[AtTelemetryAttributes.serviceVersion];
 
   /// Whether the session [sessionId] is being reported; null when it has
   /// not paired or has ended.
