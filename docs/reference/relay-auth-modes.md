@@ -21,9 +21,9 @@ Every session opens two connections into the relay:
   client can always do ESCR, so its ESCR capability is a given.
 - **Side B** — the **daemon** (`sshnpd`). Older daemons cannot do ESCR; the
   client learns whether this one can from the daemon ping
-  (`DaemonFeature.supportsRamEscr`), and from v5.18.3 also from its record of
+  (`DaemonFeature.supportsRamEscr`), and from v5.19.0 also from its record of
   the daemon's last ping response (see
-  [How a client from v5.18.3 names each side's mode](#how-a-client-from-v5183-names-each-sides-mode)).
+  [How a client from v5.19.0 names each side's mode](#how-a-client-from-v5190-names-each-sides-mode)).
 
 Each side authenticates independently, and the relay authenticates each
 incoming socket on its own. A legacy socket sends its signed envelope (a line
@@ -39,7 +39,7 @@ from how long a socket stays silent.
 `relayAuthModes: {"sideA": "escr" | "payload", "sideB": "escr" | "payload"}`,
 the relay applies it as given, and ignores the request's `relayAuthMode` and
 any auth-modes notification for the session. Its response then carries
-`appliedRelayAuthModes: true`. Clients from v5.18.3 send `relayAuthModes` in
+`appliedRelayAuthModes: true`. Clients from v5.19.0 send `relayAuthModes` in
 every request.
 
 **Otherwise the request's `relayAuthMode` and `relayAuthAesKey` decide:**
@@ -100,7 +100,7 @@ it.
   sends a challenge. The client's auth-modes notification sets a side's mode
   ahead of that. A legacy socket whose first bytes arrive after the window is
   challenged, and does not authenticate. These relays ignore
-  `relayAuthModes`, so a client from v5.18.3 is served as a v5.18.0 client
+  `relayAuthModes`, so a client from v5.19.0 is served as a v5.18.0 client
   is, and sends them its auth-modes notification.
 - **Before v5.18.0** the relay does not advertise `autoDetectsRelayAuth`, and
   applies **one session-wide mode to both sockets**: the request's
@@ -119,9 +119,9 @@ From v5.10.0 to v5.17.x the default is `payload`, and the client sends a
 `relayAuthAesKey` only for `--relay-auth-mode escr`, when it also requires the
 daemon to advertise ESCR. Only clients from v5.18.0 send `payload` with a key.
 
-From v5.18.3 every request also names both sides' modes in `relayAuthModes`.
+From v5.19.0 every request also names both sides' modes in `relayAuthModes`.
 
-## How a client from v5.18.3 names each side's mode
+## How a client from v5.19.0 names each side's mode
 
 `npt`, `sshnp` and NoPorts Desktop name both sides' modes in `request_ports`,
 so they need the daemon's ESCR support before they ask the relay for ports.
@@ -222,9 +222,9 @@ false, peerSupportsEscr = true`). The client sends a `relayAuthAesKey`
 whenever its preference is `escr`, so by default its `request_ports` says
 `payload` with a key.
 
-From v5.18.3, `request_ports` also names `relayAuthModes`: both sides
+From v5.19.0, `request_ports` also names `relayAuthModes`: both sides
 evaluated with `autoDetect = true`, side B with the daemon's support taken as
-[described above](#how-a-client-from-v5183-names-each-sides-mode). A relay
+[described above](#how-a-client-from-v5190-names-each-sides-mode). A relay
 that applied them uses them as named, whatever its `autoDetectsRelayAuth`
 says.
 
@@ -232,19 +232,19 @@ says.
 
 ## Matrix A — current relay
 
-For a client from v5.18.3, "Daemon ESCR" is the answer the request was built
+For a client from v5.19.0, "Daemon ESCR" is the answer the request was built
 from; when the live ping contradicts it, see
-[How a client from v5.18.3 names each side's mode](#how-a-client-from-v5183-names-each-sides-mode).
+[How a client from v5.19.0 names each side's mode](#how-a-client-from-v5190-names-each-sides-mode).
 
 | Client | Preference | Daemon ESCR | `request_ports` | Side A | Side B | Outcome |
 |---|---|---|---|---|---|---|
-| v5.18.3+ | escr (default) | yes | `relayAuthModes` E, E | E | E | Both ESCR. ✓ |
-| v5.18.3+ | escr (default) | **no** | `relayAuthModes` E, L | E | L | Client ESCR, daemon legacy. ✓ |
-| v5.18.3+ | escr (explicit) | yes | `relayAuthModes` E, E | E | E | Both ESCR. ✓ |
-| v5.18.3+ | escr (explicit) | **no** | `relayAuthModes` E, L | E | L | Client ESCR, daemon legacy. ✓ |
-| v5.18.3+ | payload | any | `relayAuthModes` L, L | L | L | Both legacy. ✓ |
-| v5.18.3+ | **443** | yes | `relayAuthModes` E, E | E | E | Both ESCR. ✓ |
-| v5.18.3+ | **443** | **no** | `relayAuthModes` E, E | — | — | **Rejected** by the client before the daemon is asked: 443 is ESCR-only. |
+| v5.19.0+ | escr (default) | yes | `relayAuthModes` E, E | E | E | Both ESCR. ✓ |
+| v5.19.0+ | escr (default) | **no** | `relayAuthModes` E, L | E | L | Client ESCR, daemon legacy. ✓ |
+| v5.19.0+ | escr (explicit) | yes | `relayAuthModes` E, E | E | E | Both ESCR. ✓ |
+| v5.19.0+ | escr (explicit) | **no** | `relayAuthModes` E, L | E | L | Client ESCR, daemon legacy. ✓ |
+| v5.19.0+ | payload | any | `relayAuthModes` L, L | L | L | Both legacy. ✓ |
+| v5.19.0+ | **443** | yes | `relayAuthModes` E, E | E | E | Both ESCR. ✓ |
+| v5.19.0+ | **443** | **no** | `relayAuthModes` E, E | — | — | **Rejected** by the client before the daemon is asked: 443 is ESCR-only. |
 | v5.18.0 to v5.18.2 | escr (default) | yes | payload + key | E | E, from the client's notification | Both ESCR. If the notification never arrives, the daemon's socket is closed at the 30-second limit and the session fails. |
 | v5.18.0 to v5.18.2 | escr (default) | **no** | payload + key | E | L, from its leading `{` | Client ESCR, daemon legacy. ✓ |
 | v5.18.0 to v5.18.2 | escr (explicit) | yes | escr + key | E | E | Both ESCR. ✓ |
@@ -274,11 +274,11 @@ ignores the auth-modes notification, so the two sides cannot differ.
 
 ## Walkthroughs
 
-A client from v5.18.3 asks the relay for ports once it knows what the daemon
+A client from v5.19.0 asks the relay for ports once it knows what the daemon
 last said it supports: from memory, from its record, or from the live ping it
 waited for. It names both sides' modes, and the current relay applies them.
 
-### The current relay, a v5.18.3 client, the daemon can't do ESCR → client uses ESCR, daemon uses legacy
+### The current relay, a v5.19.0 client, the daemon can't do ESCR → client uses ESCR, daemon uses legacy
 
 1. The client's record says this daemon **cannot** do ESCR. Its request names
    ESCR for side A and legacy for side B in `relayAuthModes`.
@@ -291,7 +291,7 @@ waited for. It names both sides' modes, and the current relay applies them.
 With no record, the client waits for the daemon's ping response before step
 1, and writes the record from it.
 
-### The current relay, a v5.18.3 client, the daemon has stopped doing ESCR → that attempt fails, the next one works
+### The current relay, a v5.19.0 client, the daemon has stopped doing ESCR → that attempt fails, the next one works
 
 1. The client's record says the daemon **can** do ESCR, so its request names
    ESCR for both sides, and the relay applies them.
@@ -357,7 +357,7 @@ never reaches the relay, the relay closes the daemon's connection at its
 3. The daemon's legacy envelope is refused, and the session fails.
 
 Retry without `--relay-auth-mode escr`, or upgrade the daemon. A client from
-v5.18.3 names legacy for the daemon's side instead, and the session runs.
+v5.19.0 names legacy for the daemon's side instead, and the session runs.
 
 ### An older relay, the client prefers ESCR but didn't insist → both use legacy
 
@@ -416,7 +416,7 @@ unavoidable on the daemon's socket, i.e. **either**:
   ignores the auth-modes notification.
 
 Explicit ESCR with a non-ESCR daemon through the current relay is not caught
-here: a client from v5.18.3 names legacy for the daemon's side, and a client
+here: a client from v5.19.0 names legacy for the daemon's side, and a client
 v5.18.0 to v5.18.2 fails at connect (see Matrix A).
 
 > The tables assume the daemon authenticates to the relay
@@ -430,7 +430,7 @@ v5.18.0 to v5.18.2 fails at connect (see Matrix A).
 - **The relay never decides from a clock.** Each side's mode comes from the
   request, from the client's auth-modes notification, or from a legacy
   socket's leading `{`.
-- **A client from v5.18.3 names both sides' modes** before either socket
+- **A client from v5.19.0 names both sides' modes** before either socket
   connects, from the daemon's last known answer, and fails an attempt whose
   answer the live ping contradicts in a way that matters before the daemon is
   asked for anything.
@@ -439,7 +439,7 @@ v5.18.0 to v5.18.2 fails at connect (see Matrix A).
   legacy, so daemons (and clients) that predate ESCR keep working.
 - **Explicit ESCR forces ESCR.** Against a daemon that cannot do it, it is
   refused up front on 443 and on a relay before v5.18.0. On the current relay
-  a client from v5.18.3 gives the daemon's side legacy, and a client v5.18.0
+  a client from v5.19.0 gives the daemon's side legacy, and a client v5.18.0
   to v5.18.2 fails at connect.
 - **443 is ESCR-only** on every relay version.
 - **`payload`** always yields legacy on both sides.
