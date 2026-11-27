@@ -158,6 +158,7 @@ void main() {
             (6005, ['/usr/bin/atsc', 'npt', '-t', '@device', '-d', 'sshnpd']),
             (6006, ['/usr/bin/sshnpd-helper', '-a', '@device']),
             (6007, ['dart', 'run', 'bin/sshnpd.dart', '-a', '@device']),
+            (6008, ['dart', 'run', 'bin/atsc.dart', 'sshnpd', '-a', '@d']),
           ]),
           isFalse,
           reason: 'only the program position names the daemon',
