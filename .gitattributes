@@ -1,0 +1,2 @@
+*.sh text eol=lf
+packages/dart/sshnoports/launchers/** text eol=lf

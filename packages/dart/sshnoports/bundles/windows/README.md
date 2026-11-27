@@ -12,7 +12,7 @@ msiexec /i ".\NoPorts.msi"
 ## Upgrading
 
 Installing a newer MSI over an existing install performs a major upgrade: the old version is
-uninstalled and the new one installed in its place. Two things to know:
+uninstalled and the new one installed in its place. Things to know:
 
 - **The `sshnpd` service is restarted for you.** The upgrade stops and removes the old service and
   starts the new one. If it does not come back up, check the Event Viewer under `Application` and
@@ -20,6 +20,14 @@ uninstalled and the new one installed in its place. Two things to know:
   left stopped, because it has no config yet — see Post-Installation below.)
 - **`PATH` is rewritten**, so already-open terminals need restarting before they see the new
   binaries.
+- **Close any running NoPorts program first.** Every NoPorts program runs as `atsc.exe`, so a
+  program left running, such as an `npt` tunnel or an `sshnpd` started by hand, keeps the old
+  `atsc.exe` in use until the next reboot. The upgrade stops the `sshnpd` service itself.
+- **The programs run as `atsc.exe`.** `sshnp.exe`, `npt.exe`, `sshnpd.exe` and the other
+  program names are small launchers that start the `atsc.exe` beside them, and the `sshnpd`
+  service runs `atsc.exe sshnpd` directly. A firewall or application-control rule, a
+  `taskkill /IM`, or a monitor that names one of the old `.exe` files must name `atsc.exe`
+  instead. Sessions still run in `srv.exe`, as before.
 
 Your config at `%PROGRAMDATA%\NoPorts\sshnpd.yaml` and your keys in
 `C:\Users\<USER>\.atsign\keys\` are left untouched by the upgrade.

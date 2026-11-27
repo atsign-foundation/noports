@@ -18,7 +18,7 @@ The npe2e harness is split into three packs rather than one runner because the
 packs differ in every dimension that would otherwise become a union type: actor
 sets (`policy_tests` adds npp and npp_atServer atSigns; `relay_tests` requires
 `selfRelayVersions.length * 2` distinct self-relay atSigns, validated at
-`lib/relay_tests/relay_tests.dart:52`), result shape (`PolicyTestResult` carries
+`lib/relay_tests/relay_tests.dart:53`), result shape (`PolicyTestResult` carries
 a policy version, `RelayTestResult` carries relay kind and 443 flags), and CI
 budget (`policy_tests` runs with `--test-timeout-seconds 480`, the others take
 the 300s default). Each pack owns its `bin/` entrypoint, params, context,
@@ -34,31 +34,20 @@ atSigns another job or person uses: CI starts an EE
 (`tests/tools/ee/setup_ee.sh`) with its own atSigns, and a local run names its
 own.
 
-**Each npe2e pack runs on its own atSign set in CI.** `core_tests` takes
-client01/daemon01, `policy_tests` takes client02/daemon02 plus policy01/policy02,
-`relay_tests` takes client03/daemon03 plus relay01–06
-(`.github/workflows/e2e_all.yaml:90-132`). The matrix runs `fail-fast: false`,
-so the three legs are concurrent; sharing one atSign pair across packs would
-double-book APKAM device enrolments and cross-deliver notifications. Rejected:
-one pair plus a serialized matrix — that trades a correctness property for
-3× wall-clock.
-
 **`testRunId` is derived per run+attempt in CI, not from the git hash.** The
-default is the short git hash (`lib/core_tests/core_tests.dart:67`,
+default is the short git hash (`lib/core_tests/core_tests.dart:68`,
 `lib/policy_tests/policy_tests.dart:56`,
-`lib/relay_tests/relay_tests.dart:74`); CI overrides it with
-`md5(run_id-run_attempt)` truncated to 8 chars
-(`.github/workflows/e2e_all.yaml:180-184`), because re-runs of the same commit
-otherwise collide on the same APKAM device enrolment against the shared atSigns.
+`lib/relay_tests/relay_tests.dart:75`); CI overrides it with
+`md5(run_id-run_attempt)` truncated to 8 chars (`TEST_RUN_ID` in
+`.github/workflows/e2e_all.yaml`), so each run and attempt gets its own run
+directory, device names and container names.
 Local runs deliberately keep the git-hash default — re-running one commit reuses
 the run directory and container names, which is what you want while iterating.
 `tests/npe2e/README.md` documents the two bits of state to clear first.
 
-**`needs: npe2e` on the `e2e_all` job is a lock, not a build dependency.** Both
-jobs authenticate as `@npe2e_org_*` atSigns, so the `needs:` serializes them to
-avoid double-booking within a run; `if: !cancelled()`
-(`.github/workflows/e2e_all.yaml:27-33`) keeps `e2e_all` running when an npe2e
-leg fails, so flaky shared infra cannot silently skip it.
+**Every CI job runs its pack against an atStack of its own.** Core, relay and
+policy each start a VE and a relay on their own runner, and revocation an EE,
+so concurrent workflow runs share no atServer, Atsign or relay.
 
 **The npp and npp_atServer policy flows run sequentially.**
 `lib/policy_tests/policy_tests.dart:252-272`. Both flows build their admin
@@ -88,8 +77,8 @@ admin RPC channel.
 
 **Bootstrap failures are hard stops, not just failures.** `core_tests` abandons
 the run when any `001_minus_s_flag` test fails
-(`lib/core_tests/core_tests.dart:269-288`), and `relay_tests` skips its npt tests
-when SSH-key setup fails (`lib/relay_tests/relay_tests.dart:240,275-279`).
+(`lib/core_tests/core_tests.dart:283-302`), and `relay_tests` skips its npt tests
+when SSH-key setup fails (`lib/relay_tests/relay_tests.dart:255,295-299`).
 Downstream tests cannot distinguish "the daemon never came up" from a real
 regression, so letting them run buries the one useful failure under dozens of
 derived ones.
@@ -102,8 +91,8 @@ point (`coreTests`, `policyTests`, `relayTests`). A failed revoke is printed,
 not thrown, so it cannot mask the run's own result.
 
 **Tests are `Future<T> Function()` factories, not futures.** Each pack's runner
-(`lib/core_tests/core_tests.dart:445`, `lib/policy_tests/policy_tests.dart:358`,
-`lib/relay_tests/relay_tests.dart:364`) takes factories so a retry re-invokes
+(`lib/core_tests/core_tests.dart:459`, `lib/policy_tests/policy_tests.dart:358`,
+`lib/relay_tests/relay_tests.dart:384`) takes factories so a retry re-invokes
 the test rather than re-awaiting a settled future, and so nothing starts before
 its concurrency slot opens. Runners keep `batchSize` tests in flight, stagger
 starts by 1s, and retry on either a timeout or a failed status.
@@ -112,21 +101,16 @@ starts by 1s, and retry on either a timeout or a failed status.
 
 - **Retry exhaustion on timeout aborts the whole pack.** All three runners
   `rethrow` the `TimeoutException` instead of recording one failed test; the
-  comment at `lib/core_tests/core_tests.dart:474-477` says why (no version info
+  comment at `lib/core_tests/core_tests.dart:488-491` says why (no version info
   in scope at that point).
 - **The three runners are near-identical copies.** All three result types extend
   `TestResult` (`lib/test_result.dart:3`), so one generic runner is possible;
   each copy exists only because it is typed on the pack's result class.
-- **No `concurrency:` group in `.github/workflows/e2e_all.yaml`.** Overlapping
-  workflow runs
-  double-book the fixed `@npe2e_org_*` atSigns. CI run-history analysis put the
-  effect at the edge of noise (most policy failures occurred with no other
-  policy job active), so this is knowingly unfixed.
 - **`core_tests` and `policy_tests` leave their containers running on exit.**
   Containers start with `--rm` (`lib/docker_instance.dart:78-91`) so they vanish
   once stopped, but only `relay_tests` stops them, via
   `stopNptRelayEnvironment` in a `finally`
-  (`lib/relay_tests/relay_tests.dart:280-282`).
+  (`lib/relay_tests/relay_tests.dart:300-302`).
 
 ## Reference
 

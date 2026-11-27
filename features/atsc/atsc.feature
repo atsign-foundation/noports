@@ -6,12 +6,13 @@ Feature: atsc runs every NoPorts command-line program
   installed, and runs atsc with the name as its first argument, so
   `npt <args>` and `atsc npt <args>` do the same thing. On Linux and macOS
   each name is a small script; on Windows each is an .exe at the path it has
-  today. A script rather than a link to atsc lets atsc take the program from
-  its first argument, never from the name it was started under; the cost is
-  that the program runs as a process named atsc, with a command line such as
-  `atsc sshnpd <arguments>`, which a search by the process name sshnpd does
-  not find. srv, which the daemon and clients start once per session, stays
-  a separate binary installed beside atsc.
+  today, except srvd, which Windows releases do not include: there
+  `atsc.exe srvd` runs the relay. A script rather than a link to atsc lets
+  atsc take the program from its first argument, never from the name it was
+  started under; the cost is that the program runs as a process named atsc,
+  with a command line such as `atsc sshnpd <arguments>`, which a search by
+  the process name sshnpd does not find. srv, which the daemon and clients
+  start once per session, stays a separate binary installed beside atsc.
 
   Races: when an upgrade replaces atsc and srv while sshnpd runs, sshnpd
   starts each new session's srv from the new srv beside it, as today, and

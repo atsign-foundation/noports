@@ -8,18 +8,21 @@ Binaries are expected to be in windows-msi/bin
 
 - WiX Toolset V6
 - For CD pipeline:
-  - needs setup-dotnet@v4 action
+  - needs the setup-dotnet action, with the SDK that
+    `packages/csharp/global.json` names
   - dotnet tool install --global wix
 
 - Relies upon building and signing the binaries beforehand.
-  - all dart binaries
+  - `atsc.exe` and `srv.exe`, compiled from the dart sources
+  - the launcher (`packages\csharp\AtscLauncher`), copied under each program's
+    name: `sshnpd.exe`, `sshnp.exe`, `npt.exe` and the others
   - built C# BinaryServices (sshnpdService.exe, nppService.exe, etc..)
     - see `packages\csharp\WindowsBinaryService\README.md` for more details.
 
 ## Usage
 
 1. Windows MSI expects the windows binaries & services & example config file to be in the windows-msi\bin folder.
-    - all dart binaries
+    - `atsc.exe`, `srv.exe`, and the launcher under each program's name
     - published C# BinaryServices (sshnpdService.exe, nppService.exe, etc..)
     - example config file (sshnpd.yaml)
 

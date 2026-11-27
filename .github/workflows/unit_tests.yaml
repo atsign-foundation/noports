@@ -89,6 +89,28 @@ jobs:
         working-directory: tests/npe2e
         run: dart test
 
+  csharp-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: packages/csharp/global.json
+      - name: Windows launcher tests
+        working-directory: packages/csharp/AtscLauncher/test
+        run: dotnet test
+      - name: Windows service tests
+        working-directory: packages/csharp/WindowsBinaryService.Tests
+        run: dotnet test
+      - name: The Windows launcher compiles for win-x64
+        working-directory: packages/csharp/AtscLauncher/src
+        run: dotnet build --configuration Release
+      - name: The Windows service compiles for win-x64
+        working-directory: packages/csharp/WindowsBinaryService
+        run: >-
+          dotnet build WindowsBinaryService.csproj --configuration Release
+          --runtime win-x64 -p:DefineConstants=SSHNPD
+
   noports_core-unit_tests:
     runs-on: ubuntu-latest
     strategy:

@@ -4,12 +4,12 @@
 
 ```bash
 dart run tests/npe2e/bin/policy_tests.dart \
-    --client-atsign "@client_jttest" \
-    --daemon-atsign "@device_jttest" \
-    --relay-atsign "@rv_am" \
-    --npp-atsign "@policy01_jttest" \
-    --npp-atserver-atsign "@policy02_jttest" \
-    --root-domain "root.atsign.org" \
+    --client-atsign "@denise" \
+    --daemon-atsign "@don" \
+    --relay-atsign "@relay1" \
+    --npp-atsign "@xavier" \
+    --npp-atserver-atsign "@jeremy" \
+    --root-domain "vip.ve.atsign.zone" \
     --base-directory "npe2e_policy_tests" \
     --batch-size 2
 ```

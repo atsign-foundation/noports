@@ -7,8 +7,8 @@ import 'package:npe2e/docker_instance.dart';
 import 'package:npe2e/language.dart';
 import 'package:npe2e/noports_version.dart';
 
-// Local-run aid: when the npe2e tests run against atServers on the developer's
-// own machine (reached via `/etc/hosts` overrides such as
+// When the npe2e tests run against atServers on the host, as they do on the
+// VE in CI and locally (reached via `/etc/hosts` overrides such as
 // `127.0.0.1 vip.ve.atsign.zone`), mirror those overrides into the containers
 // (daemon / relay / policy server / containerised client). A container can't
 // reach the host on 127.0.0.1, so each mapped name is re-pointed at
@@ -16,9 +16,7 @@ import 'package:npe2e/noports_version.dart';
 //
 // Scoped to `*.atsign.zone` names mapped to 127.0.0.1: that covers the atsign
 // test domains without touching unrelated /etc/hosts entries, and it leaves
-// deliberate black-holes (e.g. `127.1.1.1 unreachable.atsign.zone`) alone. On a
-// clean CI checkout there are no such entries, so this returns nothing (the
-// harness normally runs against the public root.atsign.org).
+// deliberate black-holes (e.g. `127.1.1.1 unreachable.atsign.zone`) alone.
 List<String> hostGatewayAddHostArgs() {
   final File hostsFile = File('/etc/hosts');
   if (!hostsFile.existsSync()) {

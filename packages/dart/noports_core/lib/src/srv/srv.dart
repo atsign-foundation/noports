@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:noports_core/src/srv/relay_authenticators.dart';
 import 'package:noports_core/src/srv/srv_impl.dart';
 import 'package:noports_core/utils.dart';
+import 'package:path/path.dart' as path;
 import 'package:socket_connector/socket_connector.dart';
 
 abstract class Srv<T> {
@@ -174,36 +175,31 @@ abstract class Srv<T> {
   }
 
   /// The srv binary in the same directory as [executable] when [executable]
-  /// is an absolute path to atsc, sshnp, sshnpd or npt, or null.
+  /// is an absolute path to atsc, or null.
   @visibleForTesting
   static Future<String?> getBinaryPathBeside(String executable) async {
-    if (!File(executable).isAbsolute) return null;
-    List<String> binaryNames = ['srv', 'sshrv'];
-    for (var name in binaryNames) {
-      var binary = await _getBinaryPathByName(executable, name);
-      if (binary != null) return binary;
-    }
-    return null;
+    final String? srv = srvPathBeside(executable, windows: Platform.isWindows);
+    if (srv == null || !await File(srv).exists()) return null;
+    return srv;
   }
 
-  static Future<String?> _getBinaryPathByName(
-    String executable,
-    String name,
-  ) async {
-    String postfix = Platform.isWindows ? '.exe' : '';
-    List<String> pathList = executable.split(Platform.pathSeparator);
-    bool isExe =
-        (pathList.last == 'atsc$postfix' ||
-        pathList.last == 'sshnp$postfix' ||
-        pathList.last == 'sshnpd$postfix' ||
-        pathList.last == 'npt$postfix');
-
-    pathList
-      ..removeLast()
-      ..add('$name$postfix');
-
-    File binaryName = File(pathList.join(Platform.pathSeparator));
-    bool binaryExists = await binaryName.exists();
-    return (isExe && binaryExists) ? binaryName.absolute.path : null;
+  /// The path of srv beside [executable] when [executable] is an absolute
+  /// path to atsc, or null. When [windows] is true, Windows paths are read,
+  /// and atsc is atsc.exe spelt in any case.
+  @visibleForTesting
+  static String? srvPathBeside(String executable, {required bool windows}) {
+    final path.Context context = windows ? path.windows : path.posix;
+    if (!context.isAbsolute(executable) || context.isRootRelative(executable)) {
+      return null;
+    }
+    final String name = context.basename(executable);
+    final bool isAtsc = windows
+        ? name.toLowerCase() == 'atsc.exe'
+        : name == 'atsc';
+    if (!isAtsc) return null;
+    return context.join(
+      context.dirname(executable),
+      windows ? 'srv.exe' : 'srv',
+    );
   }
 }
