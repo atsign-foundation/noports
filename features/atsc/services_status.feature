@@ -15,8 +15,8 @@ Feature: Every reconciler run reports what the endpoint runs
   Replay: only holders of the endpoint's Atsign keys can write the record
   back, and they already hold more; a reader treats a status whose run time
   is more than 20 minutes old as unknown, whatever it says.
-  DoS: a status record is bounded: the document it may carry is at most
-  64 KiB, and it has one entry for sshnpd and for each of at most 64
+  DoS: a status record is at most 256 KiB: the document it may carry is at
+  most 64 KiB, and it has one entry for sshnpd and for each of at most 64
   tunnels, each error cut to 1 KiB.
   Forgery: the signature lets a reader tell the endpoint's own status from a
   record anyone else wrote under its key name.
