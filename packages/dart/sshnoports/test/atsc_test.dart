@@ -59,9 +59,9 @@ void main() {
 
   setUpAll(() async {
     snapshots = Directory.systemTemp.createTempSync('atsc_test');
-    for (final String name in ['atsc', 'srv', 'npt']) {
-      await compile(name);
-    }
+    await Future.wait([
+      for (final String name in ['atsc', 'srv', 'npt']) compile(name),
+    ]);
     if (Platform.isWindows) return;
     installation = Directory(path.join(snapshots.path, 'installation'))
       ..createSync();

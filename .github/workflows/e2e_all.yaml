@@ -103,9 +103,7 @@ jobs:
           path: tmp_e2e_all_artifacts.zip
 
   npe2e_core_tests:
-    if:
-      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
-      'dependabot[bot]'}}
+    if: ${{ github.event.pull_request.head.repo.fork == false }}
     name: npe2e (core_tests)
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -124,12 +122,13 @@ jobs:
         run: |
           sudo apt-get install -y expect
 
-      - name: Set up atKeys from GitHub secrets
+      - name: Add VE host entry
         run: |
-          mkdir -p ~/.atsign/keys/
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client02_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon01_jttest_key.atKeys
+          echo '127.0.0.1 vip.ve.atsign.zone' | sudo tee -a /etc/hosts
+
+      - name: Setup VE
+        run: |
+          tests/tools/ve/setup_ve.sh
 
       - name: dart pub get (tests/npe2e)
         working-directory: tests/npe2e
@@ -146,17 +145,33 @@ jobs:
           echo "LOGS_DIR=npe2e_core_tests" >> $GITHUB_ENV
           echo "TEST_RUN_ID=$(echo "${{ github.run_id }}-${{ github.run_attempt }}" | md5sum | cut -c1-8)" >> $GITHUB_ENV
 
+      - name: Start srvd relay
+        run: |
+          tests/tools/ve/start_srvd.sh "@relay1" "vip.ve.atsign.zone"
+
       - name: Run npe2e core_tests
         run: |
           dart run tests/npe2e/bin/core_tests.dart \
-            --client-atsign "@npe2e_org_client01_jttest" \
-            --daemon-atsign "@npe2e_org_daemon01_jttest" \
-            --relay-atsign "@rv_am" \
-            --unauthorized-atsign "@npe2e_org_client02_jttest" \
-            --root-domain "root.atsign.org" \
+            --client-atsign "@colin" \
+            --daemon-atsign "@barbara" \
+            --relay-atsign "@relay1" \
+            --unauthorized-atsign "@curtly" \
+            --root-domain "vip.ve.atsign.zone" \
             --base-directory "$LOGS_DIR" \
             --test-run-id "$TEST_RUN_ID" \
             --batch-size 5
+
+      - name: Stop srvd relay
+        if: always()
+        run: |
+          tests/tools/ve/stop_srvd.sh
+          mkdir -p "$LOGS_DIR"
+          cp /tmp/ve_srvd/srvd.log "$LOGS_DIR/srvd.log" || true
+
+      - name: Teardown VE
+        if: always()
+        run: |
+          tests/tools/ve/teardown_ve.sh
 
       - name: Zip npe2e artifacts
         if: always()
@@ -251,6 +266,8 @@ jobs:
         if: always()
         run: |
           tests/tools/ve/stop_srvd.sh
+          mkdir -p "$LOGS_DIR"
+          cp /tmp/ve_srvd/srvd.log "$LOGS_DIR/srvd.log" || true
 
       - name: Teardown VE
         if: always()
@@ -350,15 +367,10 @@ jobs:
           if-no-files-found: warn
 
   npe2e_relay_tests:
-    if:
-      ${{ github.event.pull_request.head.repo.fork == false && github.actor !=
-      'dependabot[bot]'}}
+    if: ${{ github.event.pull_request.head.repo.fork == false }}
     name: npe2e (relay_tests)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    concurrency:
-      group: npe2e-relay-atsigns
-      cancel-in-progress: false
 
     steps:
       - name: Checkout
@@ -374,17 +386,13 @@ jobs:
         run: |
           sudo apt-get install -y expect
 
-      - name: Set up atKeys from GitHub secrets
+      - name: Add VE host entry
         run: |
-          mkdir -p ~/.atsign/keys/
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_CLIENT03_JTTEST }}' > ~/.atsign/keys/@npe2e_org_client03_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_DAEMON03_JTTEST }}' > ~/.atsign/keys/@npe2e_org_daemon03_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY01_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay01_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY02_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay02_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY03_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay03_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY04_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay04_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY05_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay05_jttest_key.atKeys
-          echo '${{ secrets.ATKEYS_NPE2E_ORG_RELAY06_JTTEST }}' > ~/.atsign/keys/@npe2e_org_relay06_jttest_key.atKeys
+          echo '127.0.0.1 vip.ve.atsign.zone' | sudo tee -a /etc/hosts
+
+      - name: Setup VE
+        run: |
+          tests/tools/ve/setup_ve.sh
 
       - name: dart pub get (tests/npe2e)
         working-directory: tests/npe2e
@@ -401,20 +409,36 @@ jobs:
           echo "LOGS_DIR=npe2e_relay_tests" >> $GITHUB_ENV
           echo "TEST_RUN_ID=$(echo "${{ github.run_id }}-${{ github.run_attempt }}" | md5sum | cut -c1-8)" >> $GITHUB_ENV
 
+      - name: Start srvd relay
+        run: |
+          tests/tools/ve/start_srvd.sh "@relay1" "vip.ve.atsign.zone"
+
       - name: Run npe2e relay_tests
         run: |
           dart run tests/npe2e/bin/relay_tests.dart \
-            --client-atsign "@npe2e_org_client03_jttest" \
-            --daemon-atsign "@npe2e_org_daemon03_jttest" \
-            --prod-relay "@rv_am" \
-            --self-relay-atsigns "@npe2e_org_relay01_jttest,@npe2e_org_relay02_jttest,@npe2e_org_relay03_jttest,@npe2e_org_relay04_jttest,@npe2e_org_relay05_jttest,@npe2e_org_relay06_jttest" \
-            --root-domain "root.atsign.org" \
+            --client-atsign "@chris" \
+            --daemon-atsign "@gareth" \
+            --prod-relay "@relay1" \
+            --self-relay-atsigns "@gary,@relay2,@policy2,@cloudvm1,@colin,@barbara" \
+            --root-domain "vip.ve.atsign.zone" \
             --base-directory "$LOGS_DIR" \
             --client-versions "d:v5.13.0,d:v5.14.13,d:current" \
             --daemon-versions "d:v5.13.0,d:v5.14.13,d:current" \
             --self-relay-versions "d:v5.10.0,d:v5.14.13,d:current" \
             --test-run-id "$TEST_RUN_ID" \
             --batch-size 3
+
+      - name: Stop srvd relay
+        if: always()
+        run: |
+          tests/tools/ve/stop_srvd.sh
+          mkdir -p "$LOGS_DIR"
+          cp /tmp/ve_srvd/srvd.log "$LOGS_DIR/srvd.log" || true
+
+      - name: Teardown VE
+        if: always()
+        run: |
+          tests/tools/ve/teardown_ve.sh
 
       - name: Zip npe2e artifacts
         if: always()

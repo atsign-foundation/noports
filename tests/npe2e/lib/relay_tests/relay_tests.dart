@@ -18,6 +18,7 @@ import 'package:npe2e/relay_tests/tests/escr_to_normal_test.dart';
 import 'package:npe2e/relay_tests/tests/normal_to_normal_test.dart';
 import 'package:npe2e/relay_tests/tests/port_443_to_443_test.dart';
 import 'package:npe2e/relay_tests/tests/port_443_to_normal_test.dart';
+import 'package:npe2e/shared_key_priming.dart';
 import 'package:npe2e/test_result.dart';
 import 'package:npe2e/utils.dart';
 
@@ -166,6 +167,19 @@ Future<void> _relayTests(
     print('    ${dockerImage.fullImageName}');
   }
   print('');
+
+  if (params.primeSharedKeys) {
+    await primeSharedKeys(
+      atsigns: [
+        params.clientAtsign,
+        params.daemonAtsign,
+        params.prodRelayAtsign,
+        ...selfRelayAtsigns,
+      ],
+      rootDomain: params.rootDomain,
+      storageDirectory: Directory('${baseDirectory.path}/atClientStorage'),
+    );
+  }
 
   final RelayTestsContext context = RelayTestsContext(
     testRunId: testRunId,
