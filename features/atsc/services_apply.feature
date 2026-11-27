@@ -103,6 +103,21 @@ Feature: atsc services apply runs an endpoint's services as its document says
     When "atsc services apply" runs
     Then nothing is applied, and the status reports that a policy Atsign is required
 
+  Scenario Outline: A device whose sshnpd names another policy Atsign is left alone
+    Given <where> names policy Atsign @other
+    When "atsc services apply" runs
+    Then nothing is applied, and the status reports that sshnpd names @other while the install settings file names @policy1
+
+    Examples:
+      | where                         |
+      | the base file                 |
+      | the sshnpd unit's command line |
+
+  Scenario: A device whose sshnpd names no policy Atsign takes the install settings file's
+    Given the base file names no policy Atsign
+    When a document is applied
+    Then sshnpd runs with policy-manager @policy1
+
   Scenario: Without a ceiling file, nothing is applied
     Given the ceiling file is missing
     When "atsc services apply" runs

@@ -54,3 +54,8 @@ Feature: Every reconciler run reports what the endpoint runs
     Given revision 15 is applied and tunnel b is failing
     When "atsc services status" runs on the endpoint
     Then it prints the endpoint's Atsign and device, the mode, the applied revision, the exposed services, the policy Atsign, each tunnel's state, and the time of the next run
+
+  Scenario: The status lists sshnpd's managers as access outside policy
+    Given the base file's managers are @admin and @ops
+    When "atsc services apply" runs
+    Then the status lists @admin and @ops as managers, whose sessions the policy service does not decide
