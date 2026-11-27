@@ -131,7 +131,7 @@ Feature: atsc services apply runs an endpoint's services as its document says
   Scenario: Missing keys fail every service, which stays stopped
     Given the endpoint's keys file is missing
     When "atsc services apply" runs
-    Then no service is started, and each is reported failed for missing keys
+    Then no service is started, and "atsc services status" reports each failed for missing keys
     And none is started again until the keys file exists and "atsc services apply" runs again
 
   # Remote changes
@@ -190,7 +190,7 @@ Feature: atsc services apply runs an endpoint's services as its document says
   Scenario: Hand edits are replaced in remote mode
     Given remote changes are on
     When someone edits npt@a's settings file by hand
-    Then the next run puts the document's settings back, restarts npt@a, and the status reports the replacement
+    Then the next run puts the document's settings back, restarts npt@a, and the status reports the replacement and its time
 
   Scenario: Hand edits are reported in file mode
     Given remote changes are off

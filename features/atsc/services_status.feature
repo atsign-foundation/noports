@@ -1,23 +1,26 @@
 Feature: Every reconciler run reports what the endpoint runs
 
   Every run of `atsc services apply` writes the self record
-  services_status.<device>.sshnp on the endpoint's atServer, signed with the
-  endpoint enrollment's client data signing key. It holds the applied
-  revision (in file mode, the applied document itself), a digest of the
-  rendered files, whether they had been edited by hand, each service's state
-  and last error, the time of the run, whether the clock is synced, the agent
-  version, the document schema versions the agent reads, and the reason any
-  document was refused. `atsc services status` prints the same comparison on
-  the endpoint.
+  services_status.<device>.sshnp directly to the endpoint's atServer, signed
+  with the endpoint enrollment's client data signing key. It holds the
+  record's format version, the Atsign and device it is about, the mode, the
+  applied revision (in file mode, the applied document itself), a digest of
+  the rendered files, the time of the last hand-edit replacement, each
+  service's state and last error, the time of the run, whether the clock is
+  synced, the agent version, the document schema versions the agent reads,
+  the local limits file's content and digest, the managers in the base file,
+  and the reason any document was refused or nothing was applied.
+  `atsc services status` prints the same comparison on the endpoint.
 
-  Races: a status written by one run is replaced by the next, and each
+  Races: a status written by one run is replaced whole by the next, and each
   carries its run time.
   Replay: only holders of the endpoint's Atsign keys can write the record
   back, and they already hold more; a reader treats a status whose run time
   is more than 20 minutes old as unknown, whatever it says.
-  DoS: a status record is at most 256 KiB: the document it may carry is at
-  most 64 KiB, and it has one entry for sshnpd and for each of at most 64
-  tunnels, each error cut to 1 KiB.
+  DoS: a status record is at most 256 KiB of signed content: the document it
+  may carry is at most 64 KiB, it has one entry for sshnpd and for each of at
+  most 64 tunnels, and every error and reason is cut to 1 KiB; a run whose
+  report would exceed that writes a short report instead.
   Forgery: the signature lets a reader tell the endpoint's own status from a
   record anyone else wrote under its key name.
   Impersonation: the status names the Atsign and device it is about inside
@@ -28,7 +31,7 @@ Feature: Every reconciler run reports what the endpoint runs
 
   Scenario: Each run writes a signed status record
     When "atsc services apply" runs and applies revision 15
-    Then services_status.pump.sshnp holds revision 15, the rendered digest, each service's state and the run time
+    Then services_status.pump.sshnp on @site1's atServer holds revision 15, the rendered digest, each service's state and the run time
     And it is signed with @site1 device pump's enrollment's client data signing key
 
   Scenario: A failing tunnel reports its last error
@@ -49,6 +52,26 @@ Feature: Every reconciler run reports what the endpoint runs
   Scenario: The status says which schema versions the agent reads
     When "atsc services apply" runs
     Then the status lists the document schema versions this agent reads
+
+  Scenario: The status keeps the time of the last hand-edit replacement
+    Given npt@a's settings file was edited by hand, and the run at 13:55 UTC put the document's settings back
+    When "atsc services apply" runs again at 14:00 UTC
+    Then the status still reports the replacement at 13:55 UTC
+
+  Scenario: The status carries the local limits file
+    When "atsc services apply" runs
+    Then the status holds the local limits file's content and its digest
+
+  Scenario: A report too large to write is cut to a short one
+    Given the full report for this run would exceed 256 KiB
+    When "atsc services apply" runs
+    Then the status holds the applied revision, each service's state and the run time, and says that the report was cut
+
+  Scenario: Without keys no status is written, and the endpoint says why locally
+    Given the endpoint's keys file is missing
+    When "atsc services apply" runs
+    Then no status record is written
+    And "atsc services status" on the endpoint reports each service failed for missing keys
 
   Scenario: atsc services status prints the comparison locally
     Given revision 15 is applied and tunnel b is failing
