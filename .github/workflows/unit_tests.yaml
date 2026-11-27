@@ -78,6 +78,17 @@ jobs:
             dart compile exe "bin/$b.dart" -o "$RUNNER_TEMP/bin/$b"
             "$RUNNER_TEMP/bin/$b" --help > /dev/null
           done
+      - name: compile atsc and check --help for each subcommand
+        working-directory: packages/dart/sshnoports
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          dart compile exe bin/atsc.dart -o "$RUNNER_TEMP/bin/atsc"
+          "$RUNNER_TEMP/bin/atsc" --help > /dev/null
+          # NOTE: keep this list in step with _commands in bin/atsc.dart
+          for c in at_activate noports npevents npp npp_atserver npp_file npt srvd sshnp sshnpd; do
+            echo "atsc $c"
+            "$RUNNER_TEMP/bin/atsc" "$c" --help > /dev/null
+          done
       # Runs osv-scanner to find any vulnerable Dart dependencies
       # It needs to look at pubspec.lock files, which is why it's
       # placed here, as the `dart pub get` above will create them
