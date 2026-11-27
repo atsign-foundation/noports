@@ -18,13 +18,20 @@ Feature: atsc services generate makes each endpoint's services document from a f
   gets one tunnel per service.
 
   An address is typed: tcp, a host and a port, and no other kind in this
-  version. A host is an IPv4 address or a host name of letters, digits, "-"
-  and ".", at most 253 characters, so never "*", "," or ":"; a port is 1 to
-  65535. Service and tunnel names are lowercase letters, digits and "-", 1 to
-  63 characters. A device name is lowercase with no whitespace, the form the
-  daemon itself uses. An Atsign is never empty or "*". The generator writes an
+  version. A host is an IPv4 address in dotted-quad form or a host name of
+  letters, digits, "-" and ".", at most 253 characters, whose last label is
+  not all digits, so never "*", "," or ":", and never a number a resolver
+  might read as an address; a port is 1 to 65535. Service and tunnel names
+  are lowercase letters, digits and "-", 1 to 63 characters. A device name
+  matches the daemon's own rule, [a-z0-9_][a-z0-9_-]{1,35}, so it is 2 to 36
+  characters. An Atsign is never empty or "*". The generator writes an
   address with the same spelling in every place it appears, since sshnpd
-  matches permitted addresses as text. A tunnel names only its local port;
+  matches permitted addresses as text; a service on 127.0.0.1 or localhost
+  is also permitted under the other of those two spellings, in the policy
+  rules and in the rendered permit-open, because callers ask for either:
+  npt's default remote host is localhost, and an sshnp session always asks
+  for localhost at the port sshd listens on, which the endpoint's base file
+  sets. A tunnel names only its local port;
   where it listens is the endpoint's business. Local ports that the file does
   not give are assigned from 18000 to 18999 unless the file names another
   range.
@@ -60,14 +67,14 @@ Feature: atsc services generate makes each endpoint's services document from a f
   Scenario: An access line becomes a policy rule for that caller alone
     Given the fleet file has an access line from @hq1 device hq to @site1 device pump's sensors, local port 18554
     When "atsc services generate" runs on the fleet file
-    Then the rules file lets @hq1 reach 127.0.0.1:8554 on @site1 device pump
+    Then the rules file lets @hq1 reach 127.0.0.1:8554 and localhost:8554 on @site1 device pump
     And lets no other Atsign reach anything on @site1 device pump
 
   Scenario: An outside Atsign gets a policy rule and no tunnel
     Given the fleet file has an access line from @oncall, which is not an endpoint in the file, to @site1 device pump's plc
     When "atsc services generate" runs on the fleet file
     Then @site1 device pump's document exposes 127.0.0.1:502
-    And the rules file lets @oncall reach 127.0.0.1:502 on @site1 device pump
+    And the rules file lets @oncall reach 127.0.0.1:502 and localhost:502 on @site1 device pump
     And no document has a tunnel for @oncall
 
   Scenario: The same fleet file always gives the same bytes
@@ -103,6 +110,8 @@ Feature: atsc services generate makes each endpoint's services document from a f
       | a service host  | ::1             |
       | a service host  | an empty string |
       | a service host  | 254 characters  |
+      | a service host  | 2130706433      |
+      | a service host  | 127.1           |
       | a service port  | 0               |
       | a service port  | 70000           |
       | a local port    | 0               |
@@ -110,6 +119,8 @@ Feature: atsc services generate makes each endpoint's services document from a f
       | a service name  | 64 characters   |
       | a tunnel name   | ..              |
       | a device name   | Pump 1          |
+      | a device name   | p               |
+      | a device name   | 37 characters   |
       | a caller Atsign | *               |
 
   Scenario: An address of a kind this version does not support is a problem
@@ -151,13 +162,20 @@ Feature: atsc services generate makes each endpoint's services document from a f
       | localhost:18554 |
       | 0.0.0.0:18554   |
 
-  Scenario: An address keeps one spelling at both ends
+  Scenario: An address keeps its spelling at both ends, and a loopback service is permitted in both spellings
     Given @site1 device pump's service sensors is on localhost:8554
     And the fleet file has an access line from @hq1 device hq to @site1 device pump's sensors, local port 18554
-    When "atsc services generate" runs on the fleet file
+    When "atsc services generate --preview" runs on the fleet file
     Then @site1 device pump's document exposes localhost:8554
-    And the rules file lets @hq1 reach localhost:8554 on @site1 device pump
     And @hq1 device hq's tunnel reaches @site1 device pump's localhost:8554
+    And the rules file lets @hq1 reach localhost:8554 and 127.0.0.1:8554 on @site1 device pump
+    And the preview's permit-open for @site1 device pump has localhost:8554 and 127.0.0.1:8554
+
+  Scenario: A service on another host is permitted only as written
+    Given @site1 device pump's service plc is on 192.168.1.10:502
+    And the fleet file has an access line from @hq1 device hq to @site1 device pump's plc, local port 18502
+    When "atsc services generate --preview" runs on the fleet file
+    Then the preview's permit-open for @site1 device pump has 192.168.1.10:502 and nothing else
 
   Scenario Outline: A document that would be too large is a problem
     Given the fleet file gives @site1 device pump <what>

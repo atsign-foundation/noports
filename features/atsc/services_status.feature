@@ -9,13 +9,20 @@ Feature: Every reconciler run reports what the endpoint runs
   service's state and last error, the time of the run, whether the clock is
   synced, the agent version, the document schema versions the agent reads,
   the local limits file's content and digest, the managers in the base file,
-  and the reason any document was refused or nothing was applied.
-  `atsc services status` prints the same comparison on the endpoint.
+  whether the base file refuses unsigned session requests, the account the
+  services run on with any root-equivalent group it is in and whether
+  "sudo -n true" succeeds for it, the units that failed to start, and the
+  reason any document was refused or nothing was applied. It is written on
+  every run. `atsc services status` prints the same comparison on the
+  endpoint.
 
   Each service's state is one of running, starting, failing, off, and off by
   schedule, with a reason where there is one, such as waiting for a
   synchronised clock; Control Center shows them as Running, Starting,
-  Failing, Off and Off by schedule. Failed for missing keys is shown only by
+  Failing, Off and Off by schedule. A tunnel's state is its unit's until npt
+  reports its own session state, which comes in the slice after the first:
+  until then running means the unit runs, and failing, with npt's last
+  error, is not reported. Failed for missing keys is shown only by
   `atsc services status`, since without keys no record can be written.
 
   Races: a status written by one run is replaced whole by the next, and each
@@ -43,7 +50,7 @@ Feature: Every reconciler run reports what the endpoint runs
     And it is signed with @site1 device pump's enrollment's client data signing key
 
   Scenario: A failing tunnel reports its last error
-    Given npt@b keeps failing with "connection refused on 127.0.0.1:8554"
+    Given npt reports its session state, and npt@b keeps failing with "no answer from @site1 device pump within 15 seconds"
     When "atsc services apply" runs
     Then the status reports tunnel b failing, with that error
 
@@ -71,7 +78,7 @@ Feature: Every reconciler run reports what the endpoint runs
     Then the status holds the local limits file's content and its digest
 
   Scenario: A long error is cut to 1 KiB on a character boundary
-    Given npt@b keeps failing with an error of 3 KiB of multibyte text
+    Given npt reports its session state, and npt@b keeps failing with an error of 3 KiB of multibyte text
     When "atsc services apply" runs
     Then the status holds at most 1 KiB of that error, ending on a whole character
 
@@ -90,6 +97,11 @@ Feature: Every reconciler run reports what the endpoint runs
     Given revision 15 is applied and tunnel b is failing
     When "atsc services status" runs on the endpoint
     Then it prints the endpoint's Atsign and device, the mode, the applied revision, the exposed services, the policy Atsign, each tunnel's state, and the time of the next run
+
+  Scenario: The status reports the account the services run on
+    Given the services run on account noports, which is in group docker
+    When "atsc services apply" runs
+    Then the status names account noports, reports that it is in group docker, and whether "sudo -n true" succeeds for it
 
   Scenario: The status lists sshnpd's managers as access outside policy
     Given the base file's managers are @admin and @ops

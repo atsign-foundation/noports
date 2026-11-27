@@ -7,49 +7,77 @@ Feature: atsc services apply runs an endpoint's services as its document says
   whose settings changed. systemd supervises every service; nothing the
   reconciler starts stays under its control once it exits.
 
-  It runs as the user sshnpd runs as, never as root. A polkit rule installed
-  with atsc lets that user start, stop and restart sshnpd.service and
-  npt@*.service, and nothing else.
+  It runs on the account sshnpd and every npt@ unit run on, never as root.
+  sshnpd must share that account, since the reconciler writes sshnpd's whole
+  configuration file. Installing a managed endpoint creates the account: it
+  has no sudo and is in no root-equivalent group, and it keeps a login shell,
+  so "sshnp -s" still lands callers on it. Status reports the account, any
+  root-equivalent group it is in, and whether "sudo -n true" succeeds for it.
+  A polkit rule installed with atsc lets that account start, stop and restart
+  sshnpd.service and npt@*.service, and nothing else.
 
   Files on the endpoint. The install settings file, written at install, names
-  the endpoint's Atsign and device, the public key that signs its documents,
-  the policy Atsign, whether remote changes are on, and the revision the
-  endpoint starts from. The base file is sshnpd's existing configuration; a
+  the endpoint's Atsign and device, the public keys that may sign its
+  documents, each with its key id, the policy Atsign, whether remote changes
+  are on, and the revision the endpoint starts from; replacing a key takes a
+  new install settings file. In file mode no install settings file is
+  needed: the Atsign, device and policy Atsign come from the base file. The
+  reconciler applies nothing while sshnpd runs under a device name other
+  than the install settings file's. The base file is sshnpd's existing configuration; a
   document adds exposed services to it and never removes or replaces anything
   in it, so the managers in the base file are a break-glass list no document
   can change. The local limits file is owned by root, lists the addresses any
   document may expose and the most tunnels it may run, and requires sshnpd
   to use a policy Atsign. Each entry is host:port, where port may be "*", or
   "tunnels" and a number; entries are matched as text, as sshnpd matches
-  them; the file is at most 16 KiB. It is required when remote changes are
-  on. Install writes a default when there is none, allowing 127.0.0.1 and
-  localhost on any port and 64 tunnels (a placeholder, not measured), and
-  never overwrites one that exists. A document can use only part of what the
-  file allows, never more.
+  them, except that 127.0.0.1 and localhost are one host; the file is at
+  most 16 KiB. It is required when remote changes are on, and enforced in
+  file mode too when it exists. With remote changes on, install writes a
+  default when there is none, allowing 127.0.0.1 and localhost on any port
+  and 64 tunnels (a placeholder, not measured), and never overwrites one
+  that exists. A document can use only part of what the file allows, never
+  more.
 
   What the reconciler renders. sshnpd's configuration always has an explicit
-  permit-open: the base file's entries and the document's, and none at all
-  when both are empty, so that sshnpd allows nothing rather than falling back
-  to "*:*", its default when a policy Atsign is set. sshnpd carries each
-  session in a separate srv process, which a restart of sshnpd leaves
+  permit-open list: the base file's entries and the document's, with a
+  document's service on 127.0.0.1 or localhost under both spellings, and an
+  empty list when there are none, never a key with no value, which sshnpd
+  reads as unset and so as "*:*" when a policy Atsign is set. sshnpd carries
+  each session in a separate srv process, which a restart of sshnpd leaves
   running, and the reconciler never makes it carry sessions in its own
   process. Each npt@ unit runs npt with --local-host 127.0.0.1, --keep-alive
   and -T 0, so a tunnel listens on loopback only and keeps its session until
   it is stopped; with --keep-alive and no -T, npt would end an idle session
   after 24 hours and listen again 5 seconds later. Each npt@ unit stops
-  everything it started when it stops.
+  everything it started when it stops, unlike the npt.service.template
+  packaged today. Until npt reports its own session state, a tunnel's state
+  is its unit's: Running means the unit runs, not that its session is up.
+
+  At boot. The timer also runs shortly after boot. That run verifies the
+  saved signed document again, checks it against the local limits as any run
+  does, and applies it when the atServer cannot be reached, so tunnels are
+  down from boot until it runs.
 
   The document comes from a local file, or, when the install settings file
   turns remote changes on, from the self record services_config.<device>.sshnp
   on the endpoint's atServer, inside an envelope signed over the Atsign,
-  device, revision and document. A revision is a whole number from 1 to
-  2^53 - 1. The reconciler records a revision as applied before it restarts
-  any unit, and reports it applied after.
+  device, revision, key id and document, over the exact bytes carried, with
+  a context string and an envelope version inside them; the reconciler
+  verifies the signature before it parses anything else. A revision is a
+  whole number from 1 to 2^53 - 1. The reconciler records a revision as
+  accepted before it restarts any unit, which is the floor every later
+  document must pass, and as applied once every restart it needs has been
+  attempted, a unit that failed being reported in status. A run that finds
+  the accepted revision not yet applied restarts every unit that differs
+  from the last applied revision's rendering, whatever the files on disk
+  say. Both marks are written to a temporary file and renamed.
 
   Races: two runs at once hold a lock, so the second waits for the first, and
   a run that cannot take the lock within 60 seconds exits and logs it; a
   document arriving during a run is read at the next one; the local limits
-  file is opened once, and its owner checked on what was opened.
+  file is opened once, and its owner checked on what was opened; a run that
+  stops between accepting a revision and applying it leaves the next run to
+  finish it.
   Replay: a document whose revision is lower than the last one applied, or
   than the install settings file's starting revision, is refused and
   reported; one equal to the last applied with the same content changes
@@ -62,15 +90,16 @@ Feature: atsc services apply runs an endpoint's services as its document says
   local limits. The record is read whole before its size is checked, up to
   the client's limit of about 10 MB; whoever can write it already holds the
   endpoint's keys or its atServer.
-  Forgery: a document not signed by the key in the install settings file is
+  Forgery: a document not signed by a key in the install settings file is
   refused whole; documents carry typed fields only, so nothing in one reaches
   a unit file as a command line. The signer is the management backend, which
   holds the Atsign's master keys; what bounds a document it signs is the
   local limits file.
-  Impersonation: the signing key and the policy Atsign come only from files
+  Impersonation: the signing keys and the policy Atsign come only from files
   written at install, never from a document; the reconciler refuses a local
-  limits file its own user could rewrite. The install settings file and the
-  recorded revision need no such check: the user sshnpd runs as already holds
+  limits file its own account could rewrite, and applies nothing while sshnpd
+  runs under another device name. The install settings file and the
+  recorded revision need no such check: the account sshnpd runs on already holds
   the endpoint's keys and writes sshnpd's rendered configuration.
 
   Background:
@@ -83,7 +112,7 @@ Feature: atsc services apply runs an endpoint's services as its document says
   Scenario: Applying a document renders sshnpd's exposed services and starts it
     Given a document exposing 127.0.0.1:8554
     When "atsc services apply" runs
-    Then sshnpd's configuration has the base file's settings, permit-open 127.0.0.1:8554, and policy-manager @policy1
+    Then sshnpd's configuration has the base file's settings, permit-open 127.0.0.1:8554 and localhost:8554, and policy-manager @policy1
     And sshnpd.service is running
 
   Scenario: Each tunnel switched on becomes a running npt@ instance
@@ -130,7 +159,7 @@ Feature: atsc services apply runs an endpoint's services as its document says
 
     Examples:
       | base         | rendered                       |
-      | not set      | set, with no entries           |
+      | not set      | an empty list                  |
       | localhost:22 | localhost:22, and nothing else |
 
   Scenario: A document never changes the base file's managers
@@ -143,9 +172,20 @@ Feature: atsc services apply runs an endpoint's services as its document says
     Then nothing changes, and the status reports the document refused for exposing a service outside the local limits
 
   Scenario: The local limits file is matched as text
-    Given the local limits file allows localhost:8554 and not 127.0.0.1:8554
-    When a document exposing 127.0.0.1:8554 is applied
+    Given the local limits file allows 192.168.1.10:502 and not plc.site1.example:502
+    When a document exposing plc.site1.example:502 is applied
     Then nothing changes, and the status reports the document refused for exposing a service outside the local limits
+
+  Scenario Outline: 127.0.0.1 and localhost are one host in the local limits file
+    Given the local limits file allows <entry> and nothing else
+    When a document exposing <exposed> is applied
+    Then sshnpd's configuration has permit-open 127.0.0.1:8554 and localhost:8554
+
+    Examples:
+      | entry          | exposed        |
+      | localhost:8554 | 127.0.0.1:8554 |
+      | 127.0.0.1:8554 | localhost:8554 |
+      | localhost:*    | 127.0.0.1:8554 |
 
   Scenario: Too many tunnels are refused whole
     When a document with 9 tunnels is applied
@@ -194,6 +234,11 @@ Feature: atsc services apply runs an endpoint's services as its document says
     When "atsc services apply" runs
     Then nothing is applied, and the status reports that the unit's command line sets permit-open, which would override the document's
 
+  Scenario: A device whose sshnpd runs under another device name is left alone
+    Given the base file names device pump2
+    When "atsc services apply" runs
+    Then nothing is applied, and the status reports that sshnpd runs as device pump2 while the install settings file names pump
+
   Scenario: A device whose sshnpd names no policy Atsign takes the install settings file's
     Given the base file names no policy Atsign
     When a document is applied
@@ -209,7 +254,17 @@ Feature: atsc services apply runs an endpoint's services as its document says
   Scenario: With remote changes off, no local limits file is needed
     Given remote changes are off, the local limits file is missing, and a local document exposes 127.0.0.1:8554
     When "atsc services apply" runs
-    Then sshnpd's configuration has permit-open 127.0.0.1:8554
+    Then sshnpd's configuration has permit-open 127.0.0.1:8554 and localhost:8554
+
+  Scenario: With remote changes off, a local limits file that exists is enforced
+    Given remote changes are off, the local limits file allows 127.0.0.1:8554 only, and a local document exposes 192.168.1.10:502
+    When "atsc services apply" runs
+    Then nothing changes, and the status reports the document refused for exposing a service outside the local limits
+
+  Scenario: File mode needs no install settings file
+    Given no install settings file, and a base file naming @site1, device pump and policy Atsign @policy1
+    When "atsc services apply" runs with a local document
+    Then the local document is applied for @site1 device pump
 
   Scenario Outline: A local limits file the reconciler's user could rewrite is refused
     Given <what>
@@ -218,7 +273,7 @@ Feature: atsc services apply runs an endpoint's services as its document says
 
     Examples:
       | what                                                                   |
-      | the local limits file is writable by the user sshnpd runs as           |
+      | the local limits file is writable by the account sshnpd runs on        |
       | the directory that holds it is writable by that user                   |
       | a parent of that directory is writable by that user                    |
       | the file is writable by a group that user belongs to                   |
@@ -242,9 +297,14 @@ Feature: atsc services apply runs an endpoint's services as its document says
 
   Scenario: Install writes a default local limits file that allows loopback services only
     Given an endpoint with no local limits file
-    When atsc is installed
+    When atsc is installed with remote changes on
     Then the local limits file allows 127.0.0.1 and localhost on any port, and 64 tunnels
     And a document exposing 192.168.1.10:502 is refused for exposing a service outside the local limits
+
+  Scenario: Install in file mode writes no local limits file
+    Given an endpoint with no local limits file
+    When atsc is installed with remote changes off
+    Then there is still no local limits file
 
   Scenario Outline: Reinstalling keeps the existing local limits file
     Given the local limits file <holds>
@@ -281,10 +341,15 @@ Feature: atsc services apply runs an endpoint's services as its document says
     Then every service keeps running as revision 15 says
     And the status reports that the record is missing
 
-  Scenario: A document not signed by the pinned key is refused
+  Scenario: A document not signed by a pinned key is refused
     Given remote changes are on
     When services_config.pump.sshnp holds a document signed by any other key
     Then it is refused, and the status reports a signature that does not verify
+
+  Scenario: A document signed by any pinned key is applied
+    Given remote changes are on, and the install settings file pins keys k1 and k2
+    When services_config.pump.sshnp holds revision 15, signed by k2 and naming key id k2
+    Then revision 15 is applied
 
   Scenario Outline: A document signed for another endpoint is refused
     Given remote changes are on
@@ -304,9 +369,13 @@ Feature: atsc services apply runs an endpoint's services as its document says
     Examples:
       | problem                                      |
       | alg none                                     |
-      | an alg other than the pinned key's algorithm |
+      | an alg other than the named key's algorithm  |
+      | a key id that is not pinned                  |
+      | another context string                       |
+      | an envelope version this agent does not read |
       | no signature                                 |
       | revision "x"                                 |
+      | revision 0                                   |
       | revision -1                                  |
       | revision 9007199254740992                    |
 
@@ -346,6 +415,7 @@ Feature: atsc services apply runs an endpoint's services as its document says
       | *           |
       | 127.0.0.1,* |
       | ::1         |
+      | 2130706433  |
 
   Scenario: An unknown field or schema version is refused whole
     Given remote changes are on
@@ -368,6 +438,28 @@ Feature: atsc services apply runs an endpoint's services as its document says
     When "atsc services apply" runs and cannot reach the atServer
     Then every service keeps running as revision 15 says
     And the next status it writes reports the failure
+
+  Scenario: Booting with no network applies the last applied document
+    Given remote changes are on, revision 15 is applied, and tunnels a and b are switched on
+    When the endpoint boots with no network
+    Then the run shortly after boot verifies the saved revision 15 again and starts npt@a and npt@b
+
+  Scenario: A saved document that no longer fits the local limits is not applied at boot
+    Given revision 15, which exposes 127.0.0.1:502, is applied
+    And the site has since changed the local limits file to allow 127.0.0.1:8554 only
+    When the endpoint boots
+    Then revision 15 is refused, and the status reports it refused for exposing a service outside the local limits
+
+  Scenario: A run that stopped after accepting a revision finishes it at the next run
+    Given a run accepted revision 16, which changes tunnel a, and stopped before restarting npt@a
+    When "atsc services apply" runs
+    Then npt@a is restarted with revision 16's settings, and revision 16 is reported applied
+
+  Scenario: A unit that fails to restart does not hold the others back
+    Given revision 16 changes tunnels a and b, and npt@a fails to start
+    When "atsc services apply" runs
+    Then npt@b is restarted, revision 16 is reported applied, and the status reports npt@a failed to start
+    And the next run does not restart npt@b again
 
   Scenario: With remote changes off, the atServer's record is ignored
     Given remote changes are off, and a local document file
@@ -393,7 +485,11 @@ Feature: atsc services apply runs an endpoint's services as its document says
     When another run starts
     Then the new run exits without applying anything, and logs that the lock was held
 
+  Scenario: Installing a managed endpoint creates the services account
+    When atsc is installed with remote changes on, on a machine with no services account
+    Then sshnpd, every npt@ unit and "atsc services apply" run on a new account with a login shell, no sudo and no root-equivalent group
+
   Scenario: The reconciler is not root, and controls only its own units
-    Given atsc was installed with sshnpd running as user noports
+    Given atsc was installed with sshnpd running on account noports
     Then "atsc services apply" runs as noports
     And noports can start, stop and restart sshnpd.service and npt@*.service, and no other unit
