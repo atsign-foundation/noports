@@ -11,7 +11,7 @@ Feature: atsc services apply runs an endpoint's services as its document says
   with atsc lets that user start, stop and restart sshnpd.service and
   npt@*.service, and nothing else.
 
-  Files on the endpoint. The bootstrap file, written at install, names the
+  Files on the endpoint. The install settings file, written at install, names the
   endpoint's Atsign and device, the public key that signs its documents, the
   policy Atsign, and whether remote changes are on. The base file is
   sshnpd's existing configuration; a document adds exposed services to it
@@ -20,7 +20,7 @@ Feature: atsc services apply runs an endpoint's services as its document says
   owned by root, lists the services any document may expose and the most
   tunnels it may run, and requires sshnpd to use a policy Atsign.
 
-  The document comes from a local file, or, when the bootstrap file turns
+  The document comes from a local file, or, when the install settings file turns
   remote changes on, from the self record services_config.<device>.sshnp on
   the endpoint's atServer, inside an envelope signed over the Atsign, device,
   revision and document.
@@ -34,7 +34,7 @@ Feature: atsc services apply runs an endpoint's services as its document says
   DoS: a document over 64 KiB is refused before it is parsed; a document is
   applied at most once every 60 seconds; a document can never exceed the
   ceiling.
-  Forgery: a document not signed by the key in the bootstrap file is refused
+  Forgery: a document not signed by the key in the install settings file is refused
   whole; documents carry typed fields only, so nothing in one reaches a unit
   file as a command line.
   Impersonation: the signing key and the policy Atsign come only from files
@@ -42,8 +42,8 @@ Feature: atsc services apply runs an endpoint's services as its document says
   ceiling file its own user could rewrite.
 
   Background:
-    Given an endpoint @site1 device pump, installed with a bootstrap file, a base file and a ceiling file
-    And the bootstrap file names policy Atsign @policy1
+    Given an endpoint @site1 device pump, installed with an install settings file, a base file and a ceiling file
+    And the install settings file names policy Atsign @policy1
     And the ceiling file allows 127.0.0.1:8554, 127.0.0.1:502 and 127.0.0.1:22, and 8 tunnels
 
   # Applying a document
@@ -99,7 +99,7 @@ Feature: atsc services apply runs an endpoint's services as its document says
     Then nothing changes, and the status reports the document refused for exceeding 8 tunnels
 
   Scenario: No policy Atsign means nothing is applied
-    Given the bootstrap file names no policy Atsign
+    Given the install settings file names no policy Atsign
     When "atsc services apply" runs
     Then nothing is applied, and the status reports that a policy Atsign is required
 
@@ -123,7 +123,7 @@ Feature: atsc services apply runs an endpoint's services as its document says
 
   Scenario: A newer signed document on the atServer is applied at the next run
     Given remote changes are on, and revision 14 is applied
-    When services_config.pump.sshnp holds revision 15, signed by the bootstrap file's key
+    When services_config.pump.sshnp holds revision 15, signed by the install settings file's key
     Then the next run applies revision 15
 
   Scenario: A document not signed by the pinned key is refused
