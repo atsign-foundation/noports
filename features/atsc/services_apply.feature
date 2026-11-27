@@ -80,6 +80,11 @@ Feature: atsc services apply runs an endpoint's services as its document says
     Then sshnpd is restarted without 127.0.0.1:502 in permit-open
     And the running session carries on until it ends
 
+  Scenario: A document exposing nothing leaves sshnpd exposing nothing
+    Given a document with no exposed services
+    When "atsc services apply" runs
+    Then sshnpd refuses a session to 127.0.0.1:22, whoever asks for it
+
   Scenario: A document never changes the base file's managers
     Given the base file's managers are @admin
     When a document is applied
