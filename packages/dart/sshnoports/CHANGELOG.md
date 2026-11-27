@@ -2,7 +2,7 @@
 
 <!-- pyml disable md034-->
 
-## v5.18.3
+## v5.19.0
 
 * feat: srvd decides each side's relay auth mode from what the client told it,
   never from a timing window, so slow legacy clients and daemons are no longer
