@@ -6,19 +6,20 @@ enrols APKAM keys for the client and daemon atSigns, starts each daemon in its
 own container, then runs the client (`npt` / `sshnp`) on the host against those
 containerised daemons through a relay (`srvd`).
 
-In CI, core and relay run against the public atDirectory (`root.atsign.org`),
-policy against the virtual environment (VE, `tests/tools/ve/setup_ve.sh`), and
-revocation against an ephemeral environment (EE, `tests/tools/ee/setup_ee.sh`)
-with atSigns created for the run. This README covers running them **locally
-against a local atStack** — the usual reason being to test an atServer that has
-not been released to production yet.
+In CI, core, relay and policy run against the virtual environment (VE,
+`tests/tools/ve/setup_ve.sh`) with a relay started by
+`tests/tools/ve/start_srvd.sh`, and revocation against an ephemeral environment
+(EE, `tests/tools/ee/setup_ee.sh`) with atSigns created for the run. No pack
+runs against production atServers or the production atDirectory, and every
+pack requires `--root-domain`. This README covers running them **locally
+against a local atStack**.
 
 There are four test packs, each with its own entrypoint under `bin/`:
 
 | Pack | Entrypoint | Runs on in CI |
 | --- | --- | --- |
-| core | `bin/core_tests.dart` | `root.atsign.org` |
-| relay | `bin/relay_tests.dart` | `root.atsign.org` |
+| core | `bin/core_tests.dart` | VE |
+| relay | `bin/relay_tests.dart` | VE |
 | policy | `bin/policy_tests.dart` | VE |
 | revocation | `bin/revocation_tests.dart` | EE |
 
@@ -26,10 +27,12 @@ There are four test packs, each with its own entrypoint under `bin/`:
 receives, for the hand check in
 [../single_atsign/README.md](../single_atsign/README.md).
 
-The examples below use the core pack; relay and policy take the same
-arguments. The revocation pack starts its own relay and daemons, so it takes
-fewer; [lib/revocation_tests/README.md](lib/revocation_tests/README.md) says
-how to run it on an EE.
+The examples below use the core pack, and the [Arguments](#arguments) table
+is core's. Relay and policy name their Atsigns with options of their own, which
+their READMEs and `--help` list. The revocation pack starts its own relay and
+daemons, so it takes fewer;
+[lib/revocation_tests/README.md](lib/revocation_tests/README.md) says how to
+run it on an EE.
 
 ## Prerequisites
 
@@ -110,6 +113,7 @@ dart run tests/npe2e/bin/core_tests.dart \
   --client-atsign @client \
   --daemon-atsign @service \
   --relay-atsign @relay \
+  --unauthorized-atsign @other \
   --root-domain vip.ve.atsign.zone \
   --base-directory npe2e_core_tests \
   --batch-size 5
@@ -133,10 +137,32 @@ same commit:
   hits a `container name ... already in use` conflict. Remove them first:
 
   ```
-  docker rm -f $(docker ps -aq --filter name=npe2e) 2>/dev/null
+  docker rm -f $(docker ps -aq --filter name=^npe2e_) 2>/dev/null
   ```
 
 Either clear both, or pass a fresh `--test-run-id`.
+
+## Shared keys on a fresh VE
+
+Before the pack starts any daemon or relay of its own, core and relay create
+every shared key among their Atsigns. The relay from step 5 is already
+running by then. For each Atsign in turn they open a client with its atKeys
+from `~/.atsign/keys/<atSign>_key.atKeys`, where `setup_ve.sh` puts them, and
+put one short-lived record, in a namespace of its own, to each of the others.
+Each shared key is then created once, by one writer.
+
+Priming is there because released daemons for one Atsign, started together,
+can each create the same shared key at once, and a client may then be unable
+to read some of their replies. So a primed run does not cover first contact
+between Atsigns: that scenario belongs with the fix for that race.
+`--no-prime-shared-keys` runs a pack without priming; use it too when you do
+not hold the keyfile of every Atsign the pack names, since priming stops at
+the first one missing.
+
+Start each run from a fresh VE. Priming does not repair shared keys an
+earlier run left behind, because a client that finds a shared key on its
+atServer uses it, and `setup_ve.sh` reuses a VE that is already running, so
+run `tests/tools/ve/teardown_ve.sh` first.
 
 ## Arguments
 
@@ -145,7 +171,8 @@ Either clear both, or pass a fresh `--test-run-id`.
 | `--client-atsign` | (required) | Client atSign used in tests |
 | `--daemon-atsign` | (required) | Daemon atSign used in tests |
 | `--relay-atsign` | (required) | Relay atSign used in tests |
-| `--root-domain` | `root.atsign.org:64` | atDirectory host:port; set to your local domain |
+| `--unauthorized-atsign` | (required) | An Atsign whose atKeys are present but which no daemon lists as a manager, for the rejection tests |
+| `--root-domain` | (required) | atDirectory host[:port], port 64 when omitted; e.g. `vip.ve.atsign.zone` for the VE |
 | `--base-directory` | `npe2e_core_tests` | Where run artefacts (binaries, keys, logs) are written |
 | `--client-versions` | `d:v5.9.4,d:v5.11.2,d:v5.13.0,d:current` | Comma-separated `language:version` |
 | `--daemon-versions` | `d:v5.9.4,d:v5.11.2,d:v5.13.0,d:current,c:current` | Comma-separated `language:version` |
@@ -153,6 +180,7 @@ Either clear both, or pass a fresh `--test-run-id`.
 | `--max-retries` | `3` | Retries for a failing test |
 | `--test-timeout-seconds` | `300` | Per-test timeout before fail/retry |
 | `--test-run-id` | short git hash | Overrides the run directory name |
+| `--[no-]prime-shared-keys` | `true` | Core and relay only. Creates every shared key among the pack's Atsigns before the pack starts any daemon, and needs each one's keyfile; see [Shared keys on a fresh VE](#shared-keys-on-a-fresh-ve) |
 | `--verbose` | `false` | Unmutes the at_client SDK logger (`AtSignLogger` at `INFO` instead of `SEVERE`). Stage narration and failure detail are always on. Currently wired for `policy_tests` only. |
 
 ## Reading a failed policy_tests run

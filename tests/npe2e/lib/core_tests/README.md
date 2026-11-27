@@ -3,14 +3,15 @@
 ## Usage
 
 ```bash
-docker stop $(docker ps -q) 2>/dev/null
+docker rm -f $(docker ps -aq --filter name=^npe2e_) 2>/dev/null
 rm -rf npe2e_core_tests/
 dart run tests/npe2e/bin/core_tests.dart \
-    --client-atsign "@client_jttest" \
-    --daemon-atsign "@device_jttest" \
-    --relay-atsign "@rv_am" \
+    --client-atsign "@colin" \
+    --daemon-atsign "@barbara" \
+    --relay-atsign "@relay1" \
+    --unauthorized-atsign "@curtly" \
     --base-directory "npe2e_core_tests" \
-    --root-domain "root.atsign.org" \
+    --root-domain "vip.ve.atsign.zone" \
     --batch-size 3
 ```
 

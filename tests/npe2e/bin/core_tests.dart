@@ -47,6 +47,8 @@ Future<void> main(List<String> args) async {
       exit(0);
     }
   } catch (e) {
+    print('Error parsing arguments: $e');
+    print('');
     CoreTestsParams.printUsage();
     exit(1);
   }
@@ -79,4 +81,5 @@ void _printLoadedParameters(CoreTestsParams params) {
   print('    batch-size: ${params.batchSize}');
   print('    max-retries: ${params.maxRetries}');
   print('    test-timeout-seconds: ${params.testTimeoutSeconds}');
+  print('    prime-shared-keys: ${params.primeSharedKeys}');
 }

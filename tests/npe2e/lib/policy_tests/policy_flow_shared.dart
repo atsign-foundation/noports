@@ -791,7 +791,6 @@ Future<DockerInstance> startPolicyFlowDaemon({
         '_${policyVersion.language.name}_${policyVersion.version}',
     entrypoint: ['/bin/bash', '-c', 'sudo service ssh start && $sshnpdCommand'],
     printCommand: false,
-    // Local-run aid: let the container resolve *.atsign.zone back to the host.
     additionalDockerArgs: hostGatewayAddHostArgs(),
     volumeMappings: [
       VolumeMapping(
