@@ -12,15 +12,23 @@ Feature: Every reconciler run reports what the endpoint runs
   and the reason any document was refused or nothing was applied.
   `atsc services status` prints the same comparison on the endpoint.
 
+  Each service's state is one of running, starting, failing, off, and off by
+  schedule, with a reason where there is one, such as waiting for a
+  synchronised clock; Control Center shows them as Running, Starting,
+  Failing, Off and Off by schedule. Failed for missing keys is shown only by
+  `atsc services status`, since without keys no record can be written.
+
   Races: a status written by one run is replaced whole by the next, and each
   carries its run time.
-  Replay: only holders of the endpoint's Atsign keys can write the record
-  back, and they already hold more; a reader treats a status whose run time
-  is more than 20 minutes old as unknown, whatever it says.
-  DoS: a status record is at most 256 KiB of signed content: the document it
-  may carry is at most 64 KiB, it has one entry for sshnpd and for each of at
-  most 64 tunnels, and every error and reason is cut to 1 KiB; a run whose
-  report would exceed that writes a short report instead.
+  Replay: the atServer's host can present an old record again, but cannot
+  sign a new one; a reader treats a status whose run time is more than 20
+  minutes old as unknown, whatever it says, which bounds how long an old
+  "healthy" record can stand.
+  DoS: every part of the record is bounded, so it never passes 256 KiB as the
+  atServer stores it: the document it may carry is at most 64 KiB, the local
+  limits file at most 16 KiB, it has one entry for sshnpd and for each of at
+  most 64 tunnels, every error and reason is cut to 1 KiB on a character
+  boundary, and at most 64 managers are listed, with a count of any more.
   Forgery: the signature lets a reader tell the endpoint's own status from a
   record anyone else wrote under its key name.
   Impersonation: the status names the Atsign and device it is about inside
@@ -62,10 +70,15 @@ Feature: Every reconciler run reports what the endpoint runs
     When "atsc services apply" runs
     Then the status holds the local limits file's content and its digest
 
-  Scenario: A report too large to write is cut to a short one
-    Given the full report for this run would exceed 256 KiB
+  Scenario: A long error is cut to 1 KiB on a character boundary
+    Given npt@b keeps failing with an error of 3 KiB of multibyte text
     When "atsc services apply" runs
-    Then the status holds the applied revision, each service's state and the run time, and says that the report was cut
+    Then the status holds at most 1 KiB of that error, ending on a whole character
+
+  Scenario: At most 64 managers are listed
+    Given the base file lists 70 managers
+    When "atsc services apply" runs
+    Then the status lists 64 of them, and says that 6 more are not listed
 
   Scenario: Without keys no status is written, and the endpoint says why locally
     Given the endpoint's keys file is missing
