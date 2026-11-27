@@ -59,9 +59,11 @@ void main() {
 
   setUpAll(() async {
     snapshots = Directory.systemTemp.createTempSync('atsc_test');
-    await compile(path.join('bin', 'atsc.dart'), 'atsc');
-    await compile(path.join('bin', 'srv.dart'), 'srv');
-    await compile(path.join('test', 'npt_on_its_own.dart'), 'npt');
+    await Future.wait([
+      compile(path.join('bin', 'atsc.dart'), 'atsc'),
+      compile(path.join('bin', 'srv.dart'), 'srv'),
+      compile(path.join('test', 'npt_on_its_own.dart'), 'npt'),
+    ]);
     if (Platform.isWindows) return;
     installation = Directory(path.join(snapshots.path, 'installation'))
       ..createSync();

@@ -21,6 +21,7 @@ class RelayTestsParams {
   late int batchSize;
   late int maxRetries;
   late int testTimeoutSeconds;
+  late bool primeSharedKeys;
   late String? testRunId;
 
   RelayTestsParams._();
@@ -45,6 +46,7 @@ class RelayTestsParams {
     params.batchSize = int.parse(argResults['batch-size']);
     params.maxRetries = int.parse(argResults['max-retries']);
     params.testTimeoutSeconds = int.parse(argResults['test-timeout-seconds']);
+    params.primeSharedKeys = argResults['prime-shared-keys'];
     params.testRunId = argResults['test-run-id'];
     if (params.selfRelayAtsigns
         .split(',')
@@ -79,8 +81,8 @@ class RelayTestsParams {
     parser.addOption(
       'root-domain',
       abbr: 'r',
-      defaultsTo: 'root.atsign.org:64',
-      help: 'Root domain to use',
+      mandatory: true,
+      help: 'atDirectory host[:port], e.g. vip.ve.atsign.zone for the VE',
     );
     parser.addFlag(
       'verbose',
@@ -125,6 +127,12 @@ class RelayTestsParams {
       defaultsTo: '300',
       help:
           'Timeout in seconds for each individual test before it is failed and retried',
+    );
+    parser.addFlag(
+      'prime-shared-keys',
+      defaultsTo: true,
+      help:
+          'Create every shared key among the atSigns, one at a time, before the pack starts any daemon or relay; needs every atSign\'s keyfile in ~/.atsign/keys',
     );
     parser.addOption(
       'test-run-id',

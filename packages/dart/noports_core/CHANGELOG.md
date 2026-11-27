@@ -115,6 +115,12 @@
   error saying what it must hold
 - fix: tightened how npp loads its stored rules
 - fix: tightened how npp_atserver loads its policy groups
+- fix: the sshnpd doctor's daemon check counts only a process running `sshnpd`
+  or `atsc sshnpd` without `--doctor`, never itself
+- fix: the sshnpd doctor warns that a running service's process may be
+  restarting or hidden, instead of reporting it stopped
+- fix: `sshnpd --doctor` reports a check it cannot complete as a warning
+  naming the error, and runs the remaining checks
 
 # 6.16.0
 

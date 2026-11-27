@@ -2,7 +2,13 @@
 
 <!-- pyml disable md034-->
 
-## v5.18.3
+## v5.20.0
+
+* feat: on Linux and macOS each NoPorts program except srv now runs through a
+  single binary, atsc; the old program names are scripts that run it, so the
+  daemon's process is now `atsc sshnpd`
+
+## v5.19.0
 
 * feat: srvd decides each side's relay auth mode from what the client told it,
   never from a timing window, so slow legacy clients and daemons are no longer
@@ -70,6 +76,11 @@
   passphrase. A `--local` systemd install takes the unit and the config
   template from `sshnp/systemd.nfpm` and `sshnp/config`, where the release
   archive keeps them
+* fix: `sshnpd --doctor` no longer counts its own process as the running daemon
+* fix: `sshnpd --doctor` reports a check it cannot complete as a warning
+  naming the error, and runs the remaining checks
+* fix: the `sshnpd-slim` Docker image has a writable `/tmp`, so srv, which
+  sshnpd starts for each session, no longer exits at startup
 
 * ci: the Windows release job signs in to Azure only when it is about to
   sign, after every build step, instead of first

@@ -95,10 +95,13 @@ for atsign in "${VE_ATSIGNS[@]}"; do
     continue
   fi
   url="https://raw.githubusercontent.com/atsign-foundation/at_demos/trunk/packages/at_demo_data/lib/assets/atkeys/%40${atsign}.atKeys"
-  if curl -sSfL -o "$dest" "$url" 2>/dev/null; then
+  if curl -sSfL --retry 3 --retry-all-errors -o "$dest.tmp" "$url"; then
+    mv "$dest.tmp" "$dest"
     echo "  @${atsign}: downloaded"
   else
-    echo "  @${atsign}: FAILED to download from $url"
+    rm -f "$dest.tmp"
+    echo "ERROR: @${atsign}: FAILED to download from $url"
+    exit 1
   fi
 done
 
