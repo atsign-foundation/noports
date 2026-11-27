@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'diagnostic_check.dart';
 
 /// Manages and runs a suite of diagnostic tests
@@ -7,7 +9,8 @@ class DiagnosticRunner {
 
   DiagnosticRunner({required this.checks, this.verbose = false});
 
-  /// Run all tests and return results
+  /// Run all tests and return results; a check that throws is reported as a
+  /// warning naming the error, and the remaining checks still run.
   Future<List<CheckResult>> runAll() async {
     final results = <CheckResult>[];
     final context = <String, dynamic>{};
@@ -18,7 +21,7 @@ class DiagnosticRunner {
         print('   ${check.description}');
       }
 
-      final result = await check.run(context);
+      final result = await _run(check, context);
       results.add(result);
 
       if (verbose) {
@@ -29,6 +32,36 @@ class DiagnosticRunner {
     }
 
     return results;
+  }
+
+  Future<CheckResult> _run(
+    DiagnosticCheck check,
+    Map<String, dynamic> context,
+  ) async {
+    final stopwatch = Stopwatch()..start();
+    try {
+      return await check.run(context);
+    } catch (e, stackTrace) {
+      return CheckResult(
+        checkName: check.name,
+        status: CheckStatus.warning,
+        message: 'Could not complete this check: ${_describe(e)}',
+        details: {'stack': '$stackTrace'},
+        duration: stopwatch.elapsed,
+      );
+    }
+  }
+
+  static String _describe(Object error) => error is ProcessException
+      ? 'could not run ${error.executable}'
+            '${error.message.isEmpty ? '' : ': ${error.message}'}'
+      : '$error'.replaceAll(RegExp(r'\s*\n\s*'), ' ');
+
+  static void _writeWarnings(StringBuffer buffer, List<CheckResult> results) {
+    buffer.writeln('\nWarnings:');
+    for (final result in results.where((r) => r.hasWarning)) {
+      buffer.writeln('  • ${result.checkName}: ${result.message}');
+    }
   }
 
   /// Generate a summary report (simplified version for sshnpd)
@@ -59,13 +92,11 @@ class DiagnosticRunner {
       for (final result in results.where((r) => r.failed)) {
         buffer.writeln('  • ${result.checkName}: ${result.message}');
       }
+      if (warnings > 0) _writeWarnings(buffer, results);
     } else if (warnings > 0) {
       buffer.writeln(
           '\n  WARNING: sshnpd may work, but check the items above.');
-      buffer.writeln('\nWarnings:');
-      for (final result in results.where((r) => r.hasWarning)) {
-        buffer.writeln('  • ${result.checkName}: ${result.message}');
-      }
+      _writeWarnings(buffer, results);
     } else {
       buffer.writeln('\n SUCCESS: Everything seems ready to use sshnpd!');
     }

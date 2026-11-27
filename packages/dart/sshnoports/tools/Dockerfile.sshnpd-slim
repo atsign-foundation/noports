@@ -27,6 +27,8 @@ RUN \
   mkdir -p $HOMEDIR/config ; \
   mkdir -p /etc/cacert ; \
   mkdir -p ${BINARYDIR} ; \
+  # NOTE: the scratch image needs a 1777 /tmp.
+  mkdir -p -m 1777 /staging/rootlib/tmp ; \
   # build sshnpd
   cd ${WORKDIR}/${PACKAGEDIR}; \
   dart pub get --enforce-lockfile ; \

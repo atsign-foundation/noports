@@ -67,9 +67,9 @@ void main() {
 
   setUpAll(() async {
     snapshots = Directory.systemTemp.createTempSync('atsc_test');
-    for (final String name in ['atsc', 'srv', ...subcommands]) {
-      await compile(name);
-    }
+    await Future.wait([
+      for (final String name in ['atsc', 'srv', ...subcommands]) compile(name),
+    ]);
   });
 
   tearDownAll(() => snapshots.deleteSync(recursive: true));

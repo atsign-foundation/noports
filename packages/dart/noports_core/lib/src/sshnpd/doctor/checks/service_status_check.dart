@@ -2,6 +2,12 @@ import '../diagnostic_check.dart';
 import '../utils/platform_utils.dart';
 
 class ServiceStatusCheck extends DiagnosticCheck {
+  final PlatformUtils _platform;
+
+  /// Checks the daemon through [platform], by default the current platform's.
+  ServiceStatusCheck({PlatformUtils? platform})
+      : _platform = platform ?? PlatformUtils.instance;
+
   @override
   String get name => 'Service Status (Daemon)';
 
@@ -14,16 +20,16 @@ class ServiceStatusCheck extends DiagnosticCheck {
     final serviceName = 'sshnpd';
 
     // 1. Check Process (Is the binary executing?)
-    bool processRunning = await PlatformUtils.instance.isProcessRunning(serviceName);
+    bool processRunning = await _platform.isDaemonRunning(serviceName);
 
     // 2. Check Service (Is it registered with systemd/launchd/Windows Service?)
-    bool serviceInstalled = await PlatformUtils.instance.isServiceInstalled(serviceName);
+    bool serviceInstalled = await _platform.isServiceInstalled(serviceName);
     bool serviceRunning = false;
     ServiceExitInfo? exitInfo;
 
     if (serviceInstalled) {
-      serviceRunning = await PlatformUtils.instance.isServiceRunning(serviceName);
-      exitInfo = await PlatformUtils.instance.getServiceExitInfo(serviceName);
+      serviceRunning = await _platform.isServiceRunning(serviceName);
+      exitInfo = await _platform.getServiceExitInfo(serviceName);
     }
 
     // 3. If service has failed (non-zero exit code or failed state), report it
@@ -62,6 +68,23 @@ class ServiceStatusCheck extends DiagnosticCheck {
       return CheckResult(
         checkName: name,
         status: CheckStatus.pass,
+        message: message,
+        duration: DateTime.now().difference(start),
+      );
+    } else if (serviceRunning) {
+      String message = 'The service manager reports sshnpd RUNNING,'
+          ' but no sshnpd process was found:'
+          ' it may be restarting, or hidden from this user.';
+      message += '\n      System Service: Installed, Running';
+      if (exitInfo != null && exitInfo.exitCode >= 0) {
+        message += '\n      Exit Code: ${exitInfo.exitCode}';
+        message += '\n      Result: ${exitInfo.result}';
+        message += '\n      Active State: ${exitInfo.activeState} (${exitInfo.subState})';
+      }
+
+      return CheckResult(
+        checkName: name,
+        status: CheckStatus.warning,
         message: message,
         duration: DateTime.now().difference(start),
       );

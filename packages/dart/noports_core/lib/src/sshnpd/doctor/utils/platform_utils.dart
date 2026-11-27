@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'daemon_processes.dart';
+
 
 class ServiceExitInfo {
   final int exitCode;
@@ -50,8 +52,10 @@ abstract class PlatformUtils {
   /// Check if a command is available (e.g. 'curl', 'ssh')
   Future<bool> isCommandAvailable(String command);
 
-  /// Check if a process is currently running
-  Future<bool> isProcessRunning(String processName);
+  /// Whether another process runs the daemon [daemonName], as
+  /// `daemonName ...` or `atsc daemonName ...`, other than a `--doctor` run;
+  /// a run from source, such as `dart run bin/sshnpd.dart`, is not counted.
+  Future<bool> isDaemonRunning(String daemonName);
 
   /// Get list of potential config file paths
   List<String> getPotentialConfigPaths();
@@ -77,6 +81,25 @@ abstract class PlatformUtils {
 
 /// MacOS Implementation
 class MacOSUtils implements PlatformUtils {
+  /// Creates the macOS utilities; [listProcesses] lists the running
+  /// processes, by default from `ps`.
+  MacOSUtils({Future<List<ListedProcess>> Function()? listProcesses})
+    : _listProcesses = listProcesses ?? _listFromPs;
+
+  final Future<List<ListedProcess>> Function() _listProcesses;
+
+  static Future<List<ListedProcess>> _listFromPs() async {
+    final names = await Process.run(
+      macOSCommandNameListing.first,
+      macOSCommandNameListing.sublist(1),
+    );
+    final arguments = await Process.run(
+      macOSArgumentsListing.first,
+      macOSArgumentsListing.sublist(1),
+    );
+    return parsePsListing(names.stdout.toString(), arguments.stdout.toString());
+  }
+
   @override
   String get name => 'MacOS';
 
@@ -90,10 +113,13 @@ class MacOSUtils implements PlatformUtils {
   }
 
   @override
-  Future<bool> isProcessRunning(String processName) async {
-    
-    final result = await Process.run('pgrep', ['-f', processName]);
-    return result.exitCode == 0;
+  Future<bool> isDaemonRunning(String daemonName) async {
+    return isDaemonListed(
+      await _listProcesses(),
+      daemonName,
+      selfPid: pid,
+      windows: false,
+    );
   }
 
   @override
@@ -223,6 +249,16 @@ class MacOSUtils implements PlatformUtils {
 
 /// Linux Implementation (Very similar to MacOS)
 class LinuxUtils implements PlatformUtils {
+  /// Creates the Linux utilities; [listProcesses] lists the running
+  /// processes, by default from `/proc`.
+  LinuxUtils({Future<List<ListedProcess>> Function()? listProcesses})
+    : _listProcesses = listProcesses ?? _listFromProc;
+
+  final Future<List<ListedProcess>> Function() _listProcesses;
+
+  static Future<List<ListedProcess>> _listFromProc() =>
+      listProcDirectory(Directory(linuxProcDirectory));
+
   @override
   String get name => 'Linux';
 
@@ -236,10 +272,13 @@ class LinuxUtils implements PlatformUtils {
   }
 
   @override
-  Future<bool> isProcessRunning(String processName) async {
-    // pgrep -f matches full command line
-    final result = await Process.run('pgrep', ['-f', processName]);
-    return result.exitCode == 0;
+  Future<bool> isDaemonRunning(String daemonName) async {
+    return isDaemonListed(
+      await _listProcesses(),
+      daemonName,
+      selfPid: pid,
+      windows: false,
+    );
   }
 
   @override
@@ -335,6 +374,21 @@ class LinuxUtils implements PlatformUtils {
 
 /// Windows Implementation
 class WindowsUtils implements PlatformUtils {
+  /// Creates the Windows utilities; [listProcesses] lists the running
+  /// processes, by default from PowerShell's `Win32_Process`.
+  WindowsUtils({Future<List<ListedProcess>> Function()? listProcesses})
+    : _listProcesses = listProcesses ?? _listFromPowerShell;
+
+  final Future<List<ListedProcess>> Function() _listProcesses;
+
+  static Future<List<ListedProcess>> _listFromPowerShell() async {
+    final result = await Process.run(
+      windowsProcessListing.first,
+      windowsProcessListing.sublist(1),
+    );
+    return parseWin32ProcessListing(result.stdout.toString());
+  }
+
   @override
   String get name => 'Windows';
 
@@ -349,14 +403,13 @@ class WindowsUtils implements PlatformUtils {
   }
 
   @override
-  Future<bool> isProcessRunning(String processName) async {
-    // tasklist /FI "IMAGENAME eq sshnpd.exe"
-    // Note: Windows processes usually have .exe extension
-    String actualName = processName.endsWith('.exe') ? processName : '$processName.exe';
-    
-    final result = await Process.run('tasklist', ['/FI', 'IMAGENAME eq $actualName']);
-    // tasklist always returns 0 even if not found, so we check stdout
-    return result.stdout.toString().contains(actualName);
+  Future<bool> isDaemonRunning(String daemonName) async {
+    return isDaemonListed(
+      await _listProcesses(),
+      daemonName,
+      selfPid: pid,
+      windows: true,
+    );
   }
 
   @override
