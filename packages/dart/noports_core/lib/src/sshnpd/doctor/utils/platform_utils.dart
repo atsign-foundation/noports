@@ -54,7 +54,8 @@ abstract class PlatformUtils {
 
   /// Whether another process runs the daemon [daemonName], as
   /// `daemonName ...` or `atsc daemonName ...`, other than a `--doctor` run;
-  /// a run from source, such as `dart run bin/sshnpd.dart`, is not counted.
+  /// a run from source, such as `dart run bin/atsc.dart sshnpd`, is not
+  /// counted.
   Future<bool> isDaemonRunning(String daemonName);
 
   /// Get list of potential config file paths

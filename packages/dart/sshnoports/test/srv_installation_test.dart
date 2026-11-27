@@ -50,7 +50,8 @@ void main() {
       '-o',
       path.join(installation.path, 'atsc'),
     ]);
-    expect(compiled.exitCode, 0, reason: '${compiled.stdout}${compiled.stderr}');
+    expect(compiled.exitCode, 0,
+        reason: '${compiled.stdout}${compiled.stderr}');
     File(path.join(installation.path, 'srv')).createSync();
     for (final String name in ['sshnpd', 'npt']) {
       final String launcher = path.join(installation.path, name);

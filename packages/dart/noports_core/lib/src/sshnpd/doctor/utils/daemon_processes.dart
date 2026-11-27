@@ -17,8 +17,8 @@ class ListedProcess {
 ///
 /// The program is the first argument with its directory removed; on
 /// [windows] it is compared ignoring case and any `.exe` suffix. A run from
-/// source, such as `dart run bin/sshnpd.dart`, is not counted: its program
-/// is `dart`.
+/// source, such as `dart run bin/atsc.dart sshnpd`, is not counted: its
+/// program is `dart`.
 bool isDaemonListed(
   Iterable<ListedProcess> processes,
   String name, {

@@ -110,10 +110,20 @@ Future<List<ClientBinary>> fetchClientBinariesParallel({
   return clientBinaries;
 }
 
+/// Whether the current build runs [type] through atsc, by the launcher named
+/// after it, rather than as a binary of its own.
+bool runsThroughAtsc(final ClientBinaryType type) =>
+    type != ClientBinaryType.srv && type != ClientBinaryType.npp_client;
+
+/// Builds [clientBinaryType] from this checkout into [outputDirectory] as a
+/// release installs it: srv and npp_client compiled from their own source,
+/// and each other program as its launcher beside the atsc that [atsc]
+/// compiles there, or that this call compiles when [atsc] is null.
 Future<ClientBinary> compileDartCurrentBinary({
   required final NoPortsVersion noPortsVersion,
   required final ClientBinaryType clientBinaryType,
   required final Directory outputDirectory,
+  final Future<File> Function()? atsc,
 }) async {
   if (noPortsVersion.language != Language.dart) {
     throw Exception(
@@ -128,29 +138,52 @@ Future<ClientBinary> compileDartCurrentBinary({
     );
   }
 
-  final String outputPath = path.join(
-    outputDirectory.path,
-    clientBinaryType.name,
+  final File file;
+  if (runsThroughAtsc(clientBinaryType)) {
+    await (atsc?.call() ??
+        _compileDartSource(program: 'atsc', outputDirectory: outputDirectory));
+    file = await _installLauncher(
+      program: clientBinaryType.name,
+      outputDirectory: outputDirectory,
+    );
+  } else {
+    file = await _compileDartSource(
+      program: clientBinaryType.name,
+      outputDirectory: outputDirectory,
+    );
+  }
+
+  return ClientBinary(
+    binaryType: clientBinaryType,
+    noPortsVersion: noPortsVersion,
+    file: file,
   );
-  const String executable = 'dart';
-  final List<String> args = [
+}
+
+/// Compiles the sshnoports package's bin/[program].dart into
+/// [outputDirectory] as [program].
+Future<File> _compileDartSource({
+  required final String program,
+  required final Directory outputDirectory,
+}) async {
+  final bool dirExists = await ensureDirectoryExists(outputDirectory);
+  if (!dirExists) {
+    throw Exception(
+      'Failed to create directory for compiling current binaries: ${outputDirectory.path}',
+    );
+  }
+
+  final String outputPath = path.join(outputDirectory.path, program);
+  final ProcessResult processResult = await runCommand('dart', [
     'compile',
     'exe',
-    path.join(
-      'packages',
-      'dart',
-      'sshnoports',
-      'bin',
-      '${clientBinaryType.name}.dart',
-    ),
+    path.join('packages', 'dart', 'sshnoports', 'bin', '$program.dart'),
     '-o',
     outputPath,
-  ];
-
-  final ProcessResult processResult = await runCommand(executable, args);
+  ]);
   if (processResult.exitCode != 0) {
     throw Exception(
-      'Failed to compile current binary for ${clientBinaryType.name}: ${processResult.stderr}',
+      'Failed to compile current binary for $program: ${processResult.stderr}',
     );
   }
 
@@ -160,20 +193,41 @@ Future<ClientBinary> compileDartCurrentBinary({
       'Expected output binary not found after compilation: ${outputFile.path}',
     );
   }
-
-  return ClientBinary(
-    binaryType: clientBinaryType,
-    noPortsVersion: noPortsVersion,
-    file: outputFile,
-  );
+  return outputFile;
 }
 
+/// Copies the sshnoports package's launcher for [program] into
+/// [outputDirectory], where it runs the atsc beside it.
+Future<File> _installLauncher({
+  required final String program,
+  required final Directory outputDirectory,
+}) async {
+  final File launcher = await File(
+    path.join('packages', 'dart', 'sshnoports', 'launchers', program),
+  ).copy(path.join(outputDirectory.path, program));
+  final ProcessResult chmod = await runCommand('chmod', ['+x', launcher.path]);
+  if (chmod.exitCode != 0) {
+    throw Exception(
+      'Failed to make ${launcher.path} executable: ${chmod.stderr}',
+    );
+  }
+  return launcher;
+}
+
+/// Builds each of [clientBinaryTypes] from this checkout into
+/// [outputDirectory], compiling atsc once, when the first of those that run
+/// through it asks for it.
 List<Future<ClientBinary>> compileDartCurrentBinariesList({
   required final NoPortsVersion noPortsVersion,
   required final List<ClientBinaryType> clientBinaryTypes,
   required final Directory
   outputDirectory, // where the compiled binaries will be placed
 }) {
+  Future<File>? atsc;
+  Future<File> compileAtsc() => atsc ??= _compileDartSource(
+    program: 'atsc',
+    outputDirectory: outputDirectory,
+  );
   final List<Future<ClientBinary>> futures = [];
   for (final ClientBinaryType clientBinaryType in clientBinaryTypes) {
     futures.add(
@@ -181,6 +235,7 @@ List<Future<ClientBinary>> compileDartCurrentBinariesList({
         noPortsVersion: noPortsVersion,
         clientBinaryType: clientBinaryType,
         outputDirectory: outputDirectory,
+        atsc: compileAtsc,
       ),
     );
   }

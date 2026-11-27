@@ -41,7 +41,8 @@ run it on an EE.
 - `expect`, `ssh-keygen`, `git`, `chmod`, `sh` on `PATH` (the harness checks
   these on startup).
 - Run `melos bootstrap` from the repo root at least once. The harness compiles
-  `current` binaries directly via `dart compile exe`; it does not run
+  `current` binaries directly via `dart compile exe` (`atsc`, beside which it
+  copies each program's launcher script, and `srv`); it does not run
   `dart pub get` for you, so without bootstrapping first, package resolution
   fails.
 

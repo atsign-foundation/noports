@@ -7,6 +7,13 @@
 * feat: on Linux and macOS each NoPorts program except srv now runs through a
   single binary, atsc; the old program names are scripts that run it, so the
   daemon's process is now `atsc sshnpd`
+* feat: on Windows each NoPorts program except srv now runs through a single
+  binary, atsc.exe; the old program names are small launchers, C# compiled
+  ahead of time to native code so they need no .NET runtime, that run the
+  atsc.exe in their own folder, and the sshnpd service runs `atsc.exe sshnpd`
+* BREAKING CHANGE: on Windows a NoPorts program's .exe must stay in the folder
+  with atsc.exe and srv.exe, and a firewall or application-control rule that
+  names an old `.exe` must name `atsc.exe`
 
 ## v5.19.0
 

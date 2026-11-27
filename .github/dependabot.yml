@@ -49,6 +49,20 @@ updates:
       pub:
         patterns:
           - "*"
+  - package-ecosystem: "nuget"
+    directories:
+      - "/packages/csharp/AtscLauncher/src/"
+      - "/packages/csharp/AtscLauncher/test/"
+      - "/packages/csharp/WindowsBinaryService/"
+      - "/packages/csharp/WindowsBinaryService.Tests/"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+    groups:
+      nuget:
+        patterns:
+          - "*"
   - package-ecosystem: 'npm'
     directory: "/apps/admin/webapp/"
     schedule:

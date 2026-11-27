@@ -18,19 +18,10 @@ namespace WindowsBinaryService
 
 		private Process? process;
 
-		public Binary(string path, ILogger logger)
+		public Binary(ProcessStartInfo startInfo, ILogger logger)
 		{
 			this.logger = logger;
-			startInfo = new ProcessStartInfo
-			{
-				CreateNoWindow = true,
-				UseShellExecute = false,
-				FileName = path,
-				Arguments = string.Join(" ", Environment.GetCommandLineArgs().Skip(1)),
-				WindowStyle = ProcessWindowStyle.Hidden,
-				RedirectStandardError = true,
-				RedirectStandardOutput = true,
-			};
+			this.startInfo = startInfo;
 			logChannel = Channel.CreateUnbounded<string>();
 			logDebouncer = Task.Run(() => LogDebouncer());
 		}
@@ -42,7 +33,7 @@ namespace WindowsBinaryService
 				process = Process.Start(startInfo);
 				if (process == null)
 				{
-					logger.LogCritical($"Host failed to start the {ServiceConfig.Binary} process.\nCheck your installation or contact support.");
+					logger.LogCritical($"Host failed to start the {ServiceConfig.Binary} {ServiceConfig.Subcommand} process.\nCheck your installation or contact support.");
 					return;
 				}
 				process.OutputDataReceived += CreateLogHandler();

@@ -124,6 +124,11 @@ jobs:
           ref: multibuild-${{github.run_number}}
       - name: Setup dart
         uses: dart-lang/setup-dart@2286a0c042b44434fe26d292bbce8d34f7ec662b # v1.8.2
+      - name: Setup .NET (Windows only)
+        if: ${{ matrix.platform == 'windows' }}
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: packages/csharp/global.json
       - name: Setup Go (Linux only)
         if: ${{ matrix.platform == 'linux' }} # Only needed for nfpm packaging
         uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
@@ -146,22 +151,25 @@ jobs:
         run: |
           dart pub get --enforce-lockfile
           dart run build_runner build --delete-conflicting-outputs
-      - name: Compile core binaries (Windows only)
-        if: ${{ matrix.platform == 'windows' }}
+      - name: Compile atsc and srv
         run: |
-          for BINARY in $BINS; do \
-            dart compile exe ${CROSS} bin/${BINARY}.dart -v -o sshnp/${BINARY}${EXT};
-          done
-      - name: Build admin API (Windows only)
-        if: ${{ matrix.platform == 'windows' }}
-        run: |
-          dart compile exe ${CROSS} bin/np_admin.dart -v -o sshnp/np_admin${EXT}
-      - name: Compile atsc and srv, and add the launchers (Non-Windows)
+          dart compile exe ${CROSS} bin/atsc.dart -v -o sshnp/atsc${EXT}
+          dart compile exe ${CROSS} bin/srv.dart -v -o sshnp/srv${EXT}
+      - name: Add the launchers (Non-Windows)
         if: ${{ matrix.platform != 'windows' }}
+        run: cp -R launchers/. sshnp/
+      - name: Build the launcher and add it under each program's name (Windows only)
+        if: ${{ matrix.platform == 'windows' }}
+        working-directory: ./packages/csharp/AtscLauncher
         run: |
-          dart compile exe ${CROSS} bin/atsc.dart -v -o sshnp/atsc
-          dart compile exe ${CROSS} bin/srv.dart -v -o sshnp/srv
-          cp -R launchers/. sshnp/
+          dotnet publish src/AtscLauncher.csproj --configuration Release
+          # NOTE: the Windows release has no srvd.exe; atsc.exe srvd runs the relay.
+          for LAUNCHER in ../../dart/sshnoports/launchers/*; do
+            if [ -f "$LAUNCHER" ] && [ "${LAUNCHER##*/}" != srvd ]; then
+              cp src/bin/Release/net*/win-x64/publish/AtscLauncher.exe \
+                "../../dart/sshnoports/sshnp/${LAUNCHER##*/}.exe"
+            fi
+          done
       - name: Compile debug binaries (Non-Windows)
         if: ${{ matrix.platform != 'windows' }}
         run: |
@@ -207,6 +215,17 @@ jobs:
         run: |
           dotnet publish --configuration Release -p:DefineConstants="SSHNPD"
           mv bin/Release/net*/win-x64/publish/WindowsBinaryService.exe ../../dart/sshnoports/sshnp/sshnpdService.exe
+      - name: Each launcher does what atsc.exe does under its name (Windows only)
+        if: ${{ matrix.platform == 'windows' }}
+        timeout-minutes: 10
+        run: |
+          names=()
+          for LAUNCHER in launchers/*; do
+            if [ -f "$LAUNCHER" ] && [ "${LAUNCHER##*/}" != srvd ]; then
+              names+=("${LAUNCHER##*/}")
+            fi
+          done
+          bash tools/check_launchers.sh sshnp .exe "${names[@]}"
       # Signed in only now, after every build step has run: the Azure
       # session is not available to pub packages, dotnet or WiX.
       - name: Azure Login (Windows only)
@@ -237,7 +256,7 @@ jobs:
           wix extension add -g WixToolset.Util.wixext/6.0.2
           wix extension add -g WixToolset.UI.wixext/6.0.2
           mkdir bin
-          cp ../../packages/dart/sshnoports/sshnp/{sshnpd,at_activate,noports,sshnp,npp,npp_atserver,npp_file,npt,srv,sshnpdService}.exe ./bin/
+          cp ../../packages/dart/sshnoports/sshnp/{atsc,sshnpd,at_activate,noports,sshnp,npp,npp_atserver,npp_file,npt,srv,sshnpdService}.exe ./bin/
           cp ../../packages/dart/sshnoports/bundles/core/config/sshnpd.yaml ./bin/
           wix build -ext WixToolset.Util.wixext -ext WixToolset.UI.wixext \
               -d ProductVersion="${VERSION}" \
@@ -325,6 +344,51 @@ jobs:
           path: ./packages/dart/sshnoports/tarball
           if-no-files-found: error
 
+  # NOTE: this job runs what the build made, so it never holds id-token: write.
+  windows_install:
+    name: Install the Windows MSI and run what it installs
+    needs: [verify_tags, main_build]
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ./packages/dart/sshnoports
+        shell: bash
+    env:
+      VERSION: ${{ needs.verify_tags.outputs.version }}
+    steps:
+      - name: Checkout multibuild branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: multibuild-${{github.run_number}}
+      - name: Download the Windows build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name:
+            sshnp-windows-x64-${{github.ref_name}}-${{github.run_number}}-${{github.run_attempt}}
+          path: ./packages/dart/sshnoports/tarball
+      - name: Install the MSI
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $msi = (Resolve-Path "tarball/NoPorts-$env:VERSION-x64.msi").Path
+          $log = Join-Path $env:RUNNER_TEMP 'msi-install.log'
+          $install = Start-Process msiexec.exe -Wait -PassThru `
+            -ArgumentList '/i', "`"$msi`"", '/qn', '/l*v', "`"$log`""
+          if ($install.ExitCode -ne 0) {
+            Get-Content $log -Tail 50
+            exit $install.ExitCode
+          }
+      - name: an old Windows name is still an .exe at its installed path
+        timeout-minutes: 10
+        run: >-
+          bash tools/check_launchers.sh 'C:/Program Files/NoPorts' .exe
+          sshnpd sshnp at_activate noports npp npp_atserver npp_file npt
+      - name: srv.exe runs from its installed path
+        timeout-minutes: 5
+        run: "'C:/Program Files/NoPorts/srv.exe' --version"
+
   web_build:
     needs: verify_tags
     runs-on: ubuntu-latest
@@ -385,7 +449,7 @@ jobs:
   github-release:
     name: >-
       Upload artifacts and generate SBOMs and checksums for provenance
-    needs: [main_build, web_build, universal_sh]
+    needs: [main_build, windows_install, web_build, universal_sh]
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -459,7 +523,7 @@ jobs:
 
   cleanup:
     name: Clean up temporary branch
-    needs: [main_build]
+    needs: [main_build, windows_install]
     if: always()
     runs-on: ubuntu-latest
     permissions:

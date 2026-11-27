@@ -145,7 +145,7 @@ sudo ./install.sh sshnp && sudo ./install.sh srv
 {% tab title="Windows" %}
 Windows doesn't have a dedicated installer at this time.
 
-You can find `sshnp.exe` in the unpacked archive, you may move this binary to wherever you like.
+You can find `sshnp.exe` in the unpacked archive, beside `atsc.exe` and `srv.exe`. `sshnp.exe` runs the `atsc.exe` in its own folder, which starts the `srv.exe` there, so keep the three together: you may move the folder wherever you like, but not `sshnp.exe` on its own.
 {% endtab %}
 {% endtabs %}
 
