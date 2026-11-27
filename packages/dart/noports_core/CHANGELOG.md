@@ -121,6 +121,9 @@
   restarting or hidden, instead of reporting it stopped
 - fix: `sshnpd --doctor` reports a check it cannot complete as a warning
   naming the error, and runs the remaining checks
+- **BREAKING CHANGE**: srv is found beside the running program only when that
+  program is atsc (`atsc.exe` on Windows, in any case); a program named sshnp,
+  sshnpd or npt no longer finds `srv` or `sshrv` beside it
 
 # 6.16.0
 
