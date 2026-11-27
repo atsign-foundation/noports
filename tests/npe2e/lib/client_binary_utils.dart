@@ -274,6 +274,11 @@ Future<List<ClientBinary>> downloadDartReleaseBinariesList({
   final List<ClientBinary> clientBinaries = [];
 
   // 5. move binaries from temporary extraction directory to final location: $directory/{binaryType}/
+  await copyReleaseSupportBinaries(
+    extractedDirectory: Directory(path.join(tempExtractDir.path, 'sshnp')),
+    clientBinaryTypes: clientBinaryTypes,
+    outputDirectory: outputDirectory,
+  );
   for (final ClientBinaryType binaryType in clientBinaryTypes) {
     final String binaryName = binaryType.name;
     final File extractedBinary = File(
@@ -307,4 +312,27 @@ Future<List<ClientBinary>> downloadDartReleaseBinariesList({
     print('Warning: Failed to clean up temporary files: $e');
   }
   return clientBinaries;
+}
+
+/// Copies from [extractedDirectory], a release archive's sshnp folder, into
+/// [outputDirectory] what [clientBinaryTypes] run without naming it: atsc,
+/// when the archive has one, and srv for sshnp and npt.
+Future<void> copyReleaseSupportBinaries({
+  required final Directory extractedDirectory,
+  required final List<ClientBinaryType> clientBinaryTypes,
+  required final Directory outputDirectory,
+}) async {
+  final bool needsSrv = clientBinaryTypes.any(
+    (t) => t == ClientBinaryType.sshnp || t == ClientBinaryType.npt,
+  );
+  final List<String> names = [
+    'atsc',
+    if (needsSrv && !clientBinaryTypes.contains(ClientBinaryType.srv)) 'srv',
+  ];
+  for (final String name in names) {
+    final File file = File(path.join(extractedDirectory.path, name));
+    if (await file.exists()) {
+      await file.copy(path.join(outputDirectory.path, name));
+    }
+  }
 }

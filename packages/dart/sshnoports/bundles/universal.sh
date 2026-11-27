@@ -1056,7 +1056,7 @@ cleanup_old_installation() {
   fi
   echo "Cleaning up old noports installation..."
   # List of binaries and scripts to remove from non-package locations
-  binaries="sshnp sshnpd npt srv srvd at_activate noports np_admin npp_atserver npp_file"
+  binaries="atsc sshnp sshnpd npt srv srvd at_activate noports np_admin npp_atserver npp_file"
   # We check /usr/local/bin
   # Note: New install is to /usr/bin, so those are safe.
   for dir in "/usr/local/bin"; do

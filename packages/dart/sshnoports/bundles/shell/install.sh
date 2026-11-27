@@ -75,6 +75,7 @@ usage() {
   fi
   echo "$arg_zero [...options] [command]"
   echo "Available commands:"
+  echo "atsc            - install atsc, which the commands below run"
   echo "at_activate     - install at_activate"
   echo "npt             - install npt"
   echo "sshnp           - install sshnp"
@@ -83,7 +84,7 @@ usage() {
   echo "srvd            - install srvd"
   echo "binaries        - install all base binaries (everything above)"
   echo ""
-  echo "debug_srvd      - install srvd with debugging enabled"
+  echo "debug_srvd      - install srvd with debugging enabled, as debug_srvd"
   echo "debug           - install all debug binaries"
   echo ""
   echo "all             - install all binaries (everything above)"
@@ -123,38 +124,44 @@ setup_authorized_keys() {
 
 # INSTALL BINARIES #
 
-install_single_binary() {
+# The directory that programs are installed into.
+install_dir() {
   if [ -n "$binary_dir" ]; then
-    dest="$binary_dir"
+    echo "$binary_dir"
   elif is_root; then
-    dest="$bin_dir"
+    echo "$bin_dir"
   else
-    dest="$user_bin_dir"
+    echo "$user_bin_dir"
   fi
+}
+
+# Whether the files $1 and $2 both exist with the same contents.
+same_contents() {
+  if ! [ -f "$1" ] || ! [ -f "$2" ]; then
+    return 1
+  fi
+  if command -v cmp >/dev/null 2>&1; then
+    cmp -s "$1" "$2"
+  else
+    [ "$(cksum <"$1")" = "$(cksum <"$2")" ]
+  fi
+}
+
+# Installs $2 (default $1) from this bundle as $1.
+install_single_binary() {
+  src="$script_dir/${2:-$1}"
+  dest=$(install_dir)
   mkdir -p "$dest"
-  if test -f "$dest/$1"; then
-    if test -f "$dest/$1.old"; then
-      if rm -f "$dest/$1.old"; then
-        echo "=> Removed $dest/$1.old"
-      else
-        echo "Failed to remove $dest/$1.old - aborting"
-        exit 1
-      fi
-    fi
-    if mv "$dest/$1" "$dest/$1.old"; then
-      echo "=> Renamed existing binary $dest/$1 to $dest/$1.old"
-    else
-      echo "Failed to rename $dest/$1 to $dest/$1.old - aborting"
+  if ! [ -L "$dest/$1" ] && same_contents "$src" "$dest/$1"; then
+    if ! chmod 755 "$dest/$1"; then
+      echo "Failed to make $dest/$1 readable and executable by all - aborting"
       exit 1
     fi
+    echo "=> $dest/$1 is already up to date"
+  else
+    replace_binary "$1"
   fi
-  cp -f "$script_dir/$1" "$dest/$1"
-
-  echo "=> Installed $1 to $dest"
-  if
-    is_root &
-    ! [ -f "$user_bin_dir/$1" ]
-  then
+  if is_root && ! [ -f "$user_bin_dir/$1" ]; then
     if ! [ -d "$user_bin_dir" ]; then
       mkdir -p "$user_bin_dir"
     fi
@@ -162,7 +169,6 @@ install_single_binary() {
     if [ -f "$dest/$1" ]; then
       ln -sf "$dest/$1" "$user_bin_dir/$1"
       chown root:wheel "$dest/$1" 2>/dev/null || chown root:root "$dest/$1" 2>/dev/null || chown root "$dest/$1" 2>/dev/null
-      chmod o+x "$dest/$1"
 
       echo "=> Linked $user_bin_dir/$1 to $dest/$1"
     else
@@ -172,26 +178,53 @@ install_single_binary() {
   fi
 }
 
-install_base_binaries() {
-  install_single_binary "at_activate"
-  install_single_binary "sshnp"
-  install_single_binary "sshnpd"
-  install_single_binary "srv"
-  install_single_binary "srvd"
-  install_single_binary "npt"
+# Installs $src as $dest/$1 by copying it into $dest and renaming the copy
+# over $dest/$1, after keeping a copy of the file it replaces as $1.old. A
+# link it replaces points into another installation, so it keeps no copy.
+replace_binary() {
+  new="$dest/.$1.new.$$"
+  if ! cp -f "$src" "$new" || ! chmod 755 "$new"; then
+    rm -f "$new"
+    echo "Failed to copy $src to $dest - aborting, $dest/$1 is unchanged"
+    exit 1
+  fi
+  if [ -f "$dest/$1" ] && ! [ -L "$dest/$1" ]; then
+    if ! rm -f "$dest/$1.old" || ! cp -p "$dest/$1" "$dest/$1.old"; then
+      rm -f "$new"
+      echo "Failed to copy $dest/$1 to $dest/$1.old - aborting, $dest/$1 is unchanged"
+      exit 1
+    fi
+    echo "=> Copied existing binary $dest/$1 to $dest/$1.old"
+  fi
+  if ! mv -f "$new" "$dest/$1"; then
+    rm -f "$new"
+    echo "Failed to rename $new to $dest/$1 - aborting, $dest/$1 is unchanged"
+    exit 1
+  fi
+  echo "=> Installed $1 to $dest"
 }
 
+# Installs the program $1, with the atsc it runs and, if it needs one, srv.
+install_program() {
+  install_single_binary "atsc"
+  case "$1" in
+  sshnp | sshnpd | npt) install_single_binary "srv" ;;
+  esac
+  install_single_binary "$1"
+}
+
+install_base_binaries() {
+  install_program "at_activate"
+  install_program "sshnp"
+  install_program "sshnpd"
+  install_program "srvd"
+  install_program "npt"
+}
+
+# Installs the debug build of the program $1 as debug_$1, with debug_atsc.
 install_debug_binary() {
-  if [ -n "$binary_dir" ]; then
-    dest="$binary_dir"
-  elif is_root; then
-    dest="$bin_dir"
-  else
-    dest="$user_bin_dir"
-  fi
-  mkdir -p "$dest"
-  cp "$script_dir/debug/$1" "$bin_dir/debug_$1"
-  echo "=> Installed debug_$1 to $dest"
+  install_single_binary "debug_atsc" "debug/atsc"
+  install_single_binary "debug_$1" "debug/$1"
 }
 
 install_debug_binaries() {
@@ -274,14 +307,13 @@ install_systemd_unit() {
 
 install_systemd_sshnpd() {
   root_only
-  install_single_binary "sshnpd"
-  install_single_binary "srv"
+  install_program "sshnpd"
   install_systemd_unit "sshnpd.service"
 }
 
 install_systemd_srvd() {
   root_only
-  install_single_binary "srvd"
+  install_program "srvd"
   install_systemd_unit "srvd.service"
 }
 
@@ -328,8 +360,7 @@ install_launchd_unit() {
 }
 
 install_launchd_sshnpd() {
-  install_single_binary "sshnpd"
-  install_single_binary "srv"
+  install_program "sshnpd"
   install_launchd_unit "com.atsign.sshnpd.plist"
 }
 
@@ -408,13 +439,12 @@ install_headless_job() {
 }
 
 install_headless_sshnpd() {
-  install_single_binary "sshnpd"
-  install_single_binary "srv"
+  install_program "sshnpd"
   install_headless_job "sshnpd"
 }
 
 install_headless_srvd() {
-  install_single_binary "srvd"
+  install_program "srvd"
   install_headless_job "srvd"
 }
 
@@ -489,13 +519,12 @@ install_tmux_service() {
 }
 
 install_tmux_sshnpd() {
-  install_single_binary "sshnpd"
-  install_single_binary "srv"
+  install_program "sshnpd"
   install_tmux_service "sshnpd"
 }
 
 install_tmux_srvd() {
-  install_single_binary "srvd"
+  install_program "srvd"
   install_tmux_service "srvd"
 }
 
@@ -517,11 +546,15 @@ tmux() {
 }
 
 add_home_local_bin_to_path() {
-  if grep 'PATH=' <"$user_home/.profile" | grep -q -e "$user_home/.local/bin" -e '$HOME/.local/bin'; then
+  if ! is_root && [ "$(install_dir)" != "$user_bin_dir" ]; then
+    return 0
+  fi
+  if [ -f "$user_home/.profile" ] &&
+    grep 'PATH=' <"$user_home/.profile" | grep -q -e "$user_home/.local/bin" -e '$HOME/.local/bin'; then
     return 0
   fi
 
-  if ! [ -d "$user_home/.profile" ]; then
+  if ! [ -f "$user_home/.profile" ]; then
     touch "$user_home/.profile"
     chown $user:$user "$user_home/.profile" 2>/dev/null || chown $user "$user_home/.profile" 2>/dev/null
   fi
@@ -552,8 +585,12 @@ main() {
       user_home=$(sudo -u "$user" sh -c 'echo $HOME')
       shift
       ;;
-    at_activate | npt | sshnp | sshnpd | srv | srvd)
+    atsc | srv)
       install_single_binary "$1"
+      add_home_local_bin_to_path
+      ;;
+    at_activate | npt | sshnp | sshnpd | srvd)
+      install_program "$1"
       add_home_local_bin_to_path
       ;;
     binaries)

@@ -423,7 +423,7 @@ buildCurrentDartBinaries() {
 
   if [ "$recompile" = "true" ]; then
     cd "$binaryOutputDir" || exit 1
-    rm -f at_activate srv sshnpd srvd sshnp npt
+    rm -f atsc srv at_activate sshnpd srvd sshnp npt npevents
   fi
 
   binarySourceDir="$repoRootDir/packages/dart/sshnoports"
@@ -436,11 +436,11 @@ buildCurrentDartBinaries() {
   logInfo "    dart pub get"
   dart pub get || exit 1
 
-  if [ -f "$binaryOutputDir/at_activate" ]; then
-    logInfo "        $binaryOutputDir/at_activate has already been compiled"
+  if [ -f "$binaryOutputDir/atsc" ]; then
+    logInfo "        $binaryOutputDir/atsc has already been compiled"
   else
-    logInfo "        Compiling at_activate"
-    dart compile exe --verbosity "$compileVerbosity" bin/at_activate.dart -o "$binaryOutputDir/at_activate"
+    logInfo "        Compiling atsc"
+    dart compile exe --verbosity "$compileVerbosity" bin/atsc.dart -o "$binaryOutputDir/atsc"
   fi
 
   if [ -f "$binaryOutputDir/srv" ]; then
@@ -450,40 +450,8 @@ buildCurrentDartBinaries() {
     dart compile exe --verbosity "$compileVerbosity" bin/srv.dart -o "$binaryOutputDir/srv"
   fi
 
-  if [ -f "$binaryOutputDir/sshnpd" ]; then
-    logInfo "        $binaryOutputDir/sshnpd has already been compiled"
-  else
-    logInfo "        Compiling sshnpd"
-    dart compile exe --verbosity "$compileVerbosity" bin/sshnpd.dart -o "$binaryOutputDir/sshnpd"
-  fi
-
-  if [ -f "$binaryOutputDir/srvd" ]; then
-    logInfo "        $binaryOutputDir/srvd has already been compiled"
-  else
-    logInfo "        Compiling srvd"
-    dart compile exe --verbosity "$compileVerbosity" bin/srvd.dart -o "$binaryOutputDir/srvd"
-  fi
-
-  if [ -f "$binaryOutputDir/sshnp" ]; then
-    logInfo "        $binaryOutputDir/sshnp has already been compiled"
-  else
-    logInfo "        Compiling sshnp"
-    dart compile exe --verbosity "$compileVerbosity" bin/sshnp.dart -o "$binaryOutputDir/sshnp"
-  fi
-
-  if [ -f "$binaryOutputDir/npt" ]; then
-    logInfo "        $binaryOutputDir/npt has already been compiled"
-  else
-    logInfo "        Compiling npt"
-    dart compile exe --verbosity "$compileVerbosity" bin/npt.dart -o "$binaryOutputDir/npt"
-  fi
-
-  if [ -f "$binaryOutputDir/npevents" ]; then
-    logInfo "        $binaryOutputDir/npevents has already been compiled"
-  else
-    logInfo "        Compiling npevents"
-    dart compile exe --verbosity "$compileVerbosity" bin/npevents.dart -o "$binaryOutputDir/npevents"
-  fi
+  logInfo "        Copying the launchers"
+  find launchers -maxdepth 1 -type f -exec cp {} "$binaryOutputDir/" \;
 
   cp "$testScriptsDir/srv.sh" "$binaryOutputDir/srv.sh"
 }

@@ -14,7 +14,9 @@ Modify the `sshnpd.sh` unit to use the appropriate host and client atSigns,
 Also make sure that username running sshnpd has the .atkeys file in place at
 '~/.atsign/keys'.
 
-Run the following command to view full usage information of the sshnpd binary:
+`sshnpd` is a script that runs the `atsc` installed beside it, and `sshnpd`
+starts the `srv` installed there too.
+Run the following command to view full usage information of sshnpd:
 ```sh
 /usr/local/bin/sshnpd
 ```
@@ -50,7 +52,8 @@ Modify the `srvd.service` unit to use the appropriate atSign,
 Also change the username and make sure that username running srvd has the
 .atkeys file in place at '~/.atsign/keys'.
 
-Run the following command to view full usage information of the srvd binary:
+`srvd` is a script that runs the `atsc` installed beside it.
+Run the following command to view full usage information of srvd:
 ```sh
 /usr/local/bin/srvd
 ```

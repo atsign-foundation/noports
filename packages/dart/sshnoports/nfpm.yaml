@@ -13,12 +13,16 @@ description: |
 vendor: "Atsign"
 homepage: "http://noports.com"
 contents:
+  - src: ./sshnp/atsc
+    dst: /usr/bin/atsc
   - src: ./sshnp/at_activate
     dst: /usr/bin/at_activate
   - src: ./sshnp/noports
     dst: /usr/bin/noports
   - src: ./sshnp/np_admin
     dst: /usr/bin/np_admin
+  - src: ./sshnp/npevents
+    dst: /usr/bin/npevents
   - src: ./sshnp/npp
     dst: /usr/bin/npp
   - src: ./sshnp/npp_atserver
@@ -50,12 +54,16 @@ contents:
     type: config
   - src: ./LICENSE
     dst: /usr/share/doc/noports/copyright
+  - src: ./sshnp/atsc.1.gz
+    dst: /usr/share/man/man1/atsc.1.gz
   - src: ./sshnp/at_activate.1.gz
     dst: /usr/share/man/man1/at_activate.1.gz
   - src: ./sshnp/noports.1.gz
     dst: /usr/share/man/man1/noports.1.gz
   - src: ./sshnp/np_admin.1.gz
     dst: /usr/share/man/man1/np_admin.1.gz
+  - src: ./sshnp/npevents.1.gz
+    dst: /usr/share/man/man1/npevents.1.gz
   - src: ./sshnp/npp.1.gz
     dst: /usr/share/man/man1/npp.1.gz
   - src: ./sshnp/npp_atserver.1.gz

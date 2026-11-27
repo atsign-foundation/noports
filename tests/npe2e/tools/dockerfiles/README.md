@@ -154,6 +154,11 @@ sudo docker run \
 
 Below are some examples for building a Docker image with Dart binaries.
 
+A branch or commit with a `packages/dart/sshnoports/launchers` directory puts
+`atsc`, `srv` and a script for each program in `/usr/local/bin`, where each
+script runs the `atsc` beside it; an older one puts a binary for each program
+there.
+
 ### 1. From Commit Hash
 
 ```bash
@@ -197,6 +202,9 @@ sudo docker run \
 
 Here are some examples of building a Docker image containing Dart binaries from the current repository as it is.
 
+The image has `atsc`, `srv` and a script for each program in
+`/usr/local/bin`, where each script runs the `atsc` beside it.
+
 ### 1. From Root Directory
 
 Ensure that `pwd` is the root directory of the repository.
@@ -222,6 +230,9 @@ sudo docker run \
 ## Dockerfile.dart.release
 
 Here are some examples of running a Docker image with Dart binaries.
+
+The programs are taken from the release's archive, with its `atsc` when it
+has one, since the programs in such an archive are scripts that run it.
 
 ### 1. From Release Version
 
