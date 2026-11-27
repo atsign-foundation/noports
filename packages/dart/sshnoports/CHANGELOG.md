@@ -2,6 +2,12 @@
 
 <!-- pyml disable md034-->
 
+## v5.20.0
+
+* feat: on Linux and macOS each NoPorts program except srv now runs through a
+  single binary, atsc; the old program names are scripts that run it, so the
+  daemon's process is now `atsc sshnpd`
+
 ## v5.19.0
 
 * feat: srvd decides each side's relay auth mode from what the client told it,
