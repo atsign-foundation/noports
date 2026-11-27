@@ -26,31 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/composite/verify_tls_verification
-  np_admin-unit-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: dart-lang/setup-dart@2286a0c042b44434fe26d292bbce8d34f7ec662b # v1.8.2
-        with:
-          sdk: stable
-      - name: dart pub get enforce lockfile
-        working-directory: apps/admin/admin_api
-        run: dart pub get --enforce-lockfile
-      - name: dart analyze
-        working-directory: apps/admin/admin_api
-        run: dart analyze
-      - name: dart test
-        working-directory: apps/admin/admin_api
-        run: dart test
-      # Runs osv-scanner to find any vulnerable Dart dependencies
-      # It needs to look at pubspec.lock files, which is why it's
-      # placed here, as the `dart pub get` above will create them
-      - name: Run osv-scanner
-        uses: google/osv-scanner-action/osv-scanner-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
-        with:
-          scan-args: |-
-            --lockfile=./apps/admin/admin_api/pubspec.lock
-
   sshnoports-unit-tests:
     runs-on: ubuntu-latest
     steps:
@@ -85,7 +60,7 @@ jobs:
           dart compile exe bin/atsc.dart -o "$RUNNER_TEMP/bin/atsc"
           "$RUNNER_TEMP/bin/atsc" --help > /dev/null
           # NOTE: keep this list in step with _commands in bin/atsc.dart
-          for c in at_activate noports npevents npp npp_atserver npp_file npt srvd sshnp sshnpd; do
+          for c in at_activate noports np_admin npevents npp npp_atserver npp_file npt srvd sshnp sshnpd; do
             echo "atsc $c"
             "$RUNNER_TEMP/bin/atsc" "$c" --help > /dev/null
           done

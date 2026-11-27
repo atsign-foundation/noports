@@ -1,5 +1,9 @@
 # NoPorts Admin API
 
+np_admin's source is in `packages/dart/sshnoports`, and `atsc np_admin` runs
+it. It serves the web app in `webapp` from `web/admin` beside the binary, or,
+run from source, from `webapp/dist` in this repository.
+
 ## Status
 
 The Admin API is currently in alpha, and we are working hard to make it
