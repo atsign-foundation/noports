@@ -8,6 +8,9 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+    commit-message:
+      prefix: "build"
+      include: "scope"
     groups:
       github-actions:
         patterns:
@@ -27,6 +30,9 @@ updates:
       default-days: 7
       exclude:
       - "atsigncompany/*"
+    commit-message:
+      prefix: "build"
+      include: "scope"
     groups:
       docker:
         patterns:
@@ -42,6 +48,9 @@ updates:
       default-days: 7
       exclude:
       - "at_*"
+    commit-message:
+      prefix: "build"
+      include: "scope"
     ignore:
       # NOTE at_lookup 3.7.0 needs at_client 4.0.0
       - dependency-name: "at_lookup"
@@ -59,6 +68,9 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+    commit-message:
+      prefix: "build"
+      include: "scope"
     groups:
       nuget:
         patterns:
@@ -69,6 +81,9 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+    commit-message:
+      prefix: "build"
+      include: "scope"
     groups:
       npm:
         patterns:
@@ -79,6 +94,9 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+    commit-message:
+      prefix: "build"
+      include: "scope"
     groups:
       pip:
         patterns:
