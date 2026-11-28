@@ -10,7 +10,10 @@ is_darwin() {
 }
 
 unset binary_dir
+homes=''
 user_home=$HOME
+# NOTE root's home is read from this file, never from the environment
+passwd_file=/etc/passwd
 define_env() {
   script_dir="$(dirname -- "$(readlink -f -- "$0")")"
   bin_dir="/usr/local/bin"
@@ -21,16 +24,40 @@ define_env() {
       exit 1
     fi
     user="$SUDO_USER"
-    if [ -z "$user" ]; then
+    if [ -z "$user" ] || [ "$user" = root ]; then
       user="root"
+      define_root_home
     else
       # we are root, but via sudo
       # so get home directory of SUDO_USER
-      user_home=$(sudo -u "$user" sh -c 'echo $HOME')
+      user_home=$(sudo -H -u "$user" sh -c 'echo $HOME')
     fi
   else
     user="$USER"
   fi
+  define_user_paths
+}
+
+# Sets user_home to the home directory in the entry for root, with uid 0, in
+# $passwd_file, or stops when there is none. As root, it sets HOME to it too.
+define_root_home() {
+  user_home=$(while IFS=: read -r name _ uid _ _ home _ || [ -n "$name" ]; do
+    if [ "$name" = root ] && [ "$uid" = 0 ]; then
+      printf '%s\n' "$home"
+      break
+    fi
+  done <"$passwd_file")
+  if [ -z "$user_home" ]; then
+    echo "Error: could not find root's home directory in $passwd_file"
+    exit 1
+  fi
+  if is_root; then
+    export HOME="$user_home"
+  fi
+}
+
+# Sets the paths in $user_home, the home directory of $user.
+define_user_paths() {
   launchd_dir="$user_home/Library/LaunchAgents"
   user_bin_dir="$user_home/.local/bin"
   user_sshnpd_dir="$user_home/.sshnpd"
@@ -65,6 +92,92 @@ root_only() {
     echo "Error: this operation requires root privileges"
     exit 1
   fi
+}
+
+# Refuses the job $1 when root would install it for another account.
+no_root_for_others() {
+  if is_root && [ "$user" != root ]; then
+    echo "Error: run install.sh $1 without sudo, as the user who will run the daemon"
+    exit 1
+  fi
+}
+
+# Prints each of the paths given that exists and is not owned by the account
+# running install.sh.
+not_owned() {
+  for entry in "$@"; do
+    if [ -e "$entry" ] && ! [ -O "$entry" ]; then
+      echo "  $entry"
+    fi
+  done
+}
+
+# Prints the first of the paths given that exists and is not owned by the
+# account running install.sh.
+first_not_owned() {
+  for entry in "$@"; do
+    if [ -e "$entry" ] && ! [ -O "$entry" ]; then
+      printf '%s\n' "$entry"
+      return
+    fi
+  done
+}
+
+# Prints the first of $1.old, $1.old.2, $1.old.3 and so on that does not exist.
+free_old_name() {
+  old="$1.old"
+  n=1
+  while [ -e "$old" ] || [ -L "$old" ]; do
+    n=$((n + 1))
+    old="$1.old.$n"
+  done
+  printf '%s\n' "$old"
+}
+
+# Prints the command that moves $2 aside and copies it back with $1.
+print_move_aside() {
+  old=$(free_old_name "$2")
+  echo "  mv $(quote "$2") $(quote "$old") && $1 $(quote "$old") $(quote "$2")"
+}
+
+# Stops before the $1 job $2 is installed when a path in the home that it
+# writes to is not owned by the account running install.sh.
+check_job_paths() {
+  if is_root; then
+    return
+  fi
+  script="$user_bin_dir/$2.sh"
+  in_local=$(not_owned "$user_home/.local" "$user_bin_dir" "$script")
+  in_sshnpd=''
+  if [ "$1" = headless ]; then
+    in_sshnpd=$(not_owned "$user_sshnpd_dir" "$user_log_dir")
+  fi
+  if [ -z "$in_local$in_sshnpd" ]; then
+    return
+  fi
+  account=$(id -un)
+  echo "Error: install.sh $1 $2 writes to these, which $account does not own:"
+  if [ -n "$in_local" ]; then
+    echo "$in_local"
+  fi
+  if [ -n "$in_sshnpd" ]; then
+    echo "$in_sshnpd"
+  fi
+  echo "To clean up an earlier install, first have an admin remove its root cron job and stop it with:"
+  echo "  sudo sh -c 'crontab -l | grep -v -F -- \"\$1\" | crontab -' sh $(quote "$script")"
+  printf '%s\n' "  sudo sh -c 'for p in \$(pgrep -u 0 -f -- \"^[^ ]*sh \$1\\\$\"); do c=\$(pgrep -P \"\$p\"); kill \"\$p\"; [ -z \"\$c\" ] || kill \$c; done' sh $(quote "$(ere "$script")")"
+  echo "then move these aside and copy them back, as $account, with:"
+  top=$(first_not_owned "$user_home/.local" "$user_bin_dir")
+  if [ -n "$top" ]; then
+    print_move_aside 'cp -R' "$top"
+  elif [ -n "$in_local" ]; then
+    print_move_aside cp "$script"
+  fi
+  if [ -n "$in_sshnpd" ]; then
+    print_move_aside 'cp -R' "$(first_not_owned "$user_sshnpd_dir" "$user_log_dir")"
+  fi
+  echo "and run install.sh again."
+  exit 1
 }
 
 # USAGE #
@@ -106,20 +219,46 @@ usage() {
   echo "                  available services: [sshnpd, srvd]"
   echo ""
   echo "Options:"
-  echo "-b <dir>        - override the directory in which the binaries are written to"
-  echo "-u <username>   - override the user to install the binaries for"
+  echo "-b <dir>        - override the directory in which the binaries are written to;"
+  echo "                  as root, a directory that only root can change"
+  echo "-u <username>   - install for <username>: as root, set up its ~/.ssh/authorized_keys"
+  echo "                  for sshnpd; otherwise, install into its ~/.local/bin"
+  echo ""
+  echo "An option applies to the commands after it, and a command must follow it."
 }
 
 # SETUP AUTHORIZED KEYS #
 
+# Prints $1 quoted for the shell.
+quote() {
+  printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
+}
+
+ere() {
+  printf '%s\n' "$1" | sed 's/[[\.*^$+?(){|]/\\&/g'
+}
+
 setup_authorized_keys() {
-  mkdir -p "$user_ssh_dir"
-  if is_root; then
-    chown $user:$user "$user_ssh_dir" 2>/dev/null || chown $user "$user_ssh_dir" 2>/dev/null
+  if is_root && [ "$user" != root ]; then
+    # NOTE steps in another account's home run as that account
+    if ! sudo -H -u "$user" sh -c 'umask "$1" && mkdir -p "$HOME/.ssh" && touch "$HOME/.ssh/authorized_keys" && chmod 644 "$HOME/.ssh/authorized_keys"' sh "$(umask)"; then
+      if ! sudo -H -u "$user" sh -c '[ -e "$HOME/.ssh" ] || [ -L "$HOME/.ssh" ]'; then
+        echo "Error: $user could not create ~/.ssh; check that $user owns its home directory and can write to it"
+        exit 1
+      fi
+      old=$(sudo -H -u "$user" sh -c 'n=1; old=.ssh.old; while [ -e "$HOME/$old" ] || [ -L "$HOME/$old" ]; do n=$((n + 1)); old=.ssh.old.$n; done; echo "$old"')
+      echo "Error: could not set up ~/.ssh/authorized_keys as $user"
+      echo "Move $user's ~/.ssh aside, as $user, with:"
+      echo "  sudo -H -u $(quote "$user") sh -c 'mv ~/.ssh ~/$old'"
+      echo "then run install.sh again, and copy back, as $user, anything in ~/$old that is still needed, such as the keys in ~/$old/authorized_keys."
+      exit 1
+    fi
+    return
   fi
-  touch "$user_ssh_dir/authorized_keys"
-  chown $user:$user "$user_ssh_dir/authorized_keys" 2>/dev/null || chown $user "$user_ssh_dir/authorized_keys" 2>/dev/null
-  chmod 644 "$user_ssh_dir/authorized_keys"
+  if ! { mkdir -p "$user_ssh_dir" && touch "$user_ssh_dir/authorized_keys" && chmod 644 "$user_ssh_dir/authorized_keys"; }; then
+    echo "Error: could not set up $user_ssh_dir/authorized_keys"
+    exit 1
+  fi
 }
 
 # INSTALL BINARIES #
@@ -127,12 +266,79 @@ setup_authorized_keys() {
 # The directory that programs are installed into.
 install_dir() {
   if [ -n "$binary_dir" ]; then
-    echo "$binary_dir"
+    printf '%s\n' "$binary_dir"
   elif is_root; then
-    echo "$bin_dir"
+    printf '%s\n' "$bin_dir"
   else
-    echo "$user_bin_dir"
+    printf '%s\n' "$user_bin_dir"
   fi
+}
+
+dir_problem() {
+  ls -ldn -- "$1" | {
+    read -r mode _ owner _
+    if [ "$owner" != 0 ]; then
+      echo "is not owned by root"
+      return
+    fi
+    case "$mode" in
+    ?????????[tT]*)
+      if $2; then
+        return
+      fi
+      ;;
+    esac
+    case "$mode" in
+    ?????w* | ????????w*) echo "can be written by its group or by others" ;;
+    esac
+  }
+}
+
+check_binary_dir() {
+  if ! is_root; then
+    return
+  fi
+  dir=$1
+  rest=''
+  while ! [ -d "$dir" ]; do
+    if [ -e "$dir" ] || [ -L "$dir" ]; then
+      printf '%s\n' "Error: -b $1: $dir exists and is not a directory"
+      exit 1
+    fi
+    rest="/$(basename -- "$dir")$rest"
+    dir=$(dirname -- "$dir")
+  done
+  case "$rest/" in
+  */../*)
+    missing=${rest#/}
+    printf '%s\n' "Error: -b $1: .. cannot come after ${dir%/}/${missing%%/*}, which does not exist yet"
+    exit 1
+    ;;
+  esac
+  if ! physical=$(CDPATH='' cd -P -- "$dir" && pwd -P); then
+    printf '%s\n' "Error: -b $1: cannot find the directory $dir"
+    exit 1
+  fi
+  dir=$physical
+  if [ -n "$rest" ]; then
+    binary_dir=${dir%/}$rest
+  else
+    binary_dir=$dir
+  fi
+  above=false
+  while :; do
+    problem=$(dir_problem "$dir" "$above")
+    if [ -n "$problem" ]; then
+      printf '%s\n' "Error: -b $1: $dir $problem"
+      echo "As root, install.sh installs only into a directory that only root can change."
+      exit 1
+    fi
+    if [ "$dir" = / ]; then
+      return
+    fi
+    dir=$(dirname -- "$dir")
+    above=true
+  done
 }
 
 # Whether the files $1 and $2 both exist with the same contents.
@@ -147,11 +353,22 @@ same_contents() {
   fi
 }
 
+create_install_dir() {
+  if is_root; then
+    (umask 022 && mkdir -p "$1")
+  else
+    mkdir -p "$1"
+  fi
+}
+
 # Installs $2 (default $1) from this bundle as $1.
 install_single_binary() {
   src="$script_dir/${2:-$1}"
   dest=$(install_dir)
-  mkdir -p "$dest"
+  if ! create_install_dir "$dest"; then
+    printf '%s\n' "Error: could not create $dest"
+    exit 1
+  fi
   if ! [ -L "$dest/$1" ] && same_contents "$src" "$dest/$1"; then
     if ! chmod 755 "$dest/$1"; then
       echo "Failed to make $dest/$1 readable and executable by all - aborting"
@@ -161,20 +378,8 @@ install_single_binary() {
   else
     replace_binary "$1"
   fi
-  if is_root && ! [ -f "$user_bin_dir/$1" ]; then
-    if ! [ -d "$user_bin_dir" ]; then
-      mkdir -p "$user_bin_dir"
-    fi
-
-    if [ -f "$dest/$1" ]; then
-      ln -sf "$dest/$1" "$user_bin_dir/$1"
-      chown root:wheel "$dest/$1" 2>/dev/null || chown root:root "$dest/$1" 2>/dev/null || chown root "$dest/$1" 2>/dev/null
-
-      echo "=> Linked $user_bin_dir/$1 to $dest/$1"
-    else
-      echo "Failed to link $user_bin_dir/$1 to $dest/$1:"
-      echo "  $dest/$1 does not exist"
-    fi
+  if is_root; then
+    chown -h root:wheel "$dest/$1" 2>/dev/null || chown -h root:root "$dest/$1" 2>/dev/null || chown -h root "$dest/$1" 2>/dev/null
   fi
 }
 
@@ -305,18 +510,6 @@ install_systemd_unit() {
   post_systemd_message
 }
 
-install_systemd_sshnpd() {
-  root_only
-  install_program "sshnpd"
-  install_systemd_unit "sshnpd.service"
-}
-
-install_systemd_srvd() {
-  root_only
-  install_program "srvd"
-  install_systemd_unit "srvd.service"
-}
-
 systemd() {
   if is_darwin; then
     echo "systemd is not supported on MacOS"
@@ -328,15 +521,21 @@ systemd() {
     usage
     exit 0
     ;;
-  sshnpd) install_systemd_sshnpd ;;
-  srvd) install_systemd_srvd ;;
+  sshnpd | srvd) root_only ;;
   *)
     echo "Unknown systemd unit: $1"
     usage
     exit 1
     ;;
   esac
-  setup_authorized_keys
+  if $checking; then
+    return
+  fi
+  if [ "$1" = sshnpd ]; then
+    setup_authorized_keys
+  fi
+  install_program "$1"
+  install_systemd_unit "$1.service"
 }
 
 # LAUNCHD SERVICES #
@@ -359,11 +558,6 @@ install_launchd_unit() {
   post_launchd_message
 }
 
-install_launchd_sshnpd() {
-  install_program "sshnpd"
-  install_launchd_unit "com.atsign.sshnpd.plist"
-}
-
 launchd() {
   if ! is_darwin; then
     echo "Unknown command: launchd"
@@ -375,29 +569,93 @@ launchd() {
     usage
     exit 0
     ;;
-  sshnpd) install_launchd_sshnpd ;;
+  sshnpd) ;;
   *)
     echo "Unknown launchd unit: $1"
     usage
     exit 1
     ;;
   esac
+  if $checking; then
+    return
+  fi
   setup_authorized_keys
+  install_program "sshnpd"
+  install_launchd_unit "com.atsign.sshnpd.plist"
 }
 
 # HEADLESS SERVICES #
+
+start_command() {
+  if is_root; then
+    printf '%s\n' "HOME=$(quote "$user_home") $command"
+  else
+    printf '%s\n' "$command"
+  fi
+}
 
 post_headless_message() {
   echo "Headless job installed, make sure to configure the job by editing $dest"
   echo "Learn more in $script_dir/headless/README.md"
   echo ""
   echo "The job will start upon next system boot"
-  echo "To start the job immediately:"
-  echo "  $command &"
+  if [ "$job_state" = unknown ] && $in_crontab; then
+    echo "If the job is running, stop it before you start it again"
+  else
+    if [ "$job_state" = stopped ]; then
+      echo "The running job was stopped; start it again with the command below"
+    fi
+    echo "To start the job immediately:"
+    echo "  $(start_command) &"
+  fi
   echo ""
   echo "Warning: logs stored at $log_file and $err_file have unlimited potential size"
   echo "In a production environment, it's recommended that you install via systemd"
   echo "or use a cron job to call logrotate on these log files if systemd is not available"
+}
+
+# Refuses a -b directory that set_binary_path cannot write into a job script.
+check_binary_path() {
+  case "$binary_dir" in
+  '') return ;;
+  /*) dir=$binary_dir ;;
+  *) dir="$PWD/$binary_dir" ;;
+  esac
+  case "$dir" in
+  *'"'* | *'$'* | *'`'* | *\\* | *'
+'*)
+    printf '%s\n' "Error: the directory given with -b cannot contain \", \$, \`, \\ or a newline: $dir"
+    exit 1
+    ;;
+  esac
+}
+
+# Points the job script $1 at the directory the programs were installed into.
+set_binary_path() {
+  dir=$(CDPATH='' cd -- "$(install_dir)" && pwd | sed 's/[\\&|]/\\&/g')
+  sedi "s|^binary_path=\".*\"$|binary_path=\"$dir\"|g" "$1"
+}
+
+stop_job() {
+  job_state=unknown
+  pids=$(pgrep -u "$(id -u)" -f -- "^[^ ]*sh $(ere "$1")\$" 2>&1)
+  case $? in
+  0 | 1) ;;
+  *) return ;;
+  esac
+  for p in $pids; do
+    case $p in
+    *[!0-9]*) return ;;
+    esac
+  done
+  job_state=none
+  for p in $pids; do
+    # NOTE the loop's children are listed before it is stopped and stopped after it
+    c=$(pgrep -P "$p")
+    kill "$p"
+    [ -z "$c" ] || kill $c
+    job_state=stopped
+  done
 }
 
 install_headless_job() {
@@ -408,10 +666,8 @@ install_headless_job() {
   dest="$user_bin_dir/$job_name.sh"
   if ! [ -f "$dest" ]; then
     cp "$script_dir/headless/$job_name.sh" "$dest"
-    if is_root; then
-      sedi "s|^binary_path=\".*\"$|binary_path=\"$bin_dir\"|g" "$dest"
-    fi
   fi
+  set_binary_path "$dest"
 
   log_file="$user_sshnpd_dir/logs/$job_name.log"
   err_file="$user_sshnpd_dir/logs/$job_name.err"
@@ -420,12 +676,10 @@ install_headless_job() {
   cron_entry="@reboot $command"
   crontab_contents=$(crontab -l 2>/dev/null)
 
+  in_crontab=false
   if echo "$crontab_contents" | grep -Fxq "$cron_entry"; then
-    echo "=> cron job already installed, killing any old $job_name.sh processes"
-    pids=$(pgrep "$command")
-    if [ -n "$pids" ]; then
-      echo "$pids" | xargs kill
-    fi
+    echo "=> cron job already installed"
+    in_crontab=true
   else
     echo "=> Installing cron job: $cron_entry"
     (
@@ -433,36 +687,45 @@ install_headless_job() {
       echo "$cron_entry"
     ) | crontab -
   fi
+  stop_job "$dest"
+  case $job_state in
+  stopped) echo "=> Stopped the running $job_name.sh job" ;;
+  unknown) echo "=> Could not check for a running $job_name.sh job: pgrep is missing, does not accept -u, or failed" ;;
+  esac
 
   echo ""
   post_headless_message
 }
 
-install_headless_sshnpd() {
-  install_program "sshnpd"
-  install_headless_job "sshnpd"
-}
-
-install_headless_srvd() {
-  install_program "srvd"
-  install_headless_job "srvd"
-}
-
 headless() {
   case "$1" in
-  --help | '')
+  --help)
     usage
     exit 0
     ;;
-  sshnpd) install_headless_sshnpd ;;
-  srvd) install_headless_srvd ;;
+  '')
+    usage
+    exit 1
+    ;;
+  sshnpd | srvd)
+    no_root_for_others "headless $1"
+    check_job_paths headless "$1"
+    check_binary_path
+    ;;
   *)
     echo "Error: Unknown headless job: $1"
     usage
     exit 1
     ;;
   esac
-  setup_authorized_keys
+  if $checking; then
+    return
+  fi
+  if [ "$1" = sshnpd ]; then
+    setup_authorized_keys
+  fi
+  install_program "$1"
+  install_headless_job "$1"
 }
 
 # TMUX SESSION #
@@ -474,10 +737,29 @@ post_tmux_message() {
   echo "Learn more in $script_dir/headless/README.md"
   echo ""
   echo "To start the service immediately:"
-  echo "  $command &"
+  echo "  $(start_command) &"
   echo ""
   echo "Warning: sometimes tmux is not set to linger which will kill the tmux session on logout"
   echo "Make sure your system is configured so that tmux sessions can linger, or disown the tmux process before logging out"
+}
+
+check_tmux_server() {
+  if ! is_root || ! command tmux list-sessions >/dev/null 2>&1; then
+    return
+  fi
+  found=$(command tmux show-environment -g HOME 2>/dev/null)
+  case $found in
+  HOME=?*)
+    if [ "${found%/}" = "HOME=${user_home%/}" ]; then
+      return
+    fi
+    has=$found
+    ;;
+  *) has='no HOME' ;;
+  esac
+  printf '%s\n' "Error: root's tmux server is running with $has, not HOME=$user_home"
+  echo "Restart root's tmux server from a root login, then run install.sh again."
+  exit 1
 }
 
 install_tmux_service() {
@@ -489,10 +771,8 @@ install_tmux_service() {
   # Only copy the "$service_name".sh script if it's not already there
   if ! [ -f "$dest" ]; then
     cp "$script_dir/headless/$service_name.sh" "$dest"
-    if is_root; then
-      sedi "s|^binary_path=\".*\"$|binary_path=\"$bin_dir\"|g" "$dest"
-    fi
   fi
+  set_binary_path "$dest"
 
   command="tmux new-session -d -s $service_name && tmux send-keys -t $service_name $dest C-m"
   cron_entry="@reboot $command"
@@ -518,35 +798,40 @@ install_tmux_service() {
   post_tmux_message
 }
 
-install_tmux_sshnpd() {
-  install_program "sshnpd"
-  install_tmux_service "sshnpd"
-}
-
-install_tmux_srvd() {
-  install_program "srvd"
-  install_tmux_service "srvd"
-}
-
 tmux() {
   case "$1" in
-  --help | '')
+  --help)
     usage
     exit 0
     ;;
-  sshnpd) install_tmux_sshnpd ;;
-  srvd) install_tmux_srvd ;;
+  '')
+    usage
+    exit 1
+    ;;
+  sshnpd | srvd)
+    no_root_for_others "tmux $1"
+    check_job_paths tmux "$1"
+    check_binary_path
+    check_tmux_server
+    ;;
   *)
     echo "Unknown tmux service: $1"
     usage
     exit 1
     ;;
   esac
-  setup_authorized_keys
+  if $checking; then
+    return
+  fi
+  if [ "$1" = sshnpd ]; then
+    setup_authorized_keys
+  fi
+  install_program "$1"
+  install_tmux_service "$1"
 }
 
 add_home_local_bin_to_path() {
-  if ! is_root && [ "$(install_dir)" != "$user_bin_dir" ]; then
+  if is_root || [ "$(install_dir)" != "$user_bin_dir" ]; then
     return 0
   fi
   if [ -f "$user_home/.profile" ] &&
@@ -565,11 +850,51 @@ add_home_local_bin_to_path() {
 
 # MAIN #
 
-main() {
-  arg_zero=$0
+# Installs the programs that the command $1 names.
+install_binaries() {
+  case "$1" in
+  atsc | srv) install_single_binary "$1" ;;
+  at_activate | npt | sshnp | sshnpd | srvd) install_program "$1" ;;
+  binaries) install_base_binaries ;;
+  debug_srvd) install_debug_binary "srvd" ;;
+  debug) install_debug_binaries ;;
+  all) install_all_binaries ;;
+  esac
+}
 
-  define_env
+# Sets user_home to the home directory of $user. The checking pass looks it up
+# and keeps it in $homes, where the install pass finds it.
+find_user_home() {
+  if ! $checking; then
+    user_home=$(printf '%s\n' "$homes" | while IFS=: read -r name home; do
+      if [ "$name" = "$user" ]; then
+        printf '%s\n' "$home"
+        break
+      fi
+    done)
+    return
+  fi
+  if [ "$user" = root ]; then
+    define_root_home
+  else
+    if ! command -v sudo >/dev/null 2>&1; then
+      echo "Error: could not find the home directory of $user: sudo is not installed"
+      exit 1
+    fi
+    user_home=$(sudo -H -u "$user" sh -c 'echo $HOME')
+    if [ -z "$user_home" ] || ! [ -d "$user_home" ]; then
+      echo "Error: could not find the home directory of $user"
+      exit 1
+    fi
+  fi
+  homes=$(printf '%s\n%s:%s' "$homes" "$user" "$user_home")
+}
 
+# Runs the options and commands in the arguments in order. While $checking it
+# applies the options and refuses any command that cannot run, installing
+# nothing. It refuses an option with no value, or that no command follows.
+run_args() {
+  unfollowed=''
   while [ $# -gt 0 ]; do
     case "$1" in
     -h)
@@ -577,39 +902,37 @@ main() {
       exit 0
       ;;
     -b)
+      if [ -z "$2" ]; then
+        echo "Error: -b needs a directory"
+        exit 1
+      fi
       binary_dir="$2"
+      check_binary_dir "$2"
+      unfollowed=${unfollowed:-"-b $2"}
       shift
       ;;
     -u)
-      user="$2"
-      user_home=$(sudo -u "$user" sh -c 'echo $HOME')
+      if [ -z "$2" ]; then
+        echo "Error: -u needs an account name"
+        exit 1
+      fi
+      if [ "$2" != "$user" ]; then
+        user="$2"
+        find_user_home
+        define_user_paths
+      fi
+      unfollowed=${unfollowed:-"-u $2"}
       shift
       ;;
-    atsc | srv)
-      install_single_binary "$1"
-      add_home_local_bin_to_path
-      ;;
-    at_activate | npt | sshnp | sshnpd | srvd)
-      install_program "$1"
-      add_home_local_bin_to_path
-      ;;
-    binaries)
-      install_base_binaries
-      add_home_local_bin_to_path
-      ;;
-    debug_srvd)
-      install_debug_binary "${1#"debug_"}"
-      add_home_local_bin_to_path
-      ;; # strips debug_ prefix from the command input
-    debug)
-      install_debug_binaries
-      add_home_local_bin_to_path
-      ;;
-    all)
-      install_all_binaries
-      add_home_local_bin_to_path
+    atsc | srv | at_activate | npt | sshnp | sshnpd | srvd | binaries | debug_srvd | debug | all)
+      unfollowed=''
+      if ! $checking; then
+        install_binaries "$1"
+        add_home_local_bin_to_path
+      fi
       ;;
     systemd | launchd | headless | tmux)
+      unfollowed=''
       command=$1
       shift 1
       $command "$@"
@@ -622,7 +945,25 @@ main() {
     esac
     shift
   done
+  if [ -n "$unfollowed" ]; then
+    printf '%s\n' "Error: $unfollowed is not followed by a command"
+    exit 1
+  fi
+}
 
+main() {
+  arg_zero=$0
+  define_env
+  env_user=$user
+  env_user_home=$user_home
+  checking=true
+  run_args "$@"
+  checking=false
+  unset binary_dir
+  user=$env_user
+  user_home=$env_user_home
+  define_user_paths
+  run_args "$@"
 }
 
 main "$@"

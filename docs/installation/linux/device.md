@@ -40,6 +40,10 @@ If you've already activated the device atSign skip to [step 2](device.md#step-2-
 
 #### (3.2) Make an authorization request from your <mark style="color:orange;">device machine</mark>
 
+{% hint style="info" %}
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+{% endhint %}
+
 {% include "../../.gitbook/includes/apkam-2-unix.md" %}
 
 #### (3.3) Approve the authorization request from your <mark style="color:red;">client machine</mark>
@@ -84,6 +88,10 @@ If you've already activated the device atSign skip to [step 2](device.md#step-2-
 
 #### (3.2) Make an authorization request from your <mark style="color:orange;">device machine</mark>
 
+{% hint style="info" %}
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+{% endhint %}
+
 {% include "../../.gitbook/includes/apkam-2-unix.md" %}
 
 #### (3.3) Approve the authorization request from your <mark style="color:red;">client machine</mark>
@@ -105,6 +113,10 @@ See the Windows [#cli-client-installation](../windows/#cli-client-installation "
 {% include "../../.gitbook/includes/activate-cli-device-windows.md" %}
 
 ### Step 2 : Installing on the <mark style="color:orange;">DEVICE machine</mark>
+
+{% hint style="info" %}
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+{% endhint %}
 
 {% include "../../.gitbook/includes/apkam-2-unix.md" %}
 
@@ -193,6 +205,10 @@ Run the following command. It should output a 6-character passcode.
 ```
 
 #### (3.2) Make an authorization request from your <mark style="color:orange;">device machine</mark>
+
+{% hint style="info" %}
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+{% endhint %}
 
 <pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_device \
 <strong>  -s &#x3C;PASSCODE> \
@@ -293,6 +309,10 @@ Run the following command. It should output a 6-character passcode.
 ```
 
 #### (3.2) Make an authorization request from your <mark style="color:orange;">device machine</mark>
+
+{% hint style="info" %}
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+{% endhint %}
 
 <pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_device \
 <strong>  -s &#x3C;PASSCODE> \
@@ -388,6 +408,10 @@ Wait a few seconds for the OTP to appear then proceed to the next step.
 #### (3.2) Make an authorization request from your <mark style="color:orange;">device machine</mark>
 
 Run the following command on your remote device.
+
+{% hint style="info" %}
+If you ran `universal.sh` on the device with `sudo`, it installed `at_activate` in `/usr/bin`. Run `/usr/bin/at_activate` in place of `~/.local/bin/at_activate`.
+{% endhint %}
 
 <pre class="language-bash"><code class="lang-bash">~/.local/bin/at_activate enroll -a @&#x3C;REPLACE>_device \
 <strong>  -s &#x3C;PASSCODE> \

@@ -28,12 +28,8 @@ cd sshnp
 ./install.sh tmux sshnpd
 ```
 
-This will install the binaries to `~/.local/bin`.\
-Instead, if you'd like to install the binaries to `/usr/local/bin`, run the installer as root:
-
-```sh
-sudo ./install.sh tmux sshnpd
-```
+This installs the binaries to `~/.local/bin` and adds a cron job that starts the tmux session, so the session runs as the user who installs it.\
+Run the installer without `sudo`, as the user who will run the daemon.
 {% endtab %}
 
 {% tab title="macOS" %}
@@ -61,12 +57,8 @@ cd sshnp
 ./install.sh tmux sshnpd
 ```
 
-This will install the binaries to `~/.local/bin`.\
-Instead, if you'd like to install the binaries to `/usr/local/bin`, run the installer as root:
-
-```sh
-sudo ./install.sh tmux sshnpd
-```
+This installs the binaries to `~/.local/bin` and adds a cron job that starts the tmux session, so the session runs as the user who installs it.\
+Run the installer without `sudo`, as the user who will run the daemon.
 {% endtab %}
 {% endtabs %}
 

@@ -14,6 +14,22 @@
 * BREAKING CHANGE: on Windows a NoPorts program's .exe must stay in the folder
   with atsc.exe and srv.exe, and a firewall or application-control rule that
   names an old `.exe` must name `atsc.exe`
+* fix: install.sh run as root installs the programs system-wide only, into
+  /usr/local/bin or a `-b` directory that only root can change, and puts
+  nothing in the sudo user's ~/.local/bin or ~/.profile
+* fix: install.sh run with sudo sets up the user's ~/.ssh/authorized_keys as
+  that user, for sshnpd only, and `-u` names another user
+* BREAKING CHANGE: install.sh run as root refuses a `-b` directory that an
+  account other than root can change
+* BREAKING CHANGE: install.sh refuses a headless or tmux job under sudo from
+  another user, and universal.sh refuses a headless or tmux device install
+  as root: run them as the user who will run the daemon
+* fix: re-installing a headless job stops the running one, and a job script
+  runs the programs from the directory they were installed into
+* fix: install.sh checks each command and option before it installs
+  anything, and refuses an option with no value or with no command after it
+* fix: universal.sh unpacks into a new directory made with mktemp, and exits
+  on an unsupported platform or option value
 
 ## v5.19.0
 

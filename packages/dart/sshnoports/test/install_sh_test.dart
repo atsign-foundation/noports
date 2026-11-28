@@ -7,14 +7,24 @@ import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
 void main() {
-  final bool isRoot =
-      Process.runSync('id', ['-u']).stdout.toString().trim() == '0';
+  final int uid =
+      int.parse(Process.runSync('id', ['-u']).stdout.toString().trim());
+  final bool isRoot = uid == 0;
+  final int bobUid = uid + 1;
 
   late Directory root;
   late Directory bundle;
   late Directory home;
+  late Directory alice;
+  late Directory bob;
   late Directory prefix;
   late Directory shims;
+  late File calls;
+  late File crontab;
+  late File owners;
+
+  void ownedBy(String dir, int owner) =>
+      owners.writeAsStringSync('$owner $dir\n', mode: FileMode.append);
 
   /// Makes [file] executable.
   void executable(String file) {
@@ -41,13 +51,198 @@ void main() {
     executable(file);
   }
 
-  /// Runs install.sh from the bundle with [args] under [umask], as a user
-  /// whose home is [home], with [searchPath] as its PATH, or else the shims
-  /// in front of the PATH of this process.
+  /// A line of `sh` which appends [name] and the arguments of the script it
+  /// is in to [calls], after the account the `sudo` shim runs it as, if any.
+  String record(String name) =>
+      'echo "\${SHIM_ACCOUNT:+\$SHIM_ACCOUNT: }$name \$*" >> \'${calls.path}\'\n';
+
+  /// Writes a shim called [name] which records each call and then runs the
+  /// [name] in /bin or /usr/bin.
+  void passThrough(String name) => shim(
+        name,
+        '${record(name)}'
+        'for d in /bin /usr/bin; do\n'
+        '  if [ -x "\$d/$name" ]; then exec "\$d/$name" "\$@"; fi\n'
+        'done\n'
+        'exit 127\n',
+      );
+
+  /// Writes a `tmux` stand-in with a server that, as tmux's does, keeps the
+  /// environment it started with and gives it to every session it later
+  /// starts, and stops when its last session ends. Given [serverHome], the
+  /// server is running with [sessions] and with that HOME, or with no HOME
+  /// when it is empty. A starting server reads `.tmux.conf` in its HOME.
+  void tmuxServer({String? serverHome, List<String> sessions = const []}) {
+    final state = Directory(path.join(root.path, 'tmux_server'))..createSync();
+    final String server = path.join(state.path, 'server');
+    final String names = path.join(state.path, 'sessions');
+    File(names).writeAsStringSync(sessions.map((s) => '$s\n').join());
+    if (serverHome != null) {
+      File(server).writeAsStringSync(
+        serverHome.isEmpty ? '' : 'HOME=$serverHome\n',
+      );
+    }
+    shim(
+      'tmux',
+      '${record('tmux')}'
+          "server='$server'\n"
+          "names='$names'\n"
+          'running() {\n'
+          '  if [ -f "\$server" ]; then return 0; fi\n'
+          '  echo "no server running on /tmp/tmux-0/default" >&2\n'
+          '  return 1\n'
+          '}\n'
+          'case "\$1" in\n'
+          'list-sessions) running && cat "\$names" ;;\n'
+          'show-environment)\n'
+          '  running || exit 1\n'
+          '  while IFS= read -r line; do\n'
+          '    case "\$line" in HOME=*) echo "\$line"; exit 0 ;; esac\n'
+          '  done < "\$server"\n'
+          '  echo "unknown variable: HOME" >&2\n'
+          '  exit 1 ;;\n'
+          'has-session)\n'
+          '  [ -f "\$server" ] || exit 1\n'
+          '  while IFS= read -r s; do [ "\$s" = "\$3" ] && exit 0; done '
+          '< "\$names"\n'
+          '  exit 1 ;;\n'
+          'kill-session)\n'
+          '  left=\$(while IFS= read -r s; do [ "\$s" = "\$3" ] || '
+          'echo "\$s"; done < "\$names")\n'
+          '  if [ -n "\$left" ]; then printf "%s\\n" "\$left" > "\$names"; '
+          'else : > "\$names"; rm -f "\$server"; fi ;;\n'
+          'new-session)\n'
+          '  if ! [ -f "\$server" ]; then\n'
+          '    if [ -n "\${HOME+set}" ]; then echo "HOME=\$HOME"; fi '
+          '> "\$server"\n'
+          '    if [ -f "\$HOME/.tmux.conf" ]; then\n'
+          "      echo \"tmux reads \$HOME/.tmux.conf\" >> '${calls.path}'\n"
+          '    fi\n'
+          '  fi\n'
+          '  echo "\$4" >> "\$names" ;;\n'
+          'send-keys)\n'
+          '  home=\$(sed -n "s/^HOME=//p" "\$server")\n'
+          "  echo \"job runs with HOME=\$home\" >> '${calls.path}' ;;\n"
+          'esac\n',
+    );
+  }
+
+  /// The commands the shims were run with, in order.
+  List<String> callsMade() => calls.existsSync() ? calls.readAsLinesSync() : [];
+
+  bool isRunning(int pid) {
+    final String stat = Process.runSync('ps', ['-o', 'stat=', '-p', '$pid'])
+        .stdout
+        .toString()
+        .trim();
+    return stat.isNotEmpty && !stat.startsWith('Z');
+  }
+
+  Future<bool> stillRunning(int pid) async {
+    for (int i = 0; i < 100 && isRunning(pid); i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    return isRunning(pid);
+  }
+
+  Future<List<int>> childrenOf(int pid) async {
+    List<int> children = [];
+    for (int i = 0; i < 100 && children.isEmpty; i++) {
+      if (i > 0) await Future<void>.delayed(const Duration(milliseconds: 50));
+      children = (await Process.run('pgrep', ['-P', '$pid']))
+          .stdout
+          .toString()
+          .split('\n')
+          .where((String line) => line.isNotEmpty)
+          .map(int.parse)
+          .toList();
+    }
+    return children;
+  }
+
+  const String stopStep =
+      r"""  sudo sh -c 'for p in $(pgrep -u 0 -f -- "^[^ ]*sh $1\$"); do c=$(pgrep -P "$p"); kill "$p"; [ -z "$c" ] || kill $c; done' sh '""";
+
+  String ereEscaped(String text) => text.replaceAllMapped(
+        RegExp(r'[\[\\.*^$+?(){|]'),
+        (Match match) => '\\${match[0]}',
+      );
+
+  // NOTE: these pids are above every system's pid limit, so no real process
+  // has one.
+  const int firstPid = 5000000;
+
+  /// Writes a `pgrep` stand-in over a table of [processes], each an owner and
+  /// a command line, with pids from [firstPid] in order. A process in
+  /// [parents] is a child of the process at the index it maps to.
+  void pgrepOver(
+    List<(int, String)> processes, {
+    Map<int, int> parents = const {},
+  }) {
+    final table = File(path.join(root.path, 'processes'))
+      ..writeAsStringSync([
+        for (int i = 0; i < processes.length; i++)
+          '${firstPid + i} ${processes[i].$1} '
+              '${parents.containsKey(i) ? firstPid + parents[i]! : 1} '
+              '${processes[i].$2}\n',
+      ].join());
+    shim(
+      'pgrep',
+      '${record('pgrep')}'
+          "uid=''\n"
+          "parent=''\n"
+          'while :; do\n'
+          '  case "\$1" in\n'
+          '  -u) uid=\$2; shift 2 ;;\n'
+          '  -P) parent=\$2; shift 2 ;;\n'
+          '  -f) shift ;;\n'
+          '  --) shift; break ;;\n'
+          '  *) break ;;\n'
+          '  esac\n'
+          'done\n'
+          'found=1\n'
+          'while read -r pid owner ppid line; do\n'
+          '  if [ -n "\$uid" ] && [ "\$owner" != "\$uid" ]; then continue; fi\n'
+          '  if [ -n "\$parent" ]; then\n'
+          '    if [ "\$ppid" != "\$parent" ]; then continue; fi\n'
+          '  elif ! printf "%s\\n" "\$line" | grep -E -q -- "\$1"; then\n'
+          '    continue\n'
+          '  fi\n'
+          '  echo "\$pid"\n'
+          '  found=0\n'
+          "done < '${table.path}'\n"
+          'exit \$found\n',
+    );
+  }
+
+  /// Makes the copy of install.sh in the bundle record each `kill` it runs
+  /// in [calls] instead of sending the signal.
+  void recordKills() {
+    final script = File(path.join(bundle.path, 'install.sh'));
+    final String source = script.readAsStringSync();
+    expect(source.startsWith('#!/bin/sh\n'), isTrue);
+    script.writeAsStringSync(source.replaceFirst(
+      '#!/bin/sh\n',
+      "#!/bin/sh\nkill() { echo \"kill \$*\" >> '${calls.path}'; }\n",
+    ));
+  }
+
+  /// Writes [entries] as the passwd file that install.sh reads.
+  void passwd(String entries) =>
+      File(path.join(root.path, 'passwd')).writeAsStringSync(entries);
+
+  /// Runs install.sh from the bundle with [args] under [umask], with
+  /// [homeDir], or else [home], as its HOME, and [searchPath] as its PATH, or
+  /// else the shims in front of the PATH of this process. A [sudoUser] is the
+  /// account sudo was run from, and a [workingDirectory] the directory it
+  /// runs in.
   Future<ProcessResult> install(
     List<String> args, {
     String umask = '022',
+    Directory? homeDir,
     String? searchPath,
+    String? sudoUser,
+    String? workingDirectory,
   }) =>
       Process.run(
         '/bin/sh',
@@ -60,20 +255,123 @@ void main() {
           ...args,
         ],
         environment: {
-          'HOME': home.path,
+          'HOME': (homeDir ?? home).path,
           'USER': 'tester',
           'PATH': searchPath ?? '${shims.path}:${Platform.environment['PATH']}',
+          if (sudoUser != null) 'SUDO_USER': sudoUser,
         },
         includeParentEnvironment: false,
+        workingDirectory: workingDirectory,
       );
 
-  /// Runs install.sh as root would run it, with `id` and `uname` shims, into
-  /// [prefix] with [args].
-  Future<ProcessResult> installAsRoot(List<String> args, {String? umask}) {
+  /// Writes the `id`, `uname`, `chown`, `sed` and `ls` shims that make
+  /// install.sh run as root would run it on Linux, and records its `mkdir`,
+  /// `touch` and `chmod` calls. The `ls` shim reports what this process owns
+  /// as owned by root, and what [ownedBy] names as owned by that account.
+  void shimRoot() {
     shim('id',
         'if [ "\$1" = -u ]; then echo 0; else exec /usr/bin/id "\$@"; fi\n');
     shim('uname', 'echo Linux\n');
-    return install(['-b', prefix.path, ...args], umask: umask ?? '022');
+    shim(
+      'ls',
+      'for a in "\$@"; do last=\$a; done\n'
+          'line=\$(/bin/ls "\$@") || exit\n'
+          'owner=\$(printf "%s\\n" "\$line" | { read -r _ _ o _; echo "\$o"; })\n'
+          'if [ "\$owner" = $uid ]; then owner=0; fi\n'
+          "if [ -f '${owners.path}' ]; then\n"
+          '  while read -r o p; do\n'
+          '    if [ "\$p" = "\$last" ]; then owner=\$o; fi\n'
+          "  done < '${owners.path}'\n"
+          'fi\n'
+          'printf "%s\\n" "\$line" | {\n'
+          '  read -r mode links _ rest\n'
+          '  printf "%s %s %s %s\\n" "\$mode" "\$links" "\$owner" "\$rest"\n'
+          '}\n',
+    );
+    shim('chown', record('chown'));
+    shim(
+      'sed',
+      'if [ "\$1" = -i ] && [ -n "\$2" ] && [ "\$(/usr/bin/uname)" = Darwin ]; '
+          'then\n'
+          '  shift\n'
+          '  exec /usr/bin/sed -i "" "\$@"\n'
+          'fi\n'
+          'for d in /bin /usr/bin; do\n'
+          '  if [ -x "\$d/sed" ]; then exec "\$d/sed" "\$@"; fi\n'
+          'done\n'
+          'exit 127\n',
+    );
+    for (final String name in ['mkdir', 'touch', 'chmod']) {
+      passThrough(name);
+    }
+  }
+
+  /// Runs install.sh as root would run it on Linux, into [prefix] with
+  /// [args].
+  Future<ProcessResult> installAsRoot(
+    List<String> args, {
+    String? umask,
+    Directory? homeDir,
+    String? sudoUser,
+  }) {
+    shimRoot();
+    return install(
+      ['-b', prefix.path, ...args],
+      umask: umask ?? '022',
+      homeDir: homeDir,
+      sudoUser: sudoUser,
+    );
+  }
+
+  /// Each path under [dir], relative to it, with its type, permissions,
+  /// modification time and, for a file, its contents.
+  Map<String, String> snapshot(Directory dir) => {
+        for (final FileSystemEntity entity in [
+          dir,
+          ...dir.listSync(recursive: true, followLinks: false),
+        ])
+          path.relative(entity.path, from: dir.path): [
+            if (entity is Link) 'link ${entity.targetSync()}',
+            entity.statSync().type,
+            entity.statSync().modeString(),
+            entity.statSync().modified.microsecondsSinceEpoch,
+            if (entity is File) entity.readAsStringSync(),
+          ].join(' '),
+      };
+
+  /// The paths that [after] adds to [before], removes from it or changes.
+  List<String> changes(Map<String, String> before, Map<String, String> after) =>
+      {...before.keys, ...after.keys}
+          .where((String key) => before[key] != after[key])
+          .toList()
+        ..sort();
+
+  /// Fails unless `crontab`, `tmux` and `systemctl` are the shims on the PATH
+  /// that [install] gives install.sh.
+  Future<void> expectShimsFirst() async {
+    final probe = await Process.run(
+      '/bin/sh',
+      ['-c', 'for c in crontab tmux systemctl; do command -v \$c; done'],
+      environment: {'PATH': '${shims.path}:${Platform.environment['PATH']}'},
+      includeParentEnvironment: false,
+    );
+    expect(
+      probe.stdout,
+      ['crontab', 'tmux', 'systemctl']
+          .map((name) => '${path.join(shims.path, name)}\n')
+          .join(),
+    );
+  }
+
+  /// Fails unless this process is unable to write /etc/systemd/system, where
+  /// install.sh writes systemd units.
+  void expectSystemdUnitsUnwritable() {
+    final probe = Process.runSync('/bin/sh', [
+      '-c',
+      'd=/etc/systemd/system; while ! [ -e "\$d" ]; do d=\$(dirname "\$d"); '
+          'done; [ -w "\$d" ]',
+    ]);
+    expect(probe.exitCode, 1, reason: 'this process can write systemd units');
   }
 
   /// The names in [dir], sorted, or none when it does not exist.
@@ -122,15 +420,61 @@ void main() {
     bundle = Directory(path.join(root.path, 'sshnp'))..createSync();
     Directory(path.join(bundle.path, 'debug')).createSync();
     home = Directory(path.join(root.path, 'home'))..createSync();
+    alice = Directory(path.join(root.path, 'alice'))..createSync();
+    bob = Directory(path.join(root.path, 'bob'))..createSync();
     prefix = Directory(path.join(root.path, 'prefix'));
     shims = Directory(path.join(root.path, 'shims'))..createSync();
-    File(path.join('bundles', 'shell', 'install.sh'))
-        .copySync(path.join(bundle.path, 'install.sh'));
-    final copy = Process.runSync('cp', ['-R', 'launchers/.', bundle.path]);
-    expect(copy.exitCode, 0, reason: '${copy.stderr}');
+    calls = File(path.join(root.path, 'calls'));
+    crontab = File(path.join(root.path, 'crontab'));
+    owners = File(path.join(root.path, 'owners'));
+    const String passwdLine = 'passwd_file=/etc/passwd\n';
+    final String source =
+        File(path.join('bundles', 'shell', 'install.sh')).readAsStringSync();
+    expect(passwdLine.allMatches(source).length, 1);
+    File(path.join(bundle.path, 'install.sh')).writeAsStringSync(
+      source.replaceFirst(
+        passwdLine,
+        "passwd_file='${path.join(root.path, 'passwd')}'\n",
+      ),
+    );
+    passwd('root:*:0:0:System Administrator:${home.path}:/bin/sh\n');
+    for (final String from in ['launchers/.', 'bundles/shell/headless']) {
+      final copy = Process.runSync('cp', ['-R', from, bundle.path]);
+      expect(copy.exitCode, 0, reason: '${copy.stderr}');
+    }
     standIn(path.join(bundle.path, 'atsc'), 'atsc 1');
     standIn(path.join(bundle.path, 'srv'), 'srv');
     standIn(path.join(bundle.path, 'debug', 'atsc'), 'debug atsc');
+    shim(
+      'crontab',
+      '${record('crontab')}'
+          'case "\$1" in\n'
+          "-l) cat '${crontab.path}' 2>/dev/null ;;\n"
+          "-) cat > '${crontab.path}' ;;\n"
+          '*) exit 1 ;;\n'
+          'esac\n',
+    );
+    shim('tmux', '${record('tmux')}exit 1\n');
+    shim('systemctl', record('systemctl'));
+    shim('pgrep', '${record('pgrep')}exit 1\n');
+    shim(
+      'sudo',
+      '${record('sudo')}'
+          'set_home=false\n'
+          'if [ "\$1" = -H ]; then set_home=true; shift; fi\n'
+          'case "\$1 \$2" in\n'
+          "'-u alice') home='${alice.path}' ;;\n"
+          "'-u bob') home='${bob.path}' ;;\n"
+          "'-u root') home='${home.path}' ;;\n"
+          '*) exit 1 ;;\n'
+          'esac\n'
+          'if \$set_home; then HOME=\$home; fi\n'
+          'SHIM_ACCOUNT=\$2\n'
+          'export HOME SHIM_ACCOUNT\n'
+          'shift 2\n'
+          'umask 0002\n'
+          'exec "\$@"\n',
+    );
   });
 
   group('install.sh', () {
@@ -177,6 +521,33 @@ void main() {
         expect(namesIn(prefix.path), ['debug_atsc', 'debug_srvd']);
         final run = await Process.run(path.join(prefix.path, 'debug_srvd'), []);
         expect(run.stdout, 'debug atsc\n[srvd]\n');
+      });
+
+      test(
+          'when it creates the directory under umask 077, then the directory '
+          'gets the mode that umask gives it', () async {
+        final String dir = path.join(prefix.path, 'bin');
+
+        final result = await install(['-b', dir, 'npt'], umask: '077');
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(modeOf(prefix.path), '700');
+        expect(modeOf(dir), '700');
+      });
+
+      test(
+          'when it cannot create the directory, then it stops with an error '
+          'naming the directory, having installed nothing', () async {
+        final locked = Directory(path.join(root.path, 'locked'))..createSync();
+        expect(Process.runSync('chmod', ['555', locked.path]).exitCode, 0);
+        addTearDown(() => Process.runSync('chmod', ['755', locked.path]));
+        final String dir = path.join(locked.path, 'bin');
+
+        final result = await install(['-b', dir, 'npt']);
+
+        expect(result.exitCode, 1, reason: '${result.stderr}');
+        expect(result.stdout, 'Error: could not create $dir\n');
+        expect(namesIn(locked.path), isEmpty);
       });
     });
 
@@ -325,23 +696,2246 @@ void main() {
       });
     });
 
-    group('Given install.sh runs as root', () {
+    group('Given install.sh runs as root through sudo from the account alice',
+        () {
       test(
-          'when it installs a program, then the user it links each program for '
-          'can read and run it', () async {
-        final String links = path.join(home.path, '.local', 'bin');
+          'when it installs npt, then atsc, srv and npt are in /usr/local/bin '
+          "and nothing in alice's home is created or changed", () async {
+        File(path.join(alice.path, '.profile'))
+            .writeAsStringSync('umask 022\n');
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
 
-        final result = await installAsRoot(['sshnpd'], umask: '027');
+        final result =
+            await installAsRoot(['npt'], umask: '027', sudoUser: 'alice');
 
         expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
-        for (final String name in ['atsc', 'srv', 'sshnpd']) {
+        expect(callsMade(), contains('sudo -H -u alice sh -c echo \$HOME'));
+        expect(namesIn(prefix.path), ['atsc', 'npt', 'srv']);
+        for (final String name in ['atsc', 'srv', 'npt']) {
           final String file = path.join(prefix.path, name);
           expect(modeOf(file), '755', reason: name);
-          expect(Link(path.join(links, name)).targetSync(), file, reason: name);
+          expect(
+            callsMade(),
+            contains(allOf(startsWith('chown -h root'), endsWith(' $file'))),
+            reason: name,
+          );
         }
         expect(
-          await output(path.join(links, 'sshnpd'), ['-x']),
-          'atsc 1\n[sshnpd]\n[-x]\n',
+          await output(path.join(prefix.path, 'npt'), ['-x']),
+          'atsc 1\n[npt]\n[-x]\n',
+        );
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs as root with no -b', () {
+      test(
+          'when it installs npt, then atsc, srv and npt are installed into '
+          '/usr/local/bin, whichever account owns it', () async {
+        const String usrLocalBin = '/usr/local/bin';
+        const List<String> writers = [
+          'chmod', 'cp', 'ln', 'mkdir', 'mv', 'rm', 'touch', //
+        ];
+        shimRoot();
+        ownedBy(usrLocalBin, bobUid);
+        for (final String name in writers) {
+          shim(
+            name,
+            '${record(name)}'
+            'case "\$*" in *$usrLocalBin*) exit 0 ;; esac\n'
+            'for d in /bin /usr/bin; do\n'
+            '  if [ -x "\$d/$name" ]; then exec "\$d/$name" "\$@"; fi\n'
+            'done\n'
+            'exit 127\n',
+          );
+        }
+        for (final String name in ['cmp', 'dirname', 'readlink', 'sh']) {
+          shim(
+            name,
+            'for d in /bin /usr/bin; do\n'
+            '  if [ -x "\$d/$name" ]; then exec "\$d/$name" "\$@"; fi\n'
+            'done\n'
+            'exit 127\n',
+          );
+        }
+        final probe = await Process.run(
+          '/bin/sh',
+          ['-c', 'for c in "\$@"; do command -v \$c; done', 'sh', ...writers],
+          environment: {'PATH': shims.path},
+          includeParentEnvironment: false,
+        );
+        expect(
+          probe.stdout,
+          writers.map((name) => '${path.join(shims.path, name)}\n').join(),
+        );
+        final unshimmed = await Process.run(
+          '/bin/sh',
+          ['-c', 'command -v dd || command -v install || command -v tee'],
+          environment: {'PATH': shims.path},
+          includeParentEnvironment: false,
+        );
+        expect(
+          unshimmed.exitCode,
+          isNot(0),
+          reason: 'install.sh finds only the stand-ins: ${unshimmed.stdout}',
+        );
+        final String atsc = path.join(bundle.path, 'atsc');
+        final String fenced = path.join(root.path, 'fence$usrLocalBin');
+        for (final List<String> args in [
+          ['chmod', '755', fenced],
+          ['cp', '-f', atsc, fenced],
+          ['ln', '-s', atsc, fenced],
+          ['mkdir', '-p', fenced],
+          ['mv', '-f', atsc, fenced],
+          ['rm', '-f', atsc, fenced],
+          ['touch', fenced],
+        ]) {
+          final result = Process.runSync(
+            path.join(shims.path, args.first),
+            args.sublist(1),
+          );
+          expect(result.exitCode, 0, reason: '$args: ${result.stderr}');
+        }
+        expect(
+          Directory(path.join(root.path, 'fence')).existsSync(),
+          isFalse,
+          reason: 'the shims run nothing on paths in $usrLocalBin',
+        );
+        expect(File(atsc).existsSync(), isTrue);
+        final String outside = path.join(root.path, 'outside');
+        expect(
+          Process.runSync(path.join(shims.path, 'mkdir'), [outside]).exitCode,
+          0,
+        );
+        expect(
+          Directory(outside).existsSync(),
+          isTrue,
+          reason: 'the shims run the command on other paths',
+        );
+        if (calls.existsSync()) calls.deleteSync();
+        final List<String> namesBefore = namesIn(usrLocalBin);
+
+        final result = await install(
+          ['npt'],
+          searchPath: shims.path,
+          sudoUser: 'alice',
+        );
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        for (final String name in ['atsc', 'srv', 'npt']) {
+          final String file = '$usrLocalBin/$name';
+          expect(
+            callsMade(),
+            containsAllInOrder([
+              matches(RegExp('^mv -f $usrLocalBin/\\.$name\\.new\\.\\d+ '
+                  '${RegExp.escape(file)}\$')),
+              startsWith('chown -h root'),
+            ]),
+            reason: name,
+          );
+          expect(
+            result.stdout,
+            contains('=> Installed $name to $usrLocalBin\n'),
+          );
+        }
+        final String actors = [...writers, 'chown'].join('|');
+        expect(
+          callsMade().where((String call) => call.contains(usrLocalBin)),
+          everyElement(matches(RegExp('^($actors) '))),
+          reason: 'only the shims act on $usrLocalBin',
+        );
+        expect(namesIn(usrLocalBin), namesBefore);
+      });
+    });
+
+    group('Given install.sh runs as root with -b', () {
+      late String bobs;
+      late String writable;
+      late String sticky;
+      late String owned;
+
+      setUp(() {
+        bobs = path.join(root.path, 'bobs');
+        writable = path.join(root.path, 'writable');
+        sticky = path.join(root.path, 'sticky');
+        owned = path.join(root.path, 'owned');
+        for (final (String dir, String mode) in [
+          (bobs, '755'),
+          (path.join(bobs, 'bin'), '755'),
+          (writable, '775'),
+          (path.join(writable, 'bin'), '755'),
+          (sticky, '1777'),
+          (path.join(sticky, 'bin'), '755'),
+          (owned, '755'),
+        ]) {
+          Directory(dir).createSync();
+          expect(Process.runSync('chmod', [mode, dir]).exitCode, 0);
+        }
+        ownedBy(bobs, bobUid);
+        shimRoot();
+      });
+
+      test(
+          'when the -b directory, or a directory above it, can be changed by '
+          'an account other than root, then it refuses before changing '
+          'anything, with an error naming that directory and what is wrong '
+          'with it', () async {
+        await expectShimsFirst();
+        const String notRoot = 'is not owned by root';
+        const String others = 'can be written by its group or by others';
+
+        for (final (List<String> args, String given, String dir, String what)
+            in [
+          (['-b', bobs, 'npt'], bobs, bobs, notRoot),
+          (['-b', '$bobs/bin', 'npt'], '$bobs/bin', bobs, notRoot),
+          (['-b', writable, 'npt'], writable, writable, others),
+          (['-b', '$writable/bin', 'npt'], '$writable/bin', writable, others),
+          (['-b', sticky, 'npt'], sticky, sticky, others),
+          (['-b', '$sticky/new/bin', 'npt'], '$sticky/new/bin', sticky, others),
+          (['-b', prefix.path, 'npt', '-b', bobs, 'srv'], bobs, bobs, notRoot),
+          (['-b', bobs, 'headless', '--help'], bobs, bobs, notRoot),
+        ]) {
+          final String reason = '$args';
+          final before = snapshot(root);
+
+          final result = await install(args);
+
+          expect(result.exitCode, 1, reason: '$reason: ${result.stderr}');
+          expect(
+            result.stdout,
+            'Error: -b $given: $dir $what\n'
+            'As root, install.sh installs only into a directory that only root '
+            'can change.\n',
+            reason: reason,
+          );
+          expect(changes(before, snapshot(root)), isEmpty, reason: reason);
+        }
+      });
+
+      test(
+          "when the -b directory is root's and only root can change it or the "
+          "directories above it, one of them root's and sticky, then it "
+          'installs into it', () async {
+        final String bin = path.join(sticky, 'bin');
+
+        final result = await install(['-b', bin, 'npt']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(namesIn(bin), ['atsc', 'npt', 'srv']);
+      });
+
+      test(
+          "when the -b directory is root's, reached through a link in another "
+          "account's directory, then it installs into it by its own path",
+          () async {
+        prefix.createSync();
+        expect(Process.runSync('chmod', ['755', prefix.path]).exitCode, 0);
+        final String link = path.join(bobs, 'link');
+        Link(link).createSync(prefix.path);
+
+        final result = await install(['-b', link, 'npt']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(namesIn(prefix.path), ['atsc', 'npt', 'srv']);
+        expect(
+          result.stdout,
+          contains('=> Installed npt to ${prefix.path}\n'),
+        );
+        expect(result.stdout, isNot(contains(bobs)));
+        expect(
+          callsMade().where((String call) => call.contains(bobs)),
+          isEmpty,
+        );
+      });
+
+      test(
+          'when the part of the -b directory that does not exist yet has .., '
+          'then it refuses before creating anything, naming the first '
+          'directory that does not exist', () async {
+        await expectShimsFirst();
+        final String missing = path.join(owned, 'new');
+
+        for (final (String given, String reached) in [
+          ('$owned/new/../../bobs/bin', path.join(bobs, 'bin')),
+          ('$owned/new/../../sticky/new/bin', path.join(sticky, 'new', 'bin')),
+          ('$owned/new/..', owned),
+        ]) {
+          final before = snapshot(root);
+
+          final result = await install(['-b', given, 'npt']);
+
+          expect(result.exitCode, 1, reason: '$given: ${result.stderr}');
+          expect(
+            result.stdout,
+            'Error: -b $given: .. cannot come after $missing, which does not '
+            'exist yet\n',
+            reason: given,
+          );
+          expect(changes(before, snapshot(root)), isEmpty, reason: given);
+          expect(namesIn(reached), isNot(contains('npt')), reason: given);
+        }
+      });
+
+      test(
+          'when a directory on the -b path exists but is not a directory, '
+          'then it refuses before creating anything, naming it', () async {
+        await expectShimsFirst();
+        final String link = path.join(owned, 'link');
+        Link(link).createSync(path.join(bobs, 'later'));
+        final String file = path.join(owned, 'file');
+        File(file).writeAsStringSync('\n');
+
+        for (final (String given, String named) in [
+          ('$link/bin', link),
+          (link, link),
+          ('$file/bin', file),
+          ('$file/new/bin', file),
+        ]) {
+          final before = snapshot(root);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await install(['-b', given, 'npt']);
+
+          expect(result.exitCode, 1, reason: '$given: ${result.stderr}');
+          expect(
+            result.stdout,
+            'Error: -b $given: $named exists and is not a directory\n',
+            reason: given,
+          );
+          expect(changes(before, snapshot(root)), isEmpty, reason: given);
+          expect(callsMade(), isEmpty, reason: given);
+        }
+      });
+
+      test(
+          "when a link on the -b path points to a directory another account "
+          'makes only after the check, then it refuses before creating '
+          'anything', () async {
+        final String later = path.join(bobs, 'later');
+        final String link = path.join(owned, 'link');
+        Link(link).createSync(later);
+        ownedBy(later, bobUid);
+        shim(
+          'mkdir',
+          '${record('mkdir')}'
+              "if ! [ -d '$later' ]; then\n"
+              "  echo 'bob makes $later' >> '${calls.path}'\n"
+              '  for d in /bin /usr/bin; do\n'
+              "    if [ -x \"\$d/mkdir\" ]; then \"\$d/mkdir\" '$later'; break; fi\n"
+              '  done\n'
+              'fi\n'
+              'for d in /bin /usr/bin; do\n'
+              '  if [ -x "\$d/mkdir" ]; then exec "\$d/mkdir" "\$@"; fi\n'
+              'done\n'
+              'exit 127\n',
+        );
+        final before = snapshot(root);
+
+        final result = await install(['-b', '$link/bin', 'npt']);
+
+        expect(result.exitCode, 1, reason: '${result.stdout}${result.stderr}');
+        expect(
+          result.stdout,
+          'Error: -b $link/bin: $link exists and is not a directory\n',
+        );
+        expect(Directory(later).existsSync(), isFalse);
+        expect(callsMade(), isEmpty);
+        expect(changes(before, snapshot(root)), isEmpty);
+      });
+
+      test(
+          'when it creates the -b directory and the directories above it that '
+          'do not exist yet, under any umask, then it creates each of them '
+          'with mode 755', () async {
+        for (final String umask in ['000', '077']) {
+          final String top = path.join(owned, 'u$umask');
+          final List<String> created = [
+            top,
+            path.join(top, 'opt'),
+            path.join(top, 'opt', 'bin'),
+          ];
+
+          final result =
+              await install(['-b', created.last, 'npt'], umask: umask);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$umask: ${result.stdout}${result.stderr}',
+          );
+          for (final String dir in created) {
+            expect(modeOf(dir), '755', reason: '$dir under umask $umask');
+          }
+        }
+      });
+
+      test(
+          'when the -b directory has . in it, or .. after a directory that '
+          'exists, then it installs into it', () async {
+        for (final (String given, String dir) in [
+          ('$owned/./bin', path.join(owned, 'bin')),
+          ('$owned/new/./bin', path.join(owned, 'new', 'bin')),
+          ('$owned/../owned/other', path.join(owned, 'other')),
+        ]) {
+          final result = await install(['-b', given, 'npt']);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$given: ${result.stdout}${result.stderr}',
+          );
+          expect(namesIn(dir), ['atsc', 'npt', 'srv'], reason: given);
+        }
+      });
+
+      test('when -b names /usr/bin, then it accepts it as it does no -b',
+          () async {
+        final without = await install(['headless', '--help']);
+        expect(without.exitCode, 0, reason: '${without.stderr}');
+
+        final result = await install(['-b', '/usr/bin', 'headless', '--help']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(result.stdout, without.stdout);
+      });
+    });
+
+    group('Given install.sh runs as root', () {
+      test(
+          'when it installs the sshnpd systemd unit for alice, then the only '
+          "thing it writes in alice's home is ~/.ssh/authorized_keys, owned by "
+          'alice', () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(alice.path, '.ssh', 'authorized_keys');
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        final result =
+            await installAsRoot(['systemd', 'sshnpd'], sudoUser: 'alice');
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(callsMade(), contains('systemctl daemon-reload'));
+        expect(
+          changes(aliceBefore, snapshot(alice)),
+          ['.', '.ssh', path.join('.ssh', 'authorized_keys')],
+        );
+        expect(File(keys).existsSync(), isTrue);
+        expect(callsMade(), contains('alice: touch $keys'));
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group(
+        'Given install.sh runs as root for another account, through sudo or '
+        'with -u', () {
+      test(
+          'when it is asked to install a headless or tmux job, then it refuses '
+          'before changing anything and says to run it without sudo, as the '
+          'user who will run the daemon', () async {
+        await expectShimsFirst();
+        final aliceBefore = snapshot(alice);
+        final bobBefore = snapshot(bob);
+        final homeBefore = snapshot(home);
+
+        for (final (String? sudoUser, List<String> args, String refused) in [
+          for (final String kind in ['headless', 'tmux'])
+            for (final String job in ['sshnpd', 'srvd'])
+              ('alice', [kind, job], '$kind $job'),
+          ('alice', ['npt', 'headless', 'sshnpd'], 'headless sshnpd'),
+          (null, ['-u', 'bob', 'headless', 'sshnpd'], 'headless sshnpd'),
+          (null, ['-u', 'bob', 'tmux', 'srvd'], 'tmux srvd'),
+          ('alice', ['-u', 'bob', 'tmux', 'sshnpd'], 'tmux sshnpd'),
+        ]) {
+          final String reason = '$args, sudo user $sudoUser';
+          final result = await installAsRoot(args, sudoUser: sudoUser);
+
+          expect(result.exitCode, 1, reason: reason);
+          expect(
+            result.stdout,
+            'Error: run install.sh $refused without sudo, as the user who '
+            'will run the daemon\n',
+            reason: reason,
+          );
+          expect(prefix.existsSync(), isFalse, reason: reason);
+        }
+
+        expect(callsMade(), everyElement(endsWith(' sh -c echo \$HOME')));
+        expect(crontab.existsSync(), isFalse);
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(bobBefore, snapshot(bob)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs as root from a root login without -u', () {
+      test(
+          "when it installs a headless job, then the job is in root's crontab "
+          "and runs from root's home", () async {
+        await expectShimsFirst();
+        final String logs = path.join(home.path, '.sshnpd', 'logs');
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+
+        final result = await installAsRoot(['headless', 'sshnpd']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade().where((String call) => call.startsWith(
+                RegExp('(sudo|crontab) '),
+              )),
+          ['crontab -l', 'crontab -'],
+          reason: 'root installs the job in its own crontab, without sudo',
+        );
+        expect(
+          crontab.readAsStringSync(),
+          '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
+        );
+        expect(
+          File(job).readAsLinesSync(),
+          contains('binary_path="${prefix.path}"'),
+        );
+        expect(File(path.join(prefix.path, 'sshnpd')).existsSync(), isTrue);
+      });
+    });
+
+    group(
+        "Given install.sh runs as root from a root login whose HOME is another "
+        "account's home", () {
+      test(
+          "when it installs a headless job, then the job is in root's crontab "
+          "and runs from the home in root's entry in /etc/passwd", () async {
+        await expectShimsFirst();
+        final String logs = path.join(home.path, '.sshnpd', 'logs');
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        final aliceBefore = snapshot(alice);
+
+        final result =
+            await installAsRoot(['headless', 'sshnpd'], homeDir: alice);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          crontab.readAsStringSync(),
+          '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
+        );
+        expect(
+          result.stdout,
+          contains('To start the job immediately:\n'
+              "  HOME='${home.path}' nohup $job > $logs/sshnpd.log 2> "
+              '$logs/sshnpd.err &\n'),
+        );
+        expect(File(job).existsSync(), isTrue);
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+      });
+
+      test(
+          'when it installs a tmux job whose session exists, then it restarts '
+          "the session with root's home, reading no tmux configuration in "
+          "that account's home, and prints a start command that sets HOME to "
+          "root's home", () async {
+        await expectShimsFirst();
+        tmuxServer(serverHome: home.path, sessions: ['sshnpd']);
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        for (final Directory dir in [alice, home]) {
+          File(path.join(dir.path, '.tmux.conf')).writeAsStringSync('\n');
+        }
+        final aliceBefore = snapshot(alice);
+
+        final result = await installAsRoot(['tmux', 'sshnpd'], homeDir: alice);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade(),
+          containsAllInOrder([
+            'tmux kill-session -t sshnpd',
+            'tmux reads ${home.path}/.tmux.conf',
+            'job runs with HOME=${home.path}',
+          ]),
+        );
+        expect(
+          callsMade().where((String call) => call.contains(alice.path)),
+          isEmpty,
+        );
+        expect(
+          crontab.readAsStringSync(),
+          '\n@reboot tmux new-session -d -s sshnpd && tmux send-keys -t sshnpd '
+          '$job C-m\n',
+        );
+        expect(
+          result.stdout,
+          contains('To start the service immediately:\n'
+              "  HOME='${home.path}' tmux new-session -d -s sshnpd && tmux "
+              'send-keys -t sshnpd $job C-m &\n'),
+        );
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+      });
+
+      test(
+          'when it installs the sshnpd systemd unit, with or without -u root, '
+          "then it sets up root's keys and touches nothing in that account's "
+          'home', () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(home.path, '.ssh', 'authorized_keys');
+
+        for (final (String? sudoUser, List<String> args) in [
+          (null, <String>[]),
+          (null, ['-u', 'root']),
+          ('alice', ['-u', 'root']),
+        ]) {
+          final String reason = '$args, sudo user $sudoUser';
+          final aliceBefore = snapshot(alice);
+          final Directory ssh = Directory(path.dirname(keys));
+          if (ssh.existsSync()) ssh.deleteSync(recursive: true);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await installAsRoot(
+            [...args, 'systemd', 'sshnpd'],
+            homeDir: alice,
+            sudoUser: sudoUser,
+          );
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$reason: ${result.stdout}${result.stderr}',
+          );
+          expect(callsMade(), contains('touch $keys'), reason: reason);
+          expect(
+            callsMade().where((String call) => call.contains(alice.path)),
+            isEmpty,
+            reason: reason,
+          );
+          expect(
+            callsMade(),
+            isNot(contains(startsWith('sudo -H -u root '))),
+            reason: reason,
+          );
+          expect(
+            changes(aliceBefore, snapshot(alice)),
+            isEmpty,
+            reason: reason,
+          );
+        }
+      });
+    });
+
+    group(
+        "Given install.sh runs as root through sudo from root, with HOME set "
+        "to another account's home", () {
+      test(
+          'when it installs a tmux job whose session exists, then the tmux '
+          "steps and the job see root's home, and the start command it prints "
+          "sets HOME to root's home", () async {
+        await expectShimsFirst();
+        tmuxServer(serverHome: home.path, sessions: ['sshnpd']);
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        for (final Directory dir in [alice, home]) {
+          File(path.join(dir.path, '.tmux.conf')).writeAsStringSync('\n');
+        }
+        final aliceBefore = snapshot(alice);
+
+        final result = await installAsRoot(
+          ['tmux', 'sshnpd'],
+          homeDir: alice,
+          sudoUser: 'root',
+        );
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade(),
+          containsAllInOrder([
+            'tmux kill-session -t sshnpd',
+            'tmux reads ${home.path}/.tmux.conf',
+            'job runs with HOME=${home.path}',
+          ]),
+        );
+        expect(
+          callsMade().where((String call) => call.contains(alice.path)),
+          isEmpty,
+        );
+        expect(
+          callsMade().where((String call) => call.startsWith('sudo')),
+          isEmpty,
+          reason: "root's own steps run without sudo",
+        );
+        expect(
+          result.stdout,
+          contains('To start the service immediately:\n'
+              "  HOME='${home.path}' tmux new-session -d -s sshnpd && tmux "
+              'send-keys -t sshnpd $job C-m &\n'),
+        );
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs as root from a root login', () {
+      test(
+          "when root's tmux server is running with another HOME, or none, "
+          'then installing the tmux job refuses before changing anything, '
+          'naming the HOME the server has and saying to restart it from a '
+          'root login', () async {
+        await expectShimsFirst();
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        for (final (String serverHome, String has) in [
+          (alice.path, 'HOME=${alice.path}'),
+          ('', 'no HOME'),
+        ]) {
+          tmuxServer(serverHome: serverHome, sessions: ['sshnpd']);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await installAsRoot(['npt', 'tmux', 'sshnpd']);
+
+          expect(result.exitCode, 1, reason: '$has: ${result.stderr}');
+          expect(
+            result.stdout,
+            "Error: root's tmux server is running with $has, not "
+            'HOME=${home.path}\n'
+            "Restart root's tmux server from a root login, then run "
+            'install.sh again.\n',
+            reason: has,
+          );
+          expect(
+            callsMade().where((String call) => call.startsWith('tmux ')),
+            ['tmux list-sessions', 'tmux show-environment -g HOME'],
+            reason: has,
+          );
+          expect(prefix.existsSync(), isFalse, reason: has);
+          expect(crontab.existsSync(), isFalse, reason: has);
+        }
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+
+      test(
+          "when root's tmux server is running with root's home, then "
+          "installing the tmux job restarts the job's session in that server, "
+          "where the job sees root's home", () async {
+        await expectShimsFirst();
+
+        for (final String serverHome in [home.path, '${home.path}/']) {
+          tmuxServer(serverHome: serverHome, sessions: ['other', 'sshnpd']);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result =
+              await installAsRoot(['tmux', 'sshnpd'], homeDir: alice);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$serverHome: ${result.stdout}${result.stderr}',
+          );
+          expect(
+            callsMade().where((String call) => call.startsWith(
+                  RegExp('tmux (kill|new|send)|job runs|tmux reads'),
+                )),
+            [
+              'tmux kill-session -t sshnpd',
+              'tmux new-session -d -s sshnpd',
+              'tmux send-keys -t sshnpd '
+                  '${path.join(home.path, '.local', 'bin', 'sshnpd.sh')} C-m',
+              'job runs with HOME=$serverHome',
+            ],
+            reason: serverHome,
+          );
+        }
+      });
+
+      test(
+          "when root's tmux server is not running, then it installs the tmux "
+          "job, and the command it prints starts the job with root's home",
+          () async {
+        await expectShimsFirst();
+        tmuxServer();
+
+        final result = await installAsRoot(['tmux', 'sshnpd'], homeDir: alice);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        final List<String> lines = (result.stdout as String).split('\n');
+        final int at = lines.indexOf('To start the service immediately:');
+        expect(at, isNot(-1), reason: '${result.stdout}');
+        final String command = lines[at + 1];
+        expect(command, endsWith(' &'));
+        if (calls.existsSync()) calls.deleteSync();
+
+        final started = await Process.run(
+          '/bin/sh',
+          ['-c', command.substring(0, command.length - 2)],
+          environment: {
+            'HOME': alice.path,
+            'PATH': '${shims.path}:${Platform.environment['PATH']}',
+          },
+          includeParentEnvironment: false,
+        );
+
+        expect(started.exitCode, 0, reason: '${started.stderr}');
+        expect(callsMade(), contains('job runs with HOME=${home.path}'));
+      });
+    });
+
+    group('Given /etc/passwd has no entry for root with uid 0', () {
+      test(
+          'when install.sh runs as root from a root login, then it refuses '
+          'before changing anything', () async {
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        for (final String entries in [
+          'daemon:*:1:1:daemon:/var/root:/bin/sh\n',
+          'root:*:501:20:root:${home.path}:/bin/sh\n'
+              'toor:*:0:0:toor:${home.path}:/bin/sh\n',
+        ]) {
+          passwd(entries);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result =
+              await installAsRoot(['systemd', 'sshnpd'], homeDir: alice);
+
+          expect(result.exitCode, 1, reason: entries);
+          expect(
+            result.stdout,
+            "Error: could not find root's home directory in "
+            '${path.join(root.path, 'passwd')}\n',
+            reason: entries,
+          );
+          expect(callsMade(), isEmpty, reason: entries);
+          expect(prefix.existsSync(), isFalse, reason: entries);
+        }
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group(
+        "Given root's entry is the last line of /etc/passwd, with no newline "
+        'after it', () {
+      test(
+          'when install.sh runs as root from a root login, then it finds '
+          "root's home there", () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(home.path, '.ssh', 'authorized_keys');
+
+        for (final String entries in [
+          'root:*:0:0:root:${home.path}:/bin/sh',
+          'daemon:*:1:1:daemon:/var/root:/bin/sh\n'
+              'root:*:0:0:root:${home.path}:/bin/sh',
+        ]) {
+          passwd(entries);
+          final Directory ssh = Directory(path.dirname(keys));
+          if (ssh.existsSync()) ssh.deleteSync(recursive: true);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result =
+              await installAsRoot(['systemd', 'sshnpd'], homeDir: alice);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$entries: ${result.stdout}${result.stderr}',
+          );
+          expect(callsMade(), contains('touch $keys'), reason: entries);
+        }
+      });
+    });
+
+    group('Given install.sh runs as root with -u bob', () {
+      test(
+          "when it installs the sshnpd systemd unit, then it sets up bob's "
+          '~/.ssh/authorized_keys', () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(bob.path, '.ssh', 'authorized_keys');
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        final result = await installAsRoot(
+          ['-u', 'bob', 'systemd', 'sshnpd'],
+          sudoUser: 'alice',
+        );
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(File(keys).existsSync(), isTrue);
+        expect(modeOf(keys), '644');
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given an option after a command', () {
+      test(
+          'when install.sh installs npt and then, after -b, srv, then npt is '
+          'installed into the default directory and srv into the -b '
+          'directory', () async {
+        final result = await install(['npt', '-b', prefix.path, 'srv']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          namesIn(path.join(home.path, '.local', 'bin')),
+          ['atsc', 'npt', 'srv'],
+        );
+        expect(namesIn(prefix.path), ['srv']);
+      });
+
+      test(
+          'when install.sh runs as root through sudo and -u bob follows a '
+          'headless job, then it refuses before installing anything', () async {
+        final bobBefore = snapshot(bob);
+
+        final result = await installAsRoot(
+          ['npt', 'headless', 'sshnpd', '-u', 'bob'],
+          sudoUser: 'alice',
+        );
+
+        expect(result.exitCode, 1, reason: '${result.stdout}');
+        expect(
+          result.stdout,
+          'Error: run install.sh headless sshnpd without sudo, as the user who '
+          'will run the daemon\n',
+        );
+        expect(prefix.existsSync(), isFalse);
+        expect(crontab.existsSync(), isFalse);
+        expect(changes(bobBefore, snapshot(bob)), isEmpty);
+      });
+
+      test(
+          'when no command follows an option, or an option has no value, then '
+          'install.sh refuses before changing anything, with an error naming '
+          'the option', () async {
+        await expectShimsFirst();
+        expectSystemdUnitsUnwritable();
+        const String noValueB = 'Error: -b needs a directory';
+        const String noValueU = 'Error: -u needs an account name';
+
+        for (final (
+              List<String> args,
+              bool asRoot,
+              String? sudoUser,
+              String error,
+            ) in [
+          (
+            ['npt', '-b', prefix.path],
+            false,
+            null,
+            'Error: -b ${prefix.path} is not followed by a command',
+          ),
+          (
+            ['npt', '-u', 'bob'],
+            false,
+            null,
+            'Error: -u bob is not followed by a command',
+          ),
+          (
+            ['-b', prefix.path, '-u', 'bob'],
+            false,
+            null,
+            'Error: -b ${prefix.path} is not followed by a command',
+          ),
+          (
+            ['npt', 'headless', 'sshnpd', '-u', 'bob'],
+            true,
+            null,
+            'Error: -u bob is not followed by a command',
+          ),
+          (
+            ['systemd', 'sshnpd', '-u', 'bob'],
+            true,
+            null,
+            'Error: -u bob is not followed by a command',
+          ),
+          (
+            ['systemd', 'sshnpd', '-u', 'bob'],
+            true,
+            'alice',
+            'Error: -u bob is not followed by a command',
+          ),
+          (['npt', '-b'], false, null, noValueB),
+          (['-b', '', 'npt'], false, null, noValueB),
+          (['npt', '-u'], false, null, noValueU),
+          (['-u', '', 'npt'], false, null, noValueU),
+        ]) {
+          final String reason = '$args, root $asRoot, sudo user $sudoUser';
+          final homeBefore = snapshot(home);
+          final aliceBefore = snapshot(alice);
+          final bobBefore = snapshot(bob);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = asRoot
+              ? await installAsRoot(args, sudoUser: sudoUser)
+              : await install(args);
+
+          expect(result.exitCode, 1, reason: '$reason: ${result.stderr}');
+          expect(result.stdout, '$error\n', reason: reason);
+          expect(prefix.existsSync(), isFalse, reason: reason);
+          expect(crontab.existsSync(), isFalse, reason: reason);
+          expect(
+            callsMade(),
+            everyElement(endsWith(' sh -c echo \$HOME')),
+            reason: reason,
+          );
+          expect(changes(homeBefore, snapshot(home)), isEmpty, reason: reason);
+          expect(
+            changes(aliceBefore, snapshot(alice)),
+            isEmpty,
+            reason: reason,
+          );
+          expect(changes(bobBefore, snapshot(bob)), isEmpty, reason: reason);
+        }
+      });
+    });
+
+    group('Given install.sh runs as root with -u naming another account', () {
+      test(
+          'when it installs the sshnpd systemd unit, then that account\'s '
+          '~/.ssh/authorized_keys is created by that account', () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(bob.path, '.ssh', 'authorized_keys');
+
+        final result = await installAsRoot(
+          ['-u', 'bob', 'systemd', 'sshnpd'],
+          umask: '077',
+          sudoUser: 'alice',
+        );
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade().where((String call) => call.contains(bob.path)),
+          [
+            'bob: mkdir -p ${path.dirname(keys)}',
+            'bob: touch $keys',
+            'bob: chmod 644 $keys',
+          ],
+          reason: "each step in bob's home runs as bob, through sudo -u bob",
+        );
+        expect(modeOf(keys), '644');
+      });
+
+      test(
+          'when it installs the sshnpd systemd unit, then nothing in the '
+          "invoking user's home is created or changed", () async {
+        expectSystemdUnitsUnwritable();
+        final aliceKeys = File(path.join(alice.path, '.ssh', 'authorized_keys'))
+          ..createSync(recursive: true)
+          ..writeAsStringSync('ssh-ed25519 AAAA alice\n');
+        expect(Process.runSync('chmod', ['600', aliceKeys.path]).exitCode, 0);
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        final result = await installAsRoot(
+          ['-u', 'bob', 'systemd', 'sshnpd'],
+          sudoUser: 'alice',
+        );
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade().where(
+            (String call) =>
+                call.contains(alice.path) || call.contains(home.path),
+          ),
+          isEmpty,
+          reason: "nothing runs on the invoking user's paths",
+        );
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+
+      test(
+          "when it creates that account's ~/.ssh, then the directory gets the "
+          "mode root's umask gives it", () async {
+        expectSystemdUnitsUnwritable();
+        final dir = Directory(path.join(bob.path, '.ssh'));
+
+        for (final (String umask, String mode) in [
+          ('022', '755'),
+          ('077', '700'),
+        ]) {
+          if (dir.existsSync()) dir.deleteSync(recursive: true);
+
+          final result = await installAsRoot(
+            ['-u', 'bob', 'systemd', 'sshnpd'],
+            umask: umask,
+            sudoUser: 'alice',
+          );
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$umask: ${result.stdout}${result.stderr}',
+          );
+          expect(
+            modeOf(dir.path),
+            mode,
+            reason: "~/.ssh gets the mode root's umask $umask gives it",
+          );
+        }
+      });
+    });
+
+    group('Given install.sh runs as root with no sudo user', () {
+      test(
+          'when it installs the sshnpd systemd unit, then it sets up root\'s '
+          '~/.ssh/authorized_keys without sudo', () async {
+        expectSystemdUnitsUnwritable();
+        final String keys = path.join(home.path, '.ssh', 'authorized_keys');
+
+        final result = await installAsRoot(['systemd', 'sshnpd']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(
+          callsMade().where((String call) => call.startsWith('sudo')),
+          isEmpty,
+          reason: "root's own steps run without sudo",
+        );
+        expect(callsMade(), contains('touch $keys'));
+        expect(modeOf(keys), '644');
+      });
+
+      test(
+          "when it cannot set up root's ~/.ssh/authorized_keys, then it stops "
+          'with an error and exits non-zero', () async {
+        expectSystemdUnitsUnwritable();
+        final ssh = Directory(path.join(home.path, '.ssh'))..createSync();
+        expect(Process.runSync('chmod', ['500', ssh.path]).exitCode, 0);
+        addTearDown(() => Process.runSync('chmod', ['700', ssh.path]));
+
+        final result = await installAsRoot(['systemd', 'sshnpd']);
+
+        expect(result.exitCode, 1, reason: '${result.stdout}');
+        expect(
+          result.stdout,
+          endsWith('Error: could not set up ${ssh.path}/authorized_keys\n'),
+        );
+        expect(namesIn(ssh.path), isEmpty);
+      });
+    });
+
+    group(
+        "Given install.sh runs as root and cannot set up an account's "
+        '~/.ssh/authorized_keys as that account', () {
+      test(
+          'when it installs the sshnpd systemd unit, then it stops before '
+          'installing the unit, with an error naming the command that moves '
+          "that account's ~/.ssh aside as that account, and exits non-zero",
+          () async {
+        expectSystemdUnitsUnwritable();
+
+        for (final (List<String> args, String account, Directory dir) in [
+          (<String>[], 'alice', alice),
+          (['-u', 'bob'], 'bob', bob),
+        ]) {
+          final ssh = Directory(path.join(dir.path, '.ssh'))..createSync();
+          expect(Process.runSync('chmod', ['500', ssh.path]).exitCode, 0);
+          addTearDown(() => Process.runSync('chmod', ['700', ssh.path]));
+          final before = snapshot(dir);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await installAsRoot(
+            [...args, 'systemd', 'sshnpd'],
+            sudoUser: 'alice',
+          );
+
+          expect(result.exitCode, 1, reason: '$account: ${result.stdout}');
+          expect(
+            result.stdout,
+            'Error: could not set up ~/.ssh/authorized_keys as $account\n'
+            "Move $account's ~/.ssh aside, as $account, with:\n"
+            "  sudo -H -u '$account' sh -c 'mv ~/.ssh ~/.ssh.old'\n"
+            'then run install.sh again, and copy back, as $account, anything '
+            'in ~/.ssh.old that is still needed, such as the keys in '
+            '~/.ssh.old/authorized_keys.\n',
+            reason: account,
+          );
+          expect(result.stdout, isNot(contains('chown')), reason: account);
+          expect(
+            callsMade(),
+            isNot(contains('systemctl daemon-reload')),
+            reason: '$account: the unit is not installed',
+          );
+          expect(
+            prefix.existsSync(),
+            isFalse,
+            reason: '$account: no program is installed',
+          );
+          expect(
+            callsMade().where((String call) => call.contains(dir.path)),
+            everyElement(startsWith('$account: ')),
+            reason: "only $account acts in $account's home",
+          );
+          expect(changes(before, snapshot(dir)), isEmpty, reason: account);
+        }
+      });
+
+      test(
+          'when ~/.ssh.old is taken, then the move step and the last line name '
+          'the first free one of ~/.ssh.old.2, ~/.ssh.old.3 and so on',
+          () async {
+        expectSystemdUnitsUnwritable();
+        final ssh = Directory(path.join(alice.path, '.ssh'))..createSync();
+        expect(Process.runSync('chmod', ['500', ssh.path]).exitCode, 0);
+        addTearDown(() => Process.runSync('chmod', ['700', ssh.path]));
+        Directory(path.join(alice.path, '.ssh.old')).createSync();
+        Link(path.join(alice.path, '.ssh.old.2'))
+            .createSync(path.join(root.path, 'nowhere'));
+        final before = snapshot(alice);
+
+        final result =
+            await installAsRoot(['systemd', 'sshnpd'], sudoUser: 'alice');
+
+        expect(result.exitCode, 1, reason: '${result.stdout}');
+        expect(
+          result.stdout,
+          'Error: could not set up ~/.ssh/authorized_keys as alice\n'
+          "Move alice's ~/.ssh aside, as alice, with:\n"
+          "  sudo -H -u 'alice' sh -c 'mv ~/.ssh ~/.ssh.old.3'\n"
+          'then run install.sh again, and copy back, as alice, anything in '
+          '~/.ssh.old.3 that is still needed, such as the keys in '
+          '~/.ssh.old.3/authorized_keys.\n',
+        );
+        expect(prefix.existsSync(), isFalse);
+        expect(changes(before, snapshot(alice)), isEmpty);
+      });
+
+      test(
+          'when the account has no ~/.ssh and cannot create one, then the error '
+          'says to check its home directory, with no move step', () async {
+        expectSystemdUnitsUnwritable();
+
+        for (final (List<String> args, String account, Directory dir) in [
+          (<String>[], 'alice', alice),
+          (['-u', 'bob'], 'bob', bob),
+        ]) {
+          expect(Process.runSync('chmod', ['500', dir.path]).exitCode, 0);
+          addTearDown(() => Process.runSync('chmod', ['700', dir.path]));
+          final before = snapshot(dir);
+
+          final result = await installAsRoot(
+            [...args, 'systemd', 'sshnpd'],
+            sudoUser: 'alice',
+          );
+
+          expect(result.exitCode, 1, reason: '$account: ${result.stdout}');
+          expect(
+            result.stdout,
+            'Error: $account could not create ~/.ssh; check that $account owns '
+            'its home directory and can write to it\n',
+            reason: account,
+          );
+          expect(prefix.existsSync(), isFalse, reason: account);
+          expect(changes(before, snapshot(dir)), isEmpty, reason: account);
+        }
+      });
+    });
+
+    group(
+        'Given install.sh runs as root with -u naming an account whose home '
+        'it cannot find', () {
+      test(
+          'when it installs the sshnpd systemd unit, then it refuses before '
+          'changing anything', () async {
+        bob.deleteSync();
+        final aliceBefore = snapshot(alice);
+        final homeBefore = snapshot(home);
+
+        for (final String account in ['nobody', 'bob']) {
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await installAsRoot(
+            ['-u', account, 'systemd', 'sshnpd'],
+            sudoUser: 'alice',
+          );
+
+          expect(result.exitCode, 1, reason: account);
+          expect(
+            result.stdout,
+            'Error: could not find the home directory of $account\n',
+            reason: account,
+          );
+          expect(
+            callsMade(),
+            [
+              'sudo -H -u alice sh -c echo \$HOME',
+              'sudo -H -u $account sh -c echo \$HOME',
+            ],
+            reason: account,
+          );
+          expect(prefix.existsSync(), isFalse, reason: account);
+          expect(bob.existsSync(), isFalse, reason: account);
+        }
+        expect(changes(aliceBefore, snapshot(alice)), isEmpty);
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs with -u and sudo is not installed', () {
+      test(
+          'when it installs npt, then it refuses before changing anything and '
+          'says that sudo is not installed', () async {
+        final homeBefore = snapshot(home);
+        final bobBefore = snapshot(bob);
+
+        final result = await install(
+          ['-u', 'bob', 'npt'],
+          searchPath: pathWithout('sudo'),
+        );
+
+        expect(result.exitCode, 1, reason: '${result.stderr}');
+        expect(
+          result.stdout,
+          'Error: could not find the home directory of bob: sudo is not '
+          'installed\n',
+        );
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+        expect(changes(bobBefore, snapshot(bob)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs as a regular user', () {
+      test(
+          'when it installs a headless job and none is running, then the job '
+          "is in that user's crontab and it prints the command that starts "
+          'the job', () async {
+        await expectShimsFirst();
+        final String logs = path.join(home.path, '.sshnpd', 'logs');
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+
+        for (final List<String> user in [
+          <String>[],
+          ['-u', 'tester'],
+        ]) {
+          for (final File file in [crontab, calls]) {
+            if (file.existsSync()) file.deleteSync();
+          }
+          final result = await install([...user, 'headless', 'sshnpd']);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$user: ${result.stdout}${result.stderr}',
+          );
+          expect(
+            callsMade(),
+            [
+              'crontab -l',
+              'crontab -',
+              'pgrep -u $uid -f -- ^[^ ]*sh ${ereEscaped(job)}\$',
+            ],
+            reason: '$user',
+          );
+          expect(
+            crontab.readAsStringSync(),
+            '\n@reboot nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err\n',
+            reason: '$user',
+          );
+          expect(File(job).existsSync(), isTrue, reason: '$user');
+          expect(
+            result.stdout,
+            contains('The job will start upon next system boot\n'
+                'To start the job immediately:\n'
+                '  nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err &\n'),
+            reason: '$user',
+          );
+          expect(result.stdout, isNot(contains('stop')), reason: '$user');
+        }
+      });
+
+      test(
+          'when it installs a headless or tmux job, then the job runs the '
+          'programs from the directory they were installed into', () async {
+        await expectShimsFirst();
+        final String jobs = path.join(home.path, '.local', 'bin');
+
+        for (final (String kind, String job, List<String> into, String dir) in [
+          ('headless', 'sshnpd', <String>[], jobs),
+          ('headless', 'srvd', ['-b', prefix.path], prefix.path),
+          ('tmux', 'sshnpd', ['-b', 'prefix'], prefix.path),
+          ('tmux', 'srvd', <String>[], jobs),
+        ]) {
+          final String script = path.join(jobs, '$job.sh');
+          for (final File file in [File(script), crontab]) {
+            if (file.existsSync()) file.deleteSync();
+          }
+
+          final result = await install(
+            [...into, kind, job],
+            workingDirectory: root.path,
+          );
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$kind $job $into: ${result.stdout}${result.stderr}',
+          );
+          expect(File(path.join(dir, job)).existsSync(), isTrue);
+          expect(
+            File(script).readAsLinesSync(),
+            contains('binary_path="$dir"'),
+            reason: '$kind $job $into',
+          );
+        }
+      });
+
+      test(
+          'when it installs a headless or tmux job again into another '
+          'directory, then the job runs the programs from that directory',
+          () async {
+        await expectShimsFirst();
+        final String first = path.join(root.path, 'first');
+        final String second = path.join(root.path, 'second');
+
+        for (final String kind in ['headless', 'tmux']) {
+          final String script =
+              path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+          if (File(script).existsSync()) File(script).deleteSync();
+          for (final String dir in [first, second]) {
+            final result = await install(['-b', dir, kind, 'sshnpd']);
+
+            expect(
+              result.exitCode,
+              0,
+              reason: '$kind $dir: ${result.stdout}${result.stderr}',
+            );
+            expect(
+              File(script).readAsLinesSync(),
+              contains('binary_path="$dir"'),
+              reason: '$kind $dir',
+            );
+          }
+        }
+      });
+
+      test(
+          'when it installs a headless or tmux job into a directory whose name '
+          'has & or |, then the job runs the programs from that directory',
+          () async {
+        await expectShimsFirst();
+        final String dir = path.join(root.path, 'a&b|c');
+        final String script =
+            path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+
+        for (final String kind in ['headless', 'tmux']) {
+          if (File(script).existsSync()) File(script).deleteSync();
+
+          final result = await install(['-b', dir, kind, 'sshnpd']);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$kind: ${result.stdout}${result.stderr}',
+          );
+          expect(File(path.join(dir, 'sshnpd')).existsSync(), isTrue);
+          expect(
+            File(script).readAsLinesSync(),
+            contains('binary_path="$dir"'),
+            reason: kind,
+          );
+        }
+      });
+    });
+
+    group("Given the user's headless job is in its crontab and running", () {
+      test(
+          'when install.sh installs the job again, then it stops the job '
+          'script and its child, and leaves other processes running', () async {
+        await expectShimsFirst();
+        File(path.join(shims.path, 'pgrep')).deleteSync();
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        final first = await install(['headless', 'sshnpd']);
+        expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
+        final String lookalike =
+            path.join(home.path, 'xlocal', 'bin', 'sshnpdxsh');
+        File(lookalike)
+          ..createSync(recursive: true)
+          ..writeAsStringSync('while :; do sleep 1; done\n');
+        final List<Process> started = [
+          for (final List<String> args in [
+            [job],
+            [lookalike],
+            ['-c', 'while :; do sleep 1; done; : $job'],
+          ])
+            await Process.start('/bin/sh', args),
+        ];
+        addTearDown(() {
+          for (final Process process in started) {
+            Process.runSync('pkill', ['-P', '${process.pid}']);
+            process.kill();
+          }
+        });
+        final List<int> children = await childrenOf(started.first.pid);
+        expect(children, isNotEmpty, reason: 'the job script runs a child');
+        for (final Process other in started.skip(1)) {
+          expect(await childrenOf(other.pid), isNotEmpty);
+        }
+
+        final again = await install(['headless', 'sshnpd']);
+
+        expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+        expect(
+            again.stdout, contains('=> Stopped the running sshnpd.sh job\n'));
+        expect(
+          await started.first.exitCode.timeout(const Duration(seconds: 5)),
+          -ProcessSignal.sigterm.signalNumber,
+          reason: 'the job script is stopped',
+        );
+        for (final int child in children) {
+          expect(
+            await stillRunning(child),
+            isFalse,
+            reason: 'the child $child of the job script is stopped',
+          );
+        }
+        for (final Process other in started.skip(1)) {
+          expect(isRunning(other.pid), isTrue, reason: 'pid ${other.pid}');
+        }
+      });
+
+      test(
+          'when install.sh installs the job again, then no loop of the job '
+          'script runs, it says the job was stopped, and the command it '
+          'prints starts exactly one loop and one sshnpd', () async {
+        await expectShimsFirst();
+        File(path.join(shims.path, 'pgrep')).deleteSync();
+        final String bin = path.join(home.path, '.local', 'bin');
+        final String job = path.join(bin, 'sshnpd.sh');
+        final template = File(path.join(bundle.path, 'headless', 'sshnpd.sh'));
+        final String source = template.readAsStringSync();
+        const String firstSleep =
+            'sleep 10 # allow machine to bring up network\n';
+        expect(firstSleep.allMatches(source).length, 1);
+        template
+            .writeAsStringSync(source.replaceFirst(firstSleep, 'sleep 0\n'));
+        File(path.join(bundle.path, 'atsc')).writeAsStringSync(
+          '#!/bin/sh\n'
+          'if [ "\$1" = sshnpd ]; then while :; do sleep 1; done; fi\n'
+          "echo 'atsc 1'\n",
+        );
+        final String loops = '^[^ ]*sh ${ereEscaped(job)}\$';
+        final String daemons =
+            '^[^ ]*sh ${ereEscaped(path.join(bin, 'atsc'))} sshnpd ';
+        addTearDown(() {
+          for (final String pattern in [loops, daemons]) {
+            Process.runSync('pkill', ['-f', '--', pattern]);
+          }
+        });
+
+        Future<int> count(String pattern) async =>
+            (await Process.run('pgrep', ['-f', '--', pattern]))
+                .stdout
+                .toString()
+                .split('\n')
+                .where((String line) => line.isNotEmpty)
+                .length;
+
+        Future<(int, int)> settle((int, int) wanted) async {
+          (int, int) seen = (-1, -1);
+          for (int i = 0; i < 100; i++) {
+            seen = (await count(loops), await count(daemons));
+            if (seen == wanted) break;
+            await Future<void>.delayed(const Duration(milliseconds: 50));
+          }
+          return seen;
+        }
+
+        Future<void> start(ProcessResult installed) async {
+          final List<String> lines = (installed.stdout as String).split('\n');
+          final int at = lines.indexOf('To start the job immediately:');
+          expect(at, isNot(-1), reason: '${installed.stdout}');
+          final started = await Process.run(
+            '/bin/sh',
+            ['-c', lines[at + 1]],
+            environment: {
+              'HOME': home.path,
+              'USER': 'tester',
+              'PATH': Platform.environment['PATH']!,
+            },
+            includeParentEnvironment: false,
+          );
+          expect(started.exitCode, 0, reason: '${started.stderr}');
+        }
+
+        final first = await install(['headless', 'sshnpd']);
+        expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
+        await start(first);
+        expect(await settle((1, 1)), (1, 1), reason: 'the job is running');
+
+        final again = await install(['headless', 'sshnpd']);
+
+        expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+        expect(await settle((0, 0)), (0, 0), reason: 'loops and sshnpds left');
+        expect(
+          again.stdout,
+          contains('=> cron job already installed\n'
+              '=> Stopped the running sshnpd.sh job\n'),
+        );
+        expect(
+          again.stdout,
+          contains('The running job was stopped; start it again with the '
+              'command below\n'
+              'To start the job immediately:\n'),
+        );
+        await start(again);
+        expect(await settle((1, 1)), (1, 1), reason: 'loops and sshnpds');
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+        expect(
+          (await count(loops), await count(daemons)),
+          (1, 1),
+          reason: 'loops and sshnpds after 1.5 seconds',
+        );
+      });
+    });
+
+    group("Given the user's headless job is running and not in its crontab",
+        () {
+      test(
+          'when install.sh installs the job, then it adds the job to the '
+          'crontab and stops the running job and its child', () async {
+        await expectShimsFirst();
+        File(path.join(shims.path, 'pgrep')).deleteSync();
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        final first = await install(['headless', 'sshnpd']);
+        expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
+        crontab.deleteSync();
+        final Process loop = await Process.start('/bin/sh', [job]);
+        addTearDown(() {
+          Process.runSync('pkill', ['-P', '${loop.pid}']);
+          loop.kill();
+        });
+        final List<int> children = await childrenOf(loop.pid);
+        expect(children, isNotEmpty, reason: 'the job script runs a child');
+
+        final again = await install(['headless', 'sshnpd']);
+
+        expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+        expect(
+          await stillRunning(loop.pid),
+          isFalse,
+          reason: 'the job script is stopped',
+        );
+        expect(
+          await loop.exitCode.timeout(const Duration(seconds: 5)),
+          -ProcessSignal.sigterm.signalNumber,
+          reason: 'the job script is stopped by SIGTERM',
+        );
+        for (final int child in children) {
+          expect(
+            await stillRunning(child),
+            isFalse,
+            reason: 'the child $child of the job script is stopped',
+          );
+        }
+        expect(again.stdout, contains('=> Installing cron job: @reboot '));
+        expect(
+            again.stdout, contains('=> Stopped the running sshnpd.sh job\n'));
+      });
+    });
+
+    group(
+        "Given the user's headless job is in its crontab, and processes of the "
+        'user and of another account run its job script', () {
+      test(
+          "when install.sh installs the job again, then for each of the user's "
+          'own processes it lists the children, stops the process and then '
+          'those children', () async {
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+        final first = await install(['headless', 'sshnpd']);
+        expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
+        pgrepOver(
+          [
+            (bobUid, '/bin/sh $job'),
+            (bobUid, 'sleep 10'),
+            (uid, '/bin/sh $job'),
+            (uid, '/home/tester/.local/bin/atsc sshnpd -a @device'),
+            (uid, 'sleep 10'),
+            (uid, 'sh $job'),
+          ],
+          parents: {1: 0, 3: 2, 4: 2},
+        );
+        recordKills();
+        final int callsBefore = callsMade().length;
+
+        final again = await install(['headless', 'sshnpd']);
+
+        expect(again.exitCode, 0, reason: '${again.stdout}${again.stderr}');
+        expect(
+          callsMade()
+              .skip(callsBefore)
+              .where((String call) => call.startsWith(RegExp('(pgrep|kill) '))),
+          [
+            'pgrep -u $uid -f -- ^[^ ]*sh ${ereEscaped(job)}\$',
+            'pgrep -P ${firstPid + 2}',
+            'kill ${firstPid + 2}',
+            'kill ${firstPid + 3} ${firstPid + 4}',
+            'pgrep -P ${firstPid + 5}',
+            'kill ${firstPid + 5}',
+          ],
+        );
+      });
+    });
+
+    group('Given pgrep is missing, does not accept -u or fails', () {
+      const String couldNotCheck = '=> Could not check for a running sshnpd.sh '
+          'job: pgrep is missing, does not accept -u, or failed\n';
+      const List<String> broken = [
+        'pgrep without -u',
+        'pgrep that fails with no output',
+        'no pgrep',
+      ];
+
+      /// Leaves install.sh the [broken] pgrep named by [how], a pgrep that
+      /// refuses -u as BusyBox's does, one that exits 2 with no output, or
+      /// none, and returns the PATH to run it with.
+      Future<String?> breakPgrep(String how) async {
+        final String pgrep = path.join(shims.path, 'pgrep');
+        switch (how) {
+          case 'pgrep without -u':
+            shim(
+              'pgrep',
+              '${record('pgrep')}'
+                  'for a in "\$@"; do\n'
+                  '  if [ "\$a" = -u ]; then\n'
+                  "    echo 'pgrep: unrecognized option: u' >&2\n"
+                  "    echo 'Usage: pgrep [-flanovx] [-s SID|-P PPID|PATTERN]' "
+                  '>&2\n'
+                  '    exit 1\n'
+                  '  fi\n'
+                  'done\n'
+                  'exit 1\n',
+            );
+            return null;
+          case 'pgrep that fails with no output':
+            shim('pgrep', '${record('pgrep')}exit 2\n');
+            return null;
+        }
+        if (File(pgrep).existsSync()) File(pgrep).deleteSync();
+        final String searchPath = '${shims.path}:${pathWithout('pgrep')}';
+        final probe = await Process.run(
+          '/bin/sh',
+          ['-c', 'command -v pgrep'],
+          environment: {'PATH': searchPath},
+          includeParentEnvironment: false,
+        );
+        expect(probe.exitCode, isNot(0), reason: '${probe.stdout}');
+        return searchPath;
+      }
+
+      test(
+          "when install.sh installs the user's headless job again, then it "
+          'says it could not check for a running job and prints no command to '
+          'start it', () async {
+        await expectShimsFirst();
+        recordKills();
+
+        for (final String how in broken) {
+          for (final File file in [crontab, calls]) {
+            if (file.existsSync()) file.deleteSync();
+          }
+          shim('pgrep', '${record('pgrep')}exit 1\n');
+          final first = await install(['headless', 'sshnpd']);
+          expect(first.exitCode, 0, reason: '${first.stdout}${first.stderr}');
+          final String? searchPath = await breakPgrep(how);
+
+          final again = await install(
+            ['headless', 'sshnpd'],
+            searchPath: searchPath,
+          );
+
+          expect(
+            again.exitCode,
+            0,
+            reason: '$how: ${again.stdout}${again.stderr}',
+          );
+          expect(again.stdout, contains(couldNotCheck), reason: how);
+          expect(
+            again.stdout,
+            contains('If the job is running, stop it before you start it '
+                'again\n'),
+            reason: how,
+          );
+          expect(again.stdout, isNot(contains('immediately')), reason: how);
+          expect(
+            callsMade().where((String call) => call.startsWith('kill ')),
+            isEmpty,
+            reason: how,
+          );
+        }
+      });
+
+      test(
+          "when install.sh installs the user's headless job for the first "
+          'time, then it says it could not check for a running job and prints '
+          'the command that starts the job', () async {
+        await expectShimsFirst();
+        final String logs = path.join(home.path, '.sshnpd', 'logs');
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+
+        for (final String how in broken) {
+          if (crontab.existsSync()) crontab.deleteSync();
+          final String? searchPath = await breakPgrep(how);
+
+          final result = await install(
+            ['headless', 'sshnpd'],
+            searchPath: searchPath,
+          );
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$how: ${result.stdout}${result.stderr}',
+          );
+          expect(result.stdout, contains(couldNotCheck), reason: how);
+          expect(
+            result.stdout,
+            contains('To start the job immediately:\n'
+                '  nohup $job > $logs/sshnpd.log 2> $logs/sshnpd.err &\n'),
+            reason: how,
+          );
+        }
+      });
+    });
+
+    group('Given a -b directory whose name has ", \$, `, \\ or a newline', () {
+      test(
+          'when install.sh installs a headless or tmux job into it, then it '
+          'refuses before installing anything, with an error naming -b',
+          () async {
+        final homeBefore = snapshot(home);
+
+        for (final String char in ['"', r'$', '`', r'\', '\n']) {
+          final String dir = path.join(root.path, 'a${char}b');
+          for (final List<String> args in [
+            ['-b', dir, 'headless', 'sshnpd'],
+            ['-b', dir, 'npt', 'tmux', 'srvd'],
+          ]) {
+            final result = await install(args);
+
+            expect(result.exitCode, 1, reason: '$args: ${result.stderr}');
+            expect(
+              result.stdout,
+              'Error: the directory given with -b cannot contain ", \$, `, \\ '
+              'or a newline: $dir\n',
+              reason: '$args',
+            );
+            expect(Directory(dir).existsSync(), isFalse, reason: '$args');
+          }
+        }
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+        expect(callsMade(), isEmpty);
+      });
+
+      test('when install.sh installs npt into it, then it installs npt',
+          () async {
+        final String dir = path.join(root.path, r'a$b');
+
+        final result = await install(['-b', dir, 'npt']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(namesIn(dir), ['atsc', 'npt', 'srv']);
+      });
+    });
+
+    group('Given a headless or tmux command with no job name', () {
+      test(
+          'when install.sh runs it, then it prints the usage text and exits 1 '
+          'having installed nothing, and with --help it exits 0', () async {
+        final homeBefore = snapshot(home);
+
+        for (final String kind in ['headless', 'tmux']) {
+          final help = await install([kind, '--help']);
+          expect(help.exitCode, 0, reason: '$kind --help: ${help.stderr}');
+          expect(help.stdout, contains('headless <job>'), reason: kind);
+
+          for (final List<String> args in [
+            [kind],
+            ['npt', kind],
+          ]) {
+            final result = await install(args);
+
+            expect(result.exitCode, 1, reason: '$args: ${result.stderr}');
+            expect(result.stdout, help.stdout, reason: '$args');
+          }
+        }
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+        expect(callsMade(), isEmpty);
+      });
+    });
+
+    group(
+        'Given install.sh runs as a regular user who cannot set up '
+        '~/.ssh/authorized_keys', () {
+      test(
+          'when it installs a headless job, a tmux job or a launchd unit, then '
+          'it exits 1 having installed nothing', () async {
+        await expectShimsFirst();
+        final ssh = Directory(path.join(home.path, '.ssh'))..createSync();
+        expect(Process.runSync('chmod', ['500', ssh.path]).exitCode, 0);
+        addTearDown(() => Process.runSync('chmod', ['700', ssh.path]));
+        final homeBefore = snapshot(home);
+
+        for (final (List<String> args, String system) in [
+          (['headless', 'sshnpd'], 'Linux'),
+          (['tmux', 'sshnpd'], 'Linux'),
+          (['launchd', 'sshnpd'], 'Darwin'),
+        ]) {
+          shim('uname', 'echo $system\n');
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await install(args);
+
+          expect(result.exitCode, 1, reason: '$args: ${result.stderr}');
+          expect(
+            result.stdout,
+            'Error: could not set up ${ssh.path}/authorized_keys\n',
+            reason: '$args',
+          );
+          expect(changes(homeBefore, snapshot(home)), isEmpty, reason: '$args');
+          expect(callsMade(), isEmpty, reason: '$args');
+        }
+        expect(crontab.existsSync(), isFalse);
+      });
+    });
+
+    group('Given an account whose ~/.ssh/authorized_keys cannot be set up', () {
+      test(
+          'when install.sh installs srvd as a headless job, a tmux job or a '
+          'systemd unit, then it installs it', () async {
+        await expectShimsFirst();
+        expectSystemdUnitsUnwritable();
+
+        for (final (List<String> args, bool asRoot, String? sudoUser) in [
+          (['headless', 'srvd'], false, null),
+          (['tmux', 'srvd'], false, null),
+          (['systemd', 'srvd'], true, null),
+          (['systemd', 'srvd'], true, 'alice'),
+        ]) {
+          final String reason = '$args, root $asRoot, sudo user $sudoUser';
+          final Directory dir = sudoUser == 'alice' ? alice : home;
+          final ssh = Directory(path.join(dir.path, '.ssh'))..createSync();
+          expect(Process.runSync('chmod', ['500', ssh.path]).exitCode, 0);
+          addTearDown(() => Process.runSync('chmod', ['700', ssh.path]));
+          final sshBefore = snapshot(ssh);
+          for (final File file in [crontab, calls]) {
+            if (file.existsSync()) file.deleteSync();
+          }
+
+          final result = asRoot
+              ? await installAsRoot(args, sudoUser: sudoUser)
+              : await install(args);
+
+          expect(
+            result.exitCode,
+            0,
+            reason: '$reason: ${result.stdout}${result.stderr}',
+          );
+          final String bin =
+              asRoot ? prefix.path : path.join(home.path, '.local', 'bin');
+          expect(
+            File(path.join(bin, 'srvd')).existsSync(),
+            isTrue,
+            reason: reason,
+          );
+          expect(
+            callsMade(),
+            asRoot
+                ? contains('systemctl daemon-reload')
+                : containsAllInOrder(['crontab -l', 'crontab -']),
+            reason: reason,
+          );
+          expect(
+            callsMade().where((String call) => call.contains('.ssh')),
+            isEmpty,
+            reason: reason,
+          );
+          expect(changes(sshBefore, snapshot(ssh)), isEmpty, reason: reason);
+        }
+      });
+    });
+
+    group(
+        'Given install.sh runs as a regular user whose job script or log '
+        'directory belongs to another account', () {
+      test(
+          'when it installs a headless or tmux job, then it stops before '
+          'changing anything and prints the steps that the user runs to move '
+          'the topmost of them in each tree aside and copy it back', () async {
+        await expectShimsFirst();
+        final String account =
+            Process.runSync('id', ['-un']).stdout.toString().trim();
+        final String local = path.join(home.path, '.local');
+        final String bin = path.join(local, 'bin');
+        final String sshnpd = path.join(home.path, '.sshnpd');
+        final String nowhere = path.join(root.path, 'nowhere');
+
+        /// The step that moves [p] aside to [old], or else to `<p>.old`, and
+        /// copies it back with [cp].
+        String move(String cp, String p, [String? old]) {
+          old ??= '$p.old';
+          return "  mv '$p' '$old' && $cp '$old' '$p'\n";
+        }
+
+        for (final (
+              List<String> args,
+              Map<String, String> links,
+              Map<String, String?> taken,
+              List<String> listed,
+              String moves,
+            ) in [
+          (
+            ['headless', 'sshnpd'],
+            {'.local/bin/sshnpd.sh': '/etc/hosts'},
+            {},
+            [path.join(bin, 'sshnpd.sh')],
+            move('cp', path.join(bin, 'sshnpd.sh')),
+          ),
+          (
+            ['npt', 'headless', 'sshnpd'],
+            {'.local/bin/sshnpd.sh': '/etc/hosts'},
+            {},
+            [path.join(bin, 'sshnpd.sh')],
+            move('cp', path.join(bin, 'sshnpd.sh')),
+          ),
+          (
+            ['headless', 'srvd'],
+            {'.sshnpd/logs': '/usr'},
+            {},
+            [path.join(sshnpd, 'logs')],
+            move('cp -R', path.join(sshnpd, 'logs')),
+          ),
+          (
+            ['tmux', 'sshnpd'],
+            {'.local/bin': '/usr'},
+            {},
+            [bin],
+            move('cp -R', bin),
+          ),
+          (
+            ['headless', 'sshnpd'],
+            {'.local': '/usr'},
+            {},
+            [local, bin],
+            move('cp -R', local),
+          ),
+          (
+            ['headless', 'sshnpd'],
+            {'.local': '/usr', '.sshnpd': '/usr'},
+            {},
+            [local, bin, sshnpd],
+            move('cp -R', local) + move('cp -R', sshnpd),
+          ),
+          (
+            ['headless', 'sshnpd'],
+            {'.local': '/usr'},
+            {'.local.old': null, '.local.old.2': nowhere},
+            [local, bin],
+            move('cp -R', local, '$local.old.3'),
+          ),
+          (
+            ['tmux', 'sshnpd'],
+            {'.local/bin/sshnpd.sh': '/etc/hosts'},
+            {'.local/bin/sshnpd.sh.old': null},
+            [path.join(bin, 'sshnpd.sh')],
+            move(
+              'cp',
+              path.join(bin, 'sshnpd.sh'),
+              path.join(bin, 'sshnpd.sh.old.2'),
+            ),
+          ),
+        ]) {
+          final String reason = '$args, $links, $taken';
+          for (final FileSystemEntity entity
+              in home.listSync(followLinks: false)) {
+            entity.deleteSync(recursive: true);
+          }
+          for (final MapEntry(:String key, :String value) in links.entries) {
+            final String link = path.join(home.path, key);
+            Directory(path.dirname(link)).createSync(recursive: true);
+            Link(link).createSync(value);
+            expect(
+              Process.runSync('/bin/sh', ['-c', '[ -O "\$1" ]', 'sh', link])
+                  .exitCode,
+              1,
+              reason: 'this process owns $value',
+            );
+          }
+          for (final MapEntry(:String key, :String? value) in taken.entries) {
+            final String name = path.join(home.path, key);
+            if (value == null) {
+              Directory(name).createSync(recursive: true);
+            } else {
+              Link(name).createSync(value);
+            }
+          }
+          final String job = args.last;
+          final String script = path.join(bin, '$job.sh');
+          final homeBefore = snapshot(home);
+          if (calls.existsSync()) calls.deleteSync();
+
+          final result = await install(args);
+
+          final String kindJob = args.sublist(args.length - 2).join(' ');
+          expect(result.exitCode, 1, reason: '$reason: ${result.stderr}');
+          expect(
+            result.stdout,
+            'Error: install.sh $kindJob writes to these, which $account does '
+            'not own:\n'
+            '${listed.map((String p) => '  $p\n').join()}'
+            'To clean up an earlier install, first have an admin remove its '
+            'root cron job and stop it with:\n'
+            "  sudo sh -c 'crontab -l | grep -v -F -- \"\$1\" | crontab -' sh "
+            "'$script'\n"
+            '$stopStep${ereEscaped(script)}\'\n'
+            'then move these aside and copy them back, as $account, with:\n'
+            '$moves'
+            'and run install.sh again.\n',
+            reason: reason,
+          );
+          expect(result.stdout, isNot(contains('chown')), reason: reason);
+          expect(callsMade(), isEmpty, reason: reason);
+          expect(changes(homeBefore, snapshot(home)), isEmpty, reason: reason);
+        }
+        expect(crontab.existsSync(), isFalse);
+      });
+    });
+
+    group(
+        'Given a job script whose path has characters that are special in an '
+        'extended regular expression', () {
+      test(
+          'when install.sh prints the step that stops an earlier root job, '
+          "then the step stops only root's processes that run that script "
+          'with a shell, each after listing its children, and then those '
+          'children', () async {
+        await expectShimsFirst();
+        const String name = r'h.o+m*e?(1)[2]{3}|^$';
+        final odd = Directory(path.join(root.path, name))..createSync();
+        final String bin = path.join(odd.path, '.local', 'bin');
+        Directory(bin).createSync(recursive: true);
+        final String script = path.join(bin, 'sshnpd.sh');
+        Link(script).createSync('/etc/hosts');
+
+        final result = await install(['headless', 'sshnpd'], homeDir: odd);
+
+        expect(result.exitCode, 1, reason: '${result.stdout}${result.stderr}');
+        final String step = (result.stdout as String)
+            .split('\n')
+            .singleWhere((String line) => line.contains('pgrep'));
+        final List<(int, String, bool)> processes = [
+          (0, '/bin/sh $script', true),
+          (0, 'sh $script', true),
+          (0, '/usr/bin/bash $script', true),
+          (bobUid, '/bin/sh $script', false),
+          (0, '/bin/sh ${script.replaceAll('.', 'x')}', false),
+          for (final String char in name.split('').toSet())
+            if (!RegExp(r'[a-z0-9]').hasMatch(char))
+              (
+                0,
+                '/bin/sh ${script.replaceFirst(name, name.replaceAll(char, ''))}',
+                false
+              ),
+          (0, '/bin/sh $script -v', false),
+          (0, 'sudo sh $script', false),
+          (0, 'sh -c kill sh $script', false),
+          (0, 'sleep 10', false),
+          (0, '/usr/bin/atsc sshnpd -a @device', false),
+          (0, 'sleep 10', false),
+          (bobUid, 'sleep 10', false),
+        ];
+        final int last = processes.length - 1;
+        final Map<int, int> parents = {
+          last - 3: 0,
+          last - 2: 0,
+          last - 1: 1,
+          last: 3,
+        };
+        final Map<int, List<int>> children = {};
+        for (final MapEntry(:int key, :int value) in parents.entries) {
+          children.putIfAbsent(value, () => []).add(key);
+        }
+        pgrepOver(
+          [
+            for (final (int, String, bool) process in processes)
+              (process.$1, process.$2),
+          ],
+          parents: parents,
+        );
+        shim('sudo', r'''
+if [ "$1 $2" != 'sh -c' ]; then exit 1; fi
+shift 2
+body=$1
+shift
+exec sh -c "kill() { echo \"kill \$*\" >> \"\$CALLS\"; }; $body" "$@"
+''');
+        final int callsBefore = callsMade().length;
+
+        final stop = await Process.run('/bin/sh', [
+          '-c',
+          step,
+        ], environment: {
+          'PATH': '${shims.path}:${Platform.environment['PATH']}',
+          'CALLS': calls.path,
+        });
+
+        expect(stop.exitCode, 0, reason: '${stop.stdout}${stop.stderr}');
+        expect(
+          callsMade().skip(callsBefore),
+          [
+            'pgrep -u 0 -f -- ^[^ ]*sh ${ereEscaped(script)}\$',
+            for (int i = 0; i < processes.length; i++)
+              if (processes[i].$3) ...[
+                'pgrep -P ${firstPid + i}',
+                'kill ${firstPid + i}',
+                if (children.containsKey(i))
+                  'kill ${children[i]!.map((int c) => firstPid + c).join(' ')}',
+              ],
+          ],
+          reason: [
+            for (int i = 0; i < processes.length; i++)
+              '${firstPid + i} ${processes[i].$1} ${processes[i].$2}',
+          ].join('\n'),
+        );
+      });
+    });
+
+    group(
+        'Given install.sh runs as a regular user with -u naming another '
+        'account', () {
+      test(
+          "when it installs npt, then npt is in that account's ~/.local/bin "
+          "and nothing in the user's own home is created or changed", () async {
+        final homeBefore = snapshot(home);
+
+        final result = await install(['-u', 'bob', 'npt']);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(callsMade(), ['sudo -H -u bob sh -c echo \$HOME']);
+        expect(
+          namesIn(path.join(bob.path, '.local', 'bin')),
+          ['atsc', 'npt', 'srv'],
+        );
+        expect(
+          File(path.join(bob.path, '.profile')).readAsStringSync(),
+          'PATH="\$PATH:\$HOME/.local/bin"\n',
+        );
+        expect(changes(homeBefore, snapshot(home)), isEmpty);
+      });
+    });
+
+    group('Given install.sh runs as a regular user with -u root', () {
+      test(
+          'when it installs a tmux job whose session exists, then the session '
+          "runs with the user's own HOME, and the start command it prints sets "
+          'no HOME', () async {
+        await expectShimsFirst();
+        tmuxServer(serverHome: alice.path, sessions: ['sshnpd']);
+        final String job = path.join(home.path, '.local', 'bin', 'sshnpd.sh');
+
+        final result =
+            await install(['-u', 'root', 'tmux', 'sshnpd'], homeDir: alice);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(callsMade(), contains('job runs with HOME=${alice.path}'));
+        expect(
+          result.stdout,
+          contains('To start the service immediately:\n'
+              '  tmux new-session -d -s sshnpd && tmux send-keys -t sshnpd '
+              '$job C-m &\n'),
         );
       });
     });

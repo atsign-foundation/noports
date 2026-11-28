@@ -23,6 +23,12 @@ sudo ./install.sh systemd sshnpd
 ```
 
 This installer must be run as root.
+
+To run sshnpd as another account, such as a service account, name it with `-u` so that the installer sets up that account's `~/.ssh/authorized_keys` (see Step 5):
+
+```sh
+sudo ./install.sh -u <username> systemd sshnpd
+```
 {% endtab %}
 
 {% tab title="macOS" %}
@@ -42,7 +48,7 @@ You'll then be greeted with a file that looks like this:
 
 {% @github-files/github-code-block url="https://github.com/atsign-foundation/noports/blob/trunk/packages/dart/sshnoports/bundles/shell/systemd/sshnpd.service" %}
 
-Replace `<username>` with the [linux user ](#user-content-fn-1)[^1]running sshnpd (we suggest creating service account not running as root)
+Replace `<username>` with the [linux user ](#user-content-fn-1)[^1]running sshnpd (we suggest creating a service account, not running as root, and naming it with `-u` in Step 1)
 
 Replace `<@device_atsign>` with the [device address](#user-content-fn-2)[^2]
 
@@ -132,11 +138,9 @@ sudo journalctl -u sshnpd.service -f
 
 There are a number of fiddly things to get in place for ssh to work. The first is the `~/.ssh/authorized_keys`file of the user being used to run the systemd unit.
 
-If that file does not exist, sshnpd run with `-s` creates `~/.ssh` (mode 0700) and `authorized_keys` (mode 0600) when it adds the first key, and the rest of this step does not apply. If it does exist, check it as follows.
+The installer sets up `~/.ssh/authorized_keys` for the user who ran `sudo ./install.sh systemd sshnpd`, or for the account named with `-u`. It runs these steps as that user, creating the file if it is missing, so that user owns it, and it sets the file's mode to 644 (`-rw-r--r--`). If it cannot, it stops before installing the unit, with an error. For an account other than root, the error gives the command to move that account's `~/.ssh` aside as that account, so that a second run can create it afresh, or, if the account has no `~/.ssh` and cannot create one, says to check that it owns its home directory. For root, the error names the file it could not set up.
 
-The file needs to owned by the user running the systemd unit. Currently there is a bug in the script and this sets the user to root, which needs to be corrected if not running as root. You can do this with the following command substituting `debain` for your username and group.
-
-The file also needs to be only writable by the owner, else the `sshd` will not allow logins. This can be checked with `ls -l` and corrected with the chmod command.
+The file needs to be owned by the user running the systemd unit, and writable only by that owner, else `sshd` will not allow logins. Check it with `ls -l`. If it is owned by someone else, correct it with `chown`, substituting `debian` for your username and group, and correct its mode with `chmod`.
 
 ```bash
 debian@beaglebone:~$ ls -l ~/.ssh/
@@ -162,7 +166,13 @@ debian@beaglebone:~$
 
 If you decided to use the root user in the service setup you have a futher couple of steps.
 
-sshnpd run with `-s` creates `~root/.ssh` and `~root/.ssh/authorized_keys` with the right modes when it adds the first key. If you add keys yourself instead, create them first.
+Run the installer with `-u root` so that it sets up `~root/.ssh/authorized_keys`:
+
+```bash
+sudo ./install.sh -u root systemd sshnpd
+```
+
+Or create them yourself:
 
 ```bash
 sudo mkdir -p ~root/.ssh

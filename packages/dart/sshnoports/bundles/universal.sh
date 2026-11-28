@@ -25,7 +25,7 @@ unset script_dir
 unset platform_name
 unset system_arch
 unset archive_ext
-unset time_stamp
+unset extract_path
 unset archive_path
 unset as_root
 unset bin_path
@@ -85,6 +85,14 @@ is_root() {
 
 is_darwin() {
   [ "$(uname)" = 'Darwin' ]
+}
+
+# Whether this is a device installation as a headless or tmux job.
+is_job_install() {
+  case "${device_install_type:-}" in
+  headless | tmux) return 0 ;;
+  *) return 1 ;;
+  esac
 }
 
 is_systemd_available() {
@@ -189,7 +197,8 @@ parse_env() {
   *)
     >&2 echo "Detected an unsupported platform: $(uname)"
     >&2 echo "Please open an issue at: $repo_url"
-    >&2 echo "and provide the following information: $(uname -a)" exit 1
+    >&2 echo "and provide the following information: $(uname -a)"
+    exit 1
     ;;
   esac
 
@@ -219,14 +228,10 @@ parse_env() {
     ;;
   esac
 
-  time_stamp=$(date +%s)
-
   tmp_path="/tmp"
-  extract_path="$tmp_path/sshnp-$time_stamp"
-  archive_path="$extract_path.$archive_ext"
   user_home="$HOME"
   if is_root; then
-    user="$SUDO_USER"
+    user="${SUDO_USER:-}"
     as_root=true
     bin_path="/usr/bin"
     if [ -z "$user" ]; then
@@ -326,7 +331,8 @@ parse_args() {
       install_type=$(norm_install_type "$install_type_input")
       if ! is_valid_install_type "$install_type"; then
         >&2 echo "Invalid install type: $install_type_input"
-        >&2 echo "Valid options are: (device, client)" exit 1
+        >&2 echo "Valid options are: (device, client)"
+        exit 1
       fi
       ;;
     --local)
@@ -375,7 +381,8 @@ parse_args() {
       device_type=$(norm_device_type "$device_type_input")
       if ! is_valid_device_type "$device_type"; then
         >&2 echo "Invalid device type: $device_type_input"
-        >&2 echo "Valid options are: (launchd, systemd, tmux, headless)" exit 1
+        >&2 echo "Valid options are: (launchd, systemd, tmux, headless)"
+        exit 1
       fi
       ;;
     --no-sudo)
@@ -508,18 +515,27 @@ unpack_archive() {
   esac
 }
 
-cleanup() {
-  # These should be in the tmp directory, attempt to remove them anyway
-  rm -f "$archive_path"
-  rm -rf "$extract_path"
+make_work_dir() {
+  if ! work_dir=$(mktemp -d "$tmp_path/sshnp-XXXXXX"); then
+    >&2 echo "Error: could not create a work directory in $tmp_path"
+    exit 1
+  fi
+  extract_path=$work_dir
+  archive_path="$extract_path/sshnp.$archive_ext"
+}
 
-  if $as_root; then
-    $is_dotlocal_created || chown_dir $user_home/.local
-    $is_dotlocalbin_created || chown_dir $user_home/.local/bin
-    $is_dotssh_created || chown_dir $user_home/.ssh/
-    $is_dotsshnp_created || chown_dir $user_home/.sshnp/
-    $is_dotatsign_created || chown_dir $user_home/.atsign/
-    $is_dotatsignkeys_created || chown_dir $user_home/.atsign/keys/
+cleanup() {
+  if [ -n "${extract_path:-}" ]; then
+    rm -rf "$extract_path"
+  fi
+
+  if ${as_root:-false}; then
+    ${is_dotlocal_created:-true} || chown_dir $user_home/.local
+    ${is_dotlocalbin_created:-true} || chown_dir $user_home/.local/bin
+    ${is_dotssh_created:-true} || chown_dir $user_home/.ssh/
+    ${is_dotsshnp_created:-true} || chown_dir $user_home/.sshnp/
+    ${is_dotatsign_created:-true} || chown_dir $user_home/.atsign/
+    ${is_dotatsignkeys_created:-true} || chown_dir $user_home/.atsign/keys/
   fi
 }
 
@@ -790,7 +806,7 @@ client() {
 }
 
 # DEVICE INSTALLATION #
-device() {
+get_device_install_type() {
   if is_container; then
     >&2 echo "Error: Device installation cannot succeed inside a container because"
     >&2 echo "there is no init process to run the daemon."
@@ -809,7 +825,7 @@ device() {
       if check_cmd tmux; then
         device_install_type="tmux"
       else
-        if ! check_cmd cron; then
+        if ! check_cmd crontab; then
           >&2 echo "ERROR: crontab not available"
           >&2 echo "Please install cron and make it available on the PATH"
           exit 1
@@ -827,6 +843,18 @@ device() {
     device_install_type=$device_type
   fi
 
+  case "$device_install_type" in
+  tmux | headless)
+    if is_root; then
+      >&2 echo "Error: a $device_install_type device installation runs as the user who will run the daemon."
+      >&2 echo "Run this script again as that user, not as root and without sudo."
+      exit 1
+    fi
+    ;;
+  esac
+}
+
+device() {
   if [ "$used_package_manager" = false ]; then
     if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ]; then
       cleanup_old_installation
@@ -838,7 +866,10 @@ device() {
     # install sshnpd binary and capture the installer output
     # If systemd, we want to use the new style
     if [ "$device_install_type" = "systemd" ] && [ "$as_root" = true ]; then
-      install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnpd)
+      if ! install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" sshnpd); then
+        printf '%s\n' "$install_output" >&2
+        exit 1
+      fi
       # Manually install the nfpm style systemd unit
       mkdir -p /lib/systemd/system
       cp "$extract_path/sshnp/systemd.nfpm/sshnpd.service" /lib/systemd/system/sshnpd.service
@@ -856,7 +887,10 @@ device() {
       migrate_systemd_config_to_yaml
       secure_config_file
     else
-      install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd)
+      if ! install_output=$("$extract_path"/sshnp/install.sh -b "$bin_path" -u "$user" "$device_install_type" sshnpd); then
+        printf '%s\n' "$install_output" >&2
+        exit 1
+      fi
     fi
 
     if [ "$verbose" = true ]; then
@@ -1353,19 +1387,31 @@ main() {
   parse_env
   print_env
   parse_args "$@"
+  make_work_dir
 
   if $as_root && $no_sudo; then
     >&2 echo "Error: --no-sudo cannot be used when running as root/sudo"
     exit 1
   fi
 
+  if $as_root && [ "$platform_name" = "macos" ]; then
+    >&2 echo "Error: installing as root is not available on macOS."
+    >&2 echo "Run this script again as the user who will run NoPorts, not as root and without sudo."
+    exit 1
+  fi
+
+  get_user_inputs
+  if [ "$install_type" = "device" ]; then
+    get_device_install_type
+  fi
+
   if [ -n "$local_archive" ]; then
     echo "Using local archive: $local_archive"
     cp "$local_archive" "$archive_path"
     unpack_archive
-  elif [ "${device_type:-}" != "headless" ] && ! $no_sudo && [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
+  elif ! is_job_install && ! $no_sudo && [ "$platform_name" = "linux" ] && is_debian_like && (check_cmd apt || check_cmd apt-get); then
     install_via_apt
-  elif [ "${device_type:-}" != "headless" ] && ! $no_sudo && [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
+  elif ! is_job_install && ! $no_sudo && [ "$platform_name" = "linux" ] && is_redhat_like && (check_cmd dnf || check_cmd yum); then
     install_via_rpm
   elif [ "$platform_name" = "macos" ] && check_cmd brew; then
     if [ "$quiet" = true ]; then
@@ -1391,7 +1437,6 @@ main() {
     unpack_archive
   fi
 
-  get_user_inputs
   case "$install_type" in
   client) client ;;
   device) device ;;

@@ -135,11 +135,7 @@ cd sshnp
 ```
 
 This will install the binaries to `~/.local/bin`.\
-Instead, if you'd like to install the binaries to `/usr/local/bin`, run the installer as root:
-
-```sh
-sudo ./install.sh sshnp && sudo ./install.sh srv
-```
+Run the installer without `sudo`; installing as root is not available on macOS.
 {% endtab %}
 
 {% tab title="Windows" %}
@@ -164,7 +160,7 @@ export PATH="$PATH:$HOME/.local/bin";
 {% endtab %}
 
 {% tab title="macOS" %}
-If you chose not to install as root, you will need to add `~/.local/bin` to your `PATH`.\
+The installer installs the binaries to `~/.local/bin`, so you will need to add `~/.local/bin` to your `PATH`.\
 Add the following line to your shell's rc file:
 
 ```sh

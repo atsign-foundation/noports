@@ -26,12 +26,8 @@ cd sshnp
 ./install.sh headless sshnpd
 ```
 
-This will install the binaries to `~/.local/bin`.\
-Instead, if you'd like to install the binaries to `/usr/local/bin`, run the installer as root:
-
-```sh
-sudo ./install.sh headless sshnpd
-```
+This installs the binaries to `~/.local/bin` and adds the job to your crontab, so the job runs as the user who installs it.\
+Run the installer without `sudo`, as the user who will run the daemon.
 {% endtab %}
 
 {% tab title="macOS" %}
@@ -47,12 +43,8 @@ cd sshnp
 ./install.sh headless sshnpd
 ```
 
-This will install the binaries to `~/.local/bin`.\
-Instead, if you'd like to install the binaries to `/usr/local/bin`, run the installer as root:
-
-```sh
-sudo ./install.sh headless sshnpd
-```
+This installs the binaries to `~/.local/bin` and adds the job to your crontab, so the job runs as the user who installs it.\
+Run the installer without `sudo`, as the user who will run the daemon.
 {% endtab %}
 {% endtabs %}
 
