@@ -26,9 +26,10 @@ void main() {
         outputDirectory: Directory(path.join(notADirectory.path, 'out')),
       );
 
-      for (final Future<ClientBinary> build in builds) {
-        await expectLater(build, throwsA(isA<Exception>()));
-      }
+      await Future.wait([
+        for (final Future<ClientBinary> build in builds)
+          expectLater(build, throwsA(isA<Exception>())),
+      ]);
     },
   );
 }
